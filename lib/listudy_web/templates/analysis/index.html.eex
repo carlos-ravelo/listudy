@@ -1,0 +1,101 @@
+<div class="whole">
+  <h2 style="margin-bottom: 1rem;">Analizar Partidas</h2>
+
+  <%
+    lichess_synced = Enum.any?(@user_games, &(&1.platform == "lichess"))
+    chesscom_synced = Enum.any?(@user_games, &(&1.platform == "chess_com"))
+  %>
+
+  <!-- Plataformas -->
+  <div style="display: flex; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap;">
+    <!-- Tarjeta Lichess -->
+    <div style="flex: 1; min-width: 300px; background-color: var(--gray-100); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--gray-300); display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <h3 style="margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
+          Lichess
+          <%= if lichess_synced do %>
+            <span style="font-size: 0.8rem; color: #15781B; background: #e6ffed; padding: 3px 8px; border-radius: 12px;">✓ Configurado</span>
+          <% else %>
+            <span style="font-size: 0.8rem; color: var(--gray-600); background: var(--gray-200); padding: 3px 8px; border-radius: 12px;">Sin configurar</span>
+          <% end %>
+        </h3>
+        <p style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 1rem;">
+          <%= if lichess_synced, do: "Tus partidas están sincronizadas. Vuelve a conectar para actualizarlas.", else: "Ingresa tu usuario de Lichess para importar tus partidas." %>
+        </p>
+      </div>
+      <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0; display: flex; gap: 0.5rem;", onsubmit: "this.querySelector('button').innerText = 'Procesando...';"], fn f -> %>
+        <%= hidden_input f, :platform, value: "lichess" %>
+        <%= text_input f, :username, placeholder: "Usuario de Lichess", required: true, style: "flex: 1; padding: 8px; margin: 0; border: 1px solid var(--gray-400); border-radius: 4px;" %>
+        <%= submit "Sincronizar", class: "button", style: "margin: 0;" %>
+      <% end %>
+    </div>
+
+    <!-- Tarjeta Chess.com -->
+    <div style="flex: 1; min-width: 300px; background-color: var(--gray-100); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--gray-300); display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <h3 style="margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
+          Chess.com
+          <%= if chesscom_synced do %>
+            <span style="font-size: 0.8rem; color: #15781B; background: #e6ffed; padding: 3px 8px; border-radius: 12px;">✓ Configurado</span>
+          <% else %>
+            <span style="font-size: 0.8rem; color: var(--gray-600); background: var(--gray-200); padding: 3px 8px; border-radius: 12px;">Sin configurar</span>
+          <% end %>
+        </h3>
+        <p style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 1rem;">
+          <%= if chesscom_synced, do: "Tus partidas están sincronizadas. Vuelve a conectar para actualizarlas.", else: "Ingresa tu usuario de Chess.com para importar tus partidas." %>
+        </p>
+      </div>
+      <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0; display: flex; gap: 0.5rem;", onsubmit: "this.querySelector('button').innerText = 'Procesando...';"], fn f -> %>
+        <%= hidden_input f, :platform, value: "chess_com" %>
+        <%= text_input f, :username, placeholder: "Usuario de Chess.com", required: true, style: "flex: 1; padding: 8px; margin: 0; border: 1px solid var(--gray-400); border-radius: 4px;" %>
+        <%= submit "Sincronizar", class: "button", style: "margin: 0;" %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Dashboard de Rendimiento por Estudios -->
+  <div class="moves">
+    <h3 style="margin-bottom: 1.5rem;">Resumen de tu Repertorio</h3>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+      <!-- Ejemplo: Estudio 1 -->
+      <div style="background: white; border: 1px solid var(--gray-300); border-radius: 8px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1.25rem;">Defensa Siciliana - Variante Najdorf</h4>
+          <p style="margin: 0; color: var(--gray-600); font-size: 0.95rem;">
+            Basado en <strong>12</strong> partidas recientes.
+          </p>
+        </div>
+        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
+          <div style="margin-bottom: 0.5rem; font-size: 1.1rem;">
+            <span style="color: #15781B; font-weight: bold; margin-right: 1.5rem;">✓ 9 Acertadas</span>
+            <span style="color: #e53e3e; font-weight: bold;">✗ 3 Desviaciones</span>
+          </div>
+          <button class="button button-primary" style="margin: 0; padding: 0 1.5rem; line-height: 2.5rem; height: auto;">Entrenar Errores</button>
+        </div>
+      </div>
+
+      <!-- Ejemplo: Estudio 2 -->
+      <div style="background: white; border: 1px solid var(--gray-300); border-radius: 8px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1.25rem;">Gambito de Dama Aceptado</h4>
+          <p style="margin: 0; color: var(--gray-600); font-size: 0.95rem;">
+            Basado en <strong>5</strong> partidas recientes.
+          </p>
+        </div>
+        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
+          <div style="margin-bottom: 0.5rem; font-size: 1.1rem;">
+            <span style="color: #15781B; font-weight: bold; margin-right: 1.5rem;">✓ 5 Acertadas</span>
+            <span style="color: #e53e3e; font-weight: bold;">✗ 0 Desviaciones</span>
+          </div>
+          <button class="button button-primary" style="margin: 0; padding: 0 1.5rem; line-height: 2.5rem; height: auto; opacity: 0.5; cursor: not-allowed;" disabled>Perfecto</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nota Temporal -->
+    <div style="margin-top: 2rem; padding: 1rem; background-color: #ebf8ff; border-left: 4px solid #3182ce; color: #2b6cb0; border-radius: 4px;">
+      <strong>Nota de desarrollo:</strong> Estos datos son una maqueta (mockup) visual. El siguiente paso es implementar el algoritmo en Elixir para analizar el PGN de las partidas, compararlas con tus Studies y reemplazar esto con información real.
+    </div>
+  </div>
+</div>
