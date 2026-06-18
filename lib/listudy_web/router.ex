@@ -97,6 +97,13 @@ defmodule ListudyWeb.Router do
     post "/progress/sync", ProgressController, :sync
   end
 
+  scope "/analysis", ListudyWeb do
+    pipe_through [:browser, :logged_in]
+
+    get "/", AnalysisController, :index
+    post "/sync", AnalysisController, :sync
+  end
+
   scope "/:locale", ListudyWeb do
     pipe_through [:browser, :stockfish]
     get "/play-stockfish", PageController, :play_stockfish
