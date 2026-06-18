@@ -239,7 +239,7 @@ defmodule ListudyWeb.StudyController do
 
     case File.stat(file) do
       {:ok, %{size: size}} ->
-        if size < 50000 do
+        if size < 15000000 do
           {:ok, file}
         else
           {:error, dgettext("study", "PGN is too big, only 50kb allowed")}

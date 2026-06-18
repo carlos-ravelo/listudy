@@ -18,6 +18,7 @@ import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_mo
 import { TextOverlayId, TextOverlayManager } from './modules/overlays.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { array_contains } from './modules/utils.js';
+import { StorageAdapter } from './storageAdapter.js';
 
 
 const mode_free = "free_mode";
@@ -67,8 +68,8 @@ function right_move_text() {
 }
 
 function achievement_end_of_line() {
-    let t = localStorage.getItem("achievements_lines_learned") || 0;
-    localStorage.setItem("achievements_lines_learned", Number(t) + 1);
+    let t = StorageAdapter.getItem("achievements_lines_learned") || 0;
+    StorageAdapter.setItem("achievements_lines_learned", Number(t) + 1);
     if (typeof achievement_student_test != "undefined") {
         document.dispatchEvent(achievement_student_test);
     }
@@ -455,7 +456,7 @@ function start_training() {
 function store_trees() {
     let tree_key = study_id + "_tree";
     try {
-        localStorage.setItem(tree_key, JSON.stringify(trees));
+        StorageAdapter.setItem(tree_key, JSON.stringify(trees));
     } catch(caught_error) {
         console.log("Ignored localstorage error: " + caught_error);
     }
@@ -466,7 +467,7 @@ function setup_trees() {
     let hash_key = study_id + "_hash";
     let tree_key = study_id + "_tree";
 
-    let last_hash = localStorage.getItem(hash_key);
+    let last_hash = StorageAdapter.getItem(hash_key);
     let curr_hash = string_hash(pgn + color);
     curr_hash += 3; // increase when trees have to be redone; for example when bugs in free_from_pgn are fixed
     let trees = {};
@@ -486,14 +487,14 @@ function setup_trees() {
             set_text(error_div, error_text);
         }
         try {
-            localStorage.setItem(tree_key, JSON.stringify(trees));
-            localStorage.setItem(hash_key, curr_hash);
+            StorageAdapter.setItem(tree_key, JSON.stringify(trees));
+            StorageAdapter.setItem(hash_key, curr_hash);
         } catch(caught_error) {
             console.log("Ignored localstorage error: " + caught_error);
         }
 
     } else {
-        trees = JSON.parse(localStorage.getItem(tree_key));
+        trees = JSON.parse(StorageAdapter.getItem(tree_key));
     }
     window.trees = trees;
 }
@@ -511,7 +512,7 @@ function setup_chapter_select() {
     let select_key = study_id + "_selected";
     let select_id = "chapter_select"
     let select = document.getElementById(select_id);
-    let selected = parseInt(localStorage.getItem(select_key) || 0);
+    let selected = parseInt(StorageAdapter.getItem(select_key) || 0);
     selected = Math.min(selected, trees.length - 1);  // prevent error if replacing with a pgn with fewer chapters
     window.chapter = selected;
     for (let i = 0; i < trees.length; ++i) {
@@ -527,7 +528,7 @@ function setup_chapter_select() {
 
     select.onchange = function() {
         let v = document.getElementById(select_id).value;
-        localStorage.setItem(select_key, v);
+        StorageAdapter.setItem(select_key, v);
         window.chapter = v;
         start_training();
         update_progress(); // update the progress bar shown
@@ -543,7 +544,7 @@ function setup_chapter_select() {
 function has_seen_suggestion(key, ever) {
     if (ever) {
         let lsKey = study_id + "_suggestions_" + key;
-        return localStorage.getItem(lsKey) === "true";
+        return StorageAdapter.getItem(lsKey) === "true";
     } else {
         return array_contains(seen_suggestions, key);
     }
@@ -554,7 +555,7 @@ function has_seen_suggestion(key, ever) {
  */
 function mark_suggestion_seen(key) {
     let lsKey = study_id + "_suggestions_" + key;
-    localStorage.setItem(lsKey, true);
+    StorageAdapter.setItem(lsKey, true);
 
     if (!array_contains(seen_suggestions, key)) {
         seen_suggestions.push(key);
@@ -631,7 +632,7 @@ function toggle_arrows() {
     show_arrows = curr;
     display_arrows(false);
     display_comments(false);
-    localStorage.setItem(show_arrows_key, show_arrows);
+    StorageAdapter.setItem(show_arrows_key, curr);
 }
 
 function toggle_arrow_type() {
@@ -653,7 +654,7 @@ function toggle_arrow_type() {
     arrow_type = curr;
     display_arrows(false);
     display_comments(false);
-    localStorage.setItem(arrow_type_key, arrow_type);
+    StorageAdapter.setItem(arrow_type_key, curr);
 }
 
 function toggle_key_move() {
@@ -672,7 +673,7 @@ function toggle_key_move() {
     }
     key_moves_mode = curr;
     link.textContent = curr;
-    localStorage.setItem(key_moves_mode_key, key_moves_mode);
+    StorageAdapter.setItem(key_moves_mode_key, curr);
 }
 
 function toggle_review() {
@@ -689,7 +690,7 @@ function toggle_review() {
     }
     board_review = curr;
     link.textContent = curr;
-    localStorage.setItem(board_review_key, board_review);
+    StorageAdapter.setItem(board_review_key, curr);
 }
 
 function toggle_move_delay() {
@@ -712,7 +713,7 @@ function toggle_move_delay() {
     }
     span.textContent = curr;
     move_delay_time = curr;
-    localStorage.setItem(move_delay_time_key, move_delay_time);
+    StorageAdapter.setItem(move_delay_time_key, curr);
 }
 
 
@@ -756,7 +757,7 @@ function toggle_comments() {
     link.textContent = curr;
     show_comments = curr;
     display_comments(false);
-    localStorage.setItem(show_comments_key, show_comments);
+    StorageAdapter.setItem(show_comments_key, curr);
 }
 
 function get_repertoire_depth() {
@@ -797,7 +798,7 @@ function inc_or_dec_max_depth(delta) {
 
     update_max_depth_label(depth, tree_depth);
 
-    localStorage.setItem(max_depth_key_base + chapter, max_depth);
+    StorageAdapter.setItem(max_depth_key_base + chapter, max_depth);
 }
 
 /**
@@ -810,7 +811,7 @@ function max_depth_changed() {
 
     update_max_depth_label(depth, tree_depth);
 
-    localStorage.setItem(max_depth_key_base + chapter, max_depth);
+    StorageAdapter.setItem(max_depth_key_base + chapter, max_depth);
 }
 
 function reset_line() {
@@ -932,7 +933,34 @@ function setup_configs() {
 
 window.overlay_manager = new TextOverlayManager();
 
-function main() {
+async function main() {
+    // 1. If the user is authenticated, try to fetch cloud progress/settings
+    if (typeof logged_in !== 'undefined' && logged_in) {
+        try {
+            const response = await fetch('/api/progress', {
+                credentials: 'same-origin'
+            });
+            if (response.ok) {
+                const cloudSettings = await response.json();
+                // Hydrate localStorage with cloud data
+                Object.entries(cloudSettings).forEach(([key, value]) => {
+                    // Save directly to localStorage to prevent triggering a bounce POST request
+                    localStorage.setItem(key, value); 
+                });
+                
+                // Reload global variables that were initialized before this async call
+                move_delay_time = get_option_from_localstorage(move_delay_time_key, i18n.instant, [i18n.instant, i18n.fast, i18n.medium, i18n.slow]);
+                show_arrows = get_option_from_localstorage(show_arrows_key, i18n.arrows_new2x, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
+                arrow_type = get_option_from_localstorage(arrow_type_key, i18n.arrow_type_both, [i18n.arrow_type_playable, i18n.arrow_type_pgn, i18n.arrow_type_both]);
+                board_review = get_option_from_localstorage(board_review_key, i18n.review_fast, [i18n.review_fast, i18n.review_slow]);
+                key_moves_mode = get_option_from_localstorage(key_moves_mode_key, i18n.key_move_enabled, [i18n.key_move_enabled, i18n.key_move_disabled]);
+                show_comments = get_option_from_localstorage(show_comments_key, i18n.comments_when_arrows, [i18n.comments_when_arrows, i18n.comments_always_on, i18n.comments_hidden]);
+            }
+        } catch (error) {
+            console.log("Ignored cloud sync fetch error: ", error);
+        }
+    }
+
     setup_ground();
     setup_chess();
     setup_trees();
