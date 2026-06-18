@@ -37,6 +37,13 @@ defmodule ListudyWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :api_session do
+    plug :accepts, ["json"]
+    plug :fetch_session
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+  end
+
   scope "/" do
     pipe_through :browser
 
@@ -81,6 +88,13 @@ defmodule ListudyWeb.Router do
     resources "/expert_recommendation", ExpertRecommendationController
 
     resources "/blind_tactics", BlindTacticController
+  end
+
+  scope "/api", ListudyWeb do
+    pipe_through [:api_session, :logged_in]
+
+    get "/progress", ProgressController, :index
+    post "/progress/sync", ProgressController, :sync
   end
 
   scope "/:locale", ListudyWeb do
@@ -190,4 +204,5 @@ defmodule ListudyWeb.Router do
 
     get "/", PageController, :domain
   end
+
 end
