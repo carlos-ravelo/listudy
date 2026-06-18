@@ -1,95 +1,89 @@
-<section class="">
-  <h1><%= dgettext "index", "Welcome to %{name}!", name: "Listudy" %></h1>
-  <p><%= dgettext "index", "With %{name} you can improve your chess skills with the help of spaced repetition.", name: "Listudy" %></p>
-  <p><%= dgettext "index", "Better train openings, endgames and tactics with the help of systematic repetition." %></p>
+<section style="background: #f7fafc; padding: 4rem 2rem; border-radius: 8px; text-align: center; margin-bottom: 4rem; border: 1px solid #e2e8f0;">
+  <h1 style="margin-bottom: 1rem;"><%= dgettext "index", "Welcome to %{name}!", name: "Listudy" %></h1>
+  <p style="font-size: 1.25rem; max-width: 600px; margin: 0 auto 2rem; color: #4a5568;">
+    <%= dgettext "index", "With %{name} you can improve your chess skills with the help of spaced repetition.", name: "Listudy" %><br/>
+    <%= dgettext "index", "Better train openings, endgames and tactics with the help of systematic repetition." %>
+  </p>
+  <div>
+    <%= link (dgettext "index", "Your Studies"), to: Routes.study_path(@conn, :index, @locale), class: "button button-primary", style: "margin: 0.5rem; font-size: 1.25rem; height: auto; padding: 0 2rem; line-height: 3rem; background-color: #2d3748; border-color: #2d3748;" %>
+    <%= link (dgettext "index", "Explore Openings"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "button button-primary", style: "margin: 0.5rem; font-size: 1.25rem; height: auto; padding: 0 2rem; line-height: 3rem;" %>
+    <%= link (dgettext "index", "Train Tactics"), to: Routes.tactic_path(@conn, :random, @locale), class: "button button-primary", style: "margin: 0.5rem; font-size: 1.25rem; height: auto; padding: 0 2rem; line-height: 3rem;" %>
+  </div>
 </section>
 
 <div class="row">
-  <div class="one-half column">
-    <h2><%= dgettext "index", "Study Openings" %></h2>
-    <p><%= dgettext "index", "Use Listudy to better memorize openings. " %></p>
-    <p><%= dgettext "index", "Play against your opening repertoire and learn them playfully and with scientifically effective methods." %></p>
-    <p><%= dgettext "index", "Explore the" %> <%= link (dgettext "index", "latest openings"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale) %>.</p>
-  </div>
-  <div class="one-half column">
-    <h2><%= dgettext "index", "Train Tactics" %></h2>
-    <p><%= dgettext "index", "Train tactics with thousands of tactical sequences from real games." %></p>
-    <p><%= dgettext "index", "Get better at identifying and exploiting tactics." %></p>
-    <p><%= dgettext "index", "Train your tactical abilities: "%> <%= link (dgettext "index", "Tactics"), to: Routes.tactic_path(@conn, :random, @locale) %></p>
-  </div>
-</div>
-
-<div class="row">
-  <div class="one-half column">
-    <h2><%= dgettext "index", "Books" %></h2>
-    <p><%= dgettext "index", "Find the best chess books for you." %></p>
-    <p><%= dgettext "index", "Discover the greatest books with the help of Grandmaster recommendations." %></p>
-    <p><%= dgettext "index", "Explore the" %> <%= link (dgettext "index", "best chess books"), to: Routes.book_path(@conn, :recommended, @locale) %>.</p>
-  </div>
-  <div class="one-half column">
-    <h2><%= dgettext "index", "Endgames" %></h2>
-    <p><%= dgettext "index", "Become unbeatable in endgames." %></p>
-    <p><%= dgettext "index", "Train endgames against Stockfish to become skilled and ready to take on any human opponent." %></p>
-    <p><%= dgettext "index", "Train your endgame abilities: "%> <%= link (dgettext "index", "Endgames"), to: Routes.endgame_path(@conn, :index, @locale) %></p>
-  </div>
-</div>
-
-
-<div class="row">
-  <div class="one-half column">
-    <h2><%= dgettext "index", "Latest blog posts" %></h2>
-    <ul>
-    <%= for post <- @posts do %>
-        <li><%= link post.title, to: Routes.post_path(@conn, :show, @conn.assigns.locale, post) %></li>
-    <% end %>
-    </ul>
-    <span><%= link (dgettext "index", "All blog posts"), to: Routes.post_path(@conn, :index, @conn.assigns.locale) %></span>
-  </div>
-
-  <div class="one-half column">
-    <h2><%= dgettext "index", "Visualization" %></h2>
-    <p><%= dgettext "index", "Improve your visualization skills with blind tactics." %>
-    <p><%= dgettext "index", "Solve tactics while only seeing the board from 2 moves ago." %>
-    <p><%= dgettext "index", "Train your visualization skills: "%> <%= link (dgettext "index", "Blind Tactics"), to: Routes.blind_tactic_path(@conn, :random, @locale) %></p>
-  </div>
-
-</div>
-
-<div class="row">
-  <div class="one-half column">
-    <h2><%= dgettext "index", "Contribute" %></h2>
-    <p><%= dgettext "index", "You can help make Listudy better." %></p>
-    <p><%= dgettext "index", "The support can look different. Report bugs if you find any, fix bugs if you can, help translate Listudy into other languages." %></p>
-    <p><%= dgettext "index", "Visit github to find out more about how you can help:" %> <a rel="nofollow" href="https://github.com/ArneVogel/listudy">https://github.com/ArneVogel/listudy</a></p>
-  </div>
-
-  <div class="one-half column">
-    <h2><%= dgettext "index", "Free & Open Source" %></h2>
-    <p><%= dgettext "index", "Your freedoms are important. That's why you have the rights to:" %></p>
-    <ol>
-      <li><%= dgettext "index", "Run the server yourself as you wish, for any purpose" %></li>
-      <li><%= dgettext "index", "Study how the software works, and change it so it does your computing as you wish" %></li>
-      <li><%= dgettext "index", "Redistribute the software" %></li>
-      <li><%= dgettext "index", "Distribute copies of your modified versions" %></li>
-    </ol>
-    <p><%= dgettext "index", "You can find the source code running Listudy on github:" %> <a rel="nofollow" href="https://github.com/ArneVogel/listudy">https://github.com/ArneVogel/listudy</a></p>
-  </div>
-</div>
-
-<div class="row">
-  <div class="one-half column">
-    <h2><%= dgettext "index", "Explore" %></h2>
-    <ul>
-      <li><%= link (dgettext "index", "Openings"), to: Routes.opening_search_path(@conn, ListudyWeb.OpeningSearchLive, @conn.assigns.locale) %></li>
-      <li><%= link (dgettext "index", "Motifs"), to: Routes.motif_search_path(@conn, ListudyWeb.MotifSearchLive, @conn.assigns.locale) %></li>
-      <li><%= link (dgettext "index", "Players"), to: Routes.player_search_path(@conn, ListudyWeb.PlayerSearchLive, @conn.assigns.locale) %></li>
-      <li><%= link (dgettext "index", "Events"), to: Routes.event_search_path(@conn, ListudyWeb.EventSearchLive, @conn.assigns.locale) %></li>
-    </ul>
-  </div>
-
-  <div class="one-half column">
+  <div class="column text-center">
     <h2><%= dgettext "index", "Daily Puzzle" %></h2>
     <% next_url = Routes.tactic_path(@conn, :random, @locale) %>
     <%= render ListudyWeb.TacticView, "tactic.html", conn: @conn, tactic: @tactic, next: next_url %>
+  </div>
+</div>
+
+<div class="row" style="margin-bottom: 4rem; text-align: center; margin-top: 4rem;">
+  <div class="one-third column">
+    <h3><%= dgettext "index", "Books" %></h3>
+    <p style="min-height: 5rem; color: #4a5568;"><%= dgettext "index", "Discover the greatest chess books for you with the help of Grandmaster recommendations." %></p>
+    <%= link (dgettext "index", "Explore best books"), to: Routes.book_path(@conn, :recommended, @locale), class: "button" %>
+  </div>
+  <div class="one-third column">
+    <h3><%= dgettext "index", "Endgames" %></h3>
+    <p style="min-height: 5rem; color: #4a5568;"><%= dgettext "index", "Become unbeatable. Train endgames against Stockfish and get ready for any human opponent." %></p>
+    <%= link (dgettext "index", "Train Endgames"), to: Routes.endgame_path(@conn, :index, @locale), class: "button" %>
+  </div>
+  <div class="one-third column">
+    <h3><%= dgettext "index", "Visualization" %></h3>
+    <p style="min-height: 5rem; color: #4a5568;"><%= dgettext "index", "Improve your visualization skills with blind tactics. Solve them while only seeing the board from 2 moves ago." %></p>
+    <%= link (dgettext "index", "Blind Tactics"), to: Routes.blind_tactic_path(@conn, :random, @locale), class: "button" %>
+  </div>
+</div>
+
+<div class="row" style="margin-bottom: 4rem;">
+  <div class="column">
+    <h3 class="text-center" style="margin-bottom: 2rem; color: #718096;"><%= dgettext "index", "More about Listudy" %></h3>
+
+    <details style="margin-bottom: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem;">
+      <summary style="font-weight: bold; cursor: pointer; outline: none; font-size: 1.25rem; color: #2d3748;"><%= dgettext "index", "Explore & Blog" %></summary>
+      <div class="row" style="margin-top: 1.5rem;">
+         <div class="one-half column">
+            <strong style="color: #4a5568;"><%= dgettext "index", "Explore" %></strong>
+            <ul style="margin-top: 0.5rem;">
+              <li><%= link (dgettext "index", "Openings"), to: Routes.opening_search_path(@conn, ListudyWeb.OpeningSearchLive, @conn.assigns.locale) %></li>
+              <li><%= link (dgettext "index", "Motifs"), to: Routes.motif_search_path(@conn, ListudyWeb.MotifSearchLive, @conn.assigns.locale) %></li>
+              <li><%= link (dgettext "index", "Players"), to: Routes.player_search_path(@conn, ListudyWeb.PlayerSearchLive, @conn.assigns.locale) %></li>
+              <li><%= link (dgettext "index", "Events"), to: Routes.event_search_path(@conn, ListudyWeb.EventSearchLive, @conn.assigns.locale) %></li>
+            </ul>
+         </div>
+         <div class="one-half column">
+            <strong style="color: #4a5568;"><%= dgettext "index", "Latest blog posts" %></strong>
+            <ul style="margin-top: 0.5rem;">
+            <%= for post <- @posts do %>
+                <li><%= link post.title, to: Routes.post_path(@conn, :show, @conn.assigns.locale, post) %></li>
+            <% end %>
+            </ul>
+            <span><%= link (dgettext "index", "All blog posts"), to: Routes.post_path(@conn, :index, @conn.assigns.locale) %></span>
+         </div>
+      </div>
+    </details>
+
+    <details style="margin-bottom: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem;">
+      <summary style="font-weight: bold; cursor: pointer; outline: none; font-size: 1.25rem; color: #2d3748;"><%= dgettext "index", "Free, Open Source & Contribute" %></summary>
+      <div class="row" style="margin-top: 1.5rem;">
+        <div class="one-half column">
+          <strong style="color: #4a5568;"><%= dgettext "index", "Contribute" %></strong>
+          <p style="margin-top: 0.5rem;"><%= dgettext "index", "Help make Listudy better! Report bugs, fix them, or help translate the app into other languages." %><br/>
+          <%= dgettext "index", "Visit github to find out more about how you can help:" %> <a rel="nofollow" href="https://github.com/ArneVogel/listudy">https://github.com/ArneVogel/listudy</a></p>
+        </div>
+        <div class="one-half column">
+          <strong style="color: #4a5568;"><%= dgettext "index", "Free & Open Source" %></strong>
+          <p style="margin-top: 0.5rem;"><%= dgettext "index", "Your freedoms are important. That's why you have the rights to:" %></p>
+          <ul>
+            <li><%= dgettext "index", "Run the server yourself as you wish, for any purpose" %></li>
+            <li><%= dgettext "index", "Study how the software works, and change it so it does your computing as you wish" %></li>
+            <li><%= dgettext "index", "Redistribute the software" %></li>
+            <li><%= dgettext "index", "Distribute copies of your modified versions" %></li>
+          </ul>
+        </div>
+      </div>
+    </details>
   </div>
 </div>

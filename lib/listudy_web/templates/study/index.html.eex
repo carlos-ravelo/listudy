@@ -1,29 +1,32 @@
-<h1><%= dgettext("study", "Your Studies") %></h1>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; margin-top: 1rem; flex-wrap: wrap; gap: 1rem;">
+  <h1 style="margin: 0;"><%= dgettext("study", "Your Studies") %></h1>
 
-<% has_studies = length(@studies) != 0 %>
+  <% has_studies = length(@studies) != 0 %>
 
-<%= if has_studies do %>
-<a href="<%= Routes.study_path(@conn, :new, @locale) %>">
-  <button class="primary">
+  <%= if has_studies do %>
+    <a href="<%= Routes.study_path(@conn, :new, @locale) %>" class="button button-primary" style="margin: 0;">
     <%= dgettext("study", "New Study") %>
-  </button>
-</a>
+    </a>
+  <% end %>
+</div>
+
+<%= if !has_studies do %>
+<div style="background: #f7fafc; padding: 4rem 2rem; border-radius: 8px; text-align: center; border: 2px dashed #cbd5e0; margin-bottom: 3rem;">
+  <h3 style="color: #4a5568; margin-bottom: 1.5rem;"><%= dgettext("study", "Create a new study and start learning.") %></h3>
+  <div>
+    <a href="<%= Routes.study_path(@conn, :new, @locale) %>" class="button button-primary" style="margin: 0.5rem;"><%= dgettext("study", "Create a Study") %></a>
+    <a href="<%= Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale) %>" class="button" style="margin: 0.5rem;"><%= dgettext("study", "Search for Studies") %></a>
+  </div>
+</div>
 <% else %>
-<div>
-  <p><%= dgettext("study", "Create a new study and start learning.") %></p>
-  <a href="<%= Routes.study_path(@conn, :new, @locale) %>"><button class="primary"><%= dgettext("study", "Create a Study") %></button></a>
-  <a href="<%= Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale) %>"><button class="secondary"><%= dgettext("study", "Search for Studies") %></button></a>
+<div style="margin-bottom: 3rem;">
+  <%= render ListudyWeb.StudyView, "list.html", studies: @studies, conn: @conn, locale: @locale, edit: true %>
 </div>
 <% end %>
 
-<%= if has_studies do %>
-  <%= render ListudyWeb.StudyView, "list.html", studies: @studies, conn: @conn, locale: @locale, edit: true %>
-<% end %>
-
 <%= if length(@favorites) != 0 do %>
-  <hr>
-<h2><%= dgettext("study", "Favored Studies") %></h2>
+<div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+  <h2 style="color: #2d3748; margin-bottom: 1.5rem;"><%= dgettext("study", "Favored Studies") %></h2>
   <%= render ListudyWeb.StudyView, "list.html", studies: @favorites, conn: @conn, locale: @locale %>
+</div>
 <% end %>
-
-
