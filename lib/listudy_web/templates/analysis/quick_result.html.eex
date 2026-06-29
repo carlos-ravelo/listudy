@@ -1,0 +1,39 @@
+<link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
+
+<div class="analysis-result-container" style="max-width: 800px; margin: 0 auto; padding: 2rem 0;">
+  <div style="margin-bottom: 2rem;">
+    <%= link "← Back to Analysis", to: Routes.analysis_path(@conn, :index), class: "button is-small is-light" %>
+    <div style="margin-bottom: 2rem; display: flex; gap: 10px; align-items: center;">
+    <%= link "Go to Study: #{@study.title} (#{@chapter_name})", 
+    to: Routes.study_path(@conn, :show, @conn.assigns[:locale] || "en", @study.slug, chapter: @chapter_name), 
+    class: "button is-small is-primary" %>  </div>
+    <h2 class="title is-3 mt-4">Analysis Result: <%= @study.title %></h2>
+    
+    <%= if @deviator_color == @study.color do %>
+      <div class="notification is-danger">
+        <strong>You deviated!</strong> You played <b><%= @played_move %></b>, but your repertoire expected: <b><%= String.replace(@expected_moves, ",", ", ") %></b>.
+      </div>
+    <% else %>
+      <div class="notification is-warning">
+        <strong>Opponent deviated.</strong> They played <b><%= @played_move %></b>. Your repertoire expected: <b><%= String.replace(@expected_moves, ",", ", ") %></b>.
+      </div>
+    <% end %>
+  </div>
+
+  <div 
+ id="quick-analysis-board" 
+  class="cg-wrap" 
+  style="width: 500px; height: 500px; margin: 0 auto;"
+  data-pgn="<%= @pgn_text %>"
+  data-error-fen="<%= @error_fen %>"
+  data-expected="<%= @expected_moves %>"
+  data-played="<%= @played_move %>">
+  </div>
+
+  <div style="text-align: center; margin-top: 1.5rem;">
+    <button id="btn-prev" class="button is-outlined">← Prev</button>
+    <button id="btn-next" class="button is-outlined">Next →</button>
+  </div>
+</div>
+
+<script defer src="/js/quick_result.js"></script>

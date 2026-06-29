@@ -31,3 +31,23 @@ if (toggle != null) {
         document.documentElement.setAttribute('data-theme', theme);
     }
 }
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetChapter = urlParams.get('chapter');
+    
+    if (targetChapter) {
+        const chapterSelect = document.getElementById("chapter_select"); 
+
+        if (chapterSelect) {
+            for (let option of chapterSelect.options) {
+                if (option.text.trim() === targetChapter.trim() || option.value === targetChapter) {
+                    chapterSelect.value = option.value;
+                    chapterSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    break;
+                }
+            }
+        }
+    }
+});
