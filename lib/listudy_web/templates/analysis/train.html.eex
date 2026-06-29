@@ -1,0 +1,43 @@
+<link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
+
+
+<div class="training-container" style="max-width: 800px; margin: 0 auto; padding: 2rem 0;">
+
+  <div style="margin-bottom: 2.5rem;">
+    <div style="margin-bottom: 0.5rem;">
+      <%= link "← Back to Overview", to: Routes.analysis_path(@conn, :index), style: "color: #718096; text-decoration: none; font-size: 0.95rem; font-weight: 500; transition: color 0.2s ease;" %>
+    </div>
+    <h2 style="margin: 0; line-height: 1.2;">
+      Training Mistakes: <span style="color: #4a5568;"><%= @study.title %></span>
+    </h2>
+  </div>
+
+  <div style="width: min(100%, 500px); margin: 0 auto 0.5rem auto; display: flex; justify-content: flex-end;">
+    <select id="time-filter" style="padding: 0.3rem 1.5rem 0.3rem 0.8rem; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #4a5568; background-color: white; cursor: pointer; appearance: none; outline: none; background-image: url('data:image/svg+xml;charset=US-ASCII,<svg width=\"16\" height=\"16\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"%23a0aec0\"><path d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\"/></svg>'); background-repeat: no-repeat; background-position: right 0.3rem center; background-size: 1.2em 1.2em; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+      <option value="all" <%= if @filter == "all", do: "selected" %>>All time</option>
+      <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
+      <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
+    </select>
+  </div>
+
+  <div
+    id="chess-training-board"
+    class="cg-wrap"
+    style="width: min(100%, 500px); aspect-ratio: 1 / 1; height: auto; margin: 0 auto;"
+    data-mistakes="<%= @mistakes_json %>">
+  </div>
+
+  <div id="training-controls" style="text-align: center; margin-top: 2rem;">
+    <h3 id="training-status" style="margin-bottom: 1rem;">Preparing positions...</h3>
+    <p id="mistake-info" style="color: var(--gray-600);"></p>
+    <div id="mistakes-pagination" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 1rem; margin-bottom: 1rem;"></div>
+    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+      <button id="hint-btn" class="button button-outline" style="margin: 0;">Hint</button>
+      <button id="solve-btn" class="button button-outline" style="margin: 0;">Show Answer</button>
+      <button id="next-mistake-btn" class="button button-primary" style="display: none; margin: 0;">Next Position</button>
+    </div>
+
+  </div>
+</div>
+
+<script defer type="text/javascript" src="/js/train_mistakes.js"></script>

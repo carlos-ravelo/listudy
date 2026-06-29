@@ -97,11 +97,14 @@ defmodule ListudyWeb.Router do
     post "/progress/sync", ProgressController, :sync
   end
 
-  scope "/analysis", ListudyWeb do
+scope "/analysis", ListudyWeb do
     pipe_through [:browser, :logged_in]
 
     get "/", AnalysisController, :index
     post "/sync", AnalysisController, :sync
+    post "/disconnect", AnalysisController, :disconnect
+    get "/:id/train", AnalysisController, :train
+    post "/quick", AnalysisController, :quick_analyze
   end
 
   scope "/:locale", ListudyWeb do

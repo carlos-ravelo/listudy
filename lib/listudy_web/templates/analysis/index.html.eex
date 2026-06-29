@@ -1,101 +1,188 @@
 <div class="whole">
-  <h2 style="margin-bottom: 1rem;">Analizar Partidas</h2>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2 style="margin: 0;">Analyze Games</h2>
+  </div>
 
   <%
-    lichess_synced = Enum.any?(@user_games, &(&1.platform == "lichess"))
-    chesscom_synced = Enum.any?(@user_games, &(&1.platform == "chess_com"))
+    lichess_username = Map.get(@current_user, :lichess_username)
+    chesscom_username = Map.get(@current_user, :chess_com_username)
   %>
 
-  <!-- Plataformas -->
-  <div style="display: flex; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap;">
-    <!-- Tarjeta Lichess -->
-    <div style="flex: 1; min-width: 300px; background-color: var(--gray-100); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--gray-300); display: flex; flex-direction: column; justify-content: space-between;">
-      <div>
-        <h3 style="margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
-          Lichess
-          <%= if lichess_synced do %>
-            <span style="font-size: 0.8rem; color: #15781B; background: #e6ffed; padding: 3px 8px; border-radius: 12px;">✓ Configurado</span>
-          <% else %>
-            <span style="font-size: 0.8rem; color: var(--gray-600); background: var(--gray-200); padding: 3px 8px; border-radius: 12px;">Sin configurar</span>
-          <% end %>
-        </h3>
-        <p style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 1rem;">
-          <%= if lichess_synced, do: "Tus partidas están sincronizadas. Vuelve a conectar para actualizarlas.", else: "Ingresa tu usuario de Lichess para importar tus partidas." %>
-        </p>
+
+<details class="box mt-4" style="cursor: pointer;">
+  <summary class="title is-5" style="user-select: none;">
+    🔍 Quick PGN Analysis (Click to expand)
+  </summary>
+  
+  <div class="mt-4" style="cursor: default;">
+    <%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), fn f -> %>
+      <div class="field">
+        <label class="label">Paste your chess.com/lichess PGN here:</label>
+        <div class="control">
+          <%= textarea f, :pgn, class: "textarea", rows: 6, placeholder: "1. e4 c5 2. Nf3..." %>
+        </div>
       </div>
-      <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0; display: flex; gap: 0.5rem;", onsubmit: "this.querySelector('button').innerText = 'Procesando...';"], fn f -> %>
-        <%= hidden_input f, :platform, value: "lichess" %>
-        <%= text_input f, :username, placeholder: "Usuario de Lichess", required: true, style: "flex: 1; padding: 8px; margin: 0; border: 1px solid var(--gray-400); border-radius: 4px;" %>
-        <%= submit "Sincronizar", class: "button", style: "margin: 0;" %>
-      <% end %>
+      <div class="control mt-2">
+        <%= submit "Analyze Game", class: "button is-primary" %>
+      </div>
+    <% end %>
+  </div>
+</details>
+
+<div style="margin-bottom: 2rem; display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem;">
+  <label for="time-filter" style="font-size: 0.9rem; color: #718096; font-weight: 500;">Filter by date:</label>
+  <select id="time-filter" style="padding: 0.5rem 2rem 0.5rem 1rem; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.95rem; color: #2d3748; background-color: white; cursor: pointer; appearance: none; outline: none; background-image: url('data:image/svg+xml;charset=US-ASCII,<svg width=\"20\" height=\"20\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"%23a0aec0\"><path d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\"/></svg>'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+    <option value="all" <%= if @filter == "all", do: "selected" %>>All time (since <%= @oldest_date_str %>)</option>
+    <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
+    <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
+  </select>
+</div>
+
+  <!-- Modern Account Cards -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+
+    <!-- Lichess Card -->
+    <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--gray-200); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: space-between;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div>
+          <h3 style="margin: 0 0 0.25rem 0; font-size: 1.25rem; color: #1a202c;">Lichess</h3>
+          <p style="margin: 0; color: #718096; font-size: 0.9rem;">
+            <%= if lichess_username do %>
+              <strong><%= @lichess_count %></strong> games in database 
+              <p style="font-size: 0.8rem; color: #718096; margin-top: 0.2rem;">
+              Games fetched since: <%= @lichess_since %>
+              </p>
+            <% else %>
+              Import your games automatically
+            <% end %>
+          </p>
+        </div>
+        <%= if lichess_username do %>
+          <span style="font-size: 0.75rem; font-weight: 600; color: #047857; background: #d1fae5; padding: 4px 10px; border-radius: 9999px;">✓ <%= lichess_username %></span>
+        <% else %>
+          <span style="font-size: 0.75rem; font-weight: 600; color: #718096; background: #edf2f7; padding: 4px 10px; border-radius: 9999px;">Not connected</span>
+        <% end %>
+      </div>
+
+      <div>
+        <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0;", onsubmit: "this.querySelector('button').innerText = 'Processing...';"], fn f -> %>
+          <%= hidden_input f, :platform, value: "lichess" %>
+          <%= if lichess_username do %>
+            <div style="display: flex; gap: 0.5rem;">
+              <%= submit "Sync Latest Games", class: "button button-primary", style: "margin: 0; flex: 2;" %>
+              <%= link "Disconnect", to: Routes.analysis_path(@conn, :disconnect, platform: "lichess"), method: :post, class: "button button-outline", style: "margin: 0; flex: 1; text-align: center;" %>
+            </div>
+          <% else %>
+            <div style="display: flex; gap: 0.5rem;">
+              <%= text_input f, :username, placeholder: "Lichess Username", required: true, style: "flex: 1; padding: 0.6rem; margin: 0; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;" %>
+              <%= submit "Connect", class: "button button-primary", style: "margin: 0;" %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
     </div>
 
-    <!-- Tarjeta Chess.com -->
-    <div style="flex: 1; min-width: 300px; background-color: var(--gray-100); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--gray-300); display: flex; flex-direction: column; justify-content: space-between;">
-      <div>
-        <h3 style="margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
-          Chess.com
-          <%= if chesscom_synced do %>
-            <span style="font-size: 0.8rem; color: #15781B; background: #e6ffed; padding: 3px 8px; border-radius: 12px;">✓ Configurado</span>
-          <% else %>
-            <span style="font-size: 0.8rem; color: var(--gray-600); background: var(--gray-200); padding: 3px 8px; border-radius: 12px;">Sin configurar</span>
-          <% end %>
-        </h3>
-        <p style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 1rem;">
-          <%= if chesscom_synced, do: "Tus partidas están sincronizadas. Vuelve a conectar para actualizarlas.", else: "Ingresa tu usuario de Chess.com para importar tus partidas." %>
-        </p>
+    <!-- Chess.com Card -->
+    <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--gray-200); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: space-between;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div>
+          <h3 style="margin: 0 0 0.25rem 0; font-size: 1.25rem; color: #1a202c;">Chess.com</h3>
+          <p style="margin: 0; color: #718096; font-size: 0.9rem;">
+            <%= if chesscom_username do %>
+              <strong><%= @chesscom_count %></strong> games in database
+              <p style="font-size: 0.8rem; color: #718096; margin-top: 0.2rem;">
+              Games fetched since: <%= @chesscom_since %>
+              </p>
+            <% else %>
+              Import your games automatically
+            <% end %>
+          </p>
+        </div>
+        <%= if chesscom_username do %>
+          <span style="font-size: 0.75rem; font-weight: 600; color: #047857; background: #d1fae5; padding: 4px 10px; border-radius: 9999px;">✓ <%= chesscom_username %></span>
+        <% else %>
+          <span style="font-size: 0.75rem; font-weight: 600; color: #718096; background: #edf2f7; padding: 4px 10px; border-radius: 9999px;">Not connected</span>
+        <% end %>
       </div>
-      <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0; display: flex; gap: 0.5rem;", onsubmit: "this.querySelector('button').innerText = 'Procesando...';"], fn f -> %>
-        <%= hidden_input f, :platform, value: "chess_com" %>
-        <%= text_input f, :username, placeholder: "Usuario de Chess.com", required: true, style: "flex: 1; padding: 8px; margin: 0; border: 1px solid var(--gray-400); border-radius: 4px;" %>
-        <%= submit "Sincronizar", class: "button", style: "margin: 0;" %>
-      <% end %>
+
+      <div>
+        <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0;", onsubmit: "this.querySelector('button').innerText = 'Processing...';"], fn f -> %>
+          <%= hidden_input f, :platform, value: "chess_com" %>
+          <%= if chesscom_username do %>
+            <div style="display: flex; gap: 0.5rem;">
+              <%= submit "Sync Latest Games", class: "button button-primary", style: "margin: 0; flex: 2;" %>
+              <%= link "Disconnect", to: Routes.analysis_path(@conn, :disconnect, platform: "chess_com"), method: :post, class: "button button-outline", style: "margin: 0; flex: 1; text-align: center;" %>
+            </div>
+          <% else %>
+            <div style="display: flex; gap: 0.5rem;">
+              <%= text_input f, :username, placeholder: "Chess.com Username", required: true, style: "flex: 1; padding: 0.6rem; margin: 0; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;" %>
+              <%= submit "Connect", class: "button button-primary", style: "margin: 0;" %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
     </div>
   </div>
 
-  <!-- Dashboard de Rendimiento por Estudios -->
-  <div class="moves">
-    <h3 style="margin-bottom: 1.5rem;">Resumen de tu Repertorio</h3>
 
-    <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
-      <!-- Ejemplo: Estudio 1 -->
-      <div style="background: white; border: 1px solid var(--gray-300); border-radius: 8px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1.25rem;">Defensa Siciliana - Variante Najdorf</h4>
-          <p style="margin: 0; color: var(--gray-600); font-size: 0.95rem;">
-            Basado en <strong>12</strong> partidas recientes.
-          </p>
-        </div>
-        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
-          <div style="margin-bottom: 0.5rem; font-size: 1.1rem;">
-            <span style="color: #15781B; font-weight: bold; margin-right: 1.5rem;">✓ 9 Acertadas</span>
-            <span style="color: #e53e3e; font-weight: bold;">✗ 3 Desviaciones</span>
+<div class="moves">
+    <h3 style="margin-bottom: 1.5rem; color: #2d3748;">Repertoire Overview</h3>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+      <%= for stat <- @studies_stats do %>
+        <%
+          out_of_scope = stat.total_games - stat.matches - stat.deviations
+
+          match_pct = if stat.total_games > 0, do: (stat.matches / stat.total_games) * 100, else: 0
+          dev_pct = if stat.total_games > 0, do: (stat.deviations / stat.total_games) * 100, else: 0
+          oos_pct = if stat.total_games > 0, do: (out_of_scope / stat.total_games) * 100, else: 0
+        %>
+
+        <div style="background: white; border: 1px solid var(--gray-200); border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h4 style="margin: 0 0 0.25rem 0; color: #1a202c; font-size: 1.25rem;"><%= stat.study.title %></h4>
+              <p style="margin: 0; color: #718096; font-size: 0.9rem;">
+                Evaluated against <strong><%= stat.total_games %></strong> games.
+              </p>
+            </div>
+
+            <div>
+              <%= if stat.deviations > 0 do %>
+                <%= link "Train Mistakes (#{stat.deviations})", to: Routes.analysis_path(@conn, :train, stat.study.id), class: "button button-primary", style: "margin: 0; border-radius: 6px;" %>
+              <% else %>
+                <button class="button button-primary" style="margin: 0; border-radius: 6px; opacity: 0.5; cursor: not-allowed;" disabled>Perfect (0 Mistakes)</button>
+              <% end %>
+            </div>
           </div>
-          <button class="button button-primary" style="margin: 0; padding: 0 1.5rem; line-height: 2.5rem; height: auto;">Entrenar Errores</button>
-        </div>
-      </div>
 
-      <!-- Ejemplo: Estudio 2 -->
-      <div style="background: white; border: 1px solid var(--gray-300); border-radius: 8px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1.25rem;">Gambito de Dama Aceptado</h4>
-          <p style="margin: 0; color: var(--gray-600); font-size: 0.95rem;">
-            Basado en <strong>5</strong> partidas recientes.
-          </p>
-        </div>
-        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
-          <div style="margin-bottom: 0.5rem; font-size: 1.1rem;">
-            <span style="color: #15781B; font-weight: bold; margin-right: 1.5rem;">✓ 5 Acertadas</span>
-            <span style="color: #e53e3e; font-weight: bold;">✗ 0 Desviaciones</span>
+          <div style="display: flex; height: 10px; border-radius: 9999px; overflow: hidden; background-color: #edf2f7; margin-bottom: 1rem;">
+            <div style="width: <%= match_pct %>%; background-color: #38a169;" title="Theory Survived: <%= stat.matches %>"></div>
+            <div style="width: <%= dev_pct %>%; background-color: #e53e3e;" title="Deviations: <%= stat.deviations %>"></div>
+            <div style="width: <%= oos_pct %>%; background-color: #a0aec0;" title="Fuera de la teoría: <%= out_of_scope %>"></div>
           </div>
-          <button class="button button-primary" style="margin: 0; padding: 0 1.5rem; line-height: 2.5rem; height: auto; opacity: 0.5; cursor: not-allowed;" disabled>Perfecto</button>
-        </div>
-      </div>
-    </div>
 
-    <!-- Nota Temporal -->
-    <div style="margin-top: 2rem; padding: 1rem; background-color: #ebf8ff; border-left: 4px solid #3182ce; color: #2b6cb0; border-radius: 4px;">
-      <strong>Nota de desarrollo:</strong> Estos datos son una maqueta (mockup) visual. El siguiente paso es implementar el algoritmo en Elixir para analizar el PGN de las partidas, compararlas con tus Studies y reemplazar esto con información real.
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #4a5568;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #38a169;"></span>
+              <strong><%= stat.matches %></strong> My Deviation 
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #e53e3e;"></span>
+              <strong><%= stat.deviations %></strong> Oponent Deviations
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #a0aec0;"></span>
+              <strong><%= out_of_scope %></strong> Fuera de la teoría
+            </div>
+          </div>
+
+        </div>
+      <% end %>
     </div>
   </div>
 </div>
+
+
+<script defer type="text/javascript" src="/js/analysis_overview.js"></script>
