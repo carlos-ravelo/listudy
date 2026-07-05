@@ -983,3 +983,38 @@ async function main() {
 
 window.onresize = onresize;
 main();
+
+// --- QUICK WIN: Random Chapter Button ---
+document.addEventListener("DOMContentLoaded", function() {
+    // We use setTimeout to ensure Listudy has finished loading its initial setup
+    setTimeout(function() {
+        let randomChapterBtn = document.getElementById("btn_random_chapter");
+        
+        if (randomChapterBtn) {
+            randomChapterBtn.addEventListener("click", function(e) {
+                e.preventDefault(); 
+                
+                let selectObj = document.getElementById("chapter_select");
+                
+                if (selectObj && selectObj.options.length > 1) {
+                    let totalOptions = selectObj.options.length;
+                    let currentIndex = selectObj.selectedIndex;
+                    
+                    let randomIndex = Math.floor(Math.random() * totalOptions);
+                    
+                    if (randomIndex === currentIndex) {
+                        randomIndex = (randomIndex + 1) % totalOptions;
+                    }
+                    
+                    selectObj.selectedIndex = randomIndex;
+                    
+                    // Trigger the specific 'onchange' handler we found in the code
+                    if (typeof selectObj.onchange === "function") {
+                        selectObj.onchange();
+                    }
+                }
+            });
+        }
+    }, 500); // 500ms delay to ensure the board and select are ready
+});
+// ----------------------------------------
