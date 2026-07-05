@@ -1,5 +1,8 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; margin-top: 1rem; flex-wrap: wrap; gap: 1rem;">
   <h1 style="margin: 0;"><%= dgettext("study", "Your Studies") %></h1>
+  <a href="/random_study" class="button" style="margin-bottom: 15px; display: inline-block;">
+  🎲 Random Study
+  </a>
 
   <% has_studies = length(@studies) != 0 %>
 
