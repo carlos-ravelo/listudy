@@ -984,37 +984,39 @@ async function main() {
 window.onresize = onresize;
 main();
 
-// --- QUICK WIN: Random Chapter Button ---
-document.addEventListener("DOMContentLoaded", function() {
-    // We use setTimeout to ensure Listudy has finished loading its initial setup
-    setTimeout(function() {
-        let randomChapterBtn = document.getElementById("btn_random_chapter");
+// --- QUICK WIN V2: Random Chapter (Delegación de Eventos) ---
+document.addEventListener("click", function(e) {
+    // Escuchamos los clicks en todo el documento y filtramos el nuestro.
+    // Así no importa si el botón carga tarde.
+    let target = e.target.closest('#btn_random_chapter');
+    
+    if (target) {
+        e.preventDefault(); 
         
-        if (randomChapterBtn) {
-            randomChapterBtn.addEventListener("click", function(e) {
-                e.preventDefault(); 
-                
-                let selectObj = document.getElementById("chapter_select");
-                
-                if (selectObj && selectObj.options.length > 1) {
-                    let totalOptions = selectObj.options.length;
-                    let currentIndex = selectObj.selectedIndex;
-                    
-                    let randomIndex = Math.floor(Math.random() * totalOptions);
-                    
-                    if (randomIndex === currentIndex) {
-                        randomIndex = (randomIndex + 1) % totalOptions;
-                    }
-                    
-                    selectObj.selectedIndex = randomIndex;
-                    
-                    // Trigger the specific 'onchange' handler we found in the code
-                    if (typeof selectObj.onchange === "function") {
-                        selectObj.onchange();
-                    }
-                }
-            });
+        let selectObj = document.getElementById("chapter_select");
+        
+        if (selectObj && selectObj.options.length > 1) {
+            let totalOptions = selectObj.options.length;
+            let currentIndex = selectObj.selectedIndex;
+            
+            let randomIndex = Math.floor(Math.random() * totalOptions);
+            
+            if (randomIndex === currentIndex) {
+                randomIndex = (randomIndex + 1) % totalOptions;
+            }
+            
+            selectObj.selectedIndex = randomIndex;
+            
+            // Atacamos por dos vías para asegurar que reaccione:
+            // 1. La llamada directa que vimos en el código original
+            if (typeof selectObj.onchange === "function") {
+                selectObj.onchange();
+            } 
+            
+            // 2. Despachar un evento de cambio real como respaldo
+            let event = new Event('change', { bubbles: true });
+            selectObj.dispatchEvent(event);
         }
-    }, 500); // 500ms delay to ensure the board and select are ready
+    }
 });
 // ----------------------------------------
