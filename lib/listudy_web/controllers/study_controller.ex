@@ -325,23 +325,21 @@ defmodule ListudyWeb.StudyController do
     File.rm(pgn)
   end
 
-def random(conn, _params) do
-    # 1. Obtenemos el ID del usuario igual que en el index
+  def random(conn, _params) do
     user_id =
       case get_user(conn) do
         {:ok, user} -> user.id
         {:error, _} -> -1
       end
 
-    # 2. Buscamos sus estudios
     studies = Studies.get_study_by_user!(user_id)
 
-    # 3. Si no tiene estudios, lo mandamos al inicio. Si tiene, elegimos uno al azar y redirigimos.
     if Enum.empty?(studies) do
       redirect(conn, to: "/")
     else
       random_study = Enum.random(studies)
-      redirect(conn, to: "/study/#{random_study.slug}")
+      locale = conn.params["locale"] || "en" 
+      redirect(conn, to: "/#{locale}/study/#{random_study.slug}")
     end
   end
 end
