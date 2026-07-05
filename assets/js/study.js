@@ -983,40 +983,42 @@ async function main() {
 
 window.onresize = onresize;
 main();
-
-// --- QUICK WIN V2: Random Chapter (Delegación de Eventos) ---
-document.addEventListener("click", function(e) {
-    // Escuchamos los clicks en todo el documento y filtramos el nuestro.
-    // Así no importa si el botón carga tarde.
-    let target = e.target.closest('#btn_random_chapter');
+// --- QUICK WIN V4: Auto-Random + Botón Funcional ---
+function triggerRandomChapter() {
+    let selectObj = document.getElementById("chapter_select");
     
-    if (target) {
-        e.preventDefault(); 
+    if (selectObj && selectObj.options.length > 1) {
+        let totalOptions = selectObj.options.length;
+        let currentIndex = selectObj.selectedIndex;
         
-        let selectObj = document.getElementById("chapter_select");
+        let randomIndex = Math.floor(Math.random() * totalOptions);
         
-        if (selectObj && selectObj.options.length > 1) {
-            let totalOptions = selectObj.options.length;
-            let currentIndex = selectObj.selectedIndex;
-            
-            let randomIndex = Math.floor(Math.random() * totalOptions);
-            
-            if (randomIndex === currentIndex) {
-                randomIndex = (randomIndex + 1) % totalOptions;
-            }
-            
-            selectObj.selectedIndex = randomIndex;
-            
-            // Atacamos por dos vías para asegurar que reaccione:
-            // 1. La llamada directa que vimos en el código original
-            if (typeof selectObj.onchange === "function") {
-                selectObj.onchange();
-            } 
-            
-            // 2. Despachar un evento de cambio real como respaldo
+        if (randomIndex === currentIndex) {
+            randomIndex = (randomIndex + 1) % totalOptions;
+        }
+        
+        selectObj.selectedIndex = randomIndex;
+        
+        if (typeof selectObj.onchange === "function") {
+            selectObj.onchange();
+        } else {
             let event = new Event('change', { bubbles: true });
             selectObj.dispatchEvent(event);
         }
+    }
+}
+
+// 1. Auto-ejecutar al cargar la página (con 800ms de gracia)
+document.addEventListener("DOMContentLoaded", function() {
+    setTimeout(triggerRandomChapter, 800);
+});
+
+// 2. Ejecutar cada vez que presiones el botón de HTML
+document.addEventListener("click", function(e) {
+    let target = e.target.closest('#btn_random_chapter');
+    if (target) {
+        e.preventDefault();
+        triggerRandomChapter();
     }
 });
 // ----------------------------------------
