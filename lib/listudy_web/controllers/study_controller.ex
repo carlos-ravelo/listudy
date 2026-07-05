@@ -338,8 +338,10 @@ defmodule ListudyWeb.StudyController do
       redirect(conn, to: "/")
     else
       random_study = Enum.random(studies)
-      locale = conn.params["locale"] || "en" 
-      redirect(conn, to: "/#{locale}/study/#{random_study.slug}")
+      # Obtenemos el idioma del conn (o fallback a 'en')
+      locale = conn.params["locale"] || "en"
+      # La estructura correcta es /:locale/studies/:slug
+      redirect(conn, to: "/#{locale}/studies/#{random_study.slug}")
     end
   end
 end
