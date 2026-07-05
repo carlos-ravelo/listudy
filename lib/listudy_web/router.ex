@@ -97,7 +97,7 @@ defmodule ListudyWeb.Router do
     post "/progress/sync", ProgressController, :sync
   end
 
-scope "/analysis", ListudyWeb do
+  scope "/analysis", ListudyWeb do
     pipe_through [:browser, :logged_in]
 
     get "/", AnalysisController, :index
@@ -105,6 +105,12 @@ scope "/analysis", ListudyWeb do
     post "/disconnect", AnalysisController, :disconnect
     get "/:id/train", AnalysisController, :train
     post "/quick", AnalysisController, :quick_analyze
+  end
+
+  scope "/", ListudyWeb do
+    pipe_through :browser
+
+    get "/random_study", StudyController, :random
   end
 
   scope "/:locale", ListudyWeb do
@@ -210,7 +216,6 @@ scope "/analysis", ListudyWeb do
 
   scope "/", ListudyWeb do
     pipe_through :browser
-    get "/random_study", StudyController, :random
     get "/", PageController, :domain
   end
 
