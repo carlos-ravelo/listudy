@@ -202,7 +202,6 @@ scope "/analysis", ListudyWeb do
 
   scope "/", ListudyWeb do
     pipe_through [:browser, :logged_in]
-    get "/random_study", StudyController, :random
     post "/comment", CommentController, :new_comment
     delete "/comment/:type/:id", CommentController, :delete_comment
     post "/study_favorite/:slug", StudyController, :favorite_study
@@ -211,7 +210,7 @@ scope "/analysis", ListudyWeb do
 
   scope "/", ListudyWeb do
     pipe_through :browser
-
+    get "/random_study", StudyController, :random
     get "/", PageController, :domain
   end
 
