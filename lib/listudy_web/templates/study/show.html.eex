@@ -75,7 +75,9 @@
       <button id="btn_random_chapter" class="secondary" style="margin-top: 5px; width: 100%;">
         🎲 Random Chapter
       </button>
-
+      <a href="/random_study" class="button secondary" style="width: 100%; text-align: center; display: block; margin-top: 10px;">
+        🎲 Random Study
+      </a>
     </div>
   </div>
 </div>
