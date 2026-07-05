@@ -72,6 +72,10 @@
     <div class="chapter_selection">
       <label for="chapter_select"><%= dgettext "study", "Chapter Selection" %></label>
       <select id="chapter_select"></select>
+      <button id="btn_random_chapter" class="secondary" style="margin-top: 5px; width: 100%;">
+        🎲 Random Chapter
+      </button>
+
     </div>
   </div>
 </div>
