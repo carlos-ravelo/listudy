@@ -1,8 +1,10 @@
 <h1 class="clicking_turns_on_hints"><%= @study.title %></h1>
-<a href="/random_study" class="button secondary" style="width: 100%; text-align: center; display: block; margin-top: 10px;">
+ <a href="/random_study" class="button secondary" style="width: 100%; text-align: center; display: block; margin-top: 10px;">
   🎲 Random Study
 </a>
-
+<button id="btn_random_chapter" class="secondary" style="margin-top: 5px; width: 100%;">
+  🎲 Random Chapter
+</button>
 <div class="with_sidebar">
   <div id="game_container" class="sidebar_main">
     <%= render ListudyWeb.ComponentView, "chessground.html" %>
@@ -75,9 +77,6 @@
     <div class="chapter_selection">
       <label for="chapter_select"><%= dgettext "study", "Chapter Selection" %></label>
       <select id="chapter_select"></select>
-      <button id="btn_random_chapter" class="secondary" style="margin-top: 5px; width: 100%;">
-        🎲 Random Chapter
-      </button>
     </div>
   </div>
 </div>
