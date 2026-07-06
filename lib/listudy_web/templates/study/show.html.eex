@@ -1,4 +1,7 @@
 <h1 class="clicking_turns_on_hints"><%= @study.title %></h1>
+<a href="/random_study" class="button secondary" style="width: 100%; text-align: center; display: block; margin-top: 10px;">
+  🎲 Random Study
+</a>
 
 <div class="with_sidebar">
   <div id="game_container" class="sidebar_main">
@@ -75,9 +78,6 @@
       <button id="btn_random_chapter" class="secondary" style="margin-top: 5px; width: 100%;">
         🎲 Random Chapter
       </button>
-      <a href="/random_study" class="button secondary" style="width: 100%; text-align: center; display: block; margin-top: 10px;">
-        🎲 Random Study
-      </a>
     </div>
   </div>
 </div>
