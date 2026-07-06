@@ -9,8 +9,12 @@
     <%= link (dgettext "index", "Explore Openings"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "button button-primary", style: "margin: 0.5rem; font-size: 1.25rem; height: auto; padding: 0 2rem; line-height: 3rem;" %>
     <%= link (dgettext "index", "Train Tactics"), to: Routes.tactic_path(@conn, :random, @locale), class: "button button-primary", style: "margin: 0.5rem; font-size: 1.25rem; height: auto; padding: 0 2rem; line-height: 3rem;" %>
     <%= if Pow.Plug.current_user(@conn) do %>
-      <%= link (dgettext "index", "Analizar Partidas"), to: Routes.analysis_path(@conn, :index), class: "button button-primary", style: "margin: 0.5rem; font-size: 1.25rem; height: auto; padding: 0 2rem; line-height: 3rem;" %>
+      <%= link (dgettext "index", "Analize games"), to: Routes.analysis_path(@conn, :index), class: "button button-primary", style: "margin: 0.5rem; font-size: 1.25rem; height: auto; padding: 0 2rem; line-height: 3rem;" %>
+      <a href="/random_study" class="button button-primary" style="margin: 0.5rem; font-size: 1.25rem; height: auto; padding: 0 2rem; line-height: 3rem; background-color: #4a5568; border-color: #4a5568;">
+        🎲 Random Study
+      </a>
     <% end %>
+
   </div>
 </section>
 
