@@ -464,38 +464,23 @@ function store_trees() {
 
 // load the trees from the localStorage or generate if they dont exist
 function setup_trees() {
-    let hash_key = study_id + "_hash";
-    let tree_key = study_id + "_tree";
-
-    let last_hash = StorageAdapter.getItem(hash_key);
-    let curr_hash = string_hash(pgn + color);
-    curr_hash += 3; // increase when trees have to be redone; for example when bugs in free_from_pgn are fixed
     let trees = {};
-
-    if (last_hash == undefined || curr_hash != last_hash) {
-        const pgnParser = require('pgn-parser'); // slows down page load, so only require if actually needed
-        try {
-            const parsedpgn = pgnParser.parse(pgn);
-            annotate_pgn(parsedpgn);
-            trees = generate_move_trees(parsedpgn);
-            clear_local_storage();
-        } catch(caught_error) {
-            console.log(caught_error);
+    const pgnParser = require('pgn-parser'); 
+    
+    try {
+        const parsedpgn = pgnParser.parse(pgn);
+        annotate_pgn(parsedpgn);
+        trees = generate_move_trees(parsedpgn);
+    } catch(caught_error) {
+        console.log(caught_error);
+        if (caught_error.location) {
             let error_text = caught_error.name + " at line: " + caught_error.location.start.line +
                              ", character: " + caught_error.location.start.column + "; Unexpected: \"" +
                              caught_error.found + "\"";
             set_text(error_div, error_text);
         }
-        try {
-            StorageAdapter.setItem(tree_key, JSON.stringify(trees));
-            StorageAdapter.setItem(hash_key, curr_hash);
-        } catch(caught_error) {
-            console.log("Ignored localstorage error: " + caught_error);
-        }
-
-    } else {
-        trees = JSON.parse(StorageAdapter.getItem(tree_key));
     }
+    
     window.trees = trees;
 }
 
@@ -945,6 +930,10 @@ async function main() {
                 // Hydrate localStorage with cloud data
                 Object.entries(cloudSettings).forEach(([key, value]) => {
                     // Save directly to localStorage to prevent triggering a bounce POST request
+                    // Skip massive tree objects to avoid QuotaExceededError
+                    if (key.endsWith('_tree')) {
+                        return;
+                    }
                     localStorage.setItem(key, value); 
                 });
                 
