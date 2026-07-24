@@ -1011,3 +1011,37 @@ document.addEventListener("click", function(e) {
     }
 });
 // ----------------------------------------
+
+document.addEventListener("DOMContentLoaded", function() {
+    let copyBtn = document.getElementById("copy_line_to_clipboard");
+    
+    if (copyBtn) {
+        copyBtn.onclick = function(e) {
+            e.preventDefault(); 
+            
+            // Cortamos el PGN exactamente donde termina cada partida
+            let pgnGames = pgn.trim().split(/(?<=\*|1-0|0-1|1\/2-1\/2)\s+(?=\[)/);
+            let currentChapterPgn = pgnGames[chapter];
+
+            if (currentChapterPgn) {
+                navigator.clipboard.writeText(currentChapterPgn).then(() => {
+                    // Guardamos el texto original (probablemente traducido por Elixir)
+                    let originalText = copyBtn.innerText;
+                    
+                    // Cambiamos el texto para dar feedback visual
+                    copyBtn.innerText = "PGN copied to clipboard!";
+                    
+                    // Lo regresamos a la normalidad después de 2.5 segundos
+                    setTimeout(() => {
+                        copyBtn.innerText = originalText;
+                    }, 2500);
+
+                }).catch(err => {
+                    console.error("Clipboard copy failed:", err);
+                });
+            } else {
+                console.error("Could not extract current chapter PGN.");
+            }
+        };
+    }
+});
