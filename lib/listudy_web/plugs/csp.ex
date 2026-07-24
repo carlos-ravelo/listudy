@@ -25,7 +25,7 @@ defmodule ListudyWeb.Plugs.CSP do
     "default-src 'self' data: *.googlesyndication.com; \
     base-uri 'self'; \
     object-src 'none'; \
-    connect-src 'self' wss://listudy.org ws://listudy.org #{ws_url(conn)} #{ws_url(conn, "wss")} https://pagead2.googlesyndication.com; \
+    connect-src 'self' wss://listudy.org ws://listudy.org #{ws_url(conn)} #{ws_url(conn, "wss")} https://pagead2.googlesyndication.com https://lichess.org; \
     script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-#{
       conn.private.plug_session["csp_nonce"]
     }' data: pagead2.googlesyndication.com; \
