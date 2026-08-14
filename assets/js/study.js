@@ -498,6 +498,25 @@ function setup_chapter_select() {
     let select_id = "chapter_select"
     let select = document.getElementById(select_id);
     let selected = parseInt(StorageAdapter.getItem(select_key) || 0);
+
+    // --- Override local storage if URL parameter is present ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const chapterFromUrl = urlParams.get('chapter');
+    
+    if (chapterFromUrl) {
+        let targetNorm = chapterFromUrl.replace(/\s+/g, ' ').trim();
+        for (let i = 0; i < trees.length; ++i) {
+            let nameNorm = tree_chapter_name(i).replace(/\s+/g, ' ').trim();
+            if (nameNorm === targetNorm) {
+                selected = i;
+                // Optional: Save it so a manual refresh keeps the user here
+                StorageAdapter.setItem(select_key, selected);
+                break;
+            }
+        }
+    }
+    // -----------------------------------------------------------
+
     selected = Math.min(selected, trees.length - 1);  // prevent error if replacing with a pgn with fewer chapters
     window.chapter = selected;
     for (let i = 0; i < trees.length; ++i) {
@@ -972,7 +991,6 @@ async function main() {
 
 window.onresize = onresize;
 main();
-// --- QUICK WIN V4: Auto-Random + Botón Funcional ---
 function triggerRandomChapter() {
     let selectObj = document.getElementById("chapter_select");
     
@@ -988,12 +1006,7 @@ function triggerRandomChapter() {
         
         selectObj.selectedIndex = randomIndex;
         
-        if (typeof selectObj.onchange === "function") {
-            selectObj.onchange();
-        } else {
-            let event = new Event('change', { bubbles: true });
-            selectObj.dispatchEvent(event);
-        }
+        selectObj.dispatchEvent(new Event("change", { bubbles: true }));
     }
 }
 
@@ -1045,3 +1058,109 @@ document.addEventListener("DOMContentLoaded", function() {
         };
     }
 });
+
+document.addEventListener("DOMContentLoaded", function() {
+    const selectObj = document.getElementById("chapter_select");
+    const prevBtn = document.getElementById("prev_chapter_btn");
+    const nextBtn = document.getElementById("next_chapter_btn");
+    const titleBtn = document.getElementById("current_chapter_title");
+    const customList = document.getElementById("custom_chapter_list");
+
+    function buildCustomList() {
+        customList.innerHTML = "";
+        Array.from(selectObj.options).forEach((opt, index) => {
+            let item = document.createElement("div");
+            item.innerText = opt.text;
+            item.style.padding = "8px 12px";
+            item.style.cursor = "pointer";
+            item.style.borderBottom = "1px solid #eee";
+            item.style.textAlign = "left";
+            
+            // Highlight the active chapter
+            if (index === selectObj.selectedIndex) {
+                item.style.fontWeight = "bold";
+                item.style.backgroundColor = "#e2e8f0";
+            }
+
+            // Hover effects
+            item.onmouseover = () => item.style.backgroundColor = "#cbd5e1";
+            item.onmouseout = () => {
+                item.style.backgroundColor = (index === selectObj.selectedIndex) ? "#e2e8f0" : "transparent";
+            };
+
+            // Handle selection
+            item.onclick = () => {
+                selectObj.selectedIndex = index;
+                selectObj.dispatchEvent(new Event("change"));
+                customList.style.display = "none";
+            };
+            customList.appendChild(item);
+        });
+    }
+
+    function updateChapterDisplay() {
+        if (selectObj && selectObj.options.length > 0) {
+            titleBtn.innerText = selectObj.options[selectObj.selectedIndex].text;
+            buildCustomList(); 
+        }
+    }
+
+    if (selectObj && prevBtn && nextBtn && titleBtn && customList) {
+        
+        // Watch the select element for dynamic option injection by Listudy
+        const observer = new MutationObserver(function() {
+            if (selectObj.options.length > 0) {
+                updateChapterDisplay();
+                observer.disconnect(); // Stop watching once loaded
+            }
+        });
+        observer.observe(selectObj, { childList: true });
+
+        // Fallback in case options are already there
+        if (selectObj.options.length > 0) {
+            updateChapterDisplay();
+        }
+        
+        selectObj.addEventListener("change", updateChapterDisplay);
+
+        // Toggle custom dropdown
+        titleBtn.onclick = function(e) {
+            e.preventDefault();
+            customList.style.display = customList.style.display === "none" ? "block" : "none";
+            
+            // Scroll to the active chapter in the list when opened
+            if (customList.style.display === "block") {
+                const activeItem = customList.children[selectObj.selectedIndex];
+                if (activeItem) {
+                    activeItem.scrollIntoView({ block: "nearest" });
+                }
+            }
+        };
+
+        // Close dropdown if clicking outside
+        document.addEventListener("click", function(e) {
+            if (!titleBtn.contains(e.target) && !customList.contains(e.target)) {
+                customList.style.display = "none";
+            }
+        });
+
+        // Previous button logic
+        prevBtn.onclick = function(e) {
+            e.preventDefault();
+            if (selectObj.selectedIndex > 0) {
+                selectObj.selectedIndex--;
+                selectObj.dispatchEvent(new Event("change"));
+            }
+        };
+
+        // Next button logic
+        nextBtn.onclick = function(e) {
+            e.preventDefault();
+            if (selectObj.selectedIndex < selectObj.options.length - 1) {
+                selectObj.selectedIndex++;
+                selectObj.dispatchEvent(new Event("change"));
+            }
+        };
+    }
+});
+
