@@ -1,21 +1,113 @@
-<div class="study_search_results">
-  <%= for study <- @studies do %>
-    <div class="study_search_result">
-      <a href="<%= Routes.study_path(@conn, :show, @locale, study.slug) %>">
-        <h5><%= study.title%></h5>
-      </a>
-      <%= if assigns[:favorites] do %>
-        <span><span title="# <%= dgettext("study", "favorites")%>"><%= length(study.study_favorites) %> <span class="icon" data-icon="#"></span></span> <%= dgettext("study", "by") %> <%= study.user.username %>
-        </span>
+<style>
+  .study-groups-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    align-items: start;
+  }
+  .study-group-full {
+    grid-column: 1 / -1;
+  }
+  .study-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .study-list-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s ease;
+    gap: 1.5rem;
+  }
+  .study-list-item:hover {
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15), 0 2px 4px -1px rgba(0,0,0,0.1);
+  }
+  .study-list-info {
+    flex-grow: 1;
+  }
+  .study-list-item h5 {
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 1.125rem;
+  }
+  .study-list-item a {
+    text-decoration: none;
+  }
+  .study-list-item a:hover h5 {
+    color: #3182ce;
+  }
+  .study-list-desc {
+    color: #4a5568;
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+  .color-header {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    color: #4a5568;
+    border-bottom: 2px solid #edf2f7;
+    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .study-list-actions {
+    flex-shrink: 0;
+  }
+</style>
 
-      <% end %>
-      <p><%= study.description %></p>
-      <%= if assigns[:edit] do %>
-        <a href="<%= Routes.study_path(@conn, :edit, @locale, study.slug) %>">
-          <%= dgettext("study", "Edit") %>
-        </a>
-      <% end %>
+<%
+  white_studies = Enum.filter(@studies, fn s -> Map.get(s, :color) == "white" end)
+  black_studies = Enum.filter(@studies, fn s -> Map.get(s, :color) == "black" end)
+  other_studies = Enum.filter(@studies, fn s -> Map.get(s, :color) not in ["white", "black"] end)
+
+  other_label = if length(white_studies) > 0 or length(black_studies) > 0, do: dgettext("study", "Other"), else: dgettext("study", "Studies")
+  
+  study_groups = [
+    {dgettext("study", "White"), white_studies, "♔", ""},
+    {dgettext("study", "Black"), black_studies, "♚", ""},
+    {other_label, other_studies, "♞", "study-group-full"}
+  ]
+%>
+
+<div class="study_search_results study-groups-layout">
+  <%= for {label, group_studies, icon, grid_class} <- study_groups, length(group_studies) > 0 do %>
+    <div class="<%= grid_class %>">
+      <h3 class="color-header"><%= icon %> <%= label %></h3>
+      <div class="study-list-container">
+      <%= for study <- group_studies do %>
+        <div class="study-list-item">
+          <div class="study-list-info">
+            <a href="<%= Routes.study_path(@conn, :show, @locale, study.slug) %>">
+              <h5><%= study.title %></h5>
+            </a>
+            <p class="study-list-desc"><%= study.description %></p>
+            <%= if assigns[:favorites] do %>
+              <div style="font-size: 0.875rem; color: #718096; margin-top: 0.5rem;">
+                <span title="# <%= dgettext("study", "favorites")%>"><%= length(study.study_favorites) %> <span class="icon" data-icon="#"></span></span> 
+                &bull; <%= dgettext("study", "by") %> <strong><%= study.user.username %></strong>
+              </div>
+            <% end %>
+          </div>
+          <%= if assigns[:edit] do %>
+            <div class="study-list-actions">
+              <a class="button" style="margin: 0; white-space: nowrap;" href="<%= Routes.study_path(@conn, :edit, @locale, study.slug) %>">
+                <%= dgettext("study", "Edit") %>
+              </a>
+            </div>
+          <% end %>
+        </div>
+        <% end %>
+      </div>
     </div>
   <% end %>
 </div>
-

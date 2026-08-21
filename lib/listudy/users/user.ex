@@ -8,6 +8,8 @@ defmodule Listudy.Users.User do
     field :role, :string, default: "user"
     pow_user_fields()
     field :last_visited, :utc_datetime
+    field :lichess_username, :string
+    field :chess_com_username, :string
 
     timestamps()
   end
@@ -17,7 +19,7 @@ defmodule Listudy.Users.User do
 
     user_or_changeset
     |> pow_changeset(attrs)
-    |> Ecto.Changeset.cast(attrs, [:username, :role])
+    |> Ecto.Changeset.cast(attrs, [:username, :role, :lichess_username, :chess_com_username])
     |> Ecto.Changeset.validate_required([:username])
     |> unique_constraint([:username])
     |> unique_constraint([:email])

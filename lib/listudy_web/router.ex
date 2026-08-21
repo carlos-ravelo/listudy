@@ -37,6 +37,13 @@ defmodule ListudyWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :api_session do
+    plug :accepts, ["json"]
+    plug :fetch_session
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+  end
+
   scope "/" do
     pipe_through :browser
 
@@ -81,6 +88,29 @@ defmodule ListudyWeb.Router do
     resources "/expert_recommendation", ExpertRecommendationController
 
     resources "/blind_tactics", BlindTacticController
+  end
+
+  scope "/api", ListudyWeb do
+    pipe_through [:api_session, :logged_in]
+
+    get "/progress", ProgressController, :index
+    post "/progress/sync", ProgressController, :sync
+  end
+
+  scope "/analysis", ListudyWeb do
+    pipe_through [:browser, :logged_in]
+
+    get "/", AnalysisController, :index
+    post "/sync", AnalysisController, :sync
+    post "/disconnect", AnalysisController, :disconnect
+    get "/:id/train", AnalysisController, :train
+    post "/quick", AnalysisController, :quick_analyze
+  end
+
+  scope "/", ListudyWeb do
+    pipe_through :browser
+
+    get "/random_study", StudyController, :random
   end
 
   scope "/:locale", ListudyWeb do
@@ -178,7 +208,6 @@ defmodule ListudyWeb.Router do
 
   scope "/", ListudyWeb do
     pipe_through [:browser, :logged_in]
-
     post "/comment", CommentController, :new_comment
     delete "/comment/:type/:id", CommentController, :delete_comment
     post "/study_favorite/:slug", StudyController, :favorite_study
@@ -187,7 +216,7 @@ defmodule ListudyWeb.Router do
 
   scope "/", ListudyWeb do
     pipe_through :browser
-
     get "/", PageController, :domain
   end
+
 end

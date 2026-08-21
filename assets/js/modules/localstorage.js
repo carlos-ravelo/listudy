@@ -36,14 +36,11 @@ function remove_tree(key) {
  * Removes the oldest trees to make place for new trees
  */
 function clear_local_storage() {
-    const limit = 10;
     let tree_keys = Object.keys(localStorage).filter(is_tree);
-    if (tree_keys.length < limit) {
-        return;
-    }
-    tree_keys.sort(compare_trees);
-    let to_remove = tree_keys.slice(limit);
-    to_remove.forEach(remove_tree);
+    
+    // Al requerir límite 0 para archivos grandes, eliminamos todos los estudios cacheados.
+    // Omitir el sort() evita crasheos si hay JSONs corruptos previamente guardados.
+    tree_keys.forEach(remove_tree);
 }
 
 /**

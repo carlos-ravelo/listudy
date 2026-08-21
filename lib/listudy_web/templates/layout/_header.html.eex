@@ -38,6 +38,16 @@
               </div> 
             </div>
 
+            <%= if Pow.Plug.current_user(@conn) do %>
+            <div class="dropdowns_container">
+              <div class="dropdown">
+                <a href="<%= Routes.analysis_path(@conn, :index) %>">
+                  <button class="dropbtn dropdowns_single"><%= gettext "Analysis"%></button>
+                </a>
+              </div> 
+            </div>
+            <% end %>
+
             <div id="hamburger" class="hamburger_container">
               <div class="burger1"></div>
               <div class="burger2"></div>
