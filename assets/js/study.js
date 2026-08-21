@@ -504,12 +504,15 @@ function setup_chapter_select() {
     const chapterFromUrl = urlParams.get('chapter');
     
     if (chapterFromUrl) {
-        let targetNorm = chapterFromUrl.replace(/\s+/g, ' ').trim();
+        // Remove all spaces and convert to lowercase for maximum resilience
+        let targetNorm = chapterFromUrl.toLowerCase().replace(/\s+/g, '');
+        
         for (let i = 0; i < trees.length; ++i) {
-            let nameNorm = tree_chapter_name(i).replace(/\s+/g, ' ').trim();
-            if (nameNorm === targetNorm) {
+            let nameNorm = tree_chapter_name(i).toLowerCase().replace(/\s+/g, '');
+            
+            // Check for partial match to handle cut-off URLs or encoding issues
+            if (nameNorm.includes(targetNorm) || targetNorm.includes(nameNorm)) {
                 selected = i;
-                // Optional: Save it so a manual refresh keeps the user here
                 StorageAdapter.setItem(select_key, selected);
                 break;
             }
