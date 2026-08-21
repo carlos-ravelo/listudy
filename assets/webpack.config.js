@@ -25,7 +25,12 @@ module.exports = (env, options) => {
       'play_stockfish': glob.sync('./vendor/**/*.js').concat(['./js/play_stockfish.js']),
       'endgames': glob.sync('./vendor/**/*.js').concat(['./js/endgames.js']),
       'remember_lichess_study': glob.sync('./vendor/**/*.js').concat(['./js/remember_lichess_study.js']),
-      'study': glob.sync('./vendor/**/*.js').concat(['./js/study.js'])
+      'study': glob.sync('./vendor/**/*.js').concat(['./js/study.js']),
+      'train_mistakes': glob.sync('./vendor/**/*.js').concat(['./js/train_mistakes.js']),
+      'analysis_overview': glob.sync('./vendor/**/*.js').concat(['./js/analysis_overview.js']),
+      'quick_result': glob.sync('./vendor/**/*.js').concat(['./js/quick_result.js'])
+
+
     },
     output: {
       filename: '[name].js',

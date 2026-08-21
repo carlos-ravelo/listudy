@@ -18,6 +18,7 @@ import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_mo
 import { TextOverlayId, TextOverlayManager } from './modules/overlays.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { array_contains } from './modules/utils.js';
+import { StorageAdapter } from './storageAdapter.js';
 
 
 const mode_free = "free_mode";
@@ -67,8 +68,8 @@ function right_move_text() {
 }
 
 function achievement_end_of_line() {
-    let t = localStorage.getItem("achievements_lines_learned") || 0;
-    localStorage.setItem("achievements_lines_learned", Number(t) + 1);
+    let t = StorageAdapter.getItem("achievements_lines_learned") || 0;
+    StorageAdapter.setItem("achievements_lines_learned", Number(t) + 1);
     if (typeof achievement_student_test != "undefined") {
         document.dispatchEvent(achievement_student_test);
     }
@@ -455,7 +456,7 @@ function start_training() {
 function store_trees() {
     let tree_key = study_id + "_tree";
     try {
-        localStorage.setItem(tree_key, JSON.stringify(trees));
+        StorageAdapter.setItem(tree_key, JSON.stringify(trees));
     } catch(caught_error) {
         console.log("Ignored localstorage error: " + caught_error);
     }
@@ -463,38 +464,23 @@ function store_trees() {
 
 // load the trees from the localStorage or generate if they dont exist
 function setup_trees() {
-    let hash_key = study_id + "_hash";
-    let tree_key = study_id + "_tree";
-
-    let last_hash = localStorage.getItem(hash_key);
-    let curr_hash = string_hash(pgn + color);
-    curr_hash += 3; // increase when trees have to be redone; for example when bugs in free_from_pgn are fixed
     let trees = {};
-
-    if (last_hash == undefined || curr_hash != last_hash) {
-        const pgnParser = require('pgn-parser'); // slows down page load, so only require if actually needed
-        try {
-            const parsedpgn = pgnParser.parse(pgn);
-            annotate_pgn(parsedpgn);
-            trees = generate_move_trees(parsedpgn);
-            clear_local_storage();
-        } catch(caught_error) {
-            console.log(caught_error);
+    const pgnParser = require('pgn-parser'); 
+    
+    try {
+        const parsedpgn = pgnParser.parse(pgn);
+        annotate_pgn(parsedpgn);
+        trees = generate_move_trees(parsedpgn);
+    } catch(caught_error) {
+        console.log(caught_error);
+        if (caught_error.location) {
             let error_text = caught_error.name + " at line: " + caught_error.location.start.line +
                              ", character: " + caught_error.location.start.column + "; Unexpected: \"" +
                              caught_error.found + "\"";
             set_text(error_div, error_text);
         }
-        try {
-            localStorage.setItem(tree_key, JSON.stringify(trees));
-            localStorage.setItem(hash_key, curr_hash);
-        } catch(caught_error) {
-            console.log("Ignored localstorage error: " + caught_error);
-        }
-
-    } else {
-        trees = JSON.parse(localStorage.getItem(tree_key));
     }
+    
     window.trees = trees;
 }
 
@@ -511,7 +497,26 @@ function setup_chapter_select() {
     let select_key = study_id + "_selected";
     let select_id = "chapter_select"
     let select = document.getElementById(select_id);
-    let selected = parseInt(localStorage.getItem(select_key) || 0);
+    let selected = parseInt(StorageAdapter.getItem(select_key) || 0);
+
+    // --- Override local storage if URL parameter is present ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const chapterFromUrl = urlParams.get('chapter');
+    
+    if (chapterFromUrl) {
+        let targetNorm = chapterFromUrl.replace(/\s+/g, ' ').trim();
+        for (let i = 0; i < trees.length; ++i) {
+            let nameNorm = tree_chapter_name(i).replace(/\s+/g, ' ').trim();
+            if (nameNorm === targetNorm) {
+                selected = i;
+                // Optional: Save it so a manual refresh keeps the user here
+                StorageAdapter.setItem(select_key, selected);
+                break;
+            }
+        }
+    }
+    // -----------------------------------------------------------
+
     selected = Math.min(selected, trees.length - 1);  // prevent error if replacing with a pgn with fewer chapters
     window.chapter = selected;
     for (let i = 0; i < trees.length; ++i) {
@@ -527,7 +532,7 @@ function setup_chapter_select() {
 
     select.onchange = function() {
         let v = document.getElementById(select_id).value;
-        localStorage.setItem(select_key, v);
+        StorageAdapter.setItem(select_key, v);
         window.chapter = v;
         start_training();
         update_progress(); // update the progress bar shown
@@ -543,7 +548,7 @@ function setup_chapter_select() {
 function has_seen_suggestion(key, ever) {
     if (ever) {
         let lsKey = study_id + "_suggestions_" + key;
-        return localStorage.getItem(lsKey) === "true";
+        return StorageAdapter.getItem(lsKey) === "true";
     } else {
         return array_contains(seen_suggestions, key);
     }
@@ -554,7 +559,7 @@ function has_seen_suggestion(key, ever) {
  */
 function mark_suggestion_seen(key) {
     let lsKey = study_id + "_suggestions_" + key;
-    localStorage.setItem(lsKey, true);
+    StorageAdapter.setItem(lsKey, true);
 
     if (!array_contains(seen_suggestions, key)) {
         seen_suggestions.push(key);
@@ -631,7 +636,7 @@ function toggle_arrows() {
     show_arrows = curr;
     display_arrows(false);
     display_comments(false);
-    localStorage.setItem(show_arrows_key, show_arrows);
+    StorageAdapter.setItem(show_arrows_key, curr);
 }
 
 function toggle_arrow_type() {
@@ -653,7 +658,7 @@ function toggle_arrow_type() {
     arrow_type = curr;
     display_arrows(false);
     display_comments(false);
-    localStorage.setItem(arrow_type_key, arrow_type);
+    StorageAdapter.setItem(arrow_type_key, curr);
 }
 
 function toggle_key_move() {
@@ -672,7 +677,7 @@ function toggle_key_move() {
     }
     key_moves_mode = curr;
     link.textContent = curr;
-    localStorage.setItem(key_moves_mode_key, key_moves_mode);
+    StorageAdapter.setItem(key_moves_mode_key, curr);
 }
 
 function toggle_review() {
@@ -689,7 +694,7 @@ function toggle_review() {
     }
     board_review = curr;
     link.textContent = curr;
-    localStorage.setItem(board_review_key, board_review);
+    StorageAdapter.setItem(board_review_key, curr);
 }
 
 function toggle_move_delay() {
@@ -712,7 +717,7 @@ function toggle_move_delay() {
     }
     span.textContent = curr;
     move_delay_time = curr;
-    localStorage.setItem(move_delay_time_key, move_delay_time);
+    StorageAdapter.setItem(move_delay_time_key, curr);
 }
 
 
@@ -756,7 +761,7 @@ function toggle_comments() {
     link.textContent = curr;
     show_comments = curr;
     display_comments(false);
-    localStorage.setItem(show_comments_key, show_comments);
+    StorageAdapter.setItem(show_comments_key, curr);
 }
 
 function get_repertoire_depth() {
@@ -797,7 +802,7 @@ function inc_or_dec_max_depth(delta) {
 
     update_max_depth_label(depth, tree_depth);
 
-    localStorage.setItem(max_depth_key_base + chapter, max_depth);
+    StorageAdapter.setItem(max_depth_key_base + chapter, max_depth);
 }
 
 /**
@@ -810,7 +815,7 @@ function max_depth_changed() {
 
     update_max_depth_label(depth, tree_depth);
 
-    localStorage.setItem(max_depth_key_base + chapter, max_depth);
+    StorageAdapter.setItem(max_depth_key_base + chapter, max_depth);
 }
 
 function reset_line() {
@@ -932,7 +937,38 @@ function setup_configs() {
 
 window.overlay_manager = new TextOverlayManager();
 
-function main() {
+async function main() {
+    // 1. If the user is authenticated, try to fetch cloud progress/settings
+    if (typeof logged_in !== 'undefined' && logged_in) {
+        try {
+            const response = await fetch('/api/progress', {
+                credentials: 'same-origin'
+            });
+            if (response.ok) {
+                const cloudSettings = await response.json();
+                // Hydrate localStorage with cloud data
+                Object.entries(cloudSettings).forEach(([key, value]) => {
+                    // Save directly to localStorage to prevent triggering a bounce POST request
+                    // Skip massive tree objects to avoid QuotaExceededError
+                    if (key.endsWith('_tree')) {
+                        return;
+                    }
+                    localStorage.setItem(key, value); 
+                });
+                
+                // Reload global variables that were initialized before this async call
+                move_delay_time = get_option_from_localstorage(move_delay_time_key, i18n.instant, [i18n.instant, i18n.fast, i18n.medium, i18n.slow]);
+                show_arrows = get_option_from_localstorage(show_arrows_key, i18n.arrows_new2x, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
+                arrow_type = get_option_from_localstorage(arrow_type_key, i18n.arrow_type_both, [i18n.arrow_type_playable, i18n.arrow_type_pgn, i18n.arrow_type_both]);
+                board_review = get_option_from_localstorage(board_review_key, i18n.review_fast, [i18n.review_fast, i18n.review_slow]);
+                key_moves_mode = get_option_from_localstorage(key_moves_mode_key, i18n.key_move_enabled, [i18n.key_move_enabled, i18n.key_move_disabled]);
+                show_comments = get_option_from_localstorage(show_comments_key, i18n.comments_when_arrows, [i18n.comments_when_arrows, i18n.comments_always_on, i18n.comments_hidden]);
+            }
+        } catch (error) {
+            console.log("Ignored cloud sync fetch error: ", error);
+        }
+    }
+
     setup_ground();
     setup_chess();
     setup_trees();
@@ -955,3 +991,176 @@ function main() {
 
 window.onresize = onresize;
 main();
+function triggerRandomChapter() {
+    let selectObj = document.getElementById("chapter_select");
+    
+    if (selectObj && selectObj.options.length > 1) {
+        let totalOptions = selectObj.options.length;
+        let currentIndex = selectObj.selectedIndex;
+        
+        let randomIndex = Math.floor(Math.random() * totalOptions);
+        
+        if (randomIndex === currentIndex) {
+            randomIndex = (randomIndex + 1) % totalOptions;
+        }
+        
+        selectObj.selectedIndex = randomIndex;
+        
+        selectObj.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+}
+
+// 1. Auto-ejecutar al cargar la página (con 800ms de gracia)
+document.addEventListener("DOMContentLoaded", function() {
+    setTimeout(triggerRandomChapter, 800);
+});
+
+// 2. Ejecutar cada vez que presiones el botón de HTML
+document.addEventListener("click", function(e) {
+    let target = e.target.closest('#btn_random_chapter');
+    if (target) {
+        e.preventDefault();
+        triggerRandomChapter();
+    }
+});
+// ----------------------------------------
+
+document.addEventListener("DOMContentLoaded", function() {
+    let copyBtn = document.getElementById("copy_line_to_clipboard");
+    
+    if (copyBtn) {
+        copyBtn.onclick = function(e) {
+            e.preventDefault(); 
+            
+            // Cortamos el PGN exactamente donde termina cada partida
+            let pgnGames = pgn.trim().split(/(?<=\*|1-0|0-1|1\/2-1\/2)\s+(?=\[)/);
+            let currentChapterPgn = pgnGames[chapter];
+
+            if (currentChapterPgn) {
+                navigator.clipboard.writeText(currentChapterPgn).then(() => {
+                    // Guardamos el texto original (probablemente traducido por Elixir)
+                    let originalText = copyBtn.innerText;
+                    
+                    // Cambiamos el texto para dar feedback visual
+                    copyBtn.innerText = "PGN copied to clipboard!";
+                    
+                    // Lo regresamos a la normalidad después de 2.5 segundos
+                    setTimeout(() => {
+                        copyBtn.innerText = originalText;
+                    }, 2500);
+
+                }).catch(err => {
+                    console.error("Clipboard copy failed:", err);
+                });
+            } else {
+                console.error("Could not extract current chapter PGN.");
+            }
+        };
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    const selectObj = document.getElementById("chapter_select");
+    const prevBtn = document.getElementById("prev_chapter_btn");
+    const nextBtn = document.getElementById("next_chapter_btn");
+    const titleBtn = document.getElementById("current_chapter_title");
+    const customList = document.getElementById("custom_chapter_list");
+
+    function buildCustomList() {
+        customList.innerHTML = "";
+        Array.from(selectObj.options).forEach((opt, index) => {
+            let item = document.createElement("div");
+            item.innerText = opt.text;
+            item.style.padding = "8px 12px";
+            item.style.cursor = "pointer";
+            item.style.borderBottom = "1px solid #eee";
+            item.style.textAlign = "left";
+            
+            // Highlight the active chapter
+            if (index === selectObj.selectedIndex) {
+                item.style.fontWeight = "bold";
+                item.style.backgroundColor = "#e2e8f0";
+            }
+
+            // Hover effects
+            item.onmouseover = () => item.style.backgroundColor = "#cbd5e1";
+            item.onmouseout = () => {
+                item.style.backgroundColor = (index === selectObj.selectedIndex) ? "#e2e8f0" : "transparent";
+            };
+
+            // Handle selection
+            item.onclick = () => {
+                selectObj.selectedIndex = index;
+                selectObj.dispatchEvent(new Event("change"));
+                customList.style.display = "none";
+            };
+            customList.appendChild(item);
+        });
+    }
+
+    function updateChapterDisplay() {
+        if (selectObj && selectObj.options.length > 0) {
+            titleBtn.innerText = selectObj.options[selectObj.selectedIndex].text;
+            buildCustomList(); 
+        }
+    }
+
+    if (selectObj && prevBtn && nextBtn && titleBtn && customList) {
+        
+        // Watch the select element for dynamic option injection by Listudy
+        const observer = new MutationObserver(function() {
+            if (selectObj.options.length > 0) {
+                updateChapterDisplay();
+                observer.disconnect(); // Stop watching once loaded
+            }
+        });
+        observer.observe(selectObj, { childList: true });
+
+        // Fallback in case options are already there
+        if (selectObj.options.length > 0) {
+            updateChapterDisplay();
+        }
+        
+        selectObj.addEventListener("change", updateChapterDisplay);
+
+        // Toggle custom dropdown
+        titleBtn.onclick = function(e) {
+            e.preventDefault();
+            customList.style.display = customList.style.display === "none" ? "block" : "none";
+            
+            // Scroll to the active chapter in the list when opened
+            if (customList.style.display === "block") {
+                const activeItem = customList.children[selectObj.selectedIndex];
+                if (activeItem) {
+                    activeItem.scrollIntoView({ block: "nearest" });
+                }
+            }
+        };
+
+        // Close dropdown if clicking outside
+        document.addEventListener("click", function(e) {
+            if (!titleBtn.contains(e.target) && !customList.contains(e.target)) {
+                customList.style.display = "none";
+            }
+        });
+
+        // Previous button logic
+        prevBtn.onclick = function(e) {
+            e.preventDefault();
+            if (selectObj.selectedIndex > 0) {
+                selectObj.selectedIndex--;
+                selectObj.dispatchEvent(new Event("change"));
+            }
+        };
+
+        // Next button logic
+        nextBtn.onclick = function(e) {
+            e.preventDefault();
+            if (selectObj.selectedIndex < selectObj.options.length - 1) {
+                selectObj.selectedIndex++;
+                selectObj.dispatchEvent(new Event("change"));
+            }
+        };
+    }
+});
+

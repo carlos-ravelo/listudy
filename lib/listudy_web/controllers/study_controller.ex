@@ -239,7 +239,7 @@ defmodule ListudyWeb.StudyController do
 
     case File.stat(file) do
       {:ok, %{size: size}} ->
-        if size < 50000 do
+        if size < 15000000 do
           {:ok, file}
         else
           {:error, dgettext("study", "PGN is too big, only 50kb allowed")}
@@ -323,5 +323,25 @@ defmodule ListudyWeb.StudyController do
   defp save_pgn(pgn, file_name) do
     File.cp(pgn, get_path(file_name))
     File.rm(pgn)
+  end
+
+  def random(conn, _params) do
+    user_id =
+      case get_user(conn) do
+        {:ok, user} -> user.id
+        {:error, _} -> -1
+      end
+
+    studies = Studies.get_study_by_user!(user_id)
+
+    if Enum.empty?(studies) do
+      redirect(conn, to: "/")
+    else
+      random_study = Enum.random(studies)
+      # Obtenemos el idioma del conn (o fallback a 'en')
+      locale = conn.params["locale"] || "en"
+      # La estructura correcta es /:locale/studies/:slug
+      redirect(conn, to: "/#{locale}/studies/#{random_study.slug}")
+    end
   end
 end
