@@ -1250,3 +1250,209 @@ document.addEventListener("keydown", function(event) {
         go_forward();
     }
 });
+
+
+document.addEventListener("DOMContentLoaded", function() {
+    const addBtn = document.getElementById("add_to_collection");
+    const manageBtn = document.getElementById("manage_collection");
+    const chapterSelect = document.getElementById("chapter_select");
+
+    // Inyectamos el Modal en el HTML
+    const modalHTML = `
+    <div id="collection_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999;">
+        <div style="background:#fff; color:#333; margin:10% auto; padding:20px; width:90%; max-width:600px; border-radius:8px; max-height: 80vh; overflow-y: auto;">
+            <h2 style="margin-top:0;">Chapter Collection</h2>
+            <ul id="collection_list" style="list-style:none; padding:0; margin-bottom:20px;"></ul>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button id="modal_download" class="button">Download PGN</button>
+                <button id="modal_clear" class="button" style="background:#d9534f; color:#fff; border:none;">Clear All</button>
+                <button id="modal_close" class="button" style="background:#ccc; color:#333; border:none;">Close</button>
+            </div>
+        </div>
+    </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const modal = document.getElementById("collection_modal");
+    const listEl = document.getElementById("collection_list");
+
+    // Función fallback por si hay PGNs viejos guardados
+    function getFallbackChapterTitle(pgnStr) {
+        let match = pgnStr.match(/\[Event\s+"([^"]+)"\]/i);
+        if (match && match[1] && match[1] !== "?") return match[1];
+        match = pgnStr.match(/\[White\s+"([^"]+)"\]/i);
+        return match ? match[1] : "Unnamed Chapter";
+    }
+
+    // NUEVO: Sacar el título EXACTO directo del dropdown de Listudy
+    function getCurrentChapterTitle() {
+        if (chapterSelect && chapterSelect.options.length > 0 && typeof chapter !== 'undefined') {
+            return chapterSelect.options[chapter].text.trim();
+        }
+        return "Unnamed Chapter";
+    }
+
+    // Extraer título del Estudio (del h1)
+    function getCurrentStudyTitle() {
+        let h1 = document.querySelector('h1');
+        if (h1) return h1.innerText.trim();
+        return document.title.split('-')[0].trim() || "Unknown Study";
+    }
+
+    // Obtener PGN actual
+    function getCurrentChapterPgn() {
+        if (typeof pgn === 'undefined' || typeof chapter === 'undefined') return null;
+        let pgnGames = pgn.trim().split(/(?<=\*|1-0|0-1|1\/2-1\/2)\s+(?=\[)/);
+        let current = pgnGames[chapter];
+        return current ? current.trim() : null;
+    }
+
+    // Leer carrito y migrar viejos formatos si existen
+    function getCart() {
+        let cart = JSON.parse(localStorage.getItem('listudy_cart') || '[]');
+        let migrated = false;
+        cart = cart.map(item => {
+            if (typeof item === 'string') {
+                migrated = true;
+                return { 
+                    pgn: item, 
+                    study: "Unknown Study", 
+                    title: getFallbackChapterTitle(item),
+                    studyPath: window.location.pathname.split('?')[0]
+                };
+            }
+            return item;
+        });
+        if (migrated) localStorage.setItem('listudy_cart', JSON.stringify(cart));
+        return cart;
+    }
+
+    // Renderizar la lista
+    function renderModalList() {
+        let cart = getCart();
+        listEl.innerHTML = "";
+        
+        if (cart.length === 0) {
+            listEl.innerHTML = "<li style='padding:10px 0;'>Your collection is empty.</li>";
+            return;
+        }
+
+        let grouped = cart.reduce((acc, item, originalIndex) => {
+            let studyName = item.study || "Unknown Study";
+            if (!acc[studyName]) acc[studyName] = [];
+            acc[studyName].push({ item, index: originalIndex });
+            return acc;
+        }, {});
+
+        Object.keys(grouped).forEach(studyName => {
+            let studyHeader = document.createElement("li");
+            studyHeader.innerHTML = `<strong style="display:block; padding: 15px 0 5px 0; border-bottom: 2px solid #ddd; margin-bottom: 5px; color: #0056b3;">📘 ${studyName}</strong>`;
+            listEl.appendChild(studyHeader);
+
+            grouped[studyName].forEach(entry => {
+                let li = document.createElement("li");
+                li.style = "display:flex; justify-content:space-between; padding:5px 0 5px 15px; border-bottom:1px solid #f5f5f5;";
+                
+                // URL dinámica con el parámetro de búsqueda ?chapter=
+                let safePath = entry.item.studyPath || window.location.pathname;
+                let chapterUrl = `${safePath}?chapter=${encodeURIComponent(entry.item.title)}`;                
+                li.innerHTML = `
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:10px;">
+                        • <a href="${chapterUrl}" style="color:#007BFF; text-decoration:none;" target="_blank" title="Go to chapter">${entry.item.title}</a>
+                    </span> 
+                    <button data-index="${entry.index}" class="remove_chapter" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; padding:0 10px;">X</button>
+                `;
+                listEl.appendChild(li);
+            });
+        });
+
+        document.querySelectorAll(".remove_chapter").forEach(btn => {
+            btn.onclick = function() {
+                let idx = parseInt(this.getAttribute("data-index"), 10);
+                cart.splice(idx, 1);
+                localStorage.setItem('listudy_cart', JSON.stringify(cart));
+                renderModalList();
+                updateCartUI();
+            };
+        });
+    }
+
+    function updateCartUI() {
+        if (!addBtn) return;
+        let cart = getCart();
+        let currentPgn = getCurrentChapterPgn();
+        
+        let isAlreadyAdded = currentPgn && cart.some(item => item.pgn === currentPgn);
+
+        if (isAlreadyAdded) {
+            addBtn.innerHTML = `Already added (<span id="collection_count">${cart.length}</span>)`;
+            addBtn.style.opacity = "0.5";
+            addBtn.style.cursor = "default";
+        } else {
+            addBtn.innerHTML = `Add to Collection (<span id="collection_count">${cart.length}</span>)`;
+            addBtn.style.opacity = "1";
+            addBtn.style.cursor = "pointer";
+        }
+        
+        if (manageBtn) manageBtn.style.display = cart.length > 0 ? 'inline-block' : 'none';
+    }
+
+    if (addBtn) {
+        updateCartUI();
+
+        addBtn.onclick = function(e) {
+            e.preventDefault();
+            let cleanPgn = getCurrentChapterPgn();
+            if (cleanPgn) {
+                let cart = getCart();
+                if (cart.some(item => item.pgn === cleanPgn)) return; 
+
+                cart.push({
+                    pgn: cleanPgn,
+                    study: getCurrentStudyTitle(),
+                    title: getCurrentChapterTitle(), // Sacado directo del desplegable
+                    studyPath: window.location.pathname.split('?')[0] // Ej: /en/studies/tu-slug
+                });
+                
+                localStorage.setItem('listudy_cart', JSON.stringify(cart));
+                updateCartUI();
+            }
+        };
+
+        if (manageBtn) {
+            manageBtn.onclick = function(e) {
+                e.preventDefault();
+                renderModalList();
+                modal.style.display = 'block';
+            };
+        }
+
+        document.getElementById("modal_close").onclick = () => modal.style.display = 'none';
+        
+        document.getElementById("modal_clear").onclick = () => {
+            if(confirm("Are you sure you want to clear all chapters?")) {
+                localStorage.removeItem('listudy_cart');
+                renderModalList();
+                updateCartUI();
+                modal.style.display = 'none';
+            }
+        };
+
+        document.getElementById("modal_download").onclick = () => {
+            let cart = getCart();
+            if (cart.length === 0) return;
+            let combinedPgn = cart.map(item => item.pgn).join('\n\n\n');
+            let blob = new Blob([combinedPgn], { type: "text/plain" });
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "custom_collection.pgn";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        if (chapterSelect) {
+            chapterSelect.addEventListener('change', () => setTimeout(updateCartUI, 150));
+        }
+    }
+});
