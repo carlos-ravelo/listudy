@@ -49,6 +49,15 @@ function uci_to_san(chess, from, to) {
  */
 function san_to_uci(chess, san) {
     let move = chess.move(san);
+    
+    if (move === null) {
+        console.error("🚨 ERROR: Illegal move or corrupted text detected.");
+        console.error("Attempted text (SAN):", "'" + san + "'");
+        console.error("Current position (FEN):", chess.fen());
+        // Return a false value to prevent crashing and allow the rest to work
+        return {from: "a1", to: "a1"}; 
+    }
+    
     chess.undo();
     return {from: move.from, to: move.to};
 }
