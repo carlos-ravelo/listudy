@@ -1071,6 +1071,29 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function buildCustomList() {
         customList.innerHTML = "";
+
+        // --- Create search field ---
+        let searchInput = document.createElement("input");
+        searchInput.type = "text";
+        searchInput.placeholder = "Search chapter...";
+        searchInput.style.width = "100%";
+        searchInput.style.padding = "8px 12px";
+        searchInput.style.boxSizing = "border-box";
+        searchInput.style.border = "none";
+        searchInput.style.borderBottom = "1px solid #ccc";
+        searchInput.style.outline = "none";
+        
+        // Keep the search bar visible at all times
+        searchInput.style.position = "sticky";
+        searchInput.style.top = "0";
+        searchInput.style.backgroundColor = "#fff"; 
+        searchInput.style.zIndex = "10";
+        // Evitar que el clic en el input cierre el menú
+        searchInput.onclick = (e) => e.stopPropagation();
+        customList.appendChild(searchInput);
+
+        let items = []; // we save the references for filtering
+
         Array.from(selectObj.options).forEach((opt, index) => {
             let item = document.createElement("div");
             item.innerText = opt.text;
@@ -1094,13 +1117,29 @@ document.addEventListener("DOMContentLoaded", function() {
             // Handle selection
             item.onclick = () => {
                 selectObj.selectedIndex = index;
-                selectObj.dispatchEvent(new Event("change"));
+                selectObj.dispatchEvent(new Event("change", { bubbles: true }));
                 customList.style.display = "none";
             };
+            
+            items.push(item);
             customList.appendChild(item);
         });
-    }
 
+        // --- Filtering logic ---
+        searchInput.addEventListener("input", function(e) {
+            let filter = e.target.value.toLowerCase();
+            items.forEach(item => {
+                if (item.innerText.toLowerCase().includes(filter)) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        });
+
+        // Optional: Auto-focus the search bar when opening the list
+        setTimeout(() => searchInput.focus(), 50);
+    }
     function updateChapterDisplay() {
         if (selectObj && selectObj.options.length > 0) {
             titleBtn.innerText = selectObj.options[selectObj.selectedIndex].text;
