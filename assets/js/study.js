@@ -1206,3 +1206,40 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
+// --- Custom Navigation Controls ---
+
+window.go_back = function() {
+    if (curr_move.length > 1) {
+        curr_move.pop(); 
+        chess.undo();    
+        if (typeof ground_undo_last_move === "function") ground_undo_last_move(); 
+        if (typeof display_arrows === "function") display_arrows();
+        if (typeof display_comments === "function") display_comments(false);
+    }
+};
+
+window.go_forward = function() {
+    let possible_moves = tree_possible_moves(curr_move);
+    
+    if (possible_moves && possible_moves.length > 0) {
+        let next_node = possible_moves[0];
+        let next_san = typeof next_node === "string" ? next_node : (next_node.san || next_node.move || next_node.id || next_node.key);
+        
+        if (next_san) {
+            play_move(next_san);
+            if (typeof display_arrows === "function") display_arrows();
+            if (typeof display_comments === "function") display_comments(false);
+        }
+    }
+};
+
+// Bind to keyboard arrows
+document.addEventListener("keydown", function(event) {
+    if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        go_back();
+    } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        go_forward();
+    }
+});
