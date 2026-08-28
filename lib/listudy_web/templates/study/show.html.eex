@@ -1,25 +1,24 @@
 <h1 class="clicking_turns_on_hints"><%= @study.title %></h1>
 
 <!-- Contenedor en cuadrícula para los 4 botones -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px;">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; margin-bottom: 20px;">
     
-    <!-- Fila 1 -->
-    <a href="/random_study" class="button secondary" style="text-align: center; display: block; margin: 0;">
+    <a href="/random_study" class="button secondary" style="flex: 1; min-width: 120px; margin: 0; text-align: center; white-space: normal; height: auto; padding: 8px;">
         🎲 Random Study
     </a>
     
-    <button id="btn_random_chapter" class="button secondary" style="margin: 0; width: 100%;">
+    <button id="btn_random_chapter" class="button secondary" style="flex: 1; min-width: 120px; margin: 0; text-align: center; white-space: normal; height: auto; padding: 8px;">
         🎲 Random Chapter
     </button>
 
-    <!-- Fila 2 -->
-    <a href="#" id="add_to_collection" class="button" style="text-align: center; display: block; margin: 0;">
+    <a href="#" id="add_to_collection" class="button" style="flex: 1; min-width: 120px; margin: 0; text-align: center; white-space: normal; height: auto; padding: 8px;">
         ➕ Add to Collection (<span id="collection_count">0</span>)
     </a>
     
-    <a href="#" id="manage_collection" class="button secondary" style="text-align: center; display: block; margin: 0; display: none;">
+    <a href="#" id="manage_collection" class="button secondary" style="flex: 1; min-width: 120px; margin: 0; text-align: center; white-space: normal; height: auto; padding: 8px; display: none;">
         📂 Manage Collection
     </a>
+    
 </div>
 <div style="position: relative; width: 100%; max-width: 100%; display: block; margin-top: 10px;">
   
@@ -63,62 +62,66 @@
 </div>
 
 
-<div class="options_area">
-  <div class="option_item">
+
+<!-- Main Actions -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; padding-bottom: 20px; border-bottom: 1px solid #eaeaea; margin-bottom: 20px;">
+  <div class="option_item" style="margin: 0;">
     <a class="icon" data-icon="!" id="play_stockfish" href="<%= Routes.page_path(@conn, :play_stockfish, @locale) %>#rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" title="<%= dgettext "study", "Play against Stockfish" %>"><%= dgettext "study", "Play against Stockfish" %></a>
   </div>
-  <div class="option_item">
-    <a class="icon" data-icon="/" id="analysis_board" href="https://lichess.org/analysis"
-    title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
+  <div class="option_item" style="margin: 0;">
+    <a class="icon" data-icon="/" id="analysis_board" href="https://lichess.org/analysis" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
   </div>
-  <div class="option_item">
-    <a class="icon" data-icon="E" id="copy_line_to_clipboard" href="#" title="<%= dgettext "study", "Copy chapter to clipboard" %>">
-      <%= dgettext "study", "Copy chapter to clipboard" %>
-    </a>
+  <div class="option_item" style="margin: 0;">
+    <a class="icon" data-icon="E" id="copy_line_to_clipboard" href="#" title="<%= dgettext "study", "Copy chapter to clipboard" %>"><%= dgettext "study", "Copy chapter to clipboard" %></a>
   </div>
-  <div class="option_item">
-    <a class="icon" data-icon="." id="reset_line"><%= dgettext("study", "Reset line") %></a>
-  </div>
-  <div class="option_item">
+  <div class="option_item" style="margin: 0;">
     <%= if !@study.favorites do %>
       <%= link dgettext("study", "Favorite study"), to: Routes.study_path(@conn, :favorite_study, @study.slug), method: :post, class: "icon", "data-icon": "#" %>
     <% else %>
       <%= link dgettext("study" ,"Unfavorite study"), to: Routes.study_path(@conn, :unfavorite_study, @study.slug), method: :post, class: "icon", "data-icon": "\"" %>
     <% end %>
   </div>
-  <div class="option_item">
+</div>
+
+<!-- Settings & Preferences -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; opacity: 0.85;">
+  <div class="option_item" style="margin: 10;">
+    <a class="icon" data-icon="." id="reset_line"><%= dgettext("study", "Reset line") %></a>
+  </div>
+  <div class="option_item" style="margin: 0;">
     <a class="icon" data-icon="-" id="arrows_toggle">placeholder</a>
   </div>
-  <div class="option_item">
+  <div class="option_item" style="margin: 0;">
     <a class="icon" data-icon="3" id="comments_toggle" title="<%= dgettext("study", "Option to control when comments are displayed") %>">placeholder</a>
   </div>
-  <div class="option_item">
+  <div class="option_item" style="margin: 0;">
     <a class="icon" data-icon="(" id="line_review" title="<%= dgettext("study", "At the end of lines the board is only reset after 3 seconds giving you time to review the final position.") %>">placeholder</a>
   </div>
-  <div class="option_item">
-    <a class="icon" data-icon="-" id="arrow_type" title="<%= dgettext("study", "Option to control the type of hints shown. 'Moves' means arrows are displayed for all playable moves in the study. 'Annotations' are arrows and circles from the study or PGN file. These can be created at Lichess.org and other sites.") %>">placeholder</a>
-  </div>
-  <div class="option_item">
+  <div class="option_item" style="margin: 0;">
     <a class="icon" data-icon="(" id="move_delay"><%= dgettext("study", "Move delay:") %> <span id="move_delay_time">placeholder</span></a>
   </div>
-  <div class="option_item">
+  <div class="option_item" style="margin: 0;">
+    <a class="icon" data-icon="$" id="key_move" title="<%= dgettext("study", "Don't repeat the early moves that are already known. Skips to the first branching move in the study.") %>">placeholder</a>
+  </div>
+
+  <!-- Max Depth needs a bit more space, so it spans across if necessary -->
+  <div class="option_item" style="margin: 0;">
     <div id="max_depth_container" title="<%= dgettext("study", "Lets you choose how many moves deep in the repertoire to train. The highest value you can choose is the length of the longest line. Set to a lower value to train against a more shallow subset of the repertoire, and to the highest value to train against the full repertoire.") %>">
       <a class="icon" data-icon="+"><%= dgettext("study", "Max depth: ") %></a>
       <a id="max_depth_label" class="max_depth_label">placeholder</a>
       <a id="max_depth_sub" class="max_depth_ctrl" role="button">-</a><input type="range" id="max_depth_range" class="max_depth_range" min="1" max="1"><a id="max_depth_add" class="max_depth_ctrl" role="button">+</a>
     </div>
   </div>
-  <div class="option_item">
-    <a class="icon" data-icon="$" id="key_move" title="<%= dgettext("study", "Don't repeat the early moves that are already known. Skips to the first branching move in the study.") %>">placeholder</a>
+    <div class="option_item" style="margin: 0;">
+    <a class="icon" data-icon="-" id="arrow_type" title="<%= dgettext("study", "Option to control the type of hints shown. 'Moves' means arrows are displayed for all playable moves in the study. 'Annotations' are arrows and circles from the study or PGN file. These can be created at Lichess.org and other sites.") %>">placeholder</a>
   </div>
 </div>
 
-<div class="options_area">
-  <div class="option_item_progressbar">
-    <a style="display: block; padding-bottom: 5px;" href="#" data-icon="+" class="icon modal_open" id="progress"><%= dgettext("study","Progress") %></a>
+<!-- Progress Bar Area -->
+<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eaeaea;">
+  <div class="option_item_progressbar" style="width: 100%;">
+    <a style="display: block; padding-bottom: 5px; font-weight: bold;" href="#" data-icon="+" class="icon modal_open" id="progress"><%= dgettext("study","Progress") %></a>
     <div id="chapter_progress"></div>
-  </div>
-  <div class="option_item">
   </div>
 </div>
 
