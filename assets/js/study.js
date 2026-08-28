@@ -1257,17 +1257,28 @@ document.addEventListener("DOMContentLoaded", function() {
     const manageBtn = document.getElementById("manage_collection");
     const chapterSelect = document.getElementById("chapter_select");
 
-    // Inyectamos el Modal en el HTML
+// Inject the Modal into the DOM
     const modalHTML = `
-    <div id="collection_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999;">
-        <div style="background:#fff; color:#333; margin:10% auto; padding:20px; width:90%; max-width:600px; border-radius:8px; max-height: 80vh; overflow-y: auto;">
-            <h2 style="margin-top:0;">Chapter Collection</h2>
-            <ul id="collection_list" style="list-style:none; padding:0; margin-bottom:20px;"></ul>
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
+    <div id="collection_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#fff; color:#333; width:90%; max-width:600px; max-height:85vh; border-radius:8px; display:flex; flex-direction:column; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            
+            <!-- Encabezado fijo -->
+            <div style="padding:20px; border-bottom:1px solid #eee;">
+                <h2 style="margin:0;">Chapter Collection</h2>
+            </div>
+            
+            <!-- Lista con scroll independiente -->
+            <div style="padding:10px 20px; overflow-y:auto; flex-grow:1;">
+                <ul id="collection_list" style="list-style:none; padding:0; margin:0;"></ul>
+            </div>
+            
+            <!-- Botones fijos abajo -->
+            <div style="padding:15px 20px; border-top:1px solid #eee; display:flex; gap:10px; justify-content:flex-end; background:#fafafa; border-bottom-left-radius:8px; border-bottom-right-radius:8px;">
                 <button id="modal_download" class="button">Download PGN</button>
                 <button id="modal_clear" class="button" style="background:#d9534f; color:#fff; border:none;">Clear All</button>
                 <button id="modal_close" class="button" style="background:#ccc; color:#333; border:none;">Close</button>
             </div>
+            
         </div>
     </div>
     `;
@@ -1423,12 +1434,16 @@ document.addEventListener("DOMContentLoaded", function() {
             manageBtn.onclick = function(e) {
                 e.preventDefault();
                 renderModalList();
-                modal.style.display = 'block';
+                modal.style.display = 'flex';
             };
         }
 
         document.getElementById("modal_close").onclick = () => modal.style.display = 'none';
-        
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
         document.getElementById("modal_clear").onclick = () => {
             if(confirm("Are you sure you want to clear all chapters?")) {
                 localStorage.removeItem('listudy_cart');
