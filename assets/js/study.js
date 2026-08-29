@@ -1398,57 +1398,148 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    function renderModalList() {
-        let cart = getActiveCart();
-        listEl.innerHTML = "";
+    
+    // We add an optional parameter to track which item just moved
+    function renderModalList(highlightIndex = -1) {
+        let data = getCollectionsData();
+        let cart = data.collections[data.active];
+        
+        // Inject a tiny animation just for the highlighted row
+        listEl.innerHTML = `
+            <style>
+                @keyframes flashSuccess {
+                    0% { background-color: #d4edda; }
+                    100% { background-color: transparent; }
+                }
+                .highlight-row { animation: flashSuccess 0.8s ease-out; }
+            </style>
+        `;
         
         if (cart.length === 0) {
-            listEl.innerHTML = "<li style='padding:10px 0;'>This collection is empty.</li>";
+            listEl.innerHTML += "<li style='padding:10px 0;'>This collection is empty.</li>";
             return;
         }
 
-        let grouped = cart.reduce((acc, item, originalIndex) => {
-            let studyName = item.study || "Unknown Study";
-            if (!acc[studyName]) acc[studyName] = [];
-            acc[studyName].push({ item, index: originalIndex });
-            return acc;
-        }, {});
-
-        Object.keys(grouped).forEach(studyName => {
-            let studyHeader = document.createElement("li");
-            studyHeader.innerHTML = `<strong style="display:block; padding: 15px 0 5px 0; border-bottom: 2px solid #ddd; margin-bottom: 5px; color: #0056b3;">📘 ${studyName}</strong>`;
-            listEl.appendChild(studyHeader);
-
-            grouped[studyName].forEach(entry => {
-                let li = document.createElement("li");
-                li.style = "display:flex; justify-content:space-between; padding:5px 0 5px 15px; border-bottom:1px solid #f5f5f5;";
-                
-                let safePath = entry.item.studyPath || window.location.pathname.split('?')[0];
-                let chapterUrl = `${safePath}?chapter=${encodeURIComponent(entry.item.title)}`;
-                
-                li.innerHTML = `
-                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:10px;">
-                        • <a href="${chapterUrl}" style="color:#007BFF; text-decoration:none;" target="_blank" title="Go to chapter">${entry.item.title}</a>
-                    </span> 
-                    <button data-index="${entry.index}" class="remove_chapter" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; padding:0 10px;">X</button>
-                `;
-                listEl.appendChild(li);
+        let hasOtherCollections = Object.keys(data.collections).length > 1;
+        let moveOptionsHtml = `<option value="" disabled selected>📦 Move</option>`;
+        if (hasOtherCollections) {
+            Object.keys(data.collections).forEach(col => {
+                if (col !== data.active) {
+                    moveOptionsHtml += `<option value="${col}">${col}</option>`;
+                }
             });
+        }
+
+        let lastStudy = null;
+
+        cart.forEach((item, index) => {
+            let studyName = item.study || "Unknown Study";
+            
+            if (studyName !== lastStudy) {
+                let studyHeader = document.createElement("li");
+                studyHeader.innerHTML = `<strong style="display:block; padding: 15px 0 5px 0; border-bottom: 2px solid #ddd; margin-bottom: 5px; color: #0056b3; font-size: 0.9em;">📘 ${studyName}</strong>`;
+                listEl.appendChild(studyHeader);
+                lastStudy = studyName; 
+            }
+
+            let li = document.createElement("li");
+            li.style = "display:flex; justify-content:space-between; align-items:center; padding:5px 0 5px 15px; border-bottom:1px solid #f5f5f5;";
+            
+            // Add the highlight class if this is the row that just moved
+            if (index === highlightIndex) {
+                li.className = "highlight-row";
+            }
+            
+            let safePath = item.studyPath || window.location.pathname.split('?')[0];
+            let chapterUrl = `${safePath}?chapter=${encodeURIComponent(item.title)}`;
+            
+            let isFirst = index === 0;
+            let isLast = index === cart.length - 1;
+            
+            let moveSelectHtml = hasOtherCollections 
+                ? `<select data-index="${index}" class="move_chapter" style="background:transparent; border:1px solid #ddd; border-radius:4px; font-size:0.8em; cursor:pointer; margin-right:8px; padding:2px; max-width:80px;" title="Move to another collection">${moveOptionsHtml}</select>`
+                : '';
+
+            // Shorten the study name slightly so it doesn't break the layout
+            let shortStudyName = studyName.length > 25 ? studyName.substring(0, 25) + "..." : studyName;
+
+            // Added the small study name right next to the chapter title
+            li.innerHTML = `
+                <span style="padding-right:10px; flex-grow:1; line-height:1.4; word-break:break-word;">
+                    • <a href="${chapterUrl}" style="color:#007BFF; text-decoration:none;" target="_blank" title="Go to chapter">${item.title}</a>
+                    <span style="font-size:0.75em; color:#888; margin-left:6px;" title="${studyName}">(${shortStudyName})</span>
+                </span>
+                <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                    ${moveSelectHtml}
+                    <button data-index="${index}" class="move_up" style="background:transparent; border:none; cursor:pointer; opacity: ${isFirst ? '0.2' : '1'}; padding:2px;" ${isFirst ? 'disabled' : ''} title="Move Up">⬆️</button>
+                    <button data-index="${index}" class="move_down" style="background:transparent; border:none; cursor:pointer; opacity: ${isLast ? '0.2' : '1'}; padding:2px;" ${isLast ? 'disabled' : ''} title="Move Down">⬇️</button>
+                    <button data-index="${index}" class="remove_chapter" style="background:transparent; border:none; color:#dc3545; cursor:pointer; font-weight:bold; margin-left:8px; padding:2px;" title="Remove chapter">✕</button>
+                </div>
+            `;
+            listEl.appendChild(li);
         });
 
-        // Delete item logic
+        // Event Listener: Move Up
+        document.querySelectorAll(".move_up").forEach(btn => {
+            btn.onclick = function() {
+                let idx = parseInt(this.getAttribute("data-index"), 10);
+                let currentData = getCollectionsData();
+                let currentCart = currentData.collections[currentData.active];
+                if (idx > 0) {
+                    [currentCart[idx - 1], currentCart[idx]] = [currentCart[idx], currentCart[idx - 1]];
+                    saveCollectionsData(currentData);
+                    // Re-render and highlight the new position
+                    renderModalList(idx - 1);
+                }
+            };
+        });
+
+        // Event Listener: Move Down
+        document.querySelectorAll(".move_down").forEach(btn => {
+            btn.onclick = function() {
+                let idx = parseInt(this.getAttribute("data-index"), 10);
+                let currentData = getCollectionsData();
+                let currentCart = currentData.collections[currentData.active];
+                if (idx < currentCart.length - 1) {
+                    [currentCart[idx + 1], currentCart[idx]] = [currentCart[idx], currentCart[idx + 1]];
+                    saveCollectionsData(currentData);
+                    // Re-render and highlight the new position
+                    renderModalList(idx + 1);
+                }
+            };
+        });
+
+        // Event Listener: Move to another collection
+        document.querySelectorAll(".move_chapter").forEach(select => {
+            select.onchange = function() {
+                let idx = parseInt(this.getAttribute("data-index"), 10);
+                let targetCol = this.value;
+                let currentData = getCollectionsData();
+                
+                if (targetCol && currentData.collections[targetCol]) {
+                    let itemToMove = currentData.collections[currentData.active].splice(idx, 1)[0];
+                    currentData.collections[targetCol].push(itemToMove);
+                    
+                    saveCollectionsData(currentData);
+                    renderModalList();
+                    updateCartUI();
+                }
+            };
+        });
+
+        // Event Listener: Delete
         document.querySelectorAll(".remove_chapter").forEach(btn => {
             btn.onclick = function() {
                 let idx = parseInt(this.getAttribute("data-index"), 10);
-                let data = getCollectionsData();
-                data.collections[data.active].splice(idx, 1);
-                saveCollectionsData(data);
+                let currentData = getCollectionsData();
+                currentData.collections[currentData.active].splice(idx, 1);
+                saveCollectionsData(currentData);
                 renderModalList();
                 updateCartUI();
             };
         });
     }
-
+    
     function updateCartUI() {
         if (!addBtn) return;
         let cart = getActiveCart();
