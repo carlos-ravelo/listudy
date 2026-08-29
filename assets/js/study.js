@@ -1270,15 +1270,18 @@ document.addEventListener("DOMContentLoaded", function() {
     <div id="collection_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
         <div style="background:#fff; color:#333; width:90%; max-width:600px; max-height:85vh; border-radius:8px; display:flex; flex-direction:column; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
             
-            <!-- Fixed header with collection selector -->
+            <!-- Fixed header with collection selector and actions -->
             <div style="padding:20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <h2 style="margin:0; font-size:1.2em;">Collection:</h2>
-                    <select id="collection_selector" style="padding:5px; border-radius:4px; border:1px solid #ccc; font-size:1em;"></select>
+                    <select id="collection_selector" style="padding:5px 8px; border-radius:4px; border:1px solid #ccc; font-size:0.9em; background:#fff; margin:0; outline:none;"></select>
                 </div>
-                <button id="btn_new_collection" class="button secondary" style="margin:0; padding:5px 10px;">+ New collection</button>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button id="btn_rename_collection" style="background:transparent; border:none; box-shadow:none; margin:0; padding:5px; font-size:1.1em; cursor:pointer;" title="Rename Active Collection">✏️</button>
+                    <button id="btn_delete_collection" style="background:transparent; border:none; box-shadow:none; margin:0; padding:5px; font-size:1.1em; cursor:pointer;" title="Delete Active Collection">🗑️</button>
+                    <button id="btn_new_collection" style="background:transparent; border:none; box-shadow:none; margin:0; padding:5px; font-size:1.1em; cursor:pointer;" title="Create New Collection">➕</button>
+                </div>
             </div>
-            
             <!-- Scrollable list -->
             <div style="padding:10px 20px; overflow-y:auto; flex-grow:1;">
                 <ul id="collection_list" style="list-style:none; padding:0; margin:0;"></ul>
@@ -1300,6 +1303,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const listEl = document.getElementById("collection_list");
     const selectorEl = document.getElementById("collection_selector");
     const newBtn = document.getElementById("btn_new_collection");
+    const renameBtn = document.getElementById("btn_rename_collection");
+    const deleteBtn = document.getElementById("btn_delete_collection");
 
     // Utilities to fetch current UI context
     function getFallbackChapterTitle(pgnStr) {
@@ -1467,8 +1472,10 @@ document.addEventListener("DOMContentLoaded", function() {
         
         // Show "Manage" if ANY collection has at least 1 item
         let hasItemsAnywhere = Object.values(data.collections).some(arr => arr.length > 0);
-        if (manageBtn) manageBtn.style.display = hasItemsAnywhere ? 'inline-block' : 'none';
-    }
+        let hasMultipleCollections = Object.keys(data.collections).length > 1;
+        if (manageBtn) {
+            manageBtn.style.display = (hasItemsAnywhere || hasMultipleCollections) ? 'inline-block' : 'none';
+        }    }
 
     // --- Main Actions & Listeners ---
     if (addBtn) {
@@ -1524,6 +1531,55 @@ document.addEventListener("DOMContentLoaded", function() {
                     data.collections[cleanName] = [];
                 }
                 data.active = cleanName;
+                
+                saveCollectionsData(data);
+                renderSelector();
+                renderModalList();
+                updateCartUI();
+            }
+        };
+// Rename collection
+        renameBtn.onclick = function() {
+            let data = getCollectionsData();
+            let currentName = data.active;
+            let newName = prompt(`Rename collection "${currentName}" to:`, currentName);
+            
+            if (newName && newName.trim() !== "" && newName.trim() !== currentName) {
+                let cleanName = newName.trim();
+                
+                if (data.collections[cleanName]) {
+                    alert("A collection with this name already exists.");
+                    return;
+                }
+                
+                // Move the array to the new key and delete the old key
+                data.collections[cleanName] = data.collections[currentName];
+                delete data.collections[currentName];
+                data.active = cleanName;
+                
+                saveCollectionsData(data);
+                renderSelector();
+                renderModalList();
+                updateCartUI();
+            }
+        };
+
+        // Delete collection
+        deleteBtn.onclick = function() {
+            let data = getCollectionsData();
+            let currentName = data.active;
+            
+            // Prevent deleting the very last collection
+            if (Object.keys(data.collections).length === 1) {
+                alert("You cannot delete your only collection. You can 'Clear' its contents instead.");
+                return;
+            }
+
+            if (confirm(`Are you sure you want to completely delete the collection "${currentName}"?`)) {
+                delete data.collections[currentName];
+                
+                // Automatically switch to the first available collection
+                data.active = Object.keys(data.collections)[0];
                 
                 saveCollectionsData(data);
                 renderSelector();
