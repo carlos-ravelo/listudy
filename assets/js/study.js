@@ -1257,25 +1257,37 @@ document.addEventListener("DOMContentLoaded", function() {
     const manageBtn = document.getElementById("manage_collection");
     const chapterSelect = document.getElementById("chapter_select");
 
-// Inject the Modal into the DOM
+    // --- UX: Clean and adjust the title ---
+    const h1Title = document.querySelector('h1.clicking_turns_on_hints');
+    if (h1Title) {
+        h1Title.innerText = h1Title.innerText.replace(/_/g, ' ');
+        h1Title.style.fontSize = '1.8rem';
+        h1Title.style.marginBottom = '10px';
+    }
+
+    // Inject the Modal into the DOM
     const modalHTML = `
     <div id="collection_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
         <div style="background:#fff; color:#333; width:90%; max-width:600px; max-height:85vh; border-radius:8px; display:flex; flex-direction:column; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
             
-            <!-- Encabezado fijo -->
-            <div style="padding:20px; border-bottom:1px solid #eee;">
-                <h2 style="margin:0;">Chapter Collection</h2>
+            <!-- Fixed header with collection selector -->
+            <div style="padding:20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <h2 style="margin:0; font-size:1.2em;">Collection:</h2>
+                    <select id="collection_selector" style="padding:5px; border-radius:4px; border:1px solid #ccc; font-size:1em;"></select>
+                </div>
+                <button id="btn_new_collection" class="button secondary" style="margin:0; padding:5px 10px;">+ New collection</button>
             </div>
             
-            <!-- Lista con scroll independiente -->
+            <!-- Scrollable list -->
             <div style="padding:10px 20px; overflow-y:auto; flex-grow:1;">
                 <ul id="collection_list" style="list-style:none; padding:0; margin:0;"></ul>
             </div>
             
-            <!-- Botones fijos abajo -->
+            <!-- Fixed footer buttons -->
             <div style="padding:15px 20px; border-top:1px solid #eee; display:flex; gap:10px; justify-content:flex-end; background:#fafafa; border-bottom-left-radius:8px; border-bottom-right-radius:8px;">
                 <button id="modal_download" class="button">Download PGN</button>
-                <button id="modal_clear" class="button" style="background:#d9534f; color:#fff; border:none;">Clear All</button>
+                <button id="modal_clear" class="button" style="background:#d9534f; color:#fff; border:none;">Clear Current</button>
                 <button id="modal_close" class="button" style="background:#ccc; color:#333; border:none;">Close</button>
             </div>
             
@@ -1286,8 +1298,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const modal = document.getElementById("collection_modal");
     const listEl = document.getElementById("collection_list");
+    const selectorEl = document.getElementById("collection_selector");
+    const newBtn = document.getElementById("btn_new_collection");
 
-    // Función fallback por si hay PGNs viejos guardados
+    // Utilities to fetch current UI context
     function getFallbackChapterTitle(pgnStr) {
         let match = pgnStr.match(/\[Event\s+"([^"]+)"\]/i);
         if (match && match[1] && match[1] !== "?") return match[1];
@@ -1295,7 +1309,6 @@ document.addEventListener("DOMContentLoaded", function() {
         return match ? match[1] : "Unnamed Chapter";
     }
 
-    // NUEVO: Sacar el título EXACTO directo del dropdown de Listudy
     function getCurrentChapterTitle() {
         if (chapterSelect && chapterSelect.options.length > 0 && typeof chapter !== 'undefined') {
             return chapterSelect.options[chapter].text.trim();
@@ -1303,14 +1316,12 @@ document.addEventListener("DOMContentLoaded", function() {
         return "Unnamed Chapter";
     }
 
-    // Extraer título del Estudio (del h1)
     function getCurrentStudyTitle() {
-        let h1 = document.querySelector('h1');
+        let h1 = document.querySelector('h1.clicking_turns_on_hints');
         if (h1) return h1.innerText.trim();
         return document.title.split('-')[0].trim() || "Unknown Study";
     }
 
-    // Obtener PGN actual
     function getCurrentChapterPgn() {
         if (typeof pgn === 'undefined' || typeof chapter === 'undefined') return null;
         let pgnGames = pgn.trim().split(/(?<=\*|1-0|0-1|1\/2-1\/2)\s+(?=\[)/);
@@ -1318,11 +1329,38 @@ document.addEventListener("DOMContentLoaded", function() {
         return current ? current.trim() : null;
     }
 
-    // Leer carrito y migrar viejos formatos si existen
-    function getCart() {
-        let cart = JSON.parse(localStorage.getItem('listudy_cart') || '[]');
+    // --- Core Data Management ---
+    function getCollectionsData() {
+        let data = JSON.parse(localStorage.getItem('listudy_collections'));
+        
+        // Auto-migration: Move old data to the new structure
+        if (!data) {
+            let oldCart = JSON.parse(localStorage.getItem('listudy_cart') || '[]');
+            data = {
+                active: "Default",
+                collections: {
+                    "Default": oldCart
+                }
+            };
+            localStorage.removeItem('listudy_cart');
+            saveCollectionsData(data);
+        }
+        return data;
+    }
+
+    function saveCollectionsData(data) {
+        localStorage.setItem('listudy_collections', JSON.stringify(data));
+    }
+
+    function getActiveCart() {
+        let data = getCollectionsData();
+        if (!data.collections[data.active]) {
+            data.collections[data.active] = [];
+        }
+        
+        // Migrate old string elements if they exist
         let migrated = false;
-        cart = cart.map(item => {
+        let cart = data.collections[data.active].map(item => {
             if (typeof item === 'string') {
                 migrated = true;
                 return { 
@@ -1334,17 +1372,33 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             return item;
         });
-        if (migrated) localStorage.setItem('listudy_cart', JSON.stringify(cart));
+        
+        if (migrated) {
+            data.collections[data.active] = cart;
+            saveCollectionsData(data);
+        }
         return cart;
     }
 
-    // Renderizar la lista
+    // --- UI Rendering ---
+    function renderSelector() {
+        let data = getCollectionsData();
+        selectorEl.innerHTML = "";
+        Object.keys(data.collections).forEach(colName => {
+            let option = document.createElement("option");
+            option.value = colName;
+            option.textContent = colName;
+            if (colName === data.active) option.selected = true;
+            selectorEl.appendChild(option);
+        });
+    }
+
     function renderModalList() {
-        let cart = getCart();
+        let cart = getActiveCart();
         listEl.innerHTML = "";
         
         if (cart.length === 0) {
-            listEl.innerHTML = "<li style='padding:10px 0;'>Your collection is empty.</li>";
+            listEl.innerHTML = "<li style='padding:10px 0;'>This collection is empty.</li>";
             return;
         }
 
@@ -1364,9 +1418,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 let li = document.createElement("li");
                 li.style = "display:flex; justify-content:space-between; padding:5px 0 5px 15px; border-bottom:1px solid #f5f5f5;";
                 
-                // URL dinámica con el parámetro de búsqueda ?chapter=
-                let safePath = entry.item.studyPath || window.location.pathname;
-                let chapterUrl = `${safePath}?chapter=${encodeURIComponent(entry.item.title)}`;                
+                let safePath = entry.item.studyPath || window.location.pathname.split('?')[0];
+                let chapterUrl = `${safePath}?chapter=${encodeURIComponent(entry.item.title)}`;
+                
                 li.innerHTML = `
                     <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:10px;">
                         • <a href="${chapterUrl}" style="color:#007BFF; text-decoration:none;" target="_blank" title="Go to chapter">${entry.item.title}</a>
@@ -1377,11 +1431,13 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
 
+        // Delete item logic
         document.querySelectorAll(".remove_chapter").forEach(btn => {
             btn.onclick = function() {
                 let idx = parseInt(this.getAttribute("data-index"), 10);
-                cart.splice(idx, 1);
-                localStorage.setItem('listudy_cart', JSON.stringify(cart));
+                let data = getCollectionsData();
+                data.collections[data.active].splice(idx, 1);
+                saveCollectionsData(data);
                 renderModalList();
                 updateCartUI();
             };
@@ -1390,24 +1446,31 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function updateCartUI() {
         if (!addBtn) return;
-        let cart = getCart();
+        let cart = getActiveCart();
+        let data = getCollectionsData();
         let currentPgn = getCurrentChapterPgn();
         
         let isAlreadyAdded = currentPgn && cart.some(item => item.pgn === currentPgn);
 
+        // Truncate the name if it's too long so the button doesn't break
+        let displayName = data.active.length > 12 ? data.active.substring(0, 12) + "..." : data.active;
+
         if (isAlreadyAdded) {
-            addBtn.innerHTML = `Already added (<span id="collection_count">${cart.length}</span>)`;
+            addBtn.innerHTML = `Already in [${displayName}] (<span id="collection_count">${cart.length}</span>)`;
             addBtn.style.opacity = "0.5";
             addBtn.style.cursor = "default";
         } else {
-            addBtn.innerHTML = `Add to Collection (<span id="collection_count">${cart.length}</span>)`;
+            addBtn.innerHTML = `➕ Add to [${displayName}] (${cart.length})`;
             addBtn.style.opacity = "1";
             addBtn.style.cursor = "pointer";
         }
         
-        if (manageBtn) manageBtn.style.display = cart.length > 0 ? 'inline-block' : 'none';
+        // Show "Manage" if ANY collection has at least 1 item
+        let hasItemsAnywhere = Object.values(data.collections).some(arr => arr.length > 0);
+        if (manageBtn) manageBtn.style.display = hasItemsAnywhere ? 'inline-block' : 'none';
     }
 
+    // --- Main Actions & Listeners ---
     if (addBtn) {
         updateCartUI();
 
@@ -1415,17 +1478,19 @@ document.addEventListener("DOMContentLoaded", function() {
             e.preventDefault();
             let cleanPgn = getCurrentChapterPgn();
             if (cleanPgn) {
-                let cart = getCart();
+                let data = getCollectionsData();
+                let cart = data.collections[data.active];
+                
                 if (cart.some(item => item.pgn === cleanPgn)) return; 
 
                 cart.push({
                     pgn: cleanPgn,
                     study: getCurrentStudyTitle(),
-                    title: getCurrentChapterTitle(), // Sacado directo del desplegable
-                    studyPath: window.location.pathname.split('?')[0] // Ej: /en/studies/tu-slug
+                    title: getCurrentChapterTitle(),
+                    studyPath: window.location.pathname.split('?')[0]
                 });
                 
-                localStorage.setItem('listudy_cart', JSON.stringify(cart));
+                saveCollectionsData(data);
                 updateCartUI();
             }
         };
@@ -1433,34 +1498,75 @@ document.addEventListener("DOMContentLoaded", function() {
         if (manageBtn) {
             manageBtn.onclick = function(e) {
                 e.preventDefault();
+                renderSelector();
                 renderModalList();
                 modal.style.display = 'flex';
             };
         }
 
+        // Change active collection
+        selectorEl.addEventListener('change', function(e) {
+            let data = getCollectionsData();
+            data.active = e.target.value;
+            saveCollectionsData(data);
+            renderModalList();
+            updateCartUI();
+        });
+
+        // Create new collection
+        newBtn.onclick = function() {
+            let name = prompt("Enter a name for the new collection:");
+            if (name && name.trim() !== "") {
+                let data = getCollectionsData();
+                let cleanName = name.trim();
+                
+                if (!data.collections[cleanName]) {
+                    data.collections[cleanName] = [];
+                }
+                data.active = cleanName;
+                
+                saveCollectionsData(data);
+                renderSelector();
+                renderModalList();
+                updateCartUI();
+            }
+        };
+
+        // Modal close controls
         document.getElementById("modal_close").onclick = () => modal.style.display = 'none';
+        
         window.addEventListener('click', function(event) {
             if (event.target === modal) {
                 modal.style.display = 'none';
             }
         });
+        
+        // Clear active collection
         document.getElementById("modal_clear").onclick = () => {
-            if(confirm("Are you sure you want to clear all chapters?")) {
-                localStorage.removeItem('listudy_cart');
+            let data = getCollectionsData();
+            if(confirm(`Are you sure you want to clear all chapters in "${data.active}"?`)) {
+                data.collections[data.active] = [];
+                saveCollectionsData(data);
                 renderModalList();
                 updateCartUI();
-                modal.style.display = 'none';
             }
         };
 
+        // Download active collection PGN
         document.getElementById("modal_download").onclick = () => {
-            let cart = getCart();
+            let cart = getActiveCart();
             if (cart.length === 0) return;
+            let data = getCollectionsData();
+            
             let combinedPgn = cart.map(item => item.pgn).join('\n\n\n');
             let blob = new Blob([combinedPgn], { type: "text/plain" });
             let link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "custom_collection.pgn";
+            
+            // Format filename using the active collection name
+            let safeName = data.active.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            link.download = `${safeName}.pgn`;
+            
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
