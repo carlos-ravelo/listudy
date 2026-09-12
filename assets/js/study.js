@@ -14,7 +14,7 @@ import { getRandomIntFromRange } from './modules/random.js';
 import { unescape_string } from './modules/security_related.js';
 import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_moves,
          ground_undo_last_move, setup_move_handler, setup_click_handler, ground_move,
-         create_arrow_from_move, create_pgn_arrow, create_pgn_circle, create_playable_arrow, get_doubled_playable_move_objects } from './modules/ground.js';
+         create_arrow_from_move, create_pgn_arrow, create_pgn_circle, create_playable_arrow, get_doubled_playable_move_objects, ground_set_moves_from_instance } from './modules/ground.js';
 import { TextOverlayId, TextOverlayManager } from './modules/overlays.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { array_contains } from './modules/utils.js';
@@ -1206,51 +1206,49 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// --- Custom Navigation Controls ---
-
-window.go_back = async function() {
-    for (let i = 0; i < 2; i++) {
-        if (curr_move.length > 1) {
-            curr_move.pop(); 
-            chess.undo();    
-            if (typeof ground_undo_last_move === "function") ground_undo_last_move(); 
-            await sleep(200);
-        }
-    }
-    if (typeof display_arrows === "function") display_arrows();
-    if (typeof display_comments === "function") display_comments(false);
-};
-
-window.go_forward = async function() {
-    for (let i = 0; i < 2; i++) {
-        let possible_moves = tree_possible_moves(curr_move);
+function go_back() {
+    if (curr_move.length > 1) {
+        curr_move.pop();
+        chess.undo();
         
-        if (possible_moves && possible_moves.length > 0) {
-            let next_node = possible_moves[0];
-            let next_san = typeof next_node === "string" ? next_node : next_node.move;            
-            if (next_san) {
-                play_move(next_san);
-                await sleep(200);
-            }
-        } else {
-            break;
+        if (typeof ground_undo_last_move === "function") ground_undo_last_move();
+        
+        // Esta función nativa lee el estado de chess.js y reactiva la interactividad del ratón
+        if (typeof ground_set_moves_from_instance === "function") {
+            ground_set_moves_from_instance(chess);
         }
+        
+        if (typeof display_arrows === "function") display_arrows();
+        if (typeof display_comments === "function") display_comments(false);
     }
+}
+
+function go_forward() {
+    let possible_moves = tree_possible_moves(curr_move);
+    if (!possible_moves) return;
+
+    let nextNode = Array.isArray(possible_moves) ? possible_moves[0] : possible_moves;
+    let moveToPlay = nextNode.san || nextNode.move || (typeof nextNode === 'string' ? nextNode : null);
+
+    if (moveToPlay) {
+        play_move(moveToPlay);
+    } else {
+        console.warn("Could not find move string in:", nextNode);
+    }
+    
     if (typeof display_arrows === "function") display_arrows();
     if (typeof display_comments === "function") display_comments(false);
-};
+}
 
-// Bind to keyboard arrows
 document.addEventListener("keydown", function(event) {
-    if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        go_back();
-    } else if (event.key === "ArrowRight") {
-        event.preventDefault();
-        go_forward();
+    if (event.key === "ArrowLeft") { 
+        event.preventDefault(); 
+        go_back(); 
+    } else if (event.key === "ArrowRight") { 
+        event.preventDefault(); 
+        go_forward(); 
     }
 });
-
 
 document.addEventListener("DOMContentLoaded", function() {
     const addBtn = document.getElementById("add_to_collection");
@@ -1570,8 +1568,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // --- Main Actions & Listeners ---
     if (addBtn) {
-        updateCartUI();
-
+        // Wait for page variables to load before checking status
+        let initCheck = setInterval(() => {
+            if (typeof pgn !== 'undefined' && typeof chapter !== 'undefined') {
+                clearInterval(initCheck);
+                updateCartUI();
+            }
+        }, 150);
         addBtn.onclick = function(e) {
             e.preventDefault();
             let cleanPgn = getCurrentChapterPgn();
