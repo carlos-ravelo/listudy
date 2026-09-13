@@ -153,6 +153,15 @@ async function handle_move(orig, dest) {
         if (end_of_line) {
             achievement_end_of_line();
             set_text(success_div, right_move_text() + "\n" + i18n.success_end_of_line);
+            // Auto-advance to the next chapter if Puzzle Run is active
+            if (localStorage.getItem("puzzleRunActive") === "true") {
+                setTimeout(() => {
+                    const nextBtn = document.getElementById("next_chapter_btn");
+                    if (nextBtn) {
+                        nextBtn.click();
+                    }
+                }, 500); // 500ms delay to allow the user to read the success message
+            }
             if (board_review == i18n.review_slow) {
                 await sleep(3000);
             }
@@ -1727,3 +1736,29 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 });
+
+// Setup the puzzle run toggle logic using localStorage
+const puzzleRunBtn = document.getElementById("puzzle_run");
+
+if (puzzleRunBtn) {
+    // Load state from local storage, default to false if not set
+    let isPuzzleRunOn = localStorage.getItem("puzzleRunActive") === "true";
+
+    // Function to update the button text based on current state
+    const updatePuzzleRunText = () => {
+        puzzleRunBtn.innerText = isPuzzleRunOn ? i18n.puzzle_run_enabled : i18n.puzzle_run_disabled;
+    };
+
+    // Initialize text on page load
+    if (typeof i18n !== 'undefined' && i18n.puzzle_run_enabled) {
+        updatePuzzleRunText();
+    }
+
+    // Click handler to toggle state and save to local storage
+    puzzleRunBtn.onclick = function(e) {
+        e.preventDefault();
+        isPuzzleRunOn = !isPuzzleRunOn;
+        localStorage.setItem("puzzleRunActive", isPuzzleRunOn);
+        updatePuzzleRunText();
+    };
+}
