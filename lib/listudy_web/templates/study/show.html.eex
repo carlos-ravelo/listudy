@@ -103,6 +103,9 @@
   <div class="option_item" style="margin: 0;">
     <a class="icon" data-icon="$" id="key_move" title="<%= dgettext("study", "Don't repeat the early moves that are already known. Skips to the first branching move in the study.") %>">placeholder</a>
   </div>
+  <div class="option_item" style="margin: 0;">
+    <a class="icon" data-icon=">" id="puzzle_run" title="<%= dgettext("study", "Automatically advance to the next line when a puzzle is completed.") %>">placeholder</a>
+  </div>
 
   <!-- Max Depth needs a bit more space, so it spans across if necessary -->
   <div class="option_item" style="margin: 0;">
@@ -207,6 +210,8 @@
   i18n.arrow_type_playable = "<%= dgettext "study", "Hints: playable moves only" %>";
   i18n.arrow_type_pgn = "<%= dgettext "study", "Hints: annotations only" %>";
   i18n.review_slow = "<%= dgettext "study", "Board reset delay: slow" %>";
+  i18n.puzzle_run_enabled = "<%= dgettext "study", "Puzzle run: on" %>";
+  i18n.puzzle_run_disabled = "<%= dgettext "study", "Puzzle run: off" %>";
   i18n.review_fast = "<%= dgettext "study", "Board reset delay: fast" %>";
   i18n.key_move_enabled = "<%= dgettext "study", "Jump to key move: on" %>";
   i18n.key_move_disabled = "<%= dgettext "study", "Jump to key move: off" %>";
