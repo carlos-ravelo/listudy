@@ -153,19 +153,25 @@ async function handle_move(orig, dest) {
         if (end_of_line) {
             achievement_end_of_line();
             set_text(success_div, right_move_text() + "\n" + i18n.success_end_of_line);
-            // Auto-advance to the next chapter if Puzzle Run is active
-            if (localStorage.getItem("puzzleRunActive") === "true") {
+
+            // Auto-advance to the specific chapter type if Puzzle Run is active
+            const currentRunMode = localStorage.getItem("puzzleRunMode");
+
+            if (currentRunMode === "next" || currentRunMode === "random") {
                 setTimeout(() => {
-                    const nextBtn = document.getElementById("next_chapter_btn");
-                    if (nextBtn) {
-                        nextBtn.click();
+                    const targetBtnId = currentRunMode === "next" ? "next_chapter_btn" : "btn_random_chapter";
+                    const autoBtn = document.getElementById(targetBtnId);
+
+                    if (autoBtn) {
+                        autoBtn.click();
                     }
                 }, 500); // 500ms delay to allow the user to read the success message
+            } else {
+                if (board_review == i18n.review_slow) {
+                    await sleep(3000);
+                }
+                start_training();
             }
-            if (board_review == i18n.review_slow) {
-                await sleep(3000);
-            }
-            start_training();
         } else {
             play_move(reply);
         }
@@ -1741,24 +1747,38 @@ document.addEventListener("DOMContentLoaded", function() {
 const puzzleRunBtn = document.getElementById("puzzle_run");
 
 if (puzzleRunBtn) {
-    // Load state from local storage, default to false if not set
-    let isPuzzleRunOn = localStorage.getItem("puzzleRunActive") === "true";
+    // Load state from local storage, default to "off" if not set
+    let runMode = localStorage.getItem("puzzleRunMode") || "off";
 
     // Function to update the button text based on current state
     const updatePuzzleRunText = () => {
-        puzzleRunBtn.innerText = isPuzzleRunOn ? i18n.puzzle_run_enabled : i18n.puzzle_run_disabled;
+        if (runMode === "next") {
+            puzzleRunBtn.innerText = i18n.puzzle_run_next;
+        } else if (runMode === "random") {
+            puzzleRunBtn.innerText = i18n.puzzle_run_random;
+        } else {
+            puzzleRunBtn.innerText = i18n.puzzle_run_off;
+        }
     };
 
     // Initialize text on page load
-    if (typeof i18n !== 'undefined' && i18n.puzzle_run_enabled) {
+    if (typeof i18n !== 'undefined' && i18n.puzzle_run_off) {
         updatePuzzleRunText();
     }
 
-    // Click handler to toggle state and save to local storage
+    // Click handler to cycle states: off -> next -> random -> off
     puzzleRunBtn.onclick = function(e) {
         e.preventDefault();
-        isPuzzleRunOn = !isPuzzleRunOn;
-        localStorage.setItem("puzzleRunActive", isPuzzleRunOn);
+        
+        if (runMode === "off") {
+            runMode = "next";
+        } else if (runMode === "next") {
+            runMode = "random";
+        } else {
+            runMode = "off";
+        }
+        
+        localStorage.setItem("puzzleRunMode", runMode);
         updatePuzzleRunText();
     };
 }

@@ -66,27 +66,20 @@
 <!-- Main Actions -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; padding-bottom: 20px; border-bottom: 1px solid #eaeaea; margin-bottom: 20px;">
   <div class="option_item" style="margin: 0;">
-    <a class="icon" data-icon="!" id="play_stockfish" href="<%= Routes.page_path(@conn, :play_stockfish, @locale) %>#rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" title="<%= dgettext "study", "Play against Stockfish" %>"><%= dgettext "study", "Play against Stockfish" %></a>
-  </div>
-  <div class="option_item" style="margin: 0;">
     <a class="icon" data-icon="/" id="analysis_board" href="https://lichess.org/analysis" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
   </div>
-  <div class="option_item" style="margin: 0;">
-    <a class="icon" data-icon="E" id="copy_line_to_clipboard" href="#" title="<%= dgettext "study", "Copy chapter to clipboard" %>"><%= dgettext "study", "Copy chapter to clipboard" %></a>
+  <div class="option_item" style="margin: 10;">
+    <a class="icon" data-icon="." id="reset_line"><%= dgettext("study", "Reset line") %></a>
   </div>
   <div class="option_item" style="margin: 0;">
-    <%= if !@study.favorites do %>
-      <%= link dgettext("study", "Favorite study"), to: Routes.study_path(@conn, :favorite_study, @study.slug), method: :post, class: "icon", "data-icon": "#" %>
-    <% else %>
-      <%= link dgettext("study" ,"Unfavorite study"), to: Routes.study_path(@conn, :unfavorite_study, @study.slug), method: :post, class: "icon", "data-icon": "\"" %>
-    <% end %>
+    <a class="icon" data-icon=">" id="puzzle_run" title="<%= dgettext("study", "Automatically advance to the next line when a puzzle is completed.") %>">placeholder</a>
   </div>
 </div>
 
 <!-- Settings & Preferences -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; opacity: 0.85;">
-  <div class="option_item" style="margin: 10;">
-    <a class="icon" data-icon="." id="reset_line"><%= dgettext("study", "Reset line") %></a>
+  <div class="option_item" style="margin: 0;">
+    <a class="icon" data-icon="!" id="play_stockfish" href="<%= Routes.page_path(@conn, :play_stockfish, @locale) %>#rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" title="<%= dgettext "study", "Play against Stockfish" %>"><%= dgettext "study", "Play against Stockfish" %></a>
   </div>
   <div class="option_item" style="margin: 0;">
     <a class="icon" data-icon="-" id="arrows_toggle">placeholder</a>
@@ -104,9 +97,15 @@
     <a class="icon" data-icon="$" id="key_move" title="<%= dgettext("study", "Don't repeat the early moves that are already known. Skips to the first branching move in the study.") %>">placeholder</a>
   </div>
   <div class="option_item" style="margin: 0;">
-    <a class="icon" data-icon=">" id="puzzle_run" title="<%= dgettext("study", "Automatically advance to the next line when a puzzle is completed.") %>">placeholder</a>
+    <a class="icon" data-icon="E" id="copy_line_to_clipboard" href="#" title="<%= dgettext "study", "Copy chapter to clipboard" %>"><%= dgettext "study", "Copy chapter to clipboard" %></a>
   </div>
-
+  <div class="option_item" style="margin: 0;">
+    <%= if !@study.favorites do %>
+      <%= link dgettext("study", "Favorite study"), to: Routes.study_path(@conn, :favorite_study, @study.slug), method: :post, class: "icon", "data-icon": "#" %>
+    <% else %>
+      <%= link dgettext("study" ,"Unfavorite study"), to: Routes.study_path(@conn, :unfavorite_study, @study.slug), method: :post, class: "icon", "data-icon": "\"" %>
+    <% end %>
+  </div>
   <!-- Max Depth needs a bit more space, so it spans across if necessary -->
   <div class="option_item" style="margin: 0;">
     <div id="max_depth_container" title="<%= dgettext("study", "Lets you choose how many moves deep in the repertoire to train. The highest value you can choose is the length of the longest line. Set to a lower value to train against a more shallow subset of the repertoire, and to the highest value to train against the full repertoire.") %>">
@@ -210,8 +209,9 @@
   i18n.arrow_type_playable = "<%= dgettext "study", "Hints: playable moves only" %>";
   i18n.arrow_type_pgn = "<%= dgettext "study", "Hints: annotations only" %>";
   i18n.review_slow = "<%= dgettext "study", "Board reset delay: slow" %>";
-  i18n.puzzle_run_enabled = "<%= dgettext "study", "Puzzle run: on" %>";
-  i18n.puzzle_run_disabled = "<%= dgettext "study", "Puzzle run: off" %>";
+  i18n.puzzle_run_off = "<%= dgettext "study", "Puzzle run: off" %>";
+  i18n.puzzle_run_next = "<%= dgettext "study", "Puzzle run: next" %>";
+  i18n.puzzle_run_random = "<%= dgettext "study", "Puzzle run: random" %>";
   i18n.review_fast = "<%= dgettext "study", "Board reset delay: fast" %>";
   i18n.key_move_enabled = "<%= dgettext "study", "Jump to key move: on" %>";
   i18n.key_move_disabled = "<%= dgettext "study", "Jump to key move: off" %>";
