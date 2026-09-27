@@ -1,42 +1,6 @@
-<h1 class="clicking_turns_on_hints"><%= @study.title %></h1>
+<h1 class="clicking_turns_on_hints study-feature-title"><%= String.replace(@study.title, "_", " ") %></h1>
 
-<!-- Contenedor en cuadrícula para los 4 botones -->
-<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; margin-bottom: 20px;">
-    
-    <a href="/random_study" class="button secondary" style="flex: 1; min-width: 120px; margin: 0; text-align: center; white-space: normal; height: auto; padding: 8px;">
-        🎲 Random Study
-    </a>
-    
-    <button id="btn_random_chapter" class="button secondary" style="flex: 1; min-width: 120px; margin: 0; text-align: center; white-space: normal; height: auto; padding: 8px;">
-        🎲 Random Chapter
-    </button>
-
-    <a href="#" id="add_to_collection" class="button" style="flex: 1; min-width: 120px; margin: 0; text-align: center; white-space: normal; height: auto; padding: 8px;">
-        ➕ Add to Collection (<span id="collection_count">0</span>)
-    </a>
-    
-    <a href="#" id="manage_collection" class="button secondary" style="flex: 1; min-width: 120px; margin: 0; text-align: center; white-space: normal; height: auto; padding: 8px; display: none;">
-        📂 Manage Collection
-    </a>
-    
-</div>
-<div style="position: relative; width: 100%; max-width: 100%; display: block; margin-top: 10px;">
-  
-  <!-- Hidden original select -->
-  <select id="chapter_select" style="display: none;">
-  </select>
-
-  <!-- Navigation bar using CSS Grid to force 100% width -->
-  <div style="display: grid; grid-template-columns: 80px 1fr 80px; gap: 8px; width: 100%;">
-    <button id="prev_chapter_btn" class="secondary" style="width: 100%; margin: 0;">Back</button>
-    <button id="current_chapter_title" class="secondary" style="width: 100%; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;" title="Click to select a chapter">Loading...</button>
-    <button id="next_chapter_btn" class="secondary" style="width: 100%; margin: 0;">Next</button>
-  </div>
-
-  <!-- Custom scrollable dropdown -->
-  <div id="custom_chapter_list" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg-color, white); border: 1px solid #ccc; border-radius: 4px; max-height: 300px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-  </div>
-</div>
+<%= render "_chapter_controls.html" %>
 
 <div class="with_sidebar">
   <div id="game_container" class="sidebar_main">

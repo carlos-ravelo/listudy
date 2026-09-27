@@ -8,44 +8,73 @@ defmodule ListudyWeb.AnalysisController do
   def index(conn, params) do
     user = Repo.get!(Listudy.Users.User, conn.assigns.current_user.id)
     filter = Map.get(params, "filter", "all")
-    oldest_game_date = Repo.aggregate(from(g in Listudy.Games.UserGame, where: g.user_id == ^user.id), :min, :played_at)
-    oldest_date_str = if oldest_game_date, do: DateTime.to_date(oldest_game_date) |> to_string(), else: "beginning"
-    
+
+    oldest_game_date =
+      Repo.aggregate(
+        from(g in Listudy.Games.UserGame, where: g.user_id == ^user.id),
+        :min,
+        :played_at
+      )
+
+    oldest_date_str =
+      if oldest_game_date,
+        do: DateTime.to_date(oldest_game_date) |> to_string(),
+        else: "beginning"
+
     user_games_base = from(g in Listudy.Games.UserGame, where: g.user_id == ^user.id)
 
-    lichess_oldest = Repo.aggregate(from(g in user_games_base, where: g.platform == "lichess"), :min, :played_at)
-    chesscom_oldest = Repo.aggregate(from(g in user_games_base, where: g.platform == "chess_com"), :min, :played_at)
+    lichess_oldest =
+      Repo.aggregate(from(g in user_games_base, where: g.platform == "lichess"), :min, :played_at)
 
-    lichess_since = if lichess_oldest, do: DateTime.to_date(lichess_oldest) |> to_string(), else: "No data"
-    chesscom_since = if chesscom_oldest, do: DateTime.to_date(chesscom_oldest) |> to_string(), else: "No data"
+    chesscom_oldest =
+      Repo.aggregate(
+        from(g in user_games_base, where: g.platform == "chess_com"),
+        :min,
+        :played_at
+      )
+
+    lichess_since =
+      if lichess_oldest, do: DateTime.to_date(lichess_oldest) |> to_string(), else: "No data"
+
+    chesscom_since =
+      if chesscom_oldest, do: DateTime.to_date(chesscom_oldest) |> to_string(), else: "No data"
 
     # Filter for global game counts (Optional, but keeps the header accurate)
     games_query = from(g in Listudy.Games.UserGame, where: g.user_id == ^user.id)
+
     games_query =
       case filter do
         "last_week" ->
           limit = DateTime.utc_now() |> DateTime.add(-7, :day)
           where(games_query, [g], g.played_at > ^limit)
+
         "last_month" ->
           limit = DateTime.utc_now() |> DateTime.add(-30, :day)
           where(games_query, [g], g.played_at > ^limit)
-        _ -> games_query
+
+        _ ->
+          games_query
       end
 
-    lichess_count = Repo.aggregate(from(g in games_query, where: g.platform == "lichess"), :count, :id)
-    chesscom_count = Repo.aggregate(from(g in games_query, where: g.platform == "chess_com"), :count, :id)
+    lichess_count =
+      Repo.aggregate(from(g in games_query, where: g.platform == "lichess"), :count, :id)
 
-    # We still fetch all analyzed games to keep your current logic intact
-    user_games = Games.list_analyzed_games(user.id)
+    chesscom_count =
+      Repo.aggregate(from(g in games_query, where: g.platform == "chess_com"), :count, :id)
 
     # Subquery to filter StudyGames by date without hiding empty studies
     filtered_sg =
       if filter == "all" do
         Listudy.Games.StudyGame
       else
-        limit_date = if filter == "last_week", do: DateTime.utc_now() |> DateTime.add(-7, :day), else: DateTime.utc_now() |> DateTime.add(-30, :day)
+        limit_date =
+          if filter == "last_week",
+            do: DateTime.utc_now() |> DateTime.add(-7, :day),
+            else: DateTime.utc_now() |> DateTime.add(-30, :day)
+
         from sg in Listudy.Games.StudyGame,
-          join: ug in Listudy.Games.UserGame, on: sg.user_game_id == ug.id,
+          join: ug in Listudy.Games.UserGame,
+          on: sg.user_game_id == ug.id,
           where: ug.played_at > ^limit_date
       end
 
@@ -57,8 +86,21 @@ defmodule ListudyWeb.AnalysisController do
       |> select([s, sg], %{
         study: s,
         total_games: count(sg.id),
-        matches: type(fragment("COALESCE(SUM(CASE WHEN ? = 'match' THEN 1 ELSE 0 END), 0)", sg.status), :integer),
-        deviations: type(fragment("COALESCE(SUM(CASE WHEN ? = 'deviation' THEN 1 ELSE 0 END), 0)", sg.status), :integer)
+        matches:
+          type(
+            fragment("COALESCE(SUM(CASE WHEN ? = 'match' THEN 1 ELSE 0 END), 0)", sg.status),
+            :integer
+          ),
+        ambiguous:
+          type(
+            fragment("COALESCE(SUM(CASE WHEN ? = 'ambiguous' THEN 1 ELSE 0 END), 0)", sg.status),
+            :integer
+          ),
+        deviations:
+          type(
+            fragment("COALESCE(SUM(CASE WHEN ? = 'deviation' THEN 1 ELSE 0 END), 0)", sg.status),
+            :integer
+          )
       })
       |> Repo.all()
 
@@ -71,7 +113,11 @@ defmodule ListudyWeb.AnalysisController do
       if filter == "all" do
         raw_depths_query
       else
-        limit_date = if filter == "last_week", do: DateTime.utc_now() |> DateTime.add(-7, :day), else: DateTime.utc_now() |> DateTime.add(-30, :day)
+        limit_date =
+          if filter == "last_week",
+            do: DateTime.utc_now() |> DateTime.add(-7, :day),
+            else: DateTime.utc_now() |> DateTime.add(-30, :day)
+
         raw_depths_query
         |> join(:inner, [sg, s], ug in Listudy.Games.UserGame, on: sg.user_game_id == ug.id)
         |> where([sg, s, ug], ug.played_at > ^limit_date)
@@ -92,7 +138,8 @@ defmodule ListudyWeb.AnalysisController do
 
     render(conn, "index.html",
       # Asegúrate de pasar todas tus variables originales aquí
-      studies_stats: base_stats, # o el nombre que uses en tu render original
+      # o el nombre que uses en tu render original
+      studies_stats: base_stats,
       depth_stats: depth_stats,
       lichess_count: lichess_count,
       chesscom_count: chesscom_count,
@@ -107,21 +154,23 @@ defmodule ListudyWeb.AnalysisController do
     user = Repo.get!(Listudy.Users.User, conn.assigns.current_user.id)
     platform = params["platform"]
 
-    username = params["username"] || case platform do
-      "lichess" -> Map.get(user, :lichess_username)
-      "chess_com" -> Map.get(user, :chess_com_username)
-    end
+    username =
+      params["username"] ||
+        case platform do
+          "lichess" -> Map.get(user, :lichess_username)
+          "chess_com" -> Map.get(user, :chess_com_username)
+        end
 
     user_field = if platform == "lichess", do: :lichess_username, else: :chess_com_username
-    
+
     # 1. Reasignamos el 'conn' para inyectarle la sesión actualizada si hay cambios
-    conn = 
+    conn =
       if username != "" and Map.get(user, user_field) != username do
-        updated_user = 
+        updated_user =
           user
           |> Ecto.Changeset.change([{user_field, username}])
           |> Repo.update!()
-          
+
         # 2. Esta es la magia: refresca la sesión instantáneamente
         Pow.Plug.create(conn, updated_user)
       else
@@ -138,12 +187,17 @@ defmodule ListudyWeb.AnalysisController do
       case result do
         {:ok, _} ->
           Listudy.Games.Analyzer.analyze_all_user_studies(user.id, platform)
-        _ -> :ok
+
+        _ ->
+          :ok
       end
     end)
 
     conn
-    |> put_flash(:info, "Syncing #{platform} games in the background. Refresh the page in a minute.")
+    |> put_flash(
+      :info,
+      "Syncing #{platform} games in the background. Refresh the page in a minute."
+    )
     |> redirect(to: Routes.analysis_path(conn, :index))
   end
 
@@ -156,7 +210,7 @@ defmodule ListudyWeb.AnalysisController do
     # 1. Borramos todo el historial de juegos
     Repo.delete_all(
       from g in Listudy.Games.UserGame,
-      where: g.user_id == ^user.id and g.platform == ^platform
+        where: g.user_id == ^user.id and g.platform == ^platform
     )
 
     # 2. Actualizamos la base de datos
@@ -169,8 +223,12 @@ defmodule ListudyWeb.AnalysisController do
     updated_user = Repo.get!(Listudy.Users.User, user.id)
 
     conn
-    |> Pow.Plug.create(updated_user) # Actualiza la caché de Pow con los nuevos datos
-    |> put_flash(:info, "Successfully disconnected the #{platform} account and deleted its games.")
+    # Actualiza la caché de Pow con los nuevos datos
+    |> Pow.Plug.create(updated_user)
+    |> put_flash(
+      :info,
+      "Successfully disconnected the #{platform} account and deleted its games."
+    )
     |> redirect(to: Routes.analysis_path(conn, :index))
   end
 
@@ -194,33 +252,30 @@ defmodule ListudyWeb.AnalysisController do
     )
   end
 
-  def quick_analyze(conn, %{"pgn" => pgn_text}) do
+  def quick_analyze(conn, %{"pgn" => pgn_text} = params) do
     user = conn.assigns.current_user
-    locale = conn.assigns[:locale] || "en"
 
-    case Listudy.Games.Analyzer.analyze_single_pgn(user.id, pgn_text) do
-      {:ok, study, %{"deviation" => true, "expected" => expected, "played" => played, "fen" => fen, "chapter" => chapter}} ->
-        turn_char = Enum.at(String.split(fen, " "), 1)
-        deviator_color = if turn_char == "w", do: "white", else: "black"
-
+    case Listudy.Games.Analyzer.analyze_single_pgn(user.id, pgn_text, params) do
+      {:ok, study, result} ->
         render(conn, "quick_result.html",
           study: study,
           pgn_text: pgn_text,
-          error_fen: fen,
-          expected_moves: Enum.join(expected, ","),
-          played_move: played,
-          deviator_color: deviator_color,
-          chapter_name: chapter
+          result: result,
+          deviator_color:
+            if(Enum.at(String.split(result["fen"]), 1) == "w", do: "white", else: "black")
         )
 
-      {:ok, study, %{"deviation" => false}} ->
-        conn
-        |> put_flash(:info, "Game followed '#{study.title}' perfectly until the end of the book.")
-        |> redirect(to: Routes.study_path(conn, :show, locale, study.slug))
+      {:ambiguous, choices} ->
+        render(conn, "matches.html", choices: choices, pgn_text: pgn_text)
 
       {:error, :no_match} ->
         conn
-        |> put_flash(:info, "No matching study found for this game in your repertoire.")
+        |> put_flash(:info, "No matching chapter found for this game in your repertoire.")
+        |> redirect(to: Routes.analysis_path(conn, :index))
+
+      {:error, reason} ->
+        conn
+        |> put_flash(:error, "Analysis could not be completed: #{reason}")
         |> redirect(to: Routes.analysis_path(conn, :index))
     end
   end

@@ -1,0 +1,43 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const load = async name => import('data:text/javascript;base64,' + fs.readFileSync(path.join(__dirname, '../../js/modules/study', name)).toString('base64'));
+
+(async () => {
+    const { splitChapterPgn, chapterFromUrl } = await load('chapter_pgn.js');
+    const first = '[Event "First *"]\n\n1. e4 {fake result * [Event "x"]} (1. d4 d5) e5 1-0';
+    const second = '[Event "Second"]\n\n1. d4 ; fake result 0-1\n d5 *';
+    assert.deepStrictEqual(splitChapterPgn(first + '\n\n' + second), [first, second]);
+    assert.strictEqual(chapterFromUrl('?chapter=Same&chapter_index=1', ['Same', 'Same']), 1);
+    assert.strictEqual(chapterFromUrl('?chapter=Same', ['Same', 'Same']), null);
+    assert.strictEqual(chapterFromUrl('?chapter=Main', ['Main line', 'Main']), 1);
+    assert.strictEqual(chapterFromUrl('?chapter=Main', ['Main line']), null);
+    assert.strictEqual(chapterFromUrl('?chapter=Moved&chapter_index=0', ['Other', 'Moved']), 1);
+
+    const { CollectionStore } = await load('collection_store.js');
+    const values = new Map([['listudy_cart', JSON.stringify([first])]]);
+    const storage = { getItem: key => values.get(key) || null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) };
+    const store = new CollectionStore(storage);
+    assert.strictEqual(store.read().collections.Default[0].pgn, first);
+    assert.strictEqual(values.has('listudy_cart'), false);
+    store.create('__proto__');
+    store.add({ pgn: second, title: 'Second' });
+    store.add({ pgn: second, title: 'Second' });
+    assert.strictEqual(store.read().collections.__proto__.length, 1);
+    store.rename('Renamed');
+    store.move(0, 'Default');
+    store.select('Default');
+    store.reorder(1, -1);
+    assert.strictEqual(store.read().collections.Default[0].pgn, second);
+    assert.throws(() => store.rename('Renamed'), /already exists/);
+    values.set('listudy_collections', 'corrupt data');
+    assert.throws(() => store.read(), /kept/);
+    assert.strictEqual(values.get('listudy_collections'), 'corrupt data');
+    const legacy = JSON.stringify([first]);
+    values.delete('listudy_collections');
+    values.set('listudy_cart', legacy);
+    storage.setItem = () => { throw new Error('Quota exceeded'); };
+    assert.throws(() => store.read(), /Quota/);
+    assert.strictEqual(values.get('listudy_cart'), legacy);
+    console.log('Study feature regression checks passed.');
+})().catch(error => { console.error(error); process.exitCode = 1; });

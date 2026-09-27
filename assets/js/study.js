@@ -19,9 +19,12 @@ import { TextOverlayId, TextOverlayManager } from './modules/overlays.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { array_contains } from './modules/utils.js';
 import { StorageAdapter } from './storageAdapter.js';
+import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
 
+
+let studyFeatureViews = [];
 
 const mode_free = "free_mode";
 
@@ -527,28 +530,10 @@ function setup_chapter_select() {
     let select = document.getElementById(select_id);
     let selected = parseInt(StorageAdapter.getItem(select_key) || 0);
 
-    // --- Override local storage if URL parameter is present ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const chapterFromUrl = urlParams.get('chapter');
-    
-    if (chapterFromUrl) {
-        // Remove all spaces and convert to lowercase for maximum resilience
-        let targetNorm = chapterFromUrl.toLowerCase().replace(/\s+/g, '');
-        
-        for (let i = 0; i < trees.length; ++i) {
-            let nameNorm = tree_chapter_name(i).toLowerCase().replace(/\s+/g, '');
-            
-            // Check for partial match to handle cut-off URLs or encoding issues
-            if (nameNorm.includes(targetNorm) || targetNorm.includes(nameNorm)) {
-                selected = i;
-                StorageAdapter.setItem(select_key, selected);
-                break;
-            }
-        }
-    }
-    // -----------------------------------------------------------
-
-    selected = Math.min(selected, trees.length - 1);  // prevent error if replacing with a pgn with fewer chapters
+    const linkedChapter = chapterFromUrl(window.location.search, trees.map((_, index) => tree_chapter_name(index)));
+    if (linkedChapter !== null) selected = linkedChapter;
+    if (!Number.isInteger(selected) || selected < 0) selected = 0;
+    selected = Math.min(selected, trees.length - 1);
     window.chapter = selected;
     for (let i = 0; i < trees.length; ++i) {
         let option = document.createElement("option");
@@ -564,10 +549,11 @@ function setup_chapter_select() {
     select.onchange = function() {
         let v = document.getElementById(select_id).value;
         StorageAdapter.setItem(select_key, v);
-        window.chapter = v;
+        window.chapter = Number(v);
         start_training();
         update_progress(); // update the progress bar shown
         set_options_values_for_max_depth();  // update the max depth for the new chapter
+        studyFeatureViews.forEach(view => view.update());
     };
 }
 
@@ -1004,8 +990,18 @@ async function main() {
     setup_chess();
     setup_trees();
     setup_chapter_select();
-    setupStudyCollections({ getPgn: () => pgn, getChapter: () => chapter });
-    setupStudyNavigation({ getPgn: () => pgn, getChapter: () => chapter, goBack: go_back, goForward: go_forward });
+    const chapterPgns = splitChapterPgn(pgn);
+    const getCurrentChapter = () => chapterPgns[chapter] ? {
+        pgn: chapterPgns[chapter],
+        chapterIndex: Number(chapter),
+        title: tree_chapter_name(Number(chapter)),
+        study: document.querySelector('h1').textContent.trim(),
+        studyPath: window.location.pathname
+    } : null;
+    studyFeatureViews = [
+        setupStudyCollections({ getCurrentChapter }),
+        setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward })
+    ];
     setupPuzzleRun(i18n);
     set_options_values();
     setup_move_handler(handle_move);

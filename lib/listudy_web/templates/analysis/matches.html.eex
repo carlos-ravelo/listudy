@@ -1,0 +1,14 @@
+<h1>Several chapters match this game</h1>
+<p>These chapters fit the played positions equally well. Choose one to inspect its result.</p>
+<%= for {study, result} <- @choices do %>
+  <div class="highlight">
+    <h3><%= study.title %> — <%= result["chapter"] %></h3>
+    <p>Chapter <%= result["chapter_index"] + 1 %>. Matched <%= Enum.at(result["score"], 0) %> distinct moves.</p>
+    <%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), [as: :match], fn _f -> %>
+      <input type="hidden" name="pgn" value="<%= @pgn_text %>">
+      <input type="hidden" name="study_id" value="<%= study.id %>">
+      <input type="hidden" name="chapter_index" value="<%= result["chapter_index"] %>">
+      <button type="submit">Inspect this chapter</button>
+    <% end %>
+  </div>
+<% end %>

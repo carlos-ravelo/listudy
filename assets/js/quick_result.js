@@ -6,27 +6,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const pgnText = boardElement.dataset.pgn;
     const errorFen = boardElement.dataset.errorFen;
-    const expectedSanList = boardElement.dataset.expected.split(",");
+    const expectedSanList = boardElement.dataset.expected.split(",").filter(Boolean);
     const playedSan = boardElement.dataset.played;
 
     const game = new Chess();
     game.load_pgn(pgnText);
     const history = game.history();
     
-    // We recreate the game state step by step for navigation
-    const replayGame = new Chess();
+    // Use the matcher's exact occurrence, including games with a custom FEN.
+    const replayGame = new Chess(game.header().FEN);
     let currentMoveIndex = 0;
-    let targetIndex = 0;
-
-    // Find the move index where the error occurred
-    const tempGame = new Chess();
-    for (let i = 0; i < history.length; i++) {
-        if (tempGame.fen().split(" ")[0] === errorFen.split(" ")[0]) {
-            targetIndex = i;
-            break;
-        }
-        tempGame.move(history[i]);
-    }
+    const targetIndex = Math.max(0, Math.min(history.length, Number(boardElement.dataset.ply) || 0));
 
     // Initialize Chessground
     const cg = Chessground(boardElement, {
@@ -49,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let shapes = [];
         
         // If we are exactly at the error FEN, draw the arrows
-        if (replayGame.fen().split(" ")[0] === errorFen.split(" ")[0]) {
+        if (currentMoveIndex === targetIndex) {
             // Draw expected moves in green
             expectedSanList.forEach(san => {
                 const sq = getMoveSquares(errorFen, san);
@@ -57,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             
             // Draw played move in red
-            const playedSq = getMoveSquares(errorFen, playedSan);
+            const playedSq = playedSan ? getMoveSquares(errorFen, playedSan) : null;
             if (playedSq) shapes.push({ orig: playedSq.orig, dest: playedSq.dest, brush: 'red' });
         }
         
@@ -84,12 +74,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-next").addEventListener("click", nextMove);
     document.getElementById("btn-prev").addEventListener("click", prevMove);
     document.addEventListener("keydown", (e) => {
+        if (e.target.closest("input, textarea, select, [contenteditable]")) return;
         if (e.key === "ArrowRight") nextMove();
         if (e.key === "ArrowLeft") prevMove();
     });
 
     // Jump directly to the error position on load
     while (currentMoveIndex < targetIndex) {
-        nextMove();
+        replayGame.move(history[currentMoveIndex++]);
     }
+    updateBoard();
 });
