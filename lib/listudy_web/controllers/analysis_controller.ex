@@ -257,16 +257,10 @@ defmodule ListudyWeb.AnalysisController do
 
     case Listudy.Games.Analyzer.analyze_single_pgn(user.id, pgn_text, params) do
       {:ok, study, result} ->
-        render(conn, "quick_result.html",
-          study: study,
-          pgn_text: pgn_text,
-          result: result,
-          deviator_color:
-            if(Enum.at(String.split(result["fen"]), 1) == "w", do: "white", else: "black")
-        )
+        render(conn, "quick_result.html", choices: [{study, result}], pgn_text: pgn_text)
 
       {:ambiguous, choices} ->
-        render(conn, "matches.html", choices: choices, pgn_text: pgn_text)
+        render(conn, "quick_result.html", choices: choices, pgn_text: pgn_text)
 
       {:error, :no_match} ->
         conn

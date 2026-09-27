@@ -33,7 +33,3 @@
 .collection-move { max-width: 90px; font-size: .8em; padding: 2px; margin: 0; }
 @keyframes collectionFlash { from { background: #d4edda; } to { background: transparent; } }
 .collection-highlight { animation: collectionFlash .8s ease-out; }
-
-.analysis-result-container { max-width: 800px; margin: 0 auto; padding: 2rem 0; }
-.analysis-result-board { width: min(500px, 100%); aspect-ratio: 1; margin: 20px auto; }
-.analysis-result-navigation { text-align: center; margin-top: 1.5rem; }

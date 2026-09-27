@@ -1,87 +1,89 @@
-const Chessground = require('chessground').Chessground;
-const Chess = require('chess.js');
-document.addEventListener("DOMContentLoaded", () => {
-    const boardElement = document.getElementById("quick-analysis-board");
-    if (!boardElement) return;
+import { createGameReplay } from './modules/analysis/game_replay.js';
 
-    const pgnText = boardElement.dataset.pgn;
-    const errorFen = boardElement.dataset.errorFen;
-    const expectedSanList = boardElement.dataset.expected.split(",").filter(Boolean);
-    const playedSan = boardElement.dataset.played;
+function setupComparison() {
+    const root = document.getElementById('analysis-comparison');
+    if (!root) return;
+    const board = root.querySelector('#quick-analysis-board');
+    const previous = root.querySelector('#btn-prev');
+    const next = root.querySelector('#btn-next');
+    const jump = root.querySelector('#btn-comparison');
+    const status = root.querySelector('#analysis-board-status');
+    const choices = Array.from(root.querySelectorAll('[data-select-group]'));
+    const outcomes = Array.from(root.querySelectorAll('[data-outcome]'));
+    const moveList = root.querySelector('#analysis-moves');
+    const comparisons = JSON.parse(root.dataset.comparisons);
+    let replay;
+    try {
+        replay = createGameReplay(board, board.dataset.pgn);
+    } catch (error) {
+        const notice = root.querySelector('#analysis-replay-error');
+        notice.textContent = error.message;
+        notice.hidden = false;
+        board.hidden = true;
+    }
 
-    const game = new Chess();
-    game.load_pgn(pgnText);
-    const history = game.history();
-    
-    // Use the matcher's exact occurrence, including games with a custom FEN.
-    const replayGame = new Chess(game.header().FEN);
-    let currentMoveIndex = 0;
-    const targetIndex = Math.max(0, Math.min(history.length, Number(boardElement.dataset.ply) || 0));
+    const moveButtons = [];
+    function updateNavigation() {
+        if (!replay) return;
+        previous.disabled = replay.ply === 0;
+        next.disabled = replay.ply === replay.moves.length;
+        jump.disabled = replay.ply === replay.targetPly;
+        status.textContent = replay.status;
+        board.setAttribute('aria-label', `Game board: ${replay.status}`);
+        moveButtons.forEach((button, ply) => {
+            if (ply === replay.ply) button.setAttribute('aria-current', 'step');
+            else button.removeAttribute('aria-current');
+        });
+    }
 
-    // Initialize Chessground
-    const cg = Chessground(boardElement, {
-        fen: replayGame.fen(),
-        viewOnly: true,
-        animation: { enabled: true, duration: 200 }
+    function seek(ply) {
+        if (!replay) return;
+        replay.seek(ply);
+        updateNavigation();
+    }
+
+    function selectGroup(index) {
+        const comparison = comparisons[index];
+        if (!comparison) return;
+        choices.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.selectGroup) === index)));
+        outcomes.forEach(panel => { panel.hidden = Number(panel.dataset.outcome) !== index; });
+        if (replay) {
+            replay.select(comparison.result, comparison.color);
+            updateNavigation();
+        }
+    }
+
+    choices.forEach(button => {
+        button.disabled = false;
+        button.addEventListener('click', () => selectGroup(Number(button.dataset.selectGroup)));
     });
 
-    // Helper: Convert SAN to squares for drawing arrows
-    function getMoveSquares(fen, san) {
-        const aux = new Chess(fen);
-        const moveObj = aux.move(san);
-        if (!moveObj) return null;
-        return { orig: moveObj.from, dest: moveObj.to };
+    if (replay) {
+        ['Start', ...replay.moves.map(move => move.label)].forEach((label, ply) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = label;
+            button.addEventListener('click', () => seek(ply));
+            moveList.appendChild(button);
+            moveButtons.push(button);
+        });
+        previous.addEventListener('click', () => seek(replay.ply - 1));
+        next.addEventListener('click', () => seek(replay.ply + 1));
+        jump.addEventListener('click', () => seek(replay.targetPly));
+        root.querySelectorAll('[data-jump-ply]').forEach(button => {
+            button.disabled = false;
+            button.addEventListener('click', () => seek(Number(button.dataset.jumpPly)));
+        });
+        document.addEventListener('keydown', event => {
+            if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
+                event.target.closest('input, textarea, select, [contenteditable], summary, [role="dialog"]')) return;
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                event.preventDefault();
+                seek(replay.ply + (event.key === 'ArrowRight' ? 1 : -1));
+            }
+        });
     }
+    selectGroup(0);
+}
 
-    function updateBoard() {
-        cg.set({ fen: replayGame.fen() });
-        
-        let shapes = [];
-        
-        // If we are exactly at the error FEN, draw the arrows
-        if (currentMoveIndex === targetIndex) {
-            // Draw expected moves in green
-            expectedSanList.forEach(san => {
-                const sq = getMoveSquares(errorFen, san);
-                if (sq) shapes.push({ orig: sq.orig, dest: sq.dest, brush: 'green' });
-            });
-            
-            // Draw played move in red
-            const playedSq = playedSan ? getMoveSquares(errorFen, playedSan) : null;
-            if (playedSq) shapes.push({ orig: playedSq.orig, dest: playedSq.dest, brush: 'red' });
-        }
-        
-        cg.set({ drawable: { shapes: shapes } });
-    }
-
-    function nextMove() {
-        if (currentMoveIndex < history.length) {
-            replayGame.move(history[currentMoveIndex]);
-            currentMoveIndex++;
-            updateBoard();
-        }
-    }
-
-    function prevMove() {
-        if (currentMoveIndex > 0) {
-            replayGame.undo();
-            currentMoveIndex--;
-            updateBoard();
-        }
-    }
-
-    // Event Listeners
-    document.getElementById("btn-next").addEventListener("click", nextMove);
-    document.getElementById("btn-prev").addEventListener("click", prevMove);
-    document.addEventListener("keydown", (e) => {
-        if (e.target.closest("input, textarea, select, [contenteditable]")) return;
-        if (e.key === "ArrowRight") nextMove();
-        if (e.key === "ArrowLeft") prevMove();
-    });
-
-    // Jump directly to the error position on load
-    while (currentMoveIndex < targetIndex) {
-        replayGame.move(history[currentMoveIndex++]);
-    }
-    updateBoard();
-});
+document.addEventListener('DOMContentLoaded', setupComparison);
