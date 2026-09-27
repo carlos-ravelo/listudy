@@ -63,7 +63,7 @@ window.ready = true;
         await page.keyboard.press('ArrowLeft');
         assert.strictEqual(await page.evaluate(() => window.backCount), 0);
         await page.locator('.chapter-choice', { hasText: 'Alpha' }).click();
-        assert.strictEqual(await page.locator('#current_chapter_title').textContent(), 'Alpha');
+        assert.strictEqual(await page.locator('#current_chapter_title').textContent(), '1 / 2 · Alpha');
         await page.keyboard.press('ArrowLeft');
         assert.strictEqual(await page.evaluate(() => window.backCount), 1);
         assert.deepStrictEqual(errors, []);

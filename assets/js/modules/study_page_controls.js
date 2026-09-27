@@ -16,7 +16,7 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward }) {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'chapter-choice';
-        item.textContent = option.text;
+        item.textContent = `${index + 1}. ${option.text}`;
         item.onclick = () => { choose(index); close(); title.focus(); };
         list.appendChild(item);
         return item;
@@ -28,7 +28,10 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward }) {
     }
     function close() { list.hidden = true; title.setAttribute('aria-expanded', 'false'); }
     function update() {
-        title.textContent = select.options[select.selectedIndex]?.text || 'No chapters';
+        const selected = select.options[select.selectedIndex];
+        title.textContent = selected
+            ? `${select.selectedIndex + 1} / ${select.options.length} · ${selected.text}`
+            : 'No chapters';
         items.forEach((item, index) => item.classList.toggle('chapter-active', index === select.selectedIndex));
         previous.disabled = select.selectedIndex <= 0;
         next.disabled = select.selectedIndex >= select.options.length - 1;
