@@ -38,9 +38,39 @@ move clocks are excluded only from matching. Full FEN and the exact game ply
 remain available for replay. A chapter terminal is an end of book, not an error.
 The matcher scans beyond departures to find later transpositions and retains
 those earlier departures for display. Candidate ranking uses distinct matched
-moves, then distinct noninitial positions. Equal top candidates are shown for
-selection, including duplicate chapter titles. Bulk results with conflicting
-outcomes are marked ambiguous and excluded from mistake training.
+moves, then distinct noninitial positions. Equal top candidates are grouped by
+their comparison outcome, including duplicate chapter titles. The exact matched game plies, final position, expected moves,
+entry point and earlier departures must agree before chapters share a group.
+Bulk results with conflicting outcomes are marked ambiguous and excluded from mistake training.
+
+### Quick comparison page
+
+- `Listudy.Games.AnalysisComparison`: groups equally ranked chapters conservatively.
+- `AnalysisView`: chess move labels and chapter links.
+- `templates/analysis/quick_result.html.eex` and `_comparison_outcome.html.eex`: one game board, comparison outcomes and expandable chapter lists.
+- `assets/js/quick_result.js`: comparison selection and navigation controls.
+- `assets/js/modules/analysis/game_replay.js`: game replay, exact position occurrences and comparison arrows.
+- `assets/css/features/analysis_comparison.css`: responsive comparison layout.
+
+The uploaded game opens immediately. Selecting another comparison reuses the
+parsed game in the browser without another request. Equivalent chapters stay in
+one expandable list; their unplayed continuations can still differ. Different
+outcomes remain selectable alternatives. Match-count terminology is explained in
+“How this match was found” instead of being the primary result label. Earlier
+departures can be inspected on the same board.
+
+Named chapter links carry both `chapter` and the zero-based `chapter_index` for
+compatibility with older name-based navigation. Synthetic “Chapter N” names use
+only the index because the study page translates those labels. Chapter links open
+in a new tab to preserve the uploaded-game comparison. `chapter_index=5` means
+chapter 6, and the study page already resolves this parameter before starting
+training.
+
+The matcher now returns `matched_plies` for comparison grouping. This adds display
+data without changing ranking or persisted results, so the analysis version stays
+at `positions-v3`.
+
+### Processing and setup
 
 Quick analysis parses each submitted game once for all studies. Imports process
 batches of up to 50 games. Index caches are disposable JSON files in the system

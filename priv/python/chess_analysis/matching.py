@@ -56,5 +56,7 @@ def match_chapters(sequence, repertoire):
             result['transposed'] = result['entry_ply'] > 0
             # Rank actual matched play, never a chapter's unused future depth.
             result['score'] = [len(followed), len(meaningful)]
+            # Equal scores alone do not imply the same game moves were matched.
+            result['matched_plies'] = [pos['ply'] for pos, moves in observed if pos['played'] in moves]
             candidates.append(result)
     return sorted(candidates, key=lambda result: result['score'], reverse=True)

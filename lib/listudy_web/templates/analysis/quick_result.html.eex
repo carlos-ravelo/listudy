@@ -1,37 +1,66 @@
+<% groups = comparison_groups(@choices) %>
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
-<div class="analysis-result-container">
+<div id="analysis-comparison" class="analysis-result-container"
+  data-comparisons="<%= Jason.encode!(Enum.map(groups, &Map.take(&1, [:result, :color]))) %>">
   <%= link "← Back to Analysis", to: Routes.analysis_path(@conn, :index), class: "button" %>
-  <h2>Analysis Result: <%= @study.title %></h2>
-  <%= link "Go to chapter: #{@result["chapter"]}",
-    to: Routes.study_path(@conn, :show, @conn.assigns[:locale] || "en", @study.slug,
-      chapter_index: @result["chapter_index"]), class: "button" %>
+  <h1>Your game and repertoire</h1>
+  <p>
+    <%= length(@choices) %> matching <%= if length(@choices) == 1, do: "chapter", else: "chapters" %>.
+    <%= if length(groups) == 1 do %>
+      <%= if length(@choices) > 1, do: "They give the same comparison for this game; their later continuations may differ." %>
+    <% else %>
+      <%= length(groups) %> different comparisons fit equally well. Select one to explore it on the board.
+    <% end %>
+  </p>
 
-  <%= if @result["transposed"] do %>
-    <p>This game entered the chapter through a different move order after <%= @result["entry_ply"] %> half-moves.</p>
-  <% end %>
-  <%= if @result["deviation"] do %>
-    <p><strong><%= if @deviator_color == @study.color, do: "You deviated.", else: "Opponent deviated." %></strong>
-      Played <%= @result["played"] %>; this chapter expected <%= Enum.join(@result["expected"], " / ") %>.</p>
-  <% else %>
-    <p><%= if @result["reason"] == "book_ended", do: "The game reached the end of this chapter's stored line.", else: "The game ended in a position from this chapter." %></p>
-  <% end %>
-  <%= if @result["earlier_departures"] != [] do %>
-    <details>
-      <summary>Earlier departures from the stored move order</summary>
-      <ul>
-        <%= for departure <- @result["earlier_departures"] do %>
-          <li>Half-move <%= departure["ply"] + 1 %>: played <%= departure["played"] %>, stored <%= Enum.join(departure["expected"], " / ") %>. The game later rejoined the chapter.</li>
+  <div class="analysis-comparison-layout">
+    <section class="analysis-game" aria-label="Uploaded game">
+      <div id="analysis-replay-error" class="error infoBox" role="alert" hidden></div>
+      <div id="quick-analysis-board" class="cg-wrap analysis-result-board" data-pgn="<%= @pgn_text %>" aria-label="Game board"></div>
+      <div class="analysis-result-navigation" aria-label="Game navigation">
+        <button type="button" id="btn-prev" disabled>← Previous</button>
+        <button type="button" id="btn-comparison" disabled>Comparison position</button>
+        <button type="button" id="btn-next" disabled>Next →</button>
+      </div>
+      <p id="analysis-board-status" class="analysis-board-status" aria-live="polite"></p>
+      <details class="analysis-game-moves">
+        <summary>Game moves</summary>
+        <div id="analysis-moves" aria-label="Move list"></div>
+      </details>
+      <div id="analysis-outcomes" aria-live="polite">
+        <%= for {group, index} <- Enum.with_index(groups) do %>
+          <%= render "_comparison_outcome.html", group: group, index: index %>
         <% end %>
-      </ul>
-    </details>
-  <% end %>
-  <div id="quick-analysis-board" class="cg-wrap analysis-result-board"
-    data-pgn="<%= @pgn_text %>" data-error-fen="<%= @result["fen"] %>"
-    data-ply="<%= @result["ply"] %>" data-expected="<%= Enum.join(@result["expected"], ",") %>"
-    data-played="<%= @result["played"] %>"></div>
-  <div class="analysis-result-navigation">
-    <button id="btn-prev">← Prev</button>
-    <button id="btn-next">Next →</button>
+      </div>
+      <noscript><p>Enable JavaScript to replay your game and switch comparisons. Chapter links are available below.</p></noscript>
+    </section>
+
+    <aside class="analysis-matches" aria-labelledby="analysis-matches-heading">
+      <h2 id="analysis-matches-heading">Matching chapters</h2>
+      <%= for {group, index} <- Enum.with_index(groups) do %>
+        <section class="analysis-match-group" data-match-group="<%= index %>">
+          <button type="button" class="analysis-group-choice" data-select-group="<%= index %>"
+            aria-pressed="<%= if index == 0, do: "true", else: "false" %>"
+            aria-controls="analysis-outcome-<%= index %>" disabled>
+            <strong><%= comparison_title(group.result) %></strong>
+            <span><%= length(group.chapters) %> <%= if length(group.chapters) == 1, do: "chapter", else: "chapters with this comparison" %></span>
+          </button>
+          <details class="analysis-chapter-list" <%= if length(group.chapters) == 1, do: "open" %>>
+            <summary>View <%= length(group.chapters) %> <%= if length(group.chapters) == 1, do: "chapter", else: "chapters" %></summary>
+            <ul>
+              <%= for {study, result} <- group.chapters do %>
+                <li>
+                  <span class="analysis-study-name"><%= String.replace(study.title, "_", " ") %></span>
+                  <strong>Chapter <%= result["chapter_index"] + 1 %>: <%= result["chapter"] %></strong>
+                  <%= link "Open study chapter ↗", to: chapter_path(@conn, study, result), target: "_blank", rel: "noopener" %>
+                </li>
+              <% end %>
+            </ul>
+          </details>
+        </section>
+      <% end %>
+      <p class="analysis-match-help">Opening a study chapter uses a new tab, so you can keep this comparison open.</p>
+    </aside>
   </div>
 </div>
 <script defer src="<%= Routes.static_path(@conn, "/js/quick_result.js") %>"></script>
