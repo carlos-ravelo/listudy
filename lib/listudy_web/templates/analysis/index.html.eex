@@ -13,7 +13,7 @@
   <summary class="title is-5" style="user-select: none;">
     🔍 Quick PGN Analysis (Click to expand)
   </summary>
-  
+
   <div class="mt-4" style="cursor: default;">
     <%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), fn f -> %>
       <div class="field">
@@ -48,7 +48,7 @@
           <h3 style="margin: 0 0 0.25rem 0; font-size: 1.25rem; color: #1a202c;">Lichess</h3>
           <p style="margin: 0; color: #718096; font-size: 0.9rem;">
             <%= if lichess_username do %>
-              <strong><%= @lichess_count %></strong> games in database 
+              <strong><%= @lichess_count %></strong> games in database
               <p style="font-size: 0.8rem; color: #718096; margin-top: 0.2rem;">
               Games fetched since: <%= @lichess_since %>
               </p>
@@ -145,6 +145,9 @@
               <h4 style="margin: 0 0 0.25rem 0; color: #1a202c; font-size: 1.25rem;"><%= stat.study.title %></h4>
               <p style="margin: 0; color: #718096; font-size: 0.9rem;">
                 Evaluated against <strong><%= stat.total_games %></strong> games.
+                <%= if stat.ambiguous > 0 do %>
+                  <span><%= stat.ambiguous %> games have equally matching chapters with different outcomes; paste their PGN above to review.</span>
+                <% end %>
               </p>
             </div>
 
@@ -152,7 +155,7 @@
               <%= if stat.deviations > 0 do %>
                 <%= link "Train Mistakes (#{stat.deviations})", to: Routes.analysis_path(@conn, :train, stat.study.id), class: "button button-primary", style: "margin: 0; border-radius: 6px;" %>
               <% else %>
-                <button class="button button-primary" style="margin: 0; border-radius: 6px; opacity: 0.5; cursor: not-allowed;" disabled>Perfect (0 Mistakes)</button>
+                <button class="button button-primary" style="margin: 0; border-radius: 6px; opacity: 0.5; cursor: not-allowed;" disabled>No recorded mistakes</button>
               <% end %>
             </div>
           </div>
@@ -160,21 +163,21 @@
           <div style="display: flex; height: 10px; border-radius: 9999px; overflow: hidden; background-color: #edf2f7; margin-bottom: 1rem;">
             <div style="width: <%= match_pct %>%; background-color: #38a169;" title="Theory Survived: <%= stat.matches %>"></div>
             <div style="width: <%= dev_pct %>%; background-color: #e53e3e;" title="Deviations: <%= stat.deviations %>"></div>
-            <div style="width: <%= oos_pct %>%; background-color: #a0aec0;" title="Fuera de la teoría: <%= out_of_scope %>"></div>
+            <div style="width: <%= oos_pct %>%; background-color: #a0aec0;" title="Other results: <%= out_of_scope %>"></div>
           </div>
 
           <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #4a5568;">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #38a169;"></span>
-              <strong><%= stat.matches %></strong> My Deviation 
+              <strong><%= stat.matches %></strong> No recorded mistake
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #e53e3e;"></span>
-              <strong><%= stat.deviations %></strong> Oponent Deviations
+              <strong><%= stat.deviations %></strong> Your deviations
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #a0aec0;"></span>
-              <strong><%= out_of_scope %></strong> Fuera de la teoría
+              <strong><%= out_of_scope %></strong> Other results
             </div>
           </div>
 

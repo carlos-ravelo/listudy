@@ -47,3 +47,7 @@ scripts/prod/env.sh
 
 # npm lock files
 assets/package-lock.json
+
+# Python analysis artifacts
+__pycache__/
+*.pyc

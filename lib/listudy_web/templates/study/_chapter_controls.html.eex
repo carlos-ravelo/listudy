@@ -1,0 +1,15 @@
+<div class="study-feature-actions">
+  <a href="/random_study" class="button secondary">🎲 Random Study</a>
+  <button id="btn_random_chapter" class="button secondary">🎲 Random Chapter</button>
+  <a href="#" id="add_to_collection" class="button">➕ Add to Collection</a>
+  <a href="#" id="manage_collection" class="button secondary" hidden>📂 Manage Collection</a>
+</div>
+<div class="study-chapter-navigation">
+  <select id="chapter_select" hidden aria-label="Chapter"></select>
+  <div class="study-chapter-buttons">
+    <button id="prev_chapter_btn" class="secondary">Back</button>
+    <button id="current_chapter_title" class="secondary" aria-expanded="false" aria-controls="custom_chapter_list" title="Select a chapter">Loading...</button>
+    <button id="next_chapter_btn" class="secondary">Next</button>
+  </div>
+  <div id="custom_chapter_list" class="study-chapter-list" hidden></div>
+</div>
