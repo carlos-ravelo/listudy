@@ -435,7 +435,21 @@ function start_training() {
         fen = trees[chapter].headers.FEN || fen;
     }
     setup_chess(fen);
-    ground_init_state(fen);
+       
+    // Extract only board state, turn, castling, and en passant (ignoring move counters)
+    const base_fen = fen.split(" ").slice(0, 4).join(" ");
+    const start_base_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+    
+    // Sync color dynamically for custom positions (e.g., tactical puzzles)
+    if (base_fen !== start_base_fen) {
+        color = turn_color(chess);
+    }
+    
+    // Pass the active color to auto-rotate the board
+    ground_init_state(fen, color);
+    
+    // Pasa el color activo para rotar el tablero automáticamente
+    ground_init_state(fen, color);
     if (key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
         for (let ki = 0; ki < window.first_variation; ++ki) {
             // Moves that are not fully trained are not skipped
