@@ -111,7 +111,7 @@
 
 
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
-<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study.js") %>"></script>
+<script defer type="text/javascript" src="<%= study_script_path(@conn) %>"></script>
 <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
   /*
    * "Cleans" pgn files, 

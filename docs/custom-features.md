@@ -22,6 +22,10 @@ comparison tolerates the whitespace around parentheses and braces added by the
 study page’s PGN cleaner, including in Event headers. The chapter picker displays
 chapter numbers so identically named lines can be distinguished.
 
+Unversioned static files revalidate with ETags instead of being cached for a year.
+The study script URL includes a one-time revision to bypass previously cached
+copies. Phoenix digest URLs keep their existing long-lived cache policy. Changes
+to the endpoint cache policy require the running application to reload/restart.
 
 ## Game analysis
 
