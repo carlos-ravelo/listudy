@@ -38,10 +38,6 @@
   </div>
 </div>
 
-  <!-- Custom scrollable dropdown -->
-  <div id="custom_chapter_list" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg-color, white); border: 1px solid #ccc; border-radius: 4px; max-height: 300px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-  </div>
-</div>
 <div class="with_sidebar">
   <div id="game_container" class="sidebar_main">
     <%= render ListudyWeb.ComponentView, "chessground.html" %>
@@ -141,6 +137,8 @@
   <b><%= dgettext "study", "Opening"%></b>
   <p><%= link @opening.name, to: Routes.opening_path(@conn, :show, @locale, @opening.slug) %></p>
 </div>
+
+<%= render "_collection_modal.html" %>
 
 <hr>
 <%= render ListudyWeb.CommentView, "show_comments.html", type: "study", id: Integer.to_string(@study.id), action: Routes.comment_path(@conn, :new_comment), conn: @conn %>
