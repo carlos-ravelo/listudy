@@ -8,9 +8,9 @@ import { array_contains } from './utils.js';
  * ground that contains the chessground
  */
 
-function ground_init_state(fen) {
+function ground_init_state(fen, custom_orientation = null) {
     const config = {};
-    config["orientation"] = color;
+    config["orientation"] = custom_orientation || color;
     config["movable"] = { free: false, showDests: true };
     // fen for the initial position
     config["fen"] = fen;
