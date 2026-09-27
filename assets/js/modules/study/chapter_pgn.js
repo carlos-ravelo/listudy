@@ -51,12 +51,15 @@ export function chapterFromUrl(search, titles) {
     const params = new URLSearchParams(search);
     const title = params.get('chapter');
     const index = params.get('chapter_index');
+    // The study page's PGN cleaner adds spaces around parentheses and braces,
+    // including inside Event headers. Accept those formatting differences.
+    const normalize = text => text.trim().toLocaleLowerCase()
+        .replace(/\s+/g, ' ').replace(/\s*([(){}])\s*/g, '$1');
     if (index !== null && /^\d+$/.test(index)) {
         const value = Number(index);
-        if (value < titles.length && (!title || titles[value] === title)) return value;
+        if (value < titles.length && (!title || normalize(titles[value]) === normalize(title))) return value;
     }
     if (!title) return null;
-    const normalize = text => text.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
     const exact = titles.map((name, i) => name === title ? i : -1).filter(i => i >= 0);
     if (exact.length === 1) return exact[0];
     const matches = titles.map((name, i) => normalize(name) === normalize(title) ? i : -1).filter(i => i >= 0);

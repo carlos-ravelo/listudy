@@ -13,6 +13,21 @@ const load = async name => import('data:text/javascript;base64,' + fs.readFileSy
     assert.strictEqual(chapterFromUrl('?chapter=Main', ['Main line', 'Main']), 1);
     assert.strictEqual(chapterFromUrl('?chapter=Main', ['Main line']), null);
     assert.strictEqual(chapterFromUrl('?chapter=Moved&chapter_index=0', ['Other', 'Moved']), 1);
+    const caroKann = '3. Caro-Kann: Two Knights (1.e4 c6 2.Nc3 d5 3.Nf3)';
+    const cleanedCaroKann = '3. Caro-Kann: Two Knights ( 1.e4 c6 2.Nc3 d5 3.Nf3 )';
+    const chapterTitles = Array.from({ length: 124 }, (_, index) => `Chapter ${index + 1}`);
+    chapterTitles[67] = cleanedCaroKann;
+    const chapterQuery = new URLSearchParams({ chapter: caroKann, chapter_index: '67' });
+    assert.strictEqual(chapterFromUrl('?' + chapterQuery, chapterTitles), 67);
+    assert.strictEqual(chapterFromUrl('?chapter=' + encodeURIComponent(caroKann), chapterTitles), 67);
+    chapterTitles[61] = cleanedCaroKann;
+    chapterTitles[68] = cleanedCaroKann;
+    chapterQuery.set('chapter_index', '61');
+    assert.strictEqual(chapterFromUrl('?' + chapterQuery, chapterTitles), 61);
+    chapterQuery.set('chapter_index', '67');
+    assert.strictEqual(chapterFromUrl('?' + chapterQuery, chapterTitles), 67);
+    assert.strictEqual(chapterFromUrl('?chapter=' + encodeURIComponent(caroKann), chapterTitles), null);
+
 
     const { CollectionStore } = await load('collection_store.js');
     const values = new Map([['listudy_cart', JSON.stringify([first])]]);

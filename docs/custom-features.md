@@ -17,7 +17,11 @@ Collections remain browser-local. Migration saves the replacement before deletin
 legacy data; unreadable storage is preserved. Chapter links include a zero-based
 index and title. A unique title can recover a link after reordering. These are
 positional references, not permanent chapter IDs across simultaneous renames and
-reordering. Legacy title-only links must match a unique title, never a substring.
+reordering. Legacy title-only links must match a unique title, never a substring. Title
+comparison tolerates the whitespace around parentheses and braces added by the
+study page’s PGN cleaner, including in Event headers. The chapter picker displays
+chapter numbers so identically named lines can be distinguished.
+
 
 ## Game analysis
 
