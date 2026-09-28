@@ -2,8 +2,14 @@
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
 <div id="analysis-comparison" class="analysis-result-container"
   data-comparisons="<%= Jason.encode!(Enum.map(groups, &Map.take(&1, [:result, :color]))) %>">
-  <%= link "← Back to Analysis", to: assigns[:back_path] || Routes.analysis_path(@conn, :index), class: "button" %>
+  <%= link (if assigns[:imported_game], do: "← Imported games", else: "← Back to Analysis"), to: assigns[:back_path] || Routes.analysis_path(@conn, :index), class: "button" %>
   <h1>Your game and repertoire</h1>
+  <%= if assigns[:imported_game] do %>
+    <p><strong><%= @imported_game.white_player || "White" %> – <%= @imported_game.black_player || "Black" %></strong> · <%= analysis_platform_label(@imported_game.platform) %> · <%= Calendar.strftime(@imported_game.played_at, "%d %b %Y, %H:%M UTC") %></p>
+    <%= if Map.get(@conn.query_params, "compare_study_id") do %>
+      <p><%= link "Compare across all studies", to: @compare_all_path %></p>
+    <% end %>
+  <% end %>
   <p>
     <%= length(@choices) %> matching <%= if length(@choices) == 1, do: "chapter", else: "chapters" %>.
     <%= if length(groups) == 1 do %>
@@ -62,5 +68,8 @@
       <p class="analysis-match-help">Opening a study chapter uses a new tab, so you can keep this comparison open.</p>
     </aside>
   </div>
+  <%= if assigns[:imported_game] do %>
+    <%= render "_imported_game_details.html", game: @imported_game, summaries: @summaries %>
+  <% end %>
 </div>
 <script defer src="<%= Routes.static_path(@conn, "/js/quick_result.js") %>"></script>

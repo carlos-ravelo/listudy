@@ -5,12 +5,18 @@ defmodule ListudyWeb.AnalysisView do
   def analysis_platform_label("lichess"), do: "Lichess"
   def analysis_platform_label(platform), do: platform
 
-  def analysis_status_label("match"), do: "No recorded deviation"
-  def analysis_status_label("deviation"), do: "Your deviation"
-  def analysis_status_label("ambiguous"), do: "Several outcomes"
-  def analysis_status_label("out_of_scope"), do: "Outside repertoire"
-  def analysis_status_label("error"), do: "Analysis error"
+  def analysis_status_label("match"), do: "No trainable deviation"
+  def analysis_status_label("deviation"), do: "Deviation from study"
+  def analysis_status_label("ambiguous"), do: "Several possible chapters"
+  def analysis_status_label("out_of_scope"), do: "No matching chapter"
+  def analysis_status_label("error"), do: "Comparison unavailable"
   def analysis_status_label(status), do: status
+
+  def primary_game_result(summaries) do
+    Enum.find_value(~w(deviation ambiguous match out_of_scope error), fn status ->
+      Enum.find(summaries, &(&1.status == status))
+    end)
+  end
 
   def comparison_groups(choices), do: Listudy.Games.AnalysisComparison.groups(choices)
 

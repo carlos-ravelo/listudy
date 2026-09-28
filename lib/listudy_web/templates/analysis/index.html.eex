@@ -140,67 +140,37 @@
   </div>
 
 
-<div class="moves">
-    <h3 style="margin-bottom: 1.5rem; color: #2d3748;">Repertoire Overview</h3>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
-      <%= for stat <- @studies_stats do %>
-        <%
-          out_of_scope = stat.total_games - stat.matches - stat.deviations
-
-          match_pct = if stat.total_games > 0, do: (stat.matches / stat.total_games) * 100, else: 0
-          dev_pct = if stat.total_games > 0, do: (stat.deviations / stat.total_games) * 100, else: 0
-          oos_pct = if stat.total_games > 0, do: (out_of_scope / stat.total_games) * 100, else: 0
-        %>
-
-        <div style="background: white; border: 1px solid var(--gray-200); border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
-
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-            <div>
-              <h4 style="margin: 0 0 0.25rem 0; color: #1a202c; font-size: 1.25rem;"><%= stat.study.title %></h4>
-              <p style="margin: 0; color: #718096; font-size: 0.9rem;">
-                Evaluated against <strong><%= stat.total_games %></strong> games.
-                <%= if stat.ambiguous > 0 do %>
-                  <span><%= stat.ambiguous %> games have equally matching chapters with different outcomes; paste their PGN above to review.</span>
-                <% end %>
-              </p>
-            </div>
-
-            <div>
-              <%= if stat.deviations > 0 do %>
-                <%= link "Train Mistakes (#{stat.deviations})", to: Routes.analysis_path(@conn, :train, stat.study.id), class: "button button-primary", style: "margin: 0; border-radius: 6px;" %>
-              <% else %>
-                <button class="button button-primary" style="margin: 0; border-radius: 6px; opacity: 0.5; cursor: not-allowed;" disabled>No recorded mistakes</button>
-              <% end %>
-            </div>
-          </div>
-
-          <div style="display: flex; height: 10px; border-radius: 9999px; overflow: hidden; background-color: #edf2f7; margin-bottom: 1rem;">
-            <div style="width: <%= match_pct %>%; background-color: #38a169;" title="Theory Survived: <%= stat.matches %>"></div>
-            <div style="width: <%= dev_pct %>%; background-color: #e53e3e;" title="Deviations: <%= stat.deviations %>"></div>
-            <div style="width: <%= oos_pct %>%; background-color: #a0aec0;" title="Other results: <%= out_of_scope %>"></div>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #4a5568;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #38a169;"></span>
-              <strong><%= stat.matches %></strong> No recorded mistake
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #e53e3e;"></span>
-              <strong><%= stat.deviations %></strong> Your deviations
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #a0aec0;"></span>
-              <strong><%= out_of_scope %></strong> Other results
-            </div>
-          </div>
-
+<section class="analysis-overview-studies">
+  <h3>Repertoire Overview</h3>
+  <div class="analysis-overview-grid">
+    <%= for stat <- @studies_stats do %>
+      <article class="analysis-overview-card">
+        <div>
+          <h4><%= stat.study.title %></h4>
+          <p class="analysis-overview-primary"><strong><%= stat.deviations %></strong> <%= if stat.deviations == 1, do: "game with a repertoire deviation", else: "games with a repertoire deviation" %></p>
+          <p class="analysis-overview-secondary"><%= stat.matches %> matched with no trainable deviation · <%= stat.total_games %> checked against this study</p>
         </div>
-      <% end %>
-    </div>
-  </div>
-</div>
 
+        <%= if stat.deviations > 0 do %>
+          <%= link "Train mistakes", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), class: "button button-primary" %>
+        <% else %>
+          <p class="analysis-overview-secondary">No mistakes to train for this period.</p>
+        <% end %>
+
+        <%= if stat.ambiguous > 0 or stat.errors > 0 do %>
+          <div class="analysis-overview-notices">
+            <%= if stat.ambiguous > 0 do %>
+              <%= link "#{stat.ambiguous} games have several possible chapters", to: Routes.analysis_path(@conn, :games, study_id: stat.study.id, status: "ambiguous", period: @filter) %>
+            <% end %>
+            <%= if stat.errors > 0 do %>
+              <%= link "#{stat.errors} games could not be analyzed", to: Routes.analysis_path(@conn, :games, study_id: stat.study.id, status: "error", period: @filter) %>
+            <% end %>
+          </div>
+        <% end %>
+      </article>
+    <% end %>
+  </div>
+</section>
+</div>
 
 <script defer type="text/javascript" src="/js/analysis_overview.js"></script>

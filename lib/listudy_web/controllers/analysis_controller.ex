@@ -8,7 +8,7 @@ defmodule ListudyWeb.AnalysisController do
 
   def index(conn, params) do
     user = Repo.get!(Listudy.Users.User, conn.assigns.current_user.id)
-    filter = Map.get(params, "filter", "all")
+    filter = if params["filter"] in ~w(last_week last_month), do: params["filter"], else: "all"
 
     oldest_game_date =
       Repo.aggregate(
@@ -101,47 +101,17 @@ defmodule ListudyWeb.AnalysisController do
           type(
             fragment("COALESCE(SUM(CASE WHEN ? = 'deviation' THEN 1 ELSE 0 END), 0)", sg.status),
             :integer
+          ),
+        errors:
+          type(
+            fragment("COALESCE(SUM(CASE WHEN ? = 'error' THEN 1 ELSE 0 END), 0)", sg.status),
+            :integer
           )
       })
       |> Repo.all()
 
-    raw_depths_query =
-      Listudy.Games.StudyGame
-      |> join(:inner, [sg], s in Listudy.Studies.Study, on: sg.study_id == s.id)
-      |> where([sg, s], s.user_id == ^user.id and sg.status == "match")
-
-    raw_depths_query =
-      if filter == "all" do
-        raw_depths_query
-      else
-        limit_date =
-          if filter == "last_week",
-            do: DateTime.utc_now() |> DateTime.add(-7, :day),
-            else: DateTime.utc_now() |> DateTime.add(-30, :day)
-
-        raw_depths_query
-        |> join(:inner, [sg, s], ug in Listudy.Games.UserGame, on: sg.user_game_id == ug.id)
-        |> where([sg, s, ug], ug.played_at > ^limit_date)
-      end
-
-    raw_depths =
-      raw_depths_query
-      |> group_by([sg], [sg.study_id, sg.depth])
-      |> select([sg], %{study_id: sg.study_id, depth: sg.depth, count: count(sg.id)})
-      |> Repo.all()
-
-    depth_stats =
-      raw_depths
-      |> Enum.map(fn row ->
-        %{study_id: row.study_id, move: div(row.depth + 1, 2), count: row.count}
-      end)
-      |> Enum.group_by(& &1.study_id)
-
     render(conn, "index.html",
-      # Asegúrate de pasar todas tus variables originales aquí
-      # o el nombre que uses en tu render original
       studies_stats: base_stats,
-      depth_stats: depth_stats,
       lichess_count: lichess_count,
       chesscom_count: chesscom_count,
       filter: filter,
@@ -275,36 +245,59 @@ defmodule ListudyWeb.AnalysisController do
     render(conn, "games.html", library: library)
   end
 
-  def game(conn, %{"id" => id}) do
+  def game(conn, %{"id" => id} = params) do
+    redirect(conn,
+      to:
+        Routes.analysis_path(
+          conn,
+          :compare_game,
+          id,
+          Map.take(params, ["platform", "period", "study_id", "status", "cursor", "direction"])
+        )
+    )
+  end
+
+  def compare_game(conn, %{"id" => id} = params) do
     user_id = conn.assigns.current_user.id
     game = ImportedGames.get_owned!(user_id, id)
     summaries = ImportedGames.summaries(user_id, [game.id]) |> Map.get(game.id, [])
-    render(conn, "game.html", game: game, summaries: summaries)
-  end
 
-  def compare_game(conn, %{"id" => id}) do
-    game = ImportedGames.get_owned!(conn.assigns.current_user.id, id)
-    back_path = Routes.analysis_path(conn, :game, game.id)
+    list_params =
+      Map.take(params, ["platform", "period", "study_id", "status", "cursor", "direction"])
 
-    case Games.Analyzer.analyze_single_pgn(conn.assigns.current_user.id, game.pgn) do
+    back_path = Routes.analysis_path(conn, :games, list_params)
+    selection = %{"study_id" => params["compare_study_id"]}
+
+    case Games.Analyzer.analyze_single_pgn(user_id, game.pgn, selection) do
       {:ok, study, result} ->
         render(conn, "quick_result.html",
           choices: [{study, result}],
           pgn_text: game.pgn,
-          back_path: back_path
+          back_path: back_path,
+          imported_game: game,
+          summaries: summaries,
+          compare_all_path: Routes.analysis_path(conn, :compare_game, game.id, list_params)
         )
 
       {:ambiguous, choices} ->
         render(conn, "quick_result.html",
           choices: choices,
           pgn_text: game.pgn,
-          back_path: back_path
+          back_path: back_path,
+          imported_game: game,
+          summaries: summaries,
+          compare_all_path: Routes.analysis_path(conn, :compare_game, game.id, list_params)
         )
 
       {:error, reason} ->
-        conn
-        |> put_flash(:info, "This game could not be compared: #{reason}")
-        |> redirect(to: back_path)
+        render(conn, "game_comparison_unavailable.html",
+          game: game,
+          summaries: summaries,
+          reason: reason,
+          back_path: back_path,
+          compare_all_path: Routes.analysis_path(conn, :compare_game, game.id, list_params),
+          selected_study: params["compare_study_id"]
+        )
     end
   end
 

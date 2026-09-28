@@ -9,7 +9,8 @@ defmodule Listudy.Games.Analyzer do
   alias Listudy.Games.{ChessEngine, Deviation, StudyGame, TrainingDeviations, UserGame}
 
   def analyze_single_pgn(user_id, pgn, selection \\ %{}) do
-    with {:ok, studies} <- load_studies(user_id),
+    with {:ok, studies} <- load_studies(user_id, selection["study_id"]),
+         :ok <- if(studies == [], do: {:error, :no_match}, else: :ok),
          {:ok, %{"games" => [game]}} <-
            ChessEngine.analyze_batch(payload(studies), [%{id: 0, pgn: pgn}]),
          {:ok, candidates} <- candidates(game, studies) do
@@ -222,8 +223,23 @@ defmodule Listudy.Games.Analyzer do
 
   defp payload(studies), do: Enum.map(studies, &%{id: &1.study.id, pgn: &1.pgn})
 
-  defp load_studies(user_id) do
-    Repo.all(from s in Listudy.Studies.Study, where: s.user_id == ^user_id)
+  defp load_studies(user_id, selected_study_id \\ nil) do
+    query = from s in Listudy.Studies.Study, where: s.user_id == ^user_id
+
+    query =
+      if selected_study_id do
+        id =
+          case Integer.parse(selected_study_id) do
+            {value, ""} when value > 0 -> value
+            _ -> -1
+          end
+
+        where(query, [s], s.id == ^id)
+      else
+        query
+      end
+
+    Repo.all(query)
     |> Enum.reduce_while({:ok, []}, fn study, {:ok, studies} ->
       [id | _] = String.split(study.slug, "-")
       path = Application.app_dir(:listudy, "priv/static/study_pgn/#{id}.pgn")
