@@ -45,7 +45,7 @@
       <h2 id="analysis-matches-heading">Matching chapters</h2>
       <%= for {group, index} <- Enum.with_index(groups) do %>
         <% {state, feedback} = comparison_feedback(group.result, group.color) %>
-        <section class="analysis-match-group" data-match-group="<%= index %>">
+        <section class="analysis-match-group<%= if index == 0, do: " is-selected" %>" data-match-group="<%= index %>">
           <button type="button" class="analysis-group-choice" data-select-group="<%= index %>"
             aria-pressed="<%= if index == 0, do: "true", else: "false" %>"
             aria-controls="analysis-outcome-<%= index %>" disabled>
@@ -53,7 +53,7 @@
             <strong class="analysis-group-move"><%= comparison_move_summary(group.result) %></strong>
             <span class="analysis-group-count"><%= length(group.chapters) %> <%= if length(group.chapters) == 1, do: "chapter", else: "chapters" %></span>
           </button>
-          <details class="analysis-chapter-list" <%= if length(group.chapters) == 1, do: "open" %>>
+          <details class="analysis-chapter-list">
             <summary>View <%= length(group.chapters) %> <%= if length(group.chapters) == 1, do: "chapter", else: "chapters" %></summary>
             <ul>
               <%= for {study, result} <- group.chapters do %>

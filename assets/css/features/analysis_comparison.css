@@ -47,8 +47,11 @@
 .analysis-match-details { margin-top: .6rem; color: #4a5568; font-size: .85rem; }
 
 .analysis-matches h2 { margin-top: 0; font-size: 1.25rem; }
-.analysis-match-group { margin-bottom: .75rem; border: 1px solid var(--secondary-color); border-radius: 5px; overflow-wrap: anywhere; }
-.analysis-group-choice { display: block; width: 100%; height: auto; margin: 0; padding: .75rem .85rem; border: 2px solid transparent; border-radius: 4px; white-space: normal; text-align: left; line-height: 1.4; letter-spacing: normal; text-transform: none; }
+.analysis-match-group { margin-bottom: 1rem; border: 1px solid var(--secondary-color); border-radius: 6px; background: #fff; overflow-wrap: anywhere; transition: border-color .15s ease, background-color .15s ease; }
+.analysis-match-group.is-selected { border-color: #5b8ad6; background: #f3f8ff; box-shadow: 0 0 0 1px #c7dcfa; }
+.analysis-group-choice { display: block; width: 100%; height: auto; margin: 0; padding: .75rem .85rem; border: 2px solid transparent; border-radius: 4px; background: transparent; white-space: normal; text-align: left; line-height: 1.4; letter-spacing: normal; text-transform: none; }
+.analysis-group-choice:hover { background: rgba(49, 97, 168, .05); }
+.analysis-group-choice:focus-visible, .analysis-chapter-list summary:focus-visible { outline: 2px solid #3161a8; outline-offset: -3px; }
 .analysis-group-choice > span, .analysis-group-choice > strong { display: block; }
 .analysis-group-state { margin-bottom: .35rem; color: #4a5568; font-size: .77rem; font-weight: 700; }
 .analysis-group-state-player { color: #9a6700; }
@@ -57,8 +60,8 @@
 .analysis-group-state-book_end { color: #315a86; }
 .analysis-group-move { color: #1a202c; font-size: 1.12rem; }
 .analysis-group-count { margin-top: .2rem; color: #718096; font-size: .78rem; font-weight: 400; }
-.analysis-group-choice[aria-pressed="true"] { border-color: var(--primary-color); background: var(--bg-highlight-color); }
-.analysis-chapter-list { padding: 0 .85rem .4rem; }
+.analysis-chapter-list { padding: 0 .85rem .5rem; border-top: 1px solid #d9e3ef; }
+.analysis-chapter-list summary { padding: .55rem 0; font-size: .85rem; font-weight: 600; }
 .analysis-chapter-list ul { margin: 0; padding: 0; max-height: 360px; overflow-y: auto; list-style: none; }
 .analysis-chapter-list li { padding: .8rem 0; border-top: 1px solid var(--secondary-color); }
 .analysis-study-name, .analysis-chapter-name, .analysis-chapter-list a { display: block; }
