@@ -14,6 +14,7 @@
 
     <div class="one-third column">
       <b><%= gettext "Features" %></b><br>
+      <%= link "Books", to: Routes.book_search_path(@conn, ListudyWeb.BookSearchLive, @assigns.locale) %> <br>
       <%= link (gettext "Blind Tactics"), to: Routes.page_path(@conn, :features, @conn.assigns.locale, "blind-tactics") %> <br>
       <%= link (gettext "Pieceless Tactics"), to: Routes.page_path(@conn, :features, @conn.assigns.locale, "pieceless-tactics") %> <br>
       <%= link (gettext "Daily Puzzle"), to: Routes.tactic_path(@conn, :daily, @conn.assigns.locale) %> <br>

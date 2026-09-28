@@ -1,7 +1,6 @@
 defmodule ListudyWeb.PageController do
   use ListudyWeb, :controller
   alias Listudy.Books
-  alias Listudy.Content
 
   @languages Application.compile_env(:listudy, [:languages, :translations])
   @pages [
@@ -19,9 +18,8 @@ defmodule ListudyWeb.PageController do
   def index(conn, %{"locale" => locale}) do
     case locale in @languages do
       true ->
-        posts = Content.list_published_posts(5)
         tactic = ListudyWeb.TacticController.daily_tactic()
-        render(conn, "index.html", posts: posts, tactic: tactic)
+        render(conn, "index.html", tactic: tactic)
 
       _ ->
         conn
