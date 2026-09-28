@@ -24,7 +24,7 @@ defmodule ListudyWeb.Router do
   end
 
   pipeline :stockfish do
-    #plug ListudyWeb.Plugs.Stockfish
+    # plug ListudyWeb.Plugs.Stockfish
     plug ListudyWeb.Plugs.AllowIframe
   end
 
@@ -101,6 +101,9 @@ defmodule ListudyWeb.Router do
     pipe_through [:browser, :logged_in]
 
     get "/", AnalysisController, :index
+    get "/games", AnalysisController, :games
+    get "/games/:id", AnalysisController, :game
+    get "/games/:id/compare", AnalysisController, :compare_game
     post "/sync", AnalysisController, :sync
     post "/disconnect", AnalysisController, :disconnect
     get "/:id/train", AnalysisController, :train
@@ -218,5 +221,4 @@ defmodule ListudyWeb.Router do
     pipe_through :browser
     get "/", PageController, :domain
   end
-
 end

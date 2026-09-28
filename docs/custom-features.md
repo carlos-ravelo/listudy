@@ -97,3 +97,27 @@ mix run --no-start -e 'ExUnit.start(); Code.require_file("test/chess_analysis/ch
 # Requires the installed Playwright package and a local Chrome executable:
 node assets/test/unit/study_features_browser.cjs
 ```
+
+## Imported games and sync
+
+`Listudy.Games.ImportedGames` reads saved Chess.com and Lichess games in pages of
+20. The list selects metadata only, then fetches study summaries for those games.
+The game detail route checks the owner and can run the existing comparison on
+that single saved PGN. Filters for platform, study and status use the same
+owner-scoped data. The training route also checks ownership before reading
+mistakes.
+
+`GameSync` stores a visible per-platform running/completed/failed state. A failed
+Chess.com monthly archive now fails the sync, so the next attempt can retry the
+same month. Lichess sync overlaps the prior 24 hours and relies on the
+per-user/platform/game-ID unique constraint to deduplicate results. Imported
+analysis reads only game metadata until it has identified pending games, then
+loads PGNs in batches of 50.
+
+Apply migration `20260928000000_scope_imported_games_and_index_recent_games` before
+using the new routes or syncing. It scopes game uniqueness to the Listudy user,
+adds indexes for recent-game queries and creates `game_syncs`. The initial
+Lichess download covers one year and each platform request currently caps at
+3,500 games; earlier history needs a separate backfill design. Background sync
+runs as an unmonitored task, so a server restart can leave a stale `running`
+state until the next sync.

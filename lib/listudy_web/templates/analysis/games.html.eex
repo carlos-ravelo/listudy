@@ -1,0 +1,69 @@
+<div class="analysis-games-page">
+  <%= link "← Analysis overview", to: Routes.analysis_path(@conn, :index) %>
+  <h1>Imported games</h1>
+  <p>Browse saved games from Chess.com and Lichess. Select a game to see its study results and compare its moves.</p>
+
+  <%= form_for @conn, Routes.analysis_path(@conn, :games), [method: :get, class: "analysis-games-filters"], fn _f -> %>
+    <label>Platform
+      <select name="platform">
+        <option value="">Both platforms</option>
+        <option value="lichess" <%= if @library.platform == "lichess", do: "selected" %>>Lichess</option>
+        <option value="chess_com" <%= if @library.platform == "chess_com", do: "selected" %>>Chess.com</option>
+      </select>
+    </label>
+    <label>Study
+      <select name="study_id">
+        <option value="">All studies</option>
+        <%= for study <- @library.studies do %>
+          <option value="<%= study.id %>" <%= if @library.study_id == study.id, do: "selected" %>><%= study.title %></option>
+        <% end %>
+      </select>
+    </label>
+    <label>Analysis result
+      <select name="status">
+        <option value="">Any result</option>
+        <%= for status <- ~w(match deviation ambiguous out_of_scope error) do %>
+          <option value="<%= status %>" <%= if @library.status == status, do: "selected" %>><%= analysis_status_label(status) %></option>
+        <% end %>
+      </select>
+    </label>
+    <button type="submit">Filter games</button>
+  <% end %>
+
+  <%= if @library.games == [] do %>
+    <p class="highlight">No saved games match these filters. Sync a platform from the analysis overview or change the filters.</p>
+  <% else %>
+    <ol class="analysis-games-list">
+      <%= for game <- @library.games do %>
+        <% summaries = Map.get(@library.summaries, game.id, []) %>
+        <li>
+          <a class="analysis-game-row" href="<%= Routes.analysis_path(@conn, :game, game.id) %>">
+            <span class="analysis-game-primary">
+              <strong><%= game.white_player || "White" %> – <%= game.black_player || "Black" %></strong>
+              <span><%= analysis_platform_label(game.platform) %> · <%= Calendar.strftime(game.played_at, "%d %b %Y, %H:%M UTC") %></span>
+            </span>
+            <span class="analysis-game-summary">
+              <%= if summaries == [] do %>
+                <span class="analysis-status">Not analyzed for a study</span>
+              <% else %>
+                <%= for {status, count} <- Enum.frequencies_by(summaries, & &1.status) do %>
+                  <span class="analysis-status analysis-status-<%= status %>"><%= count %> <%= analysis_status_label(status) %></span>
+                <% end %>
+              <% end %>
+            </span>
+            <span aria-hidden="true">Open →</span>
+          </a>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+
+  <nav class="analysis-games-pagination" aria-label="Game pages">
+    <%= link "Newest games", to: Routes.analysis_path(@conn, :games, Map.take(@conn.query_params, ["platform", "study_id", "status"])) %>
+    <%= if @library.next_cursor do %>
+      <%= link "Older games →", to: Routes.analysis_path(@conn, :games,
+        Map.take(@conn.query_params, ["platform", "study_id", "status"])
+        |> Map.put("cursor", @library.next_cursor)) %>
+    <% end %>
+  </nav>
+</div>

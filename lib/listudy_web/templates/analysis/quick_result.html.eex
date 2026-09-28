@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
 <div id="analysis-comparison" class="analysis-result-container"
   data-comparisons="<%= Jason.encode!(Enum.map(groups, &Map.take(&1, [:result, :color]))) %>">
-  <%= link "← Back to Analysis", to: Routes.analysis_path(@conn, :index), class: "button" %>
+  <%= link "← Back to Analysis", to: assigns[:back_path] || Routes.analysis_path(@conn, :index), class: "button" %>
   <h1>Your game and repertoire</h1>
   <p>
     <%= length(@choices) %> matching <%= if length(@choices) == 1, do: "chapter", else: "chapters" %>.

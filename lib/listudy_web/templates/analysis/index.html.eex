@@ -1,6 +1,7 @@
 <div class="whole">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
     <h2 style="margin: 0;">Analyze Games</h2>
+    <%= link "Browse imported games →", to: Routes.analysis_path(@conn, :games), class: "button" %>
   </div>
 
   <%
@@ -64,6 +65,13 @@
         <% end %>
       </div>
 
+      <% sync = @syncs["lichess"] %>
+      <%= if lichess_username && sync do %>
+        <p class="analysis-sync-status" role="status">
+          Last sync: <strong><%= sync.status %></strong>
+          <%= if sync.details, do: sync.details %>
+        </p>
+      <% end %>
       <div>
         <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0;", onsubmit: "this.querySelector('button').innerText = 'Processing...';"], fn f -> %>
           <%= hidden_input f, :platform, value: "lichess" %>
@@ -105,6 +113,13 @@
         <% end %>
       </div>
 
+      <% sync = @syncs["chess_com"] %>
+      <%= if chesscom_username && sync do %>
+        <p class="analysis-sync-status" role="status">
+          Last sync: <strong><%= sync.status %></strong>
+          <%= if sync.details, do: sync.details %>
+        </p>
+      <% end %>
       <div>
         <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0;", onsubmit: "this.querySelector('button').innerText = 'Processing...';"], fn f -> %>
           <%= hidden_input f, :platform, value: "chess_com" %>
