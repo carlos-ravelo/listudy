@@ -1,34 +1,23 @@
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js');
+const { expectedMoves } = require('./modules/analysis/training_moves');
 
-document.addEventListener("DOMContentLoaded", () => {
-    const boardContainer = document.getElementById("chess-training-board");
+document.addEventListener('DOMContentLoaded', () => {
+    const boardContainer = document.getElementById('chess-training-board');
     if (!boardContainer) return;
 
-    let originalMistakes = [];
+    let mistakes = [];
     try {
-        originalMistakes = JSON.parse(boardContainer.getAttribute("data-mistakes") || "[]");
-    } catch (e) {
-        console.error("Error parsing mistakes data:", e);
+        mistakes = JSON.parse(boardContainer.getAttribute('data-mistakes') || '[]');
+    } catch (error) {
+        console.error('Error parsing mistakes data:', error);
     }
 
-    if (originalMistakes.length === 0) {
-        boardContainer.innerHTML = "<p>No mistakes to train! You are perfect in this study.</p>";
+    if (mistakes.length === 0) {
+        boardContainer.innerHTML = '<p>No mistakes to train in this study.</p>';
         return;
     }
 
-    // 1. Separar en bloques por prioridad (Buckets)
-    let critical = []; // 5 o más fallos
-    let medium = [];   // 2 a 4 fallos
-    let low = [];      // 1 fallo
-
-    originalMistakes.forEach(m => {
-        if (m.times_repeated >= 5) critical.push(m);
-        else if (m.times_repeated >= 2) medium.push(m);
-        else low.push(m);
-    });
-
-    // 2. Función para mezclar aleatoriamente (Fisher-Yates)
     function shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -37,93 +26,77 @@ document.addEventListener("DOMContentLoaded", () => {
         return array;
     }
 
-    // 3. Unir los bloques ya mezclados internamente
-    let mistakes = [...shuffle(critical), ...shuffle(medium), ...shuffle(low)];
+    const critical = [];
+    const medium = [];
+    const low = [];
+    mistakes.forEach(mistake => {
+        if (mistake.times_repeated >= 5) critical.push(mistake);
+        else if (mistake.times_repeated >= 2) medium.push(mistake);
+        else low.push(mistake);
+    });
+    mistakes = [...shuffle(critical), ...shuffle(medium), ...shuffle(low)];
 
-    let currentIndex = 0;
-    let chess = new Chess();
+    const chess = new Chess();
+    const statusEl = document.getElementById('training-status');
+    const infoEl = document.getElementById('mistake-info');
+    const nextBtn = document.getElementById('next-mistake-btn');
+    const paginationEl = document.getElementById('mistakes-pagination');
+    const hintBtn = document.getElementById('hint-btn');
+    const solveBtn = document.getElementById('solve-btn');
+    const dots = [];
+    let currentIndex = -1;
     let ground;
+    let resetTimer;
 
-    const statusEl = document.getElementById("training-status");
-    const infoEl   = document.getElementById("mistake-info");
-    const nextBtn  = document.getElementById("next-mistake-btn");
-    const paginationEl = document.getElementById("mistakes-pagination");
-    const hintBtn = document.getElementById("hint-btn");
-    const solveBtn = document.getElementById("solve-btn");
+    function updateDot(index) {
+        const dot = dots[index];
+        if (!dot) return;
 
-    if (paginationEl) paginationEl.style.alignItems = "center";
+        const mistake = mistakes[index];
+        const scale = mistake.times_repeated >= 5 ? 1.4 :
+            mistake.times_repeated >= 2 ? 1.15 : 0.85;
+        const active = index === currentIndex;
 
+        dot.style.backgroundColor = active ? '#3182ce' :
+            mistake.completed ? '#38a169' :
+            mistake.times_repeated >= 5 ? '#cbd5e0' : '#e2e8f0';
+        dot.style.transform = `scale(${scale * (active ? 1.3 : 1)})`;
+        dot.style.boxShadow = active ? '0 0 6px rgba(49, 130, 206, 0.4)' : '';
+        if (active) dot.setAttribute('aria-current', 'step');
+        else dot.removeAttribute('aria-current');
+    }
 
-    function renderDots() {
+    function createDots() {
         if (!paginationEl) return;
-        paginationEl.innerHTML = "";
-        
-        // Damos más espacio entre puntos para que al crecer no choquen
-        paginationEl.style.gap = "12px"; 
-        
-        mistakes.forEach((mistake, index) => {
-            const dot = document.createElement('div');
-            
-            // LÓGICA DE ESCALA
-            let baseScale = 1;
-            let baseColor = '#e2e8f0'; // Gris normal
-            
-            if (mistake.times_repeated >= 5) {
-                baseScale = 1.4; // 40% más grande
-                baseColor = '#cbd5e0'; // Gris oscuro
-            } else if (mistake.times_repeated >= 2) {
-                baseScale = 1.15; // 15% más grande
-            } else {
-                baseScale = 0.85; // Un poco más pequeño para destacar menos
-            }
+        paginationEl.style.alignItems = 'center';
+        paginationEl.style.gap = '12px';
+        const fragment = document.createDocumentFragment();
 
-            // El tamaño físico es idéntico para todos, asegurando la alineación
+        mistakes.forEach((mistake, index) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.setAttribute('aria-label',
+                `Position ${index + 1}, missed in ${mistake.times_repeated} game(s)`);
             dot.style.width = '12px';
             dot.style.height = '12px';
+            dot.style.padding = '0';
+            dot.style.border = '0';
             dot.style.borderRadius = '50%';
             dot.style.cursor = 'pointer';
             dot.style.transition = 'background-color 0.2s ease, transform 0.2s ease';
-            
-            // LÓGICA DE COLORES Y ESTADOS
-            if (index === currentIndex) {
-                dot.style.backgroundColor = '#3182ce'; // Azul activo
-                // Multiplicamos la escala base por 1.3 para que el activo siempre resalte
-                dot.style.transform = `scale(${baseScale * 1.3})`; 
-                dot.style.boxShadow = '0 0 6px rgba(49, 130, 206, 0.4)';
-            } else if (mistake.completed) {
-                dot.style.backgroundColor = '#38a169'; // Verde
-                dot.style.transform = `scale(${baseScale})`;
-            } else {
-                dot.style.backgroundColor = baseColor;
-                dot.style.transform = `scale(${baseScale})`;
-            }
-            
-            dot.addEventListener('mouseover', () => {
-                if (index !== currentIndex && !mistake.completed) {
-                    dot.style.backgroundColor = '#a0aec0';
-                }
-            });
-            dot.addEventListener('mouseout', () => {
-                if (index !== currentIndex && !mistake.completed) {
-                    dot.style.backgroundColor = baseColor;
-                }
-            });
-
-            dot.addEventListener('click', () => {
-                currentIndex = index;
-                statusEl.style.color = "inherit";
-                loadMistake(currentIndex);
-            });
-            
-            paginationEl.appendChild(dot);
+            dot.addEventListener('click', () => loadMistake(index));
+            dots.push(dot);
+            fragment.appendChild(dot);
+            updateDot(index);
         });
+        paginationEl.appendChild(fragment);
     }
 
     function getLegalMoves() {
         const dests = new Map();
         chess.SQUARES.forEach(square => {
             const moves = chess.moves({ square, verbose: true });
-            if (moves.length) dests.set(square, moves.map(m => m.to));
+            if (moves.length) dests.set(square, moves.map(move => move.to));
         });
         return dests;
     }
@@ -132,15 +105,31 @@ document.addEventListener("DOMContentLoaded", () => {
         return chess.turn() === 'w' ? 'white' : 'black';
     }
 
+    function showPrompt(mistake) {
+        infoEl.innerText = `You played ${mistake.played} here in ${mistake.times_repeated} game(s). Find a move from your study.`;
+    }
+
     function loadMistake(index) {
-        renderDots(); // Update dots on every load
+        if (resetTimer) {
+            clearTimeout(resetTimer);
+            resetTimer = undefined;
+        }
+        if (ground) {
+            ground.destroy();
+            ground = undefined;
+        }
+
+        const previousIndex = currentIndex;
+        currentIndex = index;
+        updateDot(previousIndex);
+        updateDot(currentIndex);
 
         if (index >= mistakes.length) {
-            statusEl.innerText = "Training Complete!";
-            infoEl.innerText = "You have reviewed all your mistakes.";
-            boardContainer.style.pointerEvents = "none";
-            nextBtn.style.display = "none";
-            if (paginationEl) paginationEl.style.display = "none";
+            statusEl.innerText = 'Training Complete!';
+            infoEl.innerText = 'You have reviewed all your mistakes.';
+            boardContainer.style.pointerEvents = 'none';
+            nextBtn.style.display = 'none';
+            if (paginationEl) paginationEl.style.display = 'none';
             return;
         }
 
@@ -148,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
         chess.load(mistake.fen);
         const turnColor = getTurnColor();
 
-        boardContainer.innerHTML = "";
+        boardContainer.innerHTML = '';
         ground = Chessground(boardContainer, {
             fen: mistake.fen,
             turnColor,
@@ -160,41 +149,47 @@ document.addEventListener("DOMContentLoaded", () => {
                 events: { after: onMove }
             }
         });
-        ground.redrawAll();
         statusEl.innerText = `Position ${index + 1} of ${mistakes.length}`;
-        infoEl.innerText = `You played ${mistake.played} here in ${mistake.times_repeated} game(s). Find the correct move.`;
-        nextBtn.style.display = "none";
-
-        if (hintBtn) hintBtn.style.display = "inline-block";
-        if (solveBtn) solveBtn.style.display = "inline-block";
-        ground.set({ drawable: { autoShapes: [] } }); // Limpia los círculos del hint
+        statusEl.style.color = 'inherit';
+        showPrompt(mistake);
+        nextBtn.style.display = 'none';
+        if (hintBtn) {
+            hintBtn.style.display = 'inline-block';
+            hintBtn.disabled = false;
+        }
+        if (solveBtn) {
+            solveBtn.style.display = 'inline-block';
+            solveBtn.disabled = false;
+        }
     }
 
     function onMove(orig, dest) {
         const mistake = mistakes[currentIndex];
         const move = chess.move({ from: orig, to: dest, promotion: 'q' });
-        
         if (!move) return;
 
-        if (move.san === mistake.expected) {
-            mistakes[currentIndex].completed = true;
+        if (expectedMoves(mistake).includes(move.san)) {
+            mistake.completed = true;
             ground.set({ movable: { color: undefined } });
-            statusEl.innerText = "Correct!";
-            statusEl.style.color = "#15781B";
-            infoEl.innerText = `Yes, ${mistake.expected} is the right move.`;
-            nextBtn.style.display = "block";
-            if (hintBtn) hintBtn.style.display = "none";
-            if (solveBtn) solveBtn.style.display = "none";
-            renderDots();
+            statusEl.innerText = 'Correct!';
+            statusEl.style.color = '#15781B';
+            infoEl.innerText = `Yes, ${move.san} is in your study.`;
+            nextBtn.style.display = 'block';
+            if (hintBtn) hintBtn.style.display = 'none';
+            if (solveBtn) solveBtn.style.display = 'none';
+            updateDot(currentIndex);
         } else {
-            statusEl.innerText = "Incorrect!";
-            statusEl.style.color = "#e53e3e";
+            ground.set({ movable: { color: undefined } });
+            statusEl.innerText = 'Incorrect!';
+            statusEl.style.color = '#e53e3e';
             infoEl.innerText = `You tried ${move.san}. Try again!`;
+            if (hintBtn) hintBtn.disabled = true;
+            if (solveBtn) solveBtn.disabled = true;
 
-            setTimeout(() => {
+            resetTimer = setTimeout(() => {
+                resetTimer = undefined;
                 chess.undo();
                 const turnColor = getTurnColor();
-
                 ground.set({
                     fen: chess.fen(),
                     turnColor,
@@ -205,64 +200,48 @@ document.addEventListener("DOMContentLoaded", () => {
                         events: { after: onMove }
                     }
                 });
-
                 statusEl.innerText = `Position ${currentIndex + 1} of ${mistakes.length}`;
-                statusEl.style.color = "inherit";
-                infoEl.innerText = `You played ${mistake.played} here in ${mistake.times_repeated} game(s). Find the correct move.`;
+                statusEl.style.color = 'inherit';
+                showPrompt(mistake);
+                if (hintBtn) hintBtn.disabled = false;
+                if (solveBtn) solveBtn.disabled = false;
             }, 500);
         }
     }
 
-    nextBtn.addEventListener("click", () => {
-        currentIndex++;
-        statusEl.style.color = "inherit";
-        loadMistake(currentIndex);
-    });
+    nextBtn.addEventListener('click', () => loadMistake(currentIndex + 1));
 
     if (hintBtn) {
         hintBtn.addEventListener('click', () => {
-            const mistake = mistakes[currentIndex];
-            // Simulamos el movimiento para saber desde qué casilla sale
-            const moveObj = chess.move(mistake.expected);
-            if (moveObj) {
-                chess.undo(); // Revertimos inmediatamente
-                // Dibujamos un círculo azul en la pieza que debe moverse
-                ground.set({ drawable: { autoShapes: [{ orig: moveObj.from, brush: 'blue' }] } });
-            }
+            const move = chess.move(expectedMoves(mistakes[currentIndex])[0]);
+            if (!move) return;
+            chess.undo();
+            ground.set({ drawable: { autoShapes: [{ orig: move.from, brush: 'blue' }] } });
         });
     }
 
     if (solveBtn) {
         solveBtn.addEventListener('click', () => {
-            const mistake = mistakes[currentIndex];
-            const moveObj = chess.move(mistake.expected);
-            
-            if (moveObj) {
-                // Movemos la pieza en la interfaz
-                ground.move(moveObj.from, moveObj.to);
-                ground.set({ movable: { color: undefined } }); // Bloqueamos el tablero
-                
-                // Actualizamos los textos
-                statusEl.innerText = "Solution shown";
-                statusEl.style.color = "#d69e2e"; // Color naranja/mostaza
-                infoEl.innerText = `The expected move was ${mistake.expected}.`;
-                
-                // Alternamos botones
-                hintBtn.style.display = "none";
-                solveBtn.style.display = "none";
-                nextBtn.style.display = "inline-block";
-                
-                renderDots();
-            }
+            const move = chess.move(expectedMoves(mistakes[currentIndex])[0]);
+            if (!move) return;
+            ground.move(move.from, move.to);
+            ground.set({ movable: { color: undefined } });
+            statusEl.innerText = 'Solution shown';
+            statusEl.style.color = '#d69e2e';
+            infoEl.innerText = `One move from your study was ${move.san}.`;
+            if (hintBtn) hintBtn.style.display = 'none';
+            solveBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
         });
     }
-    
+
+    createDots();
     loadMistake(0);
 
-    const timeFilter = document.getElementById("time-filter");
+    const timeFilter = document.getElementById('time-filter');
     if (timeFilter) {
-        timeFilter.addEventListener("change", (e) => {
-            window.location.href = window.location.pathname + '?filter=' + e.target.value;
+        timeFilter.addEventListener('change', event => {
+            window.location.href = window.location.pathname + '?filter=' + event.target.value;
         });
     }
 });

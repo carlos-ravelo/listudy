@@ -6,7 +6,7 @@ defmodule Listudy.Games.Analyzer do
   import Ecto.Query
   require Logger
   alias Listudy.Repo
-  alias Listudy.Games.{ChessEngine, Deviation, StudyGame, UserGame}
+  alias Listudy.Games.{ChessEngine, Deviation, StudyGame, TrainingDeviations, UserGame}
 
   def analyze_single_pgn(user_id, pgn, selection \\ %{}) do
     with {:ok, studies} <- load_studies(user_id),
@@ -148,7 +148,7 @@ defmodule Listudy.Games.Analyzer do
 
     outcomes =
       Enum.map(best, fn {_, result} ->
-        {result["deviation"], result["fen"], result["played"], result["expected"]}
+        TrainingDeviations.outcome(result, item.study.color)
       end)
       |> Enum.uniq()
 
@@ -158,12 +158,14 @@ defmodule Listudy.Games.Analyzer do
         _ -> nil
       end
 
+    training_events = TrainingDeviations.events(result, item.study.color)
+
     status =
       cond do
         error -> "error"
         result == nil -> "out_of_scope"
         length(outcomes) > 1 -> "ambiguous"
-        result["deviation"] and active_color(result["fen"]) == item.study.color -> "deviation"
+        training_events != [] -> "deviation"
         true -> "match"
       end
 
@@ -173,16 +175,18 @@ defmodule Listudy.Games.Analyzer do
       )
 
       if status == "deviation" do
-        %Deviation{}
-        |> Deviation.changeset(%{
-          user_game_id: game.id,
-          study_id: item.study.id,
-          ply_number: result["ply"] + 1,
-          position_fen: result["fen"],
-          expected_move: Enum.join(result["expected"], " / "),
-          played_move: result["played"]
-        })
-        |> Repo.insert!()
+        Enum.each(training_events, fn event ->
+          %Deviation{}
+          |> Deviation.changeset(%{
+            user_game_id: game.id,
+            study_id: item.study.id,
+            ply_number: event.ply + 1,
+            position_fen: event.fen,
+            expected_move: Enum.join(event.expected, " / "),
+            played_move: event.played
+          })
+          |> Repo.insert!()
+        end)
       end
 
       # Depth is the number of half-moves reached in the uploaded game.
@@ -202,8 +206,6 @@ defmodule Listudy.Games.Analyzer do
       )
     end)
   end
-
-  defp active_color(fen), do: if(Enum.at(String.split(fen), 1) == "w", do: "white", else: "black")
 
   defp user_color(game, user) do
     names =
