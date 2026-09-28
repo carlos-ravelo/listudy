@@ -155,10 +155,16 @@ defmodule Listudy.Games do
           query
       end
 
+    # The matcher treats the first four FEN fields as position identity.
+    # Keep a full FEN from one occurrence so the training board can replay it.
     query
-    |> group_by([d, g], [d.position_fen, d.expected_move, d.played_move])
+    |> group_by([d, g], [
+      fragment("regexp_replace(?, ' [0-9]+ [0-9]+$', '')", d.position_fen),
+      d.expected_move,
+      d.played_move
+    ])
     |> select([d, g], %{
-      fen: d.position_fen,
+      fen: min(d.position_fen),
       expected: d.expected_move,
       played: d.played_move,
       times_repeated: count(d.id)

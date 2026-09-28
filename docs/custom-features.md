@@ -70,9 +70,12 @@ in a new tab to preserve the uploaded-game comparison. `chapter_index=5` means
 chapter 6, and the study page already resolves this parameter before starting
 training.
 
-The matcher now returns `matched_plies` for comparison grouping. This adds display
-data without changing ranking or persisted results, so the analysis version stays
-at `positions-v3`.
+The matcher returns `matched_plies` for comparison grouping. Imported-game
+training records a final user-side departure only when equally ranked chapters
+agree on its position and expected moves. Earlier departures remain visible in
+the analysis, but are not training exercises: they may be another move order
+that later transposes into the repertoire. Existing analysis results remain
+valid at `positions-v3` because matching semantics have not changed.
 
 ### Processing and setup
 
@@ -121,3 +124,12 @@ Lichess download covers one year and each platform request currently caps at
 3,500 games; earlier history needs a separate backfill design. Background sync
 runs as an unmonitored task, so a server restart can leave a stale `running`
 state until the next sync.
+
+### Mistake training
+
+Exercises group positions by pieces, side to move, castling rights and legal
+en passant. The two FEN clock fields are excluded from grouping, while a full
+FEN remains available for the board. Different played mistakes at the same
+position still appear separately. Multiple repertoire moves are accepted as
+valid answers. The browser creates the position indicators once and only
+updates indicators whose state changes.
