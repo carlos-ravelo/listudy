@@ -1,20 +1,41 @@
 <% result = @group.result %>
-<section id="analysis-outcome-<%= @index %>" class="analysis-outcome" data-outcome="<%= @index %>" <%= if @index != 0, do: "hidden" %>>
-  <h2><%= comparison_title(result) %></h2>
+<% {state, feedback} = comparison_feedback(result, @group.color) %>
+<section id="analysis-outcome-<%= @index %>" class="analysis-outcome analysis-outcome-<%= state %>" data-outcome="<%= @index %>" aria-labelledby="analysis-feedback-<%= @index %>" <%= if @index != 0, do: "hidden" %>>
+  <div class="analysis-outcome-header">
+    <strong id="analysis-feedback-<%= @index %>" class="analysis-outcome-badge analysis-outcome-badge-<%= state %>"><%= feedback %></strong>
+    <span class="analysis-position-label">Position <%= move_label(result["fen"]) %></span>
+  </div>
+
   <%= if result["deviation"] do %>
-    <p><%= moving_side(result["fen"]) %> played <strong><%= result["played"] %></strong>.
-      The repertoire suggests <strong><%= Enum.join(result["expected"], " / ") %></strong> from this position.</p>
-    <p class="analysis-arrow-legend">At this position: green arrows show repertoire moves; the red arrow shows the move played in your game.</p>
+    <dl class="analysis-move-comparison">
+      <div>
+        <dt>Played in game</dt>
+        <dd><strong class="analysis-played-move"><%= result["played"] %></strong><span class="analysis-move-actor"><%= comparison_actor(result["fen"], @group.color) %></span></dd>
+      </div>
+      <div>
+        <dt>Repertoire moves</dt>
+        <dd class="analysis-expected-moves">
+          <%= for expected <- result["expected"] do %>
+            <strong class="analysis-expected-move"><%= expected %></strong>
+          <% end %>
+        </dd>
+      </div>
+    </dl>
+    <div class="analysis-arrow-legend" aria-label="Board arrows">
+      <span><i class="analysis-legend-mark analysis-legend-played" aria-hidden="true"></i> Red: played move</span>
+      <span><i class="analysis-legend-mark analysis-legend-expected" aria-hidden="true"></i> Green: repertoire</span>
+    </div>
   <% else %>
-    <p><%= if result["reason"] == "book_ended",
-      do: "Your game continued beyond the stored line. This chapter has no next move to compare here.",
-      else: "Your game ended in a position covered by this chapter." %></p>
+    <p class="analysis-outcome-note"><%= if result["reason"] == "book_ended",
+      do: "The game continued beyond this chapter’s saved line.",
+      else: "The game ended in a position saved in this chapter." %></p>
   <% end %>
+
   <%= if result["transposed"] do %>
-    <p>This game reached or rejoined the chapter through a different move order.</p>
+    <p class="analysis-transposition">↪ Reached this position by another move order.</p>
   <% end %>
   <%= if (result["earlier_departures"] || []) != [] do %>
-    <details>
+    <details class="analysis-earlier-departures" open>
       <summary>Earlier departures before the game rejoined</summary>
       <ul>
         <%= for departure <- result["earlier_departures"] do %>
@@ -22,7 +43,7 @@
             <button type="button" class="analysis-departure" data-jump-ply="<%= departure["ply"] %>" disabled>
               <%= move_label(departure["fen"]) %> <%= departure["played"] %>
             </button>
-            — repertoire suggests <%= Enum.join(departure["expected"], " / ") %>.
+            <span>Repertoire: <strong><%= Enum.join(departure["expected"], " / ") %></strong></span>
           </li>
         <% end %>
       </ul>
