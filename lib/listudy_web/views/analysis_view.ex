@@ -38,18 +38,36 @@ defmodule ListudyWeb.AnalysisView do
     number <> if(turn == "w", do: ".", else: "...")
   end
 
-  def comparison_title(result) do
+  def comparison_feedback(result, color) do
     cond do
+      result["deviation"] and player_to_move?(result["fen"], color) ->
+        {:player, "⚠️ You deviated"}
+
       result["deviation"] ->
-        "#{move_label(result["fen"])} #{result["played"]} · suggests #{Enum.join(result["expected"], " / ")}"
+        {:opponent, "🚨 Your opponent deviated"}
 
       result["reason"] == "book_ended" ->
-        "Stored line ends before #{move_label(result["fen"])}"
+        {:book_end, "📘 Repertoire line ended"}
 
       true ->
-        "Game ends in a stored position"
+        {:game_end, "✓ Game ended in a repertoire position"}
     end
   end
 
-  def moving_side(fen), do: if(Enum.at(String.split(fen), 1) == "w", do: "White", else: "Black")
+  def comparison_actor(fen, color) do
+    if player_to_move?(fen, color), do: "You", else: "Opponent"
+  end
+
+  def comparison_move_summary(result) do
+    if result["deviation"] do
+      "#{move_label(result["fen"])} #{result["played"]}"
+    else
+      "Position #{move_label(result["fen"])}"
+    end
+  end
+
+  defp player_to_move?(fen, color) do
+    side = if Enum.at(String.split(fen), 1) == "w", do: "white", else: "black"
+    side == color
+  end
 end

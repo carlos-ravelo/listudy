@@ -10,14 +10,14 @@
       <p><%= link "Compare across all studies", to: @compare_all_path %></p>
     <% end %>
   <% end %>
-  <p>
-    <%= length(@choices) %> matching <%= if length(@choices) == 1, do: "chapter", else: "chapters" %>.
-    <%= if length(groups) == 1 do %>
-      <%= if length(@choices) > 1, do: "They give the same comparison for this game; their later continuations may differ." %>
-    <% else %>
-      <%= length(groups) %> different comparisons fit equally well. Select one to explore it on the board.
-    <% end %>
-  </p>
+  <div class="analysis-comparison-summary" aria-label="Matching summary">
+    <span><strong><%= length(groups) %></strong> <%= if length(groups) == 1, do: "comparison", else: "comparisons" %></span>
+    <span aria-hidden="true">·</span>
+    <span><strong><%= length(@choices) %></strong> <%= if length(@choices) == 1, do: "chapter", else: "chapters" %></span>
+  </div>
+  <%= if length(groups) > 1 do %>
+    <p class="analysis-selection-hint">Choose a result to show on the board.</p>
+  <% end %>
 
   <div class="analysis-comparison-layout">
     <section class="analysis-game" aria-label="Uploaded game">
@@ -44,12 +44,14 @@
     <aside class="analysis-matches" aria-labelledby="analysis-matches-heading">
       <h2 id="analysis-matches-heading">Matching chapters</h2>
       <%= for {group, index} <- Enum.with_index(groups) do %>
+        <% {state, feedback} = comparison_feedback(group.result, group.color) %>
         <section class="analysis-match-group" data-match-group="<%= index %>">
           <button type="button" class="analysis-group-choice" data-select-group="<%= index %>"
             aria-pressed="<%= if index == 0, do: "true", else: "false" %>"
             aria-controls="analysis-outcome-<%= index %>" disabled>
-            <strong><%= comparison_title(group.result) %></strong>
-            <span><%= length(group.chapters) %> <%= if length(group.chapters) == 1, do: "chapter", else: "chapters with this comparison" %></span>
+            <span class="analysis-group-state analysis-group-state-<%= state %>"><%= feedback %></span>
+            <strong class="analysis-group-move"><%= comparison_move_summary(group.result) %></strong>
+            <span class="analysis-group-count"><%= length(group.chapters) %> <%= if length(group.chapters) == 1, do: "chapter", else: "chapters" %></span>
           </button>
           <details class="analysis-chapter-list" <%= if length(group.chapters) == 1, do: "open" %>>
             <summary>View <%= length(group.chapters) %> <%= if length(group.chapters) == 1, do: "chapter", else: "chapters" %></summary>
@@ -57,7 +59,7 @@
               <%= for {study, result} <- group.chapters do %>
                 <li>
                   <span class="analysis-study-name"><%= String.replace(study.title, "_", " ") %></span>
-                  <strong>Chapter <%= result["chapter_index"] + 1 %>: <%= result["chapter"] %></strong>
+                  <strong class="analysis-chapter-name">Chapter <%= result["chapter_index"] + 1 %>: <%= result["chapter"] %></strong>
                   <%= link "Open study chapter ↗", to: chapter_path(@conn, study, result), target: "_blank", rel: "noopener" %>
                 </li>
               <% end %>

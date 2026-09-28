@@ -1,6 +1,9 @@
 /* Uploaded-game replay and grouped repertoire comparisons. */
 .analysis-result-container { max-width: 1100px; margin: 0 auto; padding: 2rem 0; }
 .analysis-result-container [hidden] { display: none !important; }
+.analysis-comparison-summary { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; margin: .4rem 0 1rem; color: #4a5568; }
+.analysis-comparison-summary strong { color: #1a202c; font-size: 1.1rem; }
+.analysis-selection-hint { margin: -.5rem 0 1.2rem; color: #4a5568; font-size: .9rem; }
 .analysis-comparison-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(250px, 2fr); gap: 2rem; align-items: start; }
 .analysis-game, .analysis-matches { min-width: 0; }
 .cg-wrap.analysis-result-board { width: min(500px, 100%); height: auto; aspect-ratio: 1; margin: 10px auto 20px; }
@@ -13,20 +16,59 @@
 #analysis-moves { display: flex; flex-wrap: wrap; gap: .25rem; max-height: 180px; overflow-y: auto; padding: .3rem; }
 #analysis-moves button { margin: 0; padding: .25rem .5rem; height: auto; line-height: 1.5; letter-spacing: normal; text-transform: none; }
 #analysis-moves [aria-current] { background: var(--bg-highlight-color); border-color: var(--primary-color); font-weight: bold; }
-.analysis-outcome { padding: 1rem; border: 1px solid var(--secondary-color); border-radius: 4px; overflow-wrap: anywhere; }
-.analysis-outcome h2, .analysis-matches h2 { font-size: 1.4rem; }
-.analysis-arrow-legend, .analysis-match-help, .analysis-match-details { font-size: .9em; }
-.analysis-departure { height: auto; padding: .2rem .5rem; margin: .25rem 0; letter-spacing: normal; text-transform: none; }
-.analysis-match-group { border: 1px solid var(--secondary-color); border-radius: 4px; margin-bottom: .75rem; overflow-wrap: anywhere; }
-.analysis-group-choice { display: block; width: 100%; margin: 0; padding: .8rem; height: auto; white-space: normal; text-align: left; line-height: 1.5; letter-spacing: normal; text-transform: none; border: 2px solid transparent; border-radius: 3px; }
-.analysis-group-choice span { display: block; font-weight: normal; margin-top: .3rem; }
+
+.analysis-outcome { --outcome-accent: #4a5568; --outcome-soft: #f7fafc; padding: 1.1rem; border: 1px solid #cbd5e0; border-left: 5px solid var(--outcome-accent); border-radius: 6px; overflow-wrap: anywhere; }
+.analysis-outcome-player { --outcome-accent: #9a6700; --outcome-soft: #fff7df; }
+.analysis-outcome-opponent { --outcome-accent: #b42318; --outcome-soft: #fff0ee; }
+.analysis-outcome-game_end { --outcome-accent: #237245; --outcome-soft: #edf8f0; }
+.analysis-outcome-book_end { --outcome-accent: #315a86; --outcome-soft: #edf5fc; }
+.analysis-outcome-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: 1rem; }
+.analysis-outcome-badge { display: inline-block; padding: .45rem .7rem; border-radius: 5px; background: var(--outcome-soft); color: var(--outcome-accent); font-size: 1.05rem; line-height: 1.35; }
+.analysis-position-label { color: #4a5568; font-size: .84rem; font-weight: 600; white-space: nowrap; }
+.analysis-move-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: 0 0 .85rem; }
+.analysis-move-comparison > div { min-width: 0; padding: .75rem; border: 1px solid #e2e8f0; border-radius: 5px; background: #fff; }
+.analysis-move-comparison dt { margin-bottom: .35rem; color: #4a5568; font-size: .79rem; font-weight: 600; }
+.analysis-move-comparison dd { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: 0; }
+.analysis-played-move, .analysis-expected-move { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: 1.15rem; line-height: 1.4; }
+.analysis-played-move { background: var(--outcome-soft); color: var(--outcome-accent); }
+.analysis-expected-move { background: #edf8f0; color: #237245; }
+.analysis-move-actor { color: #4a5568; font-size: .84rem; }
+.analysis-arrow-legend { display: flex; flex-wrap: wrap; gap: .9rem; margin: .5rem 0 .7rem; color: #4a5568; font-size: .82rem; }
+.analysis-arrow-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.analysis-legend-mark { display: inline-block; width: .65rem; height: .65rem; border-radius: 50%; }
+.analysis-legend-played { background: #b42318; }
+.analysis-legend-expected { background: #237245; }
+.analysis-outcome-note { margin: 0 0 .85rem; color: #2d3748; }
+.analysis-transposition { display: inline-block; margin: .15rem 0 .8rem; padding: .3rem .55rem; border-radius: 4px; background: #edf2f7; color: #35445a; font-size: .85rem; }
+.analysis-earlier-departures { margin: .7rem 0; padding: .3rem .65rem; border: 1px solid #d7e2ee; border-radius: 5px; background: #f8fbfe; }
+.analysis-earlier-departures ul { margin: .3rem 0 .6rem; padding-left: 1.4rem; }
+.analysis-earlier-departures li { margin: .35rem 0; }
+.analysis-departure { height: auto; margin: .1rem .35rem .1rem 0; padding: .2rem .5rem; letter-spacing: normal; text-transform: none; }
+.analysis-match-details { margin-top: .6rem; color: #4a5568; font-size: .85rem; }
+
+.analysis-matches h2 { margin-top: 0; font-size: 1.25rem; }
+.analysis-match-group { margin-bottom: .75rem; border: 1px solid var(--secondary-color); border-radius: 5px; overflow-wrap: anywhere; }
+.analysis-group-choice { display: block; width: 100%; height: auto; margin: 0; padding: .75rem .85rem; border: 2px solid transparent; border-radius: 4px; white-space: normal; text-align: left; line-height: 1.4; letter-spacing: normal; text-transform: none; }
+.analysis-group-choice > span, .analysis-group-choice > strong { display: block; }
+.analysis-group-state { margin-bottom: .35rem; color: #4a5568; font-size: .77rem; font-weight: 700; }
+.analysis-group-state-player { color: #9a6700; }
+.analysis-group-state-opponent { color: #b42318; }
+.analysis-group-state-game_end { color: #237245; }
+.analysis-group-state-book_end { color: #315a86; }
+.analysis-group-move { color: #1a202c; font-size: 1.12rem; }
+.analysis-group-count { margin-top: .2rem; color: #718096; font-size: .78rem; font-weight: 400; }
 .analysis-group-choice[aria-pressed="true"] { border-color: var(--primary-color); background: var(--bg-highlight-color); }
-.analysis-chapter-list { padding: 0 .8rem .4rem; }
-.analysis-chapter-list ul { list-style: none; margin: 0; max-height: 360px; overflow-y: auto; }
-.analysis-chapter-list li { padding: .75rem 0; margin: 0; border-top: 1px solid var(--secondary-color); }
-.analysis-chapter-list strong, .analysis-study-name, .analysis-chapter-list a { display: block; }
-.analysis-study-name { font-size: .85em; margin-bottom: .2rem; }
+.analysis-chapter-list { padding: 0 .85rem .4rem; }
+.analysis-chapter-list ul { margin: 0; padding: 0; max-height: 360px; overflow-y: auto; list-style: none; }
+.analysis-chapter-list li { padding: .8rem 0; border-top: 1px solid var(--secondary-color); }
+.analysis-study-name, .analysis-chapter-name, .analysis-chapter-list a { display: block; }
+.analysis-study-name { margin-bottom: .22rem; color: #4a5568; font-size: .78rem; font-weight: 400; opacity: .85; }
+.analysis-chapter-name { color: #1a202c; font-size: 1.03rem; font-weight: 750; line-height: 1.4; }
 .analysis-chapter-list a { margin-top: .4rem; }
+.analysis-match-help { color: #718096; font-size: .82rem; }
 @media (max-width: 760px) {
-    .analysis-comparison-layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .analysis-comparison-layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+}
+@media (max-width: 520px) {
+  .analysis-move-comparison { grid-template-columns: minmax(0, 1fr); }
 }
