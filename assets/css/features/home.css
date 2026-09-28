@@ -1,0 +1,130 @@
+.home-page {
+  max-width: 960px;
+  margin: 2rem auto 4rem;
+}
+
+.home-welcome {
+  padding: 2.5rem clamp(1.25rem, 4vw, 3rem);
+  background: var(--bg-highlight-color);
+  border-radius: 12px;
+}
+
+.home-welcome h1 {
+  margin: 0 0 .75rem;
+}
+
+.home-welcome p {
+  max-width: 66ch;
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.home-paths {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 3rem;
+}
+
+.home-path {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  border: 1px solid var(--secondary-color);
+  border-radius: 12px;
+}
+
+.home-path h2 {
+  margin: 0 0 .5rem;
+}
+
+.home-path p {
+  line-height: 1.5;
+}
+
+.home-path-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem 1rem;
+  margin-top: auto;
+}
+
+.home-path-actions .button {
+  margin: 0;
+}
+
+.home-text-link {
+  color: var(--font-color);
+  font-weight: bold;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+
+.home-text-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.home-daily {
+  max-width: 700px;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--secondary-color);
+}
+
+.home-daily-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.home-daily-heading h2 {
+  margin: 0 0 .25rem;
+}
+
+.home-daily-heading p {
+  margin: 0;
+}
+
+.home-daily .with_sidebar {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.home-daily #game_container {
+  flex: 0 0 280px;
+  width: 280px;
+  max-width: 100%;
+}
+
+.home-daily .cg-wrap {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  aspect-ratio: 1;
+  margin-bottom: 1rem;
+}
+
+.home-daily .sidebar {
+  min-width: 0;
+  margin: 0;
+}
+
+@media (max-width: 650px) {
+  .home-paths {
+    grid-template-columns: 1fr;
+  }
+
+  .home-daily .with_sidebar {
+    display: block;
+  }
+
+  .home-daily-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
