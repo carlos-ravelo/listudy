@@ -1,6 +1,17 @@
 defmodule ListudyWeb.AnalysisView do
   use ListudyWeb, :view
 
+  def analysis_platform_label("chess_com"), do: "Chess.com"
+  def analysis_platform_label("lichess"), do: "Lichess"
+  def analysis_platform_label(platform), do: platform
+
+  def analysis_status_label("match"), do: "No recorded deviation"
+  def analysis_status_label("deviation"), do: "Your deviation"
+  def analysis_status_label("ambiguous"), do: "Several outcomes"
+  def analysis_status_label("out_of_scope"), do: "Outside repertoire"
+  def analysis_status_label("error"), do: "Analysis error"
+  def analysis_status_label(status), do: status
+
   def comparison_groups(choices), do: Listudy.Games.AnalysisComparison.groups(choices)
 
   def chapter_path(conn, study, result) do

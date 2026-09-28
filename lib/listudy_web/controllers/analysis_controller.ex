@@ -2,6 +2,7 @@ defmodule ListudyWeb.AnalysisController do
   use ListudyWeb, :controller
 
   alias Listudy.Games
+  alias Listudy.Games.{GameSync, ImportedGames}
   alias Listudy.Repo
   import Ecto.Query
 
@@ -146,7 +147,8 @@ defmodule ListudyWeb.AnalysisController do
       filter: filter,
       oldest_date_str: oldest_date_str,
       lichess_since: lichess_since,
-      chesscom_since: chesscom_since
+      chesscom_since: chesscom_since,
+      syncs: GameSync.for_user(user.id)
     )
   end
 
@@ -154,52 +156,67 @@ defmodule ListudyWeb.AnalysisController do
     user = Repo.get!(Listudy.Users.User, conn.assigns.current_user.id)
     platform = params["platform"]
 
-    username =
-      params["username"] ||
-        case platform do
-          "lichess" -> Map.get(user, :lichess_username)
-          "chess_com" -> Map.get(user, :chess_com_username)
-        end
+    if platform not in ~w(lichess chess_com) do
+      conn
+      |> put_flash(:error, "Choose Lichess or Chess.com to sync games.")
+      |> redirect(to: Routes.analysis_path(conn, :index))
+    else
+      username =
+        params["username"] ||
+          case platform do
+            "lichess" -> user.lichess_username
+            "chess_com" -> user.chess_com_username
+          end
 
-    user_field = if platform == "lichess", do: :lichess_username, else: :chess_com_username
-
-    # 1. Reasignamos el 'conn' para inyectarle la sesión actualizada si hay cambios
-    conn =
-      if username != "" and Map.get(user, user_field) != username do
-        updated_user =
-          user
-          |> Ecto.Changeset.change([{user_field, username}])
-          |> Repo.update!()
-
-        # 2. Esta es la magia: refresca la sesión instantáneamente
-        Pow.Plug.create(conn, updated_user)
-      else
+      if is_nil(username) or String.trim(username) == "" do
         conn
+        |> put_flash(:error, "Enter a username before syncing.")
+        |> redirect(to: Routes.analysis_path(conn, :index))
+      else
+        user_field = if platform == "lichess", do: :lichess_username, else: :chess_com_username
+
+        conn =
+          if Map.get(user, user_field) != username do
+            updated_user =
+              user
+              |> Ecto.Changeset.change([{user_field, username}])
+              |> Repo.update!()
+
+            Pow.Plug.create(conn, updated_user)
+          else
+            conn
+          end
+
+        GameSync.start(user.id, platform)
+
+        Task.start(fn ->
+          outcome =
+            try do
+              with {:ok, {imported, _}} <- import_platform(user, platform, username),
+                   {:ok, analyzed} <- Games.Analyzer.analyze_all_user_studies(user.id, platform) do
+                {:ok, "Imported #{imported} new games; analyzed #{analyzed} games."}
+              end
+            rescue
+              error -> {:error, Exception.message(error)}
+            end
+
+          case outcome do
+            {:ok, details} -> GameSync.finish(user.id, platform, "completed", details)
+            {:error, reason} -> GameSync.finish(user.id, platform, "failed", to_string(reason))
+          end
+        end)
+
+        conn
+        |> put_flash(:info, "Sync started. Refresh this page to see its result.")
+        |> redirect(to: Routes.analysis_path(conn, :index))
       end
-
-    Task.start(fn ->
-      result =
-        case platform do
-          "lichess" -> Games.import_lichess_games(user, username)
-          "chess_com" -> Games.import_chess_com_games(user, username)
-        end
-
-      case result do
-        {:ok, _} ->
-          Listudy.Games.Analyzer.analyze_all_user_studies(user.id, platform)
-
-        _ ->
-          :ok
-      end
-    end)
-
-    conn
-    |> put_flash(
-      :info,
-      "Syncing #{platform} games in the background. Refresh the page in a minute."
-    )
-    |> redirect(to: Routes.analysis_path(conn, :index))
+    end
   end
+
+  defp import_platform(user, "lichess", username), do: Games.import_lichess_games(user, username)
+
+  defp import_platform(user, "chess_com", username),
+    do: Games.import_chess_com_games(user, username)
 
   def disconnect(conn, %{"platform" => platform}) do
     user = Repo.get!(Listudy.Users.User, conn.assigns.current_user.id)
@@ -236,10 +253,11 @@ defmodule ListudyWeb.AnalysisController do
     filter = Map.get(params, "filter", "all")
 
     # 1. Buscamos el estudio para poder mostrar el título en la pantalla
-    study = Listudy.Repo.get!(Listudy.Studies.Study, study_id)
+    study =
+      Repo.get_by!(Listudy.Studies.Study, id: study_id, user_id: conn.assigns.current_user.id)
 
     # 2. Obtenemos la lista de errores agrupados, filtrados y ordenados
-    mistakes = Listudy.Games.get_unique_mistakes_to_train(study_id, filter)
+    mistakes = Games.get_unique_mistakes_to_train(study_id, conn.assigns.current_user.id, filter)
 
     # Asumiendo que pasas los mistakes a JSON como @mistakes_json
     mistakes_json = Jason.encode!(mistakes)
@@ -250,6 +268,44 @@ defmodule ListudyWeb.AnalysisController do
       mistakes_json: mistakes_json,
       filter: filter
     )
+  end
+
+  def games(conn, params) do
+    library = ImportedGames.list_recent(conn.assigns.current_user.id, params)
+    render(conn, "games.html", library: library)
+  end
+
+  def game(conn, %{"id" => id}) do
+    user_id = conn.assigns.current_user.id
+    game = ImportedGames.get_owned!(user_id, id)
+    summaries = ImportedGames.summaries(user_id, [game.id]) |> Map.get(game.id, [])
+    render(conn, "game.html", game: game, summaries: summaries)
+  end
+
+  def compare_game(conn, %{"id" => id}) do
+    game = ImportedGames.get_owned!(conn.assigns.current_user.id, id)
+    back_path = Routes.analysis_path(conn, :game, game.id)
+
+    case Games.Analyzer.analyze_single_pgn(conn.assigns.current_user.id, game.pgn) do
+      {:ok, study, result} ->
+        render(conn, "quick_result.html",
+          choices: [{study, result}],
+          pgn_text: game.pgn,
+          back_path: back_path
+        )
+
+      {:ambiguous, choices} ->
+        render(conn, "quick_result.html",
+          choices: choices,
+          pgn_text: game.pgn,
+          back_path: back_path
+        )
+
+      {:error, reason} ->
+        conn
+        |> put_flash(:info, "This game could not be compared: #{reason}")
+        |> redirect(to: back_path)
+    end
   end
 
   def quick_analyze(conn, %{"pgn" => pgn_text} = params) do

@@ -14,7 +14,7 @@
     <%= raw ListudyWeb.Seo.hreflang(@conn) %>
     <%= raw ListudyWeb.Seo.noindex(@conn) %>
 
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+    <link rel="stylesheet" href="<%= app_stylesheet_path(@conn) %>"/>
 
     <%= if is_halloween() do %>
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/halloween.css") %>"/>

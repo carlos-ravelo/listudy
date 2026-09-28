@@ -55,8 +55,12 @@ defmodule Listudy.Games.Analyzer do
 
   def analyze_all_user_studies(user_id, platform) do
     case load_studies(user_id) do
-      {:ok, studies} -> analyze_imported_games(studies, user_id, platform)
-      {:error, reason} -> Logger.error(reason)
+      {:ok, studies} ->
+        analyze_imported_games(studies, user_id, platform)
+
+      {:error, reason} ->
+        Logger.error(reason)
+        {:error, reason}
     end
   end
 
@@ -77,7 +81,13 @@ defmodule Listudy.Games.Analyzer do
         {{game_id, study_id}, if(status == "error", do: nil, else: version)}
       end)
 
-    games = Repo.all(from g in UserGame, where: g.user_id == ^user_id and g.platform == ^platform)
+    # Read only identifiers and player names until a game actually needs work.
+    games =
+      Repo.all(
+        from g in UserGame,
+          where: g.user_id == ^user_id and g.platform == ^platform,
+          select: %{id: g.id, white_player: g.white_player, black_player: g.black_player}
+      )
 
     games
     |> Enum.map(fn game ->
@@ -91,24 +101,37 @@ defmodule Listudy.Games.Analyzer do
     end)
     |> Enum.reject(fn {_, pending} -> pending == [] end)
     |> Enum.chunk_every(50)
-    |> Enum.each(fn batch ->
+    |> Enum.reduce_while({:ok, 0}, fn batch, {:ok, processed} ->
       needed =
         batch |> Enum.flat_map(fn {_, pending} -> pending end) |> Enum.uniq_by(& &1.study.id)
 
+      ids = Enum.map(batch, fn {game, _} -> game.id end)
+      pgns = Repo.all(from g in UserGame, where: g.id in ^ids, select: {g.id, g.pgn}) |> Map.new()
+
       requests =
         Enum.map(batch, fn {game, pending} ->
-          %{id: game.id, pgn: game.pgn, study_ids: Enum.map(pending, & &1.study.id)}
+          %{
+            id: game.id,
+            pgn: Map.fetch!(pgns, game.id),
+            study_ids: Enum.map(pending, & &1.study.id)
+          }
         end)
 
       case ChessEngine.analyze_batch(payload(needed), requests) do
-        {:ok, %{"games" => results}} ->
+        {:ok, %{"games" => results}} when length(results) == length(batch) ->
           Enum.zip(batch, results)
           |> Enum.each(fn {{game, pending}, result} ->
             Enum.each(pending, &persist_result(game, &1, result))
           end)
 
+          {:cont, {:ok, processed + length(batch)}}
+
+        {:ok, _} ->
+          {:halt, {:error, "The chess parser returned an incomplete batch."}}
+
         {:error, reason} ->
           Logger.error("Game analysis failed: #{inspect(reason)}")
+          {:halt, {:error, reason}}
       end
     end)
   end
