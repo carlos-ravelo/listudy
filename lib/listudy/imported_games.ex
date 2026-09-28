@@ -7,10 +7,12 @@ defmodule Listudy.Games.ImportedGames do
 
   @page_size 20
   @platforms ~w(lichess chess_com)
+  @periods ~w(all last_week last_month)
   @statuses ~w(match deviation ambiguous out_of_scope error)
 
   def list_recent(user_id, params) do
     platform = allowed(params["platform"], @platforms)
+    period = allowed(params["period"], @periods) || "all"
     status = allowed(params["status"], @statuses)
     studies = Repo.all(from s in Study, where: s.user_id == ^user_id, order_by: [asc: s.title])
 
@@ -26,19 +28,20 @@ defmodule Listudy.Games.ImportedGames do
           nil
       end
 
-    query =
-      from g in UserGame,
-        where: g.user_id == ^user_id and not is_nil(g.played_at),
-        order_by: [desc: g.played_at, desc: g.id],
-        select: %{
-          id: g.id,
-          platform: g.platform,
-          played_at: g.played_at,
-          white_player: g.white_player,
-          black_player: g.black_player
-        }
-
+    query = from g in UserGame, where: g.user_id == ^user_id and not is_nil(g.played_at)
     query = if platform, do: where(query, [g], g.platform == ^platform), else: query
+
+    query =
+      case period do
+        "last_week" ->
+          where(query, [g], g.played_at > ^DateTime.add(DateTime.utc_now(), -7, :day))
+
+        "last_month" ->
+          where(query, [g], g.played_at > ^DateTime.add(DateTime.utc_now(), -30, :day))
+
+        _ ->
+          query
+      end
 
     query =
       if status || study_id do
@@ -64,22 +67,73 @@ defmodule Listudy.Games.ImportedGames do
         query
       end
 
-    query =
-      case decode_cursor(params["cursor"]) do
-        {at, id} -> where(query, [g], g.played_at < ^at or (g.played_at == ^at and g.id < ^id))
-        nil -> query
+    total = Repo.aggregate(query, :count, :id)
+    cursor = decode_cursor(params["cursor"])
+    newer_page = cursor && params["direction"] == "newer"
+
+    page_query =
+      case {cursor, newer_page} do
+        {{at, id}, true} ->
+          query
+          |> where([g], g.played_at > ^at or (g.played_at == ^at and g.id > ^id))
+          |> order_by([g], asc: g.played_at, asc: g.id)
+
+        {{at, id}, _} ->
+          query
+          |> where([g], g.played_at < ^at or (g.played_at == ^at and g.id < ^id))
+          |> order_by([g], desc: g.played_at, desc: g.id)
+
+        _ ->
+          order_by(query, [g], desc: g.played_at, desc: g.id)
       end
 
-    rows = Repo.all(limit(query, ^(@page_size + 1)))
-    games = Enum.take(rows, @page_size)
-    next_cursor = if length(rows) > @page_size, do: encode_cursor(List.last(games))
+    rows =
+      page_query
+      |> select([g], %{
+        id: g.id,
+        platform: g.platform,
+        played_at: g.played_at,
+        white_player: g.white_player,
+        black_player: g.black_player
+      })
+      |> limit(^(@page_size + 1))
+      |> Repo.all()
+
+    games = rows |> Enum.take(@page_size) |> then(&if(newer_page, do: Enum.reverse(&1), else: &1))
+
+    first = List.first(games)
+    last = List.last(games)
+
+    newer_count =
+      if first && cursor do
+        Repo.aggregate(
+          where(
+            query,
+            [g],
+            g.played_at > ^first.played_at or
+              (g.played_at == ^first.played_at and g.id > ^first.id)
+          ),
+          :count,
+          :id
+        )
+      else
+        0
+      end
+
+    first_number = if first, do: newer_count + 1, else: 0
+    last_number = if first, do: newer_count + length(games), else: 0
 
     %{
       games: games,
-      next_cursor: next_cursor,
+      total: total,
+      first_number: first_number,
+      last_number: last_number,
+      previous_cursor: if(first && first_number > 1, do: encode_cursor(first)),
+      next_cursor: if(last && last_number < total, do: encode_cursor(last)),
       summaries: summaries(user_id, Enum.map(games, & &1.id)),
       studies: studies,
       platform: platform,
+      period: period,
       status: status,
       study_id: study_id
     }
@@ -98,6 +152,7 @@ defmodule Listudy.Games.ImportedGames do
         order_by: [asc: s.title],
         select: %{
           game_id: sg.user_game_id,
+          study_id: sg.study_id,
           study_title: s.title,
           status: sg.status,
           depth: sg.depth

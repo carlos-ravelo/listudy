@@ -105,10 +105,13 @@ node assets/test/unit/study_features_browser.cjs
 
 `Listudy.Games.ImportedGames` reads saved Chess.com and Lichess games in pages of
 20. The list selects metadata only, then fetches study summaries for those games.
-The game detail route checks the owner and can run the existing comparison on
-that single saved PGN. Filters for platform, study and status use the same
-owner-scoped data. The training route also checks ownership before reading
-mistakes.
+It shows a filtered total and supports newer/older cursor navigation. Filters
+for platform, period, study and result use owner-scoped data. A game row opens
+its comparison directly for the displayed study; the comparison page contains
+saved study results and the PGN in a collapsible section. A game without a
+matching chapter gets an explanation on that page. The old game detail URL
+redirects to comparison. The training route also checks ownership before
+reading mistakes.
 
 `GameSync` stores a visible per-platform running/completed/failed state. A failed
 Chess.com monthly archive now fails the sync, so the next attempt can retry the

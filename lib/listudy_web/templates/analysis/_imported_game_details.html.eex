@@ -1,0 +1,24 @@
+<details class="analysis-imported-details">
+  <summary>Game details, saved results and PGN</summary>
+  <p><strong><%= @game.white_player || "White" %> – <%= @game.black_player || "Black" %></strong><br>
+    <%= analysis_platform_label(@game.platform) %> · <%= Calendar.strftime(@game.played_at, "%d %b %Y, %H:%M UTC") %></p>
+
+  <h2>Saved study results</h2>
+  <%= if @summaries == [] do %>
+    <p>No study result has been saved for this game yet.</p>
+  <% else %>
+    <ul class="analysis-game-study-results">
+      <%= for result <- @summaries do %>
+        <li>
+          <strong><%= result.study_title %></strong>
+          <span class="analysis-status analysis-status-<%= result.status %>"><%= analysis_status_label(result.status) %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <details class="analysis-game-pgn">
+    <summary>View PGN</summary>
+    <textarea readonly aria-label="Game PGN" rows="12"><%= @game.pgn %></textarea>
+  </details>
+</details>

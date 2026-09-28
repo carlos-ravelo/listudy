@@ -1,7 +1,7 @@
 <div class="analysis-games-page">
   <%= link "← Analysis overview", to: Routes.analysis_path(@conn, :index) %>
   <h1>Imported games</h1>
-  <p>Browse saved games from Chess.com and Lichess. Select a game to see its study results and compare its moves.</p>
+  <p>Choose a game to compare it with your current repertoire. Results in the list come from the last sync.</p>
 
   <%= form_for @conn, Routes.analysis_path(@conn, :games), [method: :get, class: "analysis-games-filters"], fn _f -> %>
     <label>Platform
@@ -9,6 +9,13 @@
         <option value="">Both platforms</option>
         <option value="lichess" <%= if @library.platform == "lichess", do: "selected" %>>Lichess</option>
         <option value="chess_com" <%= if @library.platform == "chess_com", do: "selected" %>>Chess.com</option>
+      </select>
+    </label>
+    <label>Period
+      <select name="period">
+        <option value="all" <%= if @library.period == "all", do: "selected" %>>All dates</option>
+        <option value="last_week" <%= if @library.period == "last_week", do: "selected" %>>Last week</option>
+        <option value="last_month" <%= if @library.period == "last_month", do: "selected" %>>Last month</option>
       </select>
     </label>
     <label>Study
@@ -19,10 +26,10 @@
         <% end %>
       </select>
     </label>
-    <label>Analysis result
+    <label>Repertoire result
       <select name="status">
         <option value="">Any result</option>
-        <%= for status <- ~w(match deviation ambiguous out_of_scope error) do %>
+        <%= for status <- ~w(deviation match ambiguous out_of_scope error) do %>
           <option value="<%= status %>" <%= if @library.status == status, do: "selected" %>><%= analysis_status_label(status) %></option>
         <% end %>
       </select>
@@ -30,40 +37,66 @@
     <button type="submit">Filter games</button>
   <% end %>
 
-  <%= if @library.games == [] do %>
-    <p class="highlight">No saved games match these filters. Sync a platform from the analysis overview or change the filters.</p>
+  <%= if @library.total == 0 do %>
+    <p class="highlight">No imported games match these filters. Change the filters or sync a platform from the analysis overview.</p>
   <% else %>
-    <ol class="analysis-games-list">
-      <%= for game <- @library.games do %>
-        <% summaries = Map.get(@library.summaries, game.id, []) %>
-        <li>
-          <a class="analysis-game-row" href="<%= Routes.analysis_path(@conn, :game, game.id) %>">
-            <span class="analysis-game-primary">
-              <strong><%= game.white_player || "White" %> – <%= game.black_player || "Black" %></strong>
-              <span><%= analysis_platform_label(game.platform) %> · <%= Calendar.strftime(game.played_at, "%d %b %Y, %H:%M UTC") %></span>
-            </span>
-            <span class="analysis-game-summary">
-              <%= if summaries == [] do %>
-                <span class="analysis-status">Not analyzed for a study</span>
-              <% else %>
-                <%= for {status, count} <- Enum.frequencies_by(summaries, & &1.status) do %>
-                  <span class="analysis-status analysis-status-<%= status %>"><%= count %> <%= analysis_status_label(status) %></span>
+    <%= if @library.games == [] do %>
+      <p class="highlight">This page is no longer available. <%= link "Return to newest games", to: Routes.analysis_path(@conn, :games, Map.take(@conn.query_params, ["platform", "period", "study_id", "status"])) %>.</p>
+    <% else %>
+      <p class="analysis-games-count">Showing <strong><%= @library.first_number %>–<%= @library.last_number %></strong> of <strong><%= @library.total %></strong> matching imported games</p>
+      <ol class="analysis-games-list" start="<%= @library.first_number %>">
+        <%= for game <- @library.games do %>
+          <%
+            summaries = Map.get(@library.summaries, game.id, [])
+            visible = Enum.filter(summaries, fn summary ->
+              (is_nil(@library.study_id) or summary.study_id == @library.study_id) and
+                (is_nil(@library.status) or summary.status == @library.status)
+            end)
+            result = primary_game_result(visible)
+            has_other_error = Enum.any?(summaries, &(&1.status == "error")) and
+              (is_nil(result) or result.status != "error")
+            list_params = Map.take(@conn.query_params, ["platform", "period", "study_id", "status", "cursor", "direction"])
+            compare_params = if result, do: Map.put(list_params, "compare_study_id", to_string(result.study_id)), else: list_params
+          %>
+          <li>
+            <a class="analysis-game-row" href="<%= Routes.analysis_path(@conn, :compare_game, game.id, compare_params) %>">
+              <span class="analysis-game-primary">
+                <strong><%= game.white_player || "White" %> – <%= game.black_player || "Black" %></strong>
+                <span><%= analysis_platform_label(game.platform) %> · <%= Calendar.strftime(game.played_at, "%d %b %Y, %H:%M UTC") %></span>
+              </span>
+              <span class="analysis-game-summary">
+                <%= if result do %>
+                  <span class="analysis-status analysis-status-<%= result.status %>"><%= analysis_status_label(result.status) %></span>
+                  <span class="analysis-game-study-name"><%= result.study_title %><%= if length(visible) > 1, do: " · +#{length(visible) - 1} other studies" %></span>
+                <% else %>
+                  <span class="analysis-status">Not analyzed for a study</span>
                 <% end %>
-              <% end %>
-            </span>
-            <span aria-hidden="true">Open →</span>
-          </a>
-        </li>
-      <% end %>
-    </ol>
-  <% end %>
+                <%= if has_other_error do %>
+                  <span class="analysis-game-warning">Some study comparisons unavailable</span>
+                <% end %>
+              </span>
+              <span class="analysis-game-open" aria-hidden="true">Compare →</span>
+            </a>
+          </li>
+        <% end %>
+      </ol>
 
-  <nav class="analysis-games-pagination" aria-label="Game pages">
-    <%= link "Newest games", to: Routes.analysis_path(@conn, :games, Map.take(@conn.query_params, ["platform", "study_id", "status"])) %>
-    <%= if @library.next_cursor do %>
-      <%= link "Older games →", to: Routes.analysis_path(@conn, :games,
-        Map.take(@conn.query_params, ["platform", "study_id", "status"])
-        |> Map.put("cursor", @library.next_cursor)) %>
+      <nav class="analysis-games-pagination" aria-label="Game pages">
+        <span>
+          <%= if @library.previous_cursor do %>
+            <%= link "← Newer games", to: Routes.analysis_path(@conn, :games,
+              Map.take(@conn.query_params, ["platform", "period", "study_id", "status"])
+              |> Map.merge(%{"cursor" => @library.previous_cursor, "direction" => "newer"})) %>
+          <% end %>
+        </span>
+        <span>
+          <%= if @library.next_cursor do %>
+            <%= link "Older games →", to: Routes.analysis_path(@conn, :games,
+              Map.take(@conn.query_params, ["platform", "period", "study_id", "status"])
+              |> Map.put("cursor", @library.next_cursor)) %>
+          <% end %>
+        </span>
+      </nav>
     <% end %>
-  </nav>
+  <% end %>
 </div>

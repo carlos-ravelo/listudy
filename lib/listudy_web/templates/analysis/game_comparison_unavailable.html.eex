@@ -1,0 +1,20 @@
+<div class="analysis-games-page">
+  <%= link "← Imported games", to: @back_path %>
+  <h1>Your game and repertoire</h1>
+  <p><strong><%= @game.white_player || "White" %> – <%= @game.black_player || "Black" %></strong> · <%= analysis_platform_label(@game.platform) %> · <%= Calendar.strftime(@game.played_at, "%d %b %Y, %H:%M UTC") %></p>
+
+  <%= if @reason == :no_match do %>
+    <p class="highlight">No chapter in your current repertoire matches this game's positions.</p>
+  <% else %>
+    <p class="highlight">This game could not be compared with your current repertoire. Check the saved game and study PGN, then try again.</p>
+    <details>
+      <summary>Technical details</summary>
+      <p><%= inspect(@reason) %></p>
+    </details>
+  <% end %>
+
+  <%= if @selected_study do %>
+    <p><%= link "Compare across all studies", to: @compare_all_path %></p>
+  <% end %>
+  <%= render "_imported_game_details.html", game: @game, summaries: @summaries %>
+</div>
