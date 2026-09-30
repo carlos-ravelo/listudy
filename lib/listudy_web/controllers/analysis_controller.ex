@@ -40,28 +40,12 @@ defmodule ListudyWeb.AnalysisController do
     chesscom_since =
       if chesscom_oldest, do: DateTime.to_date(chesscom_oldest) |> to_string(), else: "No data"
 
-    # Filter for global game counts (Optional, but keeps the header accurate)
-    games_query = from(g in Listudy.Games.UserGame, where: g.user_id == ^user.id)
-
-    games_query =
-      case filter do
-        "last_week" ->
-          limit = DateTime.utc_now() |> DateTime.add(-7, :day)
-          where(games_query, [g], g.played_at > ^limit)
-
-        "last_month" ->
-          limit = DateTime.utc_now() |> DateTime.add(-30, :day)
-          where(games_query, [g], g.played_at > ^limit)
-
-        _ ->
-          games_query
-      end
-
+    # Account totals stay stable when the repertoire date filter changes.
     lichess_count =
-      Repo.aggregate(from(g in games_query, where: g.platform == "lichess"), :count, :id)
+      Repo.aggregate(from(g in user_games_base, where: g.platform == "lichess"), :count, :id)
 
     chesscom_count =
-      Repo.aggregate(from(g in games_query, where: g.platform == "chess_com"), :count, :id)
+      Repo.aggregate(from(g in user_games_base, where: g.platform == "chess_com"), :count, :id)
 
     # Subquery to filter StudyGames by date without hiding empty studies
     filtered_sg =
@@ -122,6 +106,18 @@ defmodule ListudyWeb.AnalysisController do
     )
   end
 
+  def sync_status(conn, _params) do
+    syncs = GameSync.for_user(conn.assigns.current_user.id)
+
+    statuses =
+      Map.new(~w(lichess chess_com), fn platform ->
+        sync = syncs[platform]
+        {platform, if(sync, do: %{status: sync.status, details: sync.details}, else: nil)}
+      end)
+
+    json(conn, statuses)
+  end
+
   def sync(conn, %{"analysis" => params}) do
     user = Repo.get!(Listudy.Users.User, conn.assigns.current_user.id)
     platform = params["platform"]
@@ -157,29 +153,70 @@ defmodule ListudyWeb.AnalysisController do
             conn
           end
 
-        GameSync.start(user.id, platform)
+        case GameSync.start(user.id, platform) do
+          :already_running ->
+            conn
+            |> put_flash(:info, "Sync is already running. Its progress is shown below.")
+            |> redirect(to: Routes.analysis_path(conn, :index))
 
-        Task.start(fn ->
-          outcome =
-            try do
-              with {:ok, {imported, _}} <- import_platform(user, platform, username),
-                   {:ok, analyzed} <- Games.Analyzer.analyze_all_user_studies(user.id, platform) do
-                {:ok, "Imported #{imported} new games; analyzed #{analyzed} games."}
+          :started ->
+            Task.start(fn ->
+              heartbeat = spawn_link(fn -> sync_heartbeat(user.id, platform) end)
+
+              try do
+                outcome =
+                  try do
+                    case import_platform(user, platform, username) do
+                      {:ok, {imported, _}} ->
+                        progress =
+                          if imported == 0,
+                            do: "No new games found. Checking saved analyses...",
+                            else: "Found #{imported} new games. Comparing with repertoire..."
+
+                        GameSync.progress(user.id, platform, progress)
+
+                        case Games.Analyzer.analyze_all_user_studies(user.id, platform) do
+                          {:ok, analyzed} -> {:ok, sync_result(imported, analyzed)}
+                          {:error, reason} -> {:error, inspect(reason)}
+                        end
+
+                      {:error, reason} ->
+                        {:error, inspect(reason)}
+                    end
+                  rescue
+                    error -> {:error, Exception.message(error)}
+                  catch
+                    kind, reason -> {:error, "#{kind}: #{inspect(reason)}"}
+                  end
+
+                case outcome do
+                  {:ok, details} -> GameSync.finish(user.id, platform, "completed", details)
+                  {:error, reason} -> GameSync.finish(user.id, platform, "failed", reason)
+                end
+              after
+                send(heartbeat, :stop)
               end
-            rescue
-              error -> {:error, Exception.message(error)}
-            end
+            end)
 
-          case outcome do
-            {:ok, details} -> GameSync.finish(user.id, platform, "completed", details)
-            {:error, reason} -> GameSync.finish(user.id, platform, "failed", to_string(reason))
-          end
-        end)
-
-        conn
-        |> put_flash(:info, "Sync started. Refresh this page to see its result.")
-        |> redirect(to: Routes.analysis_path(conn, :index))
+            redirect(conn, to: Routes.analysis_path(conn, :index))
+        end
       end
+    end
+  end
+
+  defp sync_result(0, 0), do: "No new games found in the checked period."
+  defp sync_result(0, analyzed), do: "No new games. Reanalyzed #{analyzed} saved games."
+
+  defp sync_result(imported, analyzed),
+    do: "#{imported} new games imported. #{analyzed} games analyzed."
+
+  defp sync_heartbeat(user_id, platform) do
+    receive do
+      :stop -> :ok
+    after
+      60_000 ->
+        GameSync.touch(user_id, platform)
+        sync_heartbeat(user_id, platform)
     end
   end
 
