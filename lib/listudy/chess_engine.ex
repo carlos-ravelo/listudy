@@ -15,6 +15,11 @@ defmodule Listudy.Games.ChessEngine do
     run("batch", Jason.encode!(%{studies: studies, games: games}))
   end
 
+  def training_chapters(pgn, mistakes) do
+    positions = Enum.map(mistakes, &Map.take(&1, [:fen, :expected]))
+    run("training_chapters", Jason.encode!(%{pgn: pgn, mistakes: positions}))
+  end
+
   defp run(mode, input) do
     path =
       Path.join(
@@ -32,8 +37,15 @@ defmodule Listudy.Games.ChessEngine do
       case System.cmd(python, [script, mode, path]) do
         {output, 0} ->
           case Jason.decode(output) do
-            {:ok, %{"games" => games} = data} when is_list(games) -> {:ok, data}
-            _ -> {:error, "The chess parser returned an invalid response."}
+            {:ok, %{"games" => games} = data} when mode == "batch" and is_list(games) ->
+              {:ok, data}
+
+            {:ok, %{"chapters" => chapters} = data}
+            when mode == "training_chapters" and is_list(chapters) ->
+              {:ok, data}
+
+            _ ->
+              {:error, "The chess parser returned an invalid response."}
           end
 
         {output, _} ->

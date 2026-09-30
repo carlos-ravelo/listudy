@@ -3,6 +3,7 @@ defmodule ListudyWeb.AnalysisController do
 
   alias Listudy.Games
   alias Listudy.Games.{GameSync, ImportedGames}
+  alias ListudyWeb.AnalysisView
   alias Listudy.Repo
   import Ecto.Query
 
@@ -259,22 +260,48 @@ defmodule ListudyWeb.AnalysisController do
   def train(conn, %{"id" => study_id} = params) do
     filter = Map.get(params, "filter", "all")
 
-    # 1. Buscamos el estudio para poder mostrar el título en la pantalla
     study =
       Repo.get_by!(Listudy.Studies.Study, id: study_id, user_id: conn.assigns.current_user.id)
 
-    # 2. Obtenemos la lista de errores agrupados, filtrados y ordenados
     mistakes = Games.get_unique_mistakes_to_train(study_id, conn.assigns.current_user.id, filter)
+    {mistakes, chapter_error} = add_training_chapters(conn, study, mistakes)
 
-    # Asumiendo que pasas los mistakes a JSON como @mistakes_json
-    mistakes_json = Jason.encode!(mistakes)
-
-    # 3. Renderizamos la nueva plantilla y le pasamos los datos
     render(conn, "train.html",
       study: study,
-      mistakes_json: mistakes_json,
+      mistakes_json: Jason.encode!(mistakes),
+      chapter_error: chapter_error,
       filter: filter
     )
+  end
+
+  defp add_training_chapters(_conn, _study, []), do: {[], nil}
+
+  defp add_training_chapters(conn, study, mistakes) do
+    [file_id | _] = String.split(study.slug, "-")
+    path = Application.app_dir(:listudy, "priv/static/study_pgn/#{file_id}.pgn")
+
+    with {:ok, pgn} <- File.read(path),
+         {:ok, %{"chapters" => chapters}} <- Games.ChessEngine.training_chapters(pgn, mistakes),
+         true <- length(chapters) == length(mistakes) do
+      enriched =
+        Enum.zip(mistakes, chapters)
+        |> Enum.map(fn {mistake, matches} ->
+          links =
+            Enum.map(matches, fn chapter ->
+              %{
+                name: chapter["chapter"],
+                number: chapter["chapter_index"] + 1,
+                url: AnalysisView.chapter_path(conn, study, chapter)
+              }
+            end)
+
+          Map.put(mistake, :chapters, links)
+        end)
+
+      {enriched, nil}
+    else
+      _ -> {mistakes, "Chapter links are unavailable for this study."}
+    end
   end
 
   def games(conn, params) do
