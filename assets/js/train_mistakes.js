@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chess = new Chess();
     const statusEl = document.getElementById('training-status');
     const infoEl = document.getElementById('mistake-info');
+    const chaptersEl = document.getElementById('training-chapters');
     const nextBtn = document.getElementById('next-mistake-btn');
     const paginationEl = document.getElementById('mistakes-pagination');
     const hintBtn = document.getElementById('hint-btn');
@@ -109,6 +110,46 @@ document.addEventListener('DOMContentLoaded', () => {
         infoEl.innerText = `You played ${mistake.played} here in ${mistake.times_repeated} game(s). Find a move from your study.`;
     }
 
+    function showChapters(mistake) {
+        if (!chaptersEl) return;
+        chaptersEl.replaceChildren();
+        const hasLookup = Array.isArray(mistake.chapters);
+        const chapters = hasLookup ? mistake.chapters : [];
+        chaptersEl.hidden = !hasLookup;
+        if (!hasLookup) return;
+        if (chapters.length === 0) {
+            chaptersEl.textContent = 'No matching chapter in the current study.';
+            return;
+        }
+
+        function makeLink(chapter) {
+            const link = document.createElement('a');
+            link.href = chapter.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = `Chapter ${chapter.number}: ${chapter.name} ↗`;
+            return link;
+        }
+
+        if (chapters.length === 1) {
+            const label = document.createElement('strong');
+            label.textContent = 'Study this position';
+            chaptersEl.append(label, makeLink(chapters[0]));
+        } else {
+            const details = document.createElement('details');
+            const summary = document.createElement('summary');
+            summary.textContent = `Study this position · ${chapters.length} chapters`;
+            const list = document.createElement('ul');
+            chapters.forEach(chapter => {
+                const item = document.createElement('li');
+                item.appendChild(makeLink(chapter));
+                list.appendChild(item);
+            });
+            details.append(summary, list);
+            chaptersEl.appendChild(details);
+        }
+    }
+
     function loadMistake(index) {
         if (resetTimer) {
             clearTimeout(resetTimer);
@@ -130,6 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
             boardContainer.style.pointerEvents = 'none';
             nextBtn.style.display = 'none';
             if (paginationEl) paginationEl.style.display = 'none';
+            if (chaptersEl) {
+                chaptersEl.replaceChildren();
+                chaptersEl.hidden = true;
+            }
             return;
         }
 
@@ -152,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusEl.innerText = `Position ${index + 1} of ${mistakes.length}`;
         statusEl.style.color = 'inherit';
         showPrompt(mistake);
+        showChapters(mistake);
         nextBtn.style.display = 'none';
         if (hintBtn) {
             hintBtn.style.display = 'inline-block';

@@ -30,6 +30,23 @@ def analyze_batch(payload):
     return {'games': output}
 
 
+def training_chapters(payload):
+    repertoire = cached_index(payload['pgn'])
+    chapters = repertoire['chapters']
+    results = []
+    for mistake in payload['mistakes']:
+        # The saved deviation and repertoire index use the same four-field key.
+        key = ' '.join(mistake['fen'].split()[:4])
+        expected = {move.strip() for move in mistake['expected'].split(' / ')}
+        matches = []
+        for chapter_id, entry in repertoire['positions'].get(key, {}).items():
+            if expected.intersection(entry['moves']):
+                chapter = chapters[int(chapter_id)]
+                matches.append({'chapter_index': chapter['index'], 'chapter': chapter['name']})
+        results.append(sorted(matches, key=lambda chapter: chapter['chapter_index']))
+    return {'chapters': results}
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else 'single'
     if len(sys.argv) > 2:
@@ -39,6 +56,8 @@ def main():
         text = sys.stdin.read()
     if mode == 'batch':
         return analyze_batch(json.loads(text))
+    if mode == 'training_chapters':
+        return training_chapters(json.loads(text))
     if mode == 'repertoire':
         return {'repertoire_map': cached_index(text)}
     if mode == 'early_exit':

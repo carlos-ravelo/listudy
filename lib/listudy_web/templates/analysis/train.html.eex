@@ -36,8 +36,11 @@
       <button id="solve-btn" class="button button-outline" style="margin: 0;">Show Answer</button>
       <button id="next-mistake-btn" class="button button-primary" style="display: none; margin: 0;">Next Position</button>
     </div>
-
+    <div id="training-chapters" class="training-chapters" aria-label="Study chapters" hidden></div>
+    <%= if @chapter_error do %>
+      <p class="training-chapters-error"><%= @chapter_error %></p>
+    <% end %>
   </div>
 </div>
 
-<script defer type="text/javascript" src="/js/train_mistakes.js?v=training-2"></script>
+<script defer type="text/javascript" src="/js/train_mistakes.js?v=training-3"></script>
