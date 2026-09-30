@@ -101,6 +101,7 @@ defmodule ListudyWeb.Router do
     pipe_through [:browser, :logged_in]
 
     get "/", AnalysisController, :index
+    get "/sync-status", AnalysisController, :sync_status
     get "/games", AnalysisController, :games
     get "/games/:id", AnalysisController, :game
     get "/games/:id/compare", AnalysisController, :compare_game

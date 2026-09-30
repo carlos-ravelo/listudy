@@ -44,3 +44,46 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 });
+document.addEventListener('DOMContentLoaded', () => {
+    const section = document.querySelector('[data-sync-status-url]');
+    if (!section) return;
+    const cards = Array.from(section.querySelectorAll('[data-sync-platform]'));
+    if (!cards.some(card => card.dataset.syncState === 'running')) return;
+
+    async function pollSyncs() {
+        try {
+            const response = await fetch(section.dataset.syncStatusUrl, {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin'
+            });
+            if (!response.ok) throw new Error(`Sync status returned ${response.status}`);
+            const statuses = await response.json();
+            let finished = false;
+            let stillRunning = false;
+
+            cards.forEach(card => {
+                const sync = statuses[card.dataset.syncPlatform];
+                if (!sync) return;
+                if (card.dataset.syncState === 'running' && sync.status !== 'running') finished = true;
+                card.dataset.syncState = sync.status;
+                const badge = card.querySelector('[data-sync-badge]');
+                const details = card.querySelector('[data-sync-details]');
+                badge.className = `analysis-sync-badge analysis-sync-badge-${sync.status}`;
+                badge.textContent = sync.status === 'running' ? 'Syncing' :
+                    sync.status === 'completed' ? 'Sync complete' : 'Sync failed';
+                details.textContent = sync.details || '';
+                if (sync.status === 'running') stillRunning = true;
+            });
+
+            if (finished) {
+                window.location.reload();
+            } else if (stillRunning) {
+                setTimeout(pollSyncs, 2500);
+            }
+        } catch (error) {
+            setTimeout(pollSyncs, 5000);
+        }
+    }
+
+    setTimeout(pollSyncs, 2500);
+});

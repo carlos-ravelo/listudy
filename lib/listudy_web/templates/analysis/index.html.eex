@@ -1,176 +1,135 @@
 <div class="whole">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h2 style="margin: 0;">Analyze Games</h2>
-    <%= link "Browse imported games →", to: Routes.analysis_path(@conn, :games), class: "button" %>
-  </div>
+  <h2>Analyze Games</h2>
 
   <%
-    lichess_username = Map.get(@current_user, :lichess_username)
-    chesscom_username = Map.get(@current_user, :chess_com_username)
+    accounts = [
+      %{key: "lichess", name: "Lichess", username: @current_user.lichess_username,
+        count: @lichess_count},
+      %{key: "chess_com", name: "Chess.com", username: @current_user.chess_com_username,
+        count: @chesscom_count}
+    ]
   %>
 
-
-<details class="box mt-4" style="cursor: pointer;">
-  <summary class="title is-5" style="user-select: none;">
-    🔍 Quick PGN Analysis (Click to expand)
-  </summary>
-
-  <div class="mt-4" style="cursor: default;">
-    <%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), fn f -> %>
-      <div class="field">
-        <label class="label">Paste your chess.com/lichess PGN here:</label>
-        <div class="control">
-          <%= textarea f, :pgn, class: "textarea", rows: 6, placeholder: "1. e4 c5 2. Nf3..." %>
-        </div>
-      </div>
-      <div class="control mt-2">
-        <%= submit "Analyze Game", class: "button is-primary" %>
-      </div>
-    <% end %>
-  </div>
-</details>
-
-<div style="margin-bottom: 2rem; display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem;">
-  <label for="time-filter" style="font-size: 0.9rem; color: #718096; font-weight: 500;">Filter by date:</label>
-  <select id="time-filter" style="padding: 0.5rem 2rem 0.5rem 1rem; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.95rem; color: #2d3748; background-color: white; cursor: pointer; appearance: none; outline: none; background-image: url('data:image/svg+xml;charset=US-ASCII,<svg width=\"20\" height=\"20\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"%23a0aec0\"><path d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\"/></svg>'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-    <option value="all" <%= if @filter == "all", do: "selected" %>>All time (since <%= @oldest_date_str %>)</option>
-    <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
-    <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
-  </select>
-</div>
-
-  <!-- Modern Account Cards -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
-
-    <!-- Lichess Card -->
-    <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--gray-200); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: space-between;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
-        <div>
-          <h3 style="margin: 0 0 0.25rem 0; font-size: 1.25rem; color: #1a202c;">Lichess</h3>
-          <p style="margin: 0; color: #718096; font-size: 0.9rem;">
-            <%= if lichess_username do %>
-              <strong><%= @lichess_count %></strong> games in database
-              <p style="font-size: 0.8rem; color: #718096; margin-top: 0.2rem;">
-              Games fetched since: <%= @lichess_since %>
-              </p>
+  <section class="analysis-accounts" data-sync-status-url="<%= Routes.analysis_path(@conn, :sync_status) %>">
+    <h3>Game sources</h3>
+    <div class="analysis-account-grid">
+      <%= for account <- accounts do %>
+        <% sync = @syncs[account.key] %>
+        <article class="analysis-account-card" data-sync-platform="<%= account.key %>" data-sync-state="<%= if sync, do: sync.status, else: "idle" %>">
+          <div class="analysis-account-heading">
+            <h4><%= account.name %></h4>
+            <%= if account.username do %>
+              <span class="analysis-account-user">✓ <%= account.username %></span>
             <% else %>
-              Import your games automatically
-            <% end %>
-          </p>
-        </div>
-        <%= if lichess_username do %>
-          <span style="font-size: 0.75rem; font-weight: 600; color: #047857; background: #d1fae5; padding: 4px 10px; border-radius: 9999px;">✓ <%= lichess_username %></span>
-        <% else %>
-          <span style="font-size: 0.75rem; font-weight: 600; color: #718096; background: #edf2f7; padding: 4px 10px; border-radius: 9999px;">Not connected</span>
-        <% end %>
-      </div>
-
-      <% sync = @syncs["lichess"] %>
-      <%= if lichess_username && sync do %>
-        <p class="analysis-sync-status" role="status">
-          Last sync: <strong><%= sync.status %></strong>
-          <%= if sync.details, do: sync.details %>
-        </p>
-      <% end %>
-      <div>
-        <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0;", onsubmit: "this.querySelector('button').innerText = 'Processing...';"], fn f -> %>
-          <%= hidden_input f, :platform, value: "lichess" %>
-          <%= if lichess_username do %>
-            <div style="display: flex; gap: 0.5rem;">
-              <%= submit "Sync Latest Games", class: "button button-primary", style: "margin: 0; flex: 2;" %>
-              <%= link "Disconnect", to: Routes.analysis_path(@conn, :disconnect, platform: "lichess"), method: :post, class: "button button-outline", style: "margin: 0; flex: 1; text-align: center;" %>
-            </div>
-          <% else %>
-            <div style="display: flex; gap: 0.5rem;">
-              <%= text_input f, :username, placeholder: "Lichess Username", required: true, style: "flex: 1; padding: 0.6rem; margin: 0; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;" %>
-              <%= submit "Connect", class: "button button-primary", style: "margin: 0;" %>
-            </div>
-          <% end %>
-        <% end %>
-      </div>
-    </div>
-
-    <!-- Chess.com Card -->
-    <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--gray-200); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: space-between;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
-        <div>
-          <h3 style="margin: 0 0 0.25rem 0; font-size: 1.25rem; color: #1a202c;">Chess.com</h3>
-          <p style="margin: 0; color: #718096; font-size: 0.9rem;">
-            <%= if chesscom_username do %>
-              <strong><%= @chesscom_count %></strong> games in database
-              <p style="font-size: 0.8rem; color: #718096; margin-top: 0.2rem;">
-              Games fetched since: <%= @chesscom_since %>
-              </p>
-            <% else %>
-              Import your games automatically
-            <% end %>
-          </p>
-        </div>
-        <%= if chesscom_username do %>
-          <span style="font-size: 0.75rem; font-weight: 600; color: #047857; background: #d1fae5; padding: 4px 10px; border-radius: 9999px;">✓ <%= chesscom_username %></span>
-        <% else %>
-          <span style="font-size: 0.75rem; font-weight: 600; color: #718096; background: #edf2f7; padding: 4px 10px; border-radius: 9999px;">Not connected</span>
-        <% end %>
-      </div>
-
-      <% sync = @syncs["chess_com"] %>
-      <%= if chesscom_username && sync do %>
-        <p class="analysis-sync-status" role="status">
-          Last sync: <strong><%= sync.status %></strong>
-          <%= if sync.details, do: sync.details %>
-        </p>
-      <% end %>
-      <div>
-        <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [style: "margin: 0;", onsubmit: "this.querySelector('button').innerText = 'Processing...';"], fn f -> %>
-          <%= hidden_input f, :platform, value: "chess_com" %>
-          <%= if chesscom_username do %>
-            <div style="display: flex; gap: 0.5rem;">
-              <%= submit "Sync Latest Games", class: "button button-primary", style: "margin: 0; flex: 2;" %>
-              <%= link "Disconnect", to: Routes.analysis_path(@conn, :disconnect, platform: "chess_com"), method: :post, class: "button button-outline", style: "margin: 0; flex: 1; text-align: center;" %>
-            </div>
-          <% else %>
-            <div style="display: flex; gap: 0.5rem;">
-              <%= text_input f, :username, placeholder: "Chess.com Username", required: true, style: "flex: 1; padding: 0.6rem; margin: 0; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;" %>
-              <%= submit "Connect", class: "button button-primary", style: "margin: 0;" %>
-            </div>
-          <% end %>
-        <% end %>
-      </div>
-    </div>
-  </div>
-
-
-<section class="analysis-overview-studies">
-  <h3>Repertoire Overview</h3>
-  <div class="analysis-overview-grid">
-    <%= for stat <- @studies_stats do %>
-      <article class="analysis-overview-card">
-        <div>
-          <h4><%= stat.study.title %></h4>
-          <p class="analysis-overview-primary"><strong><%= stat.deviations %></strong> <%= if stat.deviations == 1, do: "game with a repertoire deviation", else: "games with a repertoire deviation" %></p>
-          <p class="analysis-overview-secondary"><%= stat.matches %> matched with no trainable deviation · <%= stat.total_games %> checked against this study</p>
-        </div>
-
-        <%= if stat.deviations > 0 do %>
-          <%= link "Train mistakes", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), class: "button button-primary" %>
-        <% else %>
-          <p class="analysis-overview-secondary">No mistakes to train for this period.</p>
-        <% end %>
-
-        <%= if stat.ambiguous > 0 or stat.errors > 0 do %>
-          <div class="analysis-overview-notices">
-            <%= if stat.ambiguous > 0 do %>
-              <%= link "#{stat.ambiguous} games have several possible chapters", to: Routes.analysis_path(@conn, :games, study_id: stat.study.id, status: "ambiguous", period: @filter) %>
-            <% end %>
-            <%= if stat.errors > 0 do %>
-              <%= link "#{stat.errors} games could not be analyzed", to: Routes.analysis_path(@conn, :games, study_id: stat.study.id, status: "error", period: @filter) %>
+              <span class="analysis-account-user analysis-account-user-empty">Not connected</span>
             <% end %>
           </div>
-        <% end %>
-      </article>
-    <% end %>
-  </div>
-</section>
+
+          <%= if account.username do %>
+            <p class="analysis-account-count">
+              <%= if account.count > 0 do %>
+                <%= link "#{account.count} imported games", to: Routes.analysis_path(@conn, :games, platform: account.key) %>
+              <% else %>
+                0 imported games
+              <% end %>
+            </p>
+            <div class="analysis-sync-status" role="status" aria-live="polite">
+              <strong class="analysis-sync-badge analysis-sync-badge-<%= if sync, do: sync.status, else: "idle" %>" data-sync-badge>
+                <%= case sync && sync.status do
+                  "running" -> "Syncing"
+                  "completed" -> "Sync complete"
+                  "failed" -> "Sync failed"
+                  _ -> "Not synced yet"
+                end %>
+              </strong>
+              <span data-sync-details><%= if sync, do: sync.details %></span>
+            </div>
+            <%= if sync && sync.status != "running" do %>
+              <p class="analysis-account-meta"><%= if sync.status == "failed", do: "Last attempt", else: "Last checked" %> <time datetime="<%= NaiveDateTime.to_iso8601(sync.updated_at) %>Z"><%= Calendar.strftime(sync.updated_at, "%d %b %Y, %H:%M UTC") %></time></p>
+            <% end %>
+          <% end %>
+
+          <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [class: "analysis-account-actions"], fn f -> %>
+            <%= hidden_input f, :platform, value: account.key %>
+            <%= if account.username do %>
+              <%= submit "Sync games", class: "button button-primary", disabled: sync && sync.status == "running" %>
+              <%= unless sync && sync.status == "running" do %>
+                <%= link "Disconnect", to: Routes.analysis_path(@conn, :disconnect, platform: account.key), method: :post, class: "analysis-disconnect" %>
+              <% end %>
+            <% else %>
+              <%= text_input f, :username, placeholder: "#{account.name} username", required: true, "aria-label": "#{account.name} username" %>
+              <%= submit "Connect", class: "button button-primary" %>
+            <% end %>
+          <% end %>
+        </article>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="analysis-library" aria-label="Imported games">
+    <div>
+      <h3>Game library</h3>
+      <p><strong><%= @lichess_count + @chesscom_count %></strong> imported games</p>
+    </div>
+    <%= link "Browse games →", to: Routes.analysis_path(@conn, :games), class: "analysis-library-link" %>
+  </section>
+
+  <details class="analysis-quick-pgn">
+    <summary>Analyze a PGN</summary>
+    <div class="mt-4">
+      <%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), fn f -> %>
+        <div class="field">
+          <label class="label">Paste a PGN</label>
+          <div class="control">
+            <%= textarea f, :pgn, class: "textarea", rows: 6, placeholder: "1. e4 c5 2. Nf3..." %>
+          </div>
+        </div>
+        <div class="control mt-2">
+          <%= submit "Analyze Game", class: "button is-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </details>
+
+  <section class="analysis-overview-studies">
+    <div class="analysis-section-heading">
+      <h3>Repertoire overview</h3>
+      <div class="analysis-repertoire-filter">
+        <label for="time-filter">Period</label>
+        <select id="time-filter">
+          <option value="all" <%= if @filter == "all", do: "selected" %>>All time</option>
+          <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
+          <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
+        </select>
+      </div>
+    </div>
+    <div class="analysis-overview-grid">
+      <%= for stat <- @studies_stats do %>
+        <article class="analysis-overview-card">
+          <div>
+            <h4><%= stat.study.title %></h4>
+            <p class="analysis-overview-primary"><strong><%= stat.deviations %></strong> <span><%= if stat.deviations == 1, do: "game with a deviation", else: "games with deviations" %></span></p>
+            <p class="analysis-overview-secondary"><strong><%= stat.matches %></strong> matched without deviation <span aria-hidden="true">·</span> <strong><%= stat.total_games %></strong> checked</p>
+          </div>
+
+          <%= if stat.deviations > 0 do %>
+            <%= link "Train mistakes", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), class: "button button-primary" %>
+          <% end %>
+
+          <%= if stat.ambiguous > 0 or stat.errors > 0 do %>
+            <div class="analysis-overview-notices">
+              <%= if stat.ambiguous > 0 do %>
+                <%= link "#{stat.ambiguous} #{if stat.ambiguous == 1, do: "game matches", else: "games match"} multiple chapters", to: Routes.analysis_path(@conn, :games, study_id: stat.study.id, status: "ambiguous", period: @filter) %>
+              <% end %>
+              <%= if stat.errors > 0 do %>
+                <%= link "#{stat.errors} #{if stat.errors == 1, do: "analysis error", else: "analysis errors"}", to: Routes.analysis_path(@conn, :games, study_id: stat.study.id, status: "error", period: @filter) %>
+              <% end %>
+            </div>
+          <% end %>
+        </article>
+      <% end %>
+    </div>
+  </section>
 </div>
 
 <script defer type="text/javascript" src="/js/analysis_overview.js"></script>
