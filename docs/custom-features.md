@@ -1,5 +1,19 @@
 # Custom Listudy features
 
+## Table of content
+
+- [Custom Listudy features](#custom-listudy-features)
+  - [Table of content](#table-of-content)
+  - [Study page](#study-page)
+    - [Chapter progress and recovery](#chapter-progress-and-recovery)
+    - [Practice modes and spaced repetition](#practice-modes-and-spaced-repetition)
+    - [Storage, reset and study layout](#storage-reset-and-study-layout)
+  - [Game analysis](#game-analysis)
+    - [Quick comparison page](#quick-comparison-page)
+    - [Processing and setup](#processing-and-setup)
+  - [Imported games and sync](#imported-games-and-sync)
+    - [Mistake training](#mistake-training)
+
 ## Study page
 
 `assets/js/study.js` owns the chess engine and initializes feature views after the
@@ -10,8 +24,11 @@ view's `update()` after a chapter change.
 - `modules/study_collections.js`: collection rendering and user actions.
 - `modules/study/collection_store.js`: browser storage, migrations and collection operations.
 - `modules/study/chapter_pgn.js`: shared raw PGN extraction and chapter-link resolution.
+- `modules/study/chapter_stats.js`: mistakes, distinct move coverage and recovery.
+- `modules/study/chapter_review.js`: chapter review cards and FSRS scheduling.
 - `templates/study/_chapter_controls.html.eex` and `_collection_modal.html.eex`: static markup.
-- `assets/css/features/study_extensions.css`: feature styling.
+- `assets/css/features/study_extensions.css` and `study.css`: feature and progress styling.
+- `templates/study/show.html.eex`: training controls and the Alpine-powered progress modal.
 
 Collections remain browser-local. Migration saves the replacement before deleting
 legacy data; unreadable storage is preserved. Chapter links include a zero-based
@@ -26,6 +43,132 @@ Unversioned static files revalidate with ETags instead of being cached for a yea
 The study script URL includes a one-time revision to bypass previously cached
 copies. Phoenix digest URLs keep their existing long-lived cache policy. Changes
 to the endpoint cache policy require the running application to reload/restart.
+
+### Chapter progress and recovery
+
+A study contains chapters; a chapter is one PGN game and may contain alternative
+moves inside its PGN tree. The progress UI treats the chapter as the user-facing
+unit. `chapterMoveCatalog()` counts only moves the learner can play, across all
+lines in that chapter. Automatic opponent replies do not enter the denominator.
+Each playable move is identified by its SAN path through the tree, so replaying
+the same move does not increase coverage. For a custom starting FEN, the first
+move belongs to the learner; for a standard start, the study color determines
+which plies belong to the learner.
+
+| Measure | Meaning |
+| --- | --- |
+| Moves practiced | Distinct correct learner moves / all trainable learner moves in the chapter. The outside bar shows this percentage for the currently selected chapter, rounded to a whole number. |
+| Correct moves | Correct move attempts, including repeats. |
+| Mistakes | Incorrect move attempts, including repeats. Each wrong move increments the count immediately. This is a historical total, not the chapter's current status. |
+| Clean moves since last mistake | Distinct correct learner moves accumulated since the most recent mistake. A mistake clears this set. The chapter recovers when this set covers every trainable move, even across several complete lines. |
+
+One correct move can therefore make the bar 100% only when that is the chapter's
+only trainable move. A 100% coverage bar says every move has been practiced at
+least once; it does not claim that every attempt was correct. Green means all
+trainable moves have been played correctly since the last mistake. Historical
+mistakes remain visible after recovery, so a chapter can be green and still show
+past mistakes in its details. The recovery counter shows progress toward green
+when mistakes exist.
+
+The chapter picker above the board shows a compact status: Not practiced,
+Review due, a green practiced-move count for a recovered chapter, Needs
+practice with the clean-move count for a chapter with mistakes, or a neutral
+practiced-move count for other partial progress. The cues are gray for new,
+amber for due, green for recovered, red for mistakes and neutral for other
+partial practice. Review due takes precedence in the picker when a chapter's
+scheduled review time arrives. The Progress
+modal lists chapters with due reviews first, then unrecovered chapters by
+historical mistake rate; it shows coverage, correct moves, mistakes, recovery
+progress and the next review time where applicable. Its chapter rows navigate
+to the selected chapter. The current chapter is marked and scrolled into view
+when the modal opens. Alpine.js renders the list and action-button state from
+`study-progress-updated` and practice-run events.
+
+### Practice modes and spaced repetition
+
+The Progress modal contains two practice actions. Both use the chapter
+board. Due reviews force a full line from the start; weak practice follows
+normal chapter settings:
+
+- **Practice weak chapters** selects chapters with at least one historical
+  mistake that have not yet recovered. It orders them by a smoothed mistake
+  ratio, `mistakes / (attempts + 5)`, with total mistakes as a tiebreaker.
+  It advances after a line ends or reaches the configured Max depth. A chapter
+  with several alternatives can remain weak afterward and be selected again
+  in a later run.
+- **Review due chapters** selects chapters with an FSRS review card whose due
+  time has arrived. It orders them by due time and plays one full line from
+  the chapter's starting position for each selected chapter. The button
+  appears only when reviews are due or a review run is active. The picker and
+  modal also mark due chapters. While the page stays open, a timer refreshes
+  the UI when the next review becomes due.
+
+The two actions have different selection rules but share practice results.
+Completing an eligible clean line updates the chapter's FSRS card with
+`Rating.Good`. The first mistake in an eligible run records `Rating.Again`
+right away; further moves in that same run do not grade the card again.
+FSRS uses one 10-minute learning step and one 10-minute relearning step, so
+a missed line is normally due again in ten minutes. The date after a clean
+line is calculated by FSRS rather than by a fixed Listudy interval. A chapter
+has no FSRS card until an eligible practice result occurs; old correct and
+mistake totals are not converted into invented reviews.
+
+An eligible run starts at the chapter's beginning. Normal practice with Jump
+to key move can skip known opening moves; if it skips moves, that run does not
+grade FSRS. Manual forward/back navigation also disqualifies a clean review.
+A Max depth cutoff does not count as a clean completion unless the actual PGN
+line ends there. In Review due chapters mode, Listudy bypasses Jump to key
+move and Max depth, and disables manual forward/back navigation so the learner
+plays the whole selected line. Reset line restarts an unfinished run without
+grading a clean completion; an earlier mistake in that run has already been
+recorded. The due and weak queues are separate and stop
+the automatic Puzzle run mode when started. Selecting a chapter manually stops
+the active queue.
+
+The scheduler is the pinned `ts-fsrs` package. Listudy records chapter-level
+review results and lets the library calculate due dates; it does not implement
+its own spaced-repetition formula. A single review card represents a chapter,
+even when that chapter has multiple PGN alternatives. At present, one selected
+full line grades that card; it does not prove every alternative was recalled
+in that review. Hint use does not yet change the FSRS grade.
+
+### Storage, reset and study layout
+
+`study.js` persists two versioned JSON records per study through
+`StorageAdapter`:
+
+| Key suffix | Contents |
+| --- | --- |
+| `_chapter_stats` | Per-chapter `attempts`, `errors`, distinct `coveredMoves` and `cleanMoves` since the last mistake. |
+| `_chapter_reviews` | Per-chapter FSRS card and a signature of the chapter's move tree and starting FEN. |
+
+`StorageAdapter` writes to browser `localStorage` immediately and syncs to the
+server's `user_settings` table for signed-in users. Anonymous progress stays
+in the browser. The signature ignores comments and mutable training scores;
+editing the move tree or starting FEN invalidates the old review card for that
+chapter. Chapter statistics and review cards are indexed by chapter position,
+so substantial chapter reordering can misassociate historical statistics;
+there are no permanent chapter IDs in this data model. Existing attempt and
+mistake totals are preserved when coverage fields are added, but past moves
+cannot be reconstructed, so distinct coverage begins with newly recorded
+moves. For old data without `cleanMoves`, a chapter with zero mistakes can
+reuse its recorded `coveredMoves`; a chapter with mistakes must earn a clean
+set after the update.
+
+**Reset progress** in the modal confirms before clearing chapter statistics,
+FSRS cards and the older move scores used for hints. The study page keeps its
+most-used training actions visible: Reset line, Puzzle run, Analyze position,
+and quick hint/comment toggles. The Settings disclosure holds Jump to key move,
+Move delay, Board reset delay, hint-arrow type and Max depth. More actions
+holds Play against Stockfish, Copy chapter and Favorite study. Study details
+and Comments have their own disclosures. This keeps the main training area
+compact while preserving the controls.
+
+The asset build requires Node 20 or newer (`.nvmrc` and
+`assets/package.json`). Webpack transpiles Alpine.js and `ts-fsrs` for the
+existing Safari 13 and minifier targets. Focused study feature checks run with
+`node assets/test/unit/study_features.cjs`; build assets with
+`npm run deploy` from `assets/` after selecting Node 20.
 
 ## Game analysis
 
@@ -136,3 +279,4 @@ FEN remains available for the board. Different played mistakes at the same
 position still appear separately. Multiple repertoire moves are accepted as
 valid answers. The browser creates the position indicators once and only
 updates indicators whose state changes.
+
