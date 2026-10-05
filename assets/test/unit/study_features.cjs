@@ -1,10 +1,15 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const { pathToFileURL } = require('url');
 const load = async name => import('data:text/javascript;base64,' + fs.readFileSync(path.join(__dirname, '../../js/modules/study', name)).toString('base64'));
 
 (async () => {
     const { splitChapterPgn, chapterFromUrl } = await load('chapter_pgn.js');
+    const reviewSource = fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_review.js'), 'utf8')
+        .replace("from 'ts-fsrs'", `from '${pathToFileURL(path.join(__dirname, '../../node_modules/ts-fsrs/dist/index.mjs')).href}'`);
+    const { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus, dueChapterOrder } =
+        await import('data:text/javascript;base64,' + Buffer.from(reviewSource).toString('base64'));
     const { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder } = await load('chapter_stats.js');
     const stats = readChapterStats(null);
     recordChapterAttempt(stats, 2, false);
@@ -46,6 +51,26 @@ const load = async name => import('data:text/javascript;base64,' + fs.readFileSy
     assert.strictEqual(chapterMastery(legacyClean, 0, catalog).mastered, true);
     recordChapterAttempt(legacyClean, 0, false);
     assert.strictEqual(chapterMastery(legacyClean, 0, catalog).mastered, false);
+    const reviewTree = [{ move: 'e4', value: 0, comments: ['first'], children: [] }];
+    const signature = chapterReviewSignature(reviewTree, 'starting fen');
+    reviewTree[0].value = 5;
+    reviewTree[0].comments = ['edited'];
+    assert.strictEqual(chapterReviewSignature(reviewTree, 'starting fen'), signature);
+    assert.notStrictEqual(chapterReviewSignature(reviewTree, 'different fen'), signature);
+    reviewTree[0].move = 'd4';
+    assert.notStrictEqual(chapterReviewSignature(reviewTree, 'starting fen'), signature);
+    const reviews = emptyChapterReviews();
+    const reviewAt = new Date('2026-10-05T12:00:00Z');
+    assert.deepStrictEqual(dueChapterOrder(reviews, [signature], reviewAt), []);
+    recordLineReview(reviews, 0, signature, true, reviewAt);
+    const restoredReviews = readChapterReviews(JSON.stringify(reviews));
+    assert.strictEqual(chapterReviewStatus(restoredReviews, 0, signature, reviewAt).due, false);
+    assert.strictEqual(chapterReviewStatus(restoredReviews, 0, 'edited chapter', reviewAt).due, false);
+    const dueAt = chapterReviewStatus(restoredReviews, 0, signature, reviewAt).dueAt;
+    assert.deepStrictEqual(dueChapterOrder(restoredReviews, [signature], new Date(dueAt.getTime() + 1)), [0]);
+    recordLineReview(restoredReviews, 0, signature, false, new Date(dueAt.getTime() + 1));
+    assert.strictEqual(restoredReviews.chapters['0'].card.lapses, 1);
+    assert.deepStrictEqual(readChapterReviews('broken'), emptyChapterReviews());
 
     const first = '[Event "First *"]\n\n1. e4 {fake result * [Event "x"]} (1. d4 d5) e5 1-0';
     const second = '[Event "Second"]\n\n1. d4 ; fake result 0-1\n d5 *';

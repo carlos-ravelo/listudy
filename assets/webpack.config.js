@@ -51,6 +51,16 @@ module.exports = (env, options) => {
           }
         },
         {
+          test: /\.m?js$/,
+          include: path.resolve(__dirname, 'node_modules/ts-fsrs'),
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: [['@babel/preset-env', { targets: { safari: '13' } }]]
+            }
+          }
+        },
+        {
           test: /\.js$/,
           exclude: /node_modules/,
           use: {

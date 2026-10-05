@@ -202,6 +202,10 @@
   i18n.weak_run_active = "<%= dgettext "study", "Practicing weak chapters" %>";
   i18n.weak_run_remaining = "<%= dgettext "study", "chapters left" %>";
   i18n.weak_run_complete = "<%= dgettext "study", "Weak chapter practice complete!" %>";
+  i18n.spaced_review_due = "<%= dgettext "study", "Review due" %>";
+  i18n.spaced_review_next = "<%= dgettext "study", "Next review" %>";
+  i18n.spaced_review_active = "<%= dgettext "study", "Reviewing due chapters" %>";
+  i18n.spaced_review_complete = "<%= dgettext "study", "Reviews complete for now!" %>";
   i18n.response = "<%= dgettext "study", "response" %>";
   i18n.max_depth = "<%= dgettext "study", "Max depth: " %>";
   i18n.overlay_playable_move = "<%= dgettext "study", "Opaque arrows with a black outline are playable moves" %>";
@@ -213,28 +217,37 @@
 
 <div id="progress_modal" class="modal">
   <div class="modal-content"
-    x-data="{ chapters: [], weakRunActive: false }"
+    x-data="{ chapters: [], weakRunActive: false, spacedReviewActive: false }"
     x-on:study-progress-updated.window="chapters = &#36;event.detail"
-    x-on:study-weak-run-updated.window="weakRunActive = &#36;event.detail.active">
+    x-on:study-weak-run-updated.window="weakRunActive = &#36;event.detail.active"
+    x-on:study-spaced-run-updated.window="spacedReviewActive = &#36;event.detail.active">
     <span class="modal_close">&times;</span>
     <h3><%= dgettext("study","Study Progress")%></h3>
     <div class="study_progress" id="study_progress">
       <template x-for="chapter in chapters" :key="chapter.index">
         <button type="button" class="chapter-progress-summary"
-          :class="'chapter-progress-summary--' + chapter.level + (chapter.current ? ' chapter-progress-summary--current' : '')"
+          :class="'chapter-progress-summary--' + (chapter.reviewDue ? 'due' : chapter.level) + (chapter.current ? ' chapter-progress-summary--current' : '')"
           :aria-current="chapter.current ? 'true' : null"
           x-on:click="$dispatch('study-progress-open-chapter', { index: chapter.index })">
           <strong x-text="chapter.name"></strong>
-          <span class="chapter-progress-cues" x-show="chapter.current || (chapter.mastered)">
+          <span class="chapter-progress-cues" x-show="chapter.current || chapter.mastered && !chapter.reviewDue || chapter.reviewDue">
             <span class="chapter-progress-current" x-show="chapter.current"><%= dgettext("study", "Current chapter") %></span>
-            <span class="chapter-progress-solid" x-show="chapter.mastered">✓ <%= dgettext("study", "Chapter complete") %></span>
+            <span class="chapter-progress-solid" x-show="chapter.mastered && !chapter.reviewDue">✓ <%= dgettext("study", "Chapter complete") %></span>
+            <span class="chapter-progress-due" x-show="chapter.reviewDue"><%= dgettext("study", "Review due") %></span>
           </span>
           <span x-text="chapter.metrics"></span>
           <span x-show="chapter.recovery" x-text="chapter.recovery"></span>
+          <span x-show="chapter.reviewLabel && !chapter.reviewDue" x-text="chapter.reviewLabel"></span>
         </button>
       </template>
     </div>
     <div class="study-progress-actions">
+      <button type="button" class="secondary" id="review_due_chapters"
+        x-show="spacedReviewActive || chapters.some(chapter => chapter.reviewDue)"
+        x-on:click="$dispatch('study-progress-toggle-spaced-run')"
+        data-start-label="<%= dgettext("study", "Review due chapters") %>"
+        data-stop-label="<%= dgettext("study", "Stop reviews") %>"
+        x-text="spacedReviewActive ? $el.dataset.stopLabel : $el.dataset.startLabel + ' (' + chapters.filter(chapter => chapter.reviewDue).length + ')'"></button>
       <button type="button" class="secondary" id="practice_weak_chapters"
         x-show="weakRunActive || chapters.some(chapter => chapter.errors > 0 && !chapter.mastered)"
         x-on:click="$dispatch('study-progress-toggle-weak-run')"

@@ -210,12 +210,14 @@
 .chapter-progress-summary--watch { border-left-color: #d97706; background: rgba(217, 119, 6, 0.08); }
 .chapter-progress-summary--weak { border-left-color: #c53030; background: rgba(197, 48, 48, 0.1); }
 
+.chapter-progress-summary--due { border-left-color: #d97706; background: rgba(217, 119, 6, 0.08); }
 .chapter-progress-summary--solid { border-left-color: var(--success-color); background: rgba(79, 138, 16, 0.08); }
 .progress-bar--solid .progress-bar-fill { background: var(--success-color); }
 .chapter-progress-summary--current { outline: 2px solid var(--secondary-color); outline-offset: -2px; }
 .chapter-progress-summary .chapter-progress-cues { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.3em; }
 .chapter-progress-cues > span { padding: 0.1em 0.4em; border-radius: 4px; }
 .chapter-progress-current { background: var(--info-bg); color: var(--info-color); }
+.chapter-progress-due { background: rgba(217, 119, 6, 0.12); color: #a65f00; }
 .chapter-progress-solid { background: var(--success-bg); color: var(--success-color); }
 
 .chapter-progress-summary span, .chapter-weakness { font-size: 0.85em; }

@@ -2,6 +2,7 @@
   "repository": {},
   "description": " ",
   "license": "MIT",
+  "engines": { "node": ">=20" },
   "scripts": {
     "deploy": "webpack --mode production",
     "watch": "webpack --mode development --watch",
@@ -17,7 +18,8 @@
     "phoenix_live_view": "file:../deps/phoenix_live_view",
     "playwright": "^1.9.1",
     "regenerator-runtime": "^0.14.1",
-    "stockfish.wasm": "^0.10.0"
+    "stockfish.wasm": "^0.10.0",
+    "ts-fsrs": "5.4.2"
   },
   "devDependencies": {
     "@babel/core": "^7.13.8",
