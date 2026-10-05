@@ -944,6 +944,9 @@ async function update_progress() {
             ...mastery,
             level: mastery.mastered ? "solid" : weakness.errors > 0 ? weakness.level : "unrated",
             current: Number(tree_index) === Number(chapter),
+            recovery: weakness.errors > 0 && !mastery.mastered
+                ? i18n.progress_clean_moves + ": " + mastery.cleanCovered + "/" + coverage.total
+                : null,
             metrics: i18n.progress_practiced_moves + ": " + coverage.covered + "/" + coverage.total +
                 (weakness.attempts === 0 ? "" : " · " + i18n.progress_correct_moves + ": " + (weakness.attempts - weakness.errors) + " · " + i18n.progress_errors + ": " + weakness.errors)
         });
@@ -1121,7 +1124,7 @@ async function main() {
     } : null;
     studyFeatureViews = [
         setupStudyCollections({ getCurrentChapter }),
-        setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward, progressLabels: { one: i18n.progress_error, many: i18n.progress_errors_lower, unpracticed: i18n.progress_not_practiced, practiced: i18n.progress_practiced_moves } })
+        setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward, progressLabels: { unpracticed: i18n.progress_not_practiced, practiced: i18n.progress_practiced_moves, needsPractice: i18n.progress_needs_practice } })
     ];
     setupPuzzleRun(i18n);
     set_options_values();
