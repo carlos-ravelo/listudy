@@ -28,8 +28,10 @@
 }
 
 .home-path {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0;
   padding: 1.5rem;
   border: 1px solid var(--secondary-color);
   border-radius: 12px;
@@ -48,7 +50,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: .75rem 1rem;
-  margin-top: auto;
+  align-self: start;
 }
 
 .home-path-actions .button {
@@ -117,6 +119,11 @@
 @media (max-width: 650px) {
   .home-paths {
     grid-template-columns: 1fr;
+  }
+
+  .home-path {
+    grid-row: auto;
+    grid-template-rows: auto auto auto;
   }
 
   .home-daily .with_sidebar {
