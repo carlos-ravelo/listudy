@@ -35,12 +35,15 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
             if (!chapter || chapter.attempts === 0) {
                 badge.className = 'chapter-choice-status chapter-choice-status--new';
                 badge.textContent = progressLabels.unpracticed;
+            } else if (chapter.mastered) {
+                badge.className = 'chapter-choice-status chapter-choice-status--solid';
+                badge.textContent = `✓ ${chapter.covered}/${chapter.total} ${progressLabels.practiced}`;
             } else if (chapter.errors > 0) {
                 badge.className = 'chapter-choice-status chapter-choice-status--mistakes';
                 badge.textContent = `${chapter.errors} ${chapter.errors === 1 ? progressLabels.one : progressLabels.many}`;
             } else {
-                badge.className = 'chapter-choice-status chapter-choice-status--' + (chapter.complete ? 'solid' : 'in-progress');
-                badge.textContent = `${chapter.complete ? '✓ ' : ''}${chapter.covered}/${chapter.total} ${progressLabels.practiced}`;
+                badge.className = 'chapter-choice-status chapter-choice-status--in-progress';
+                badge.textContent = `${chapter.covered}/${chapter.total} ${progressLabels.practiced}`;
             }
             badge.hidden = false;
         });

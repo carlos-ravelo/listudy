@@ -17,10 +17,16 @@ function recordChapterAttempt(stats, chapterIndex, wasCorrect, moveId) {
     const key = String(chapterIndex);
     const current = stats.chapters[key] || EMPTY_STATS;
     const coveredMoves = Array.isArray(current.coveredMoves) ? current.coveredMoves : [];
+    const cleanMoves = Array.isArray(current.cleanMoves)
+        ? current.cleanMoves
+        : current.errors === 0 ? coveredMoves : [];
     stats.chapters[key] = {
         ...current,
         attempts: current.attempts + 1,
         errors: current.errors + (wasCorrect ? 0 : 1),
+        cleanMoves: wasCorrect
+            ? moveId && !cleanMoves.includes(moveId) ? [...cleanMoves, moveId] : cleanMoves
+            : [],
         ...(wasCorrect && moveId && !coveredMoves.includes(moveId)
             ? { coveredMoves: [...coveredMoves, moveId] }
             : {})
@@ -48,6 +54,15 @@ function chapterCoverage(stats, chapterIndex, catalog) {
     return { covered, total: catalog.size, percent: catalog.size ? Math.round(covered / catalog.size * 100) : 0 };
 }
 
+function chapterMastery(stats, chapterIndex, catalog) {
+    const current = stats.chapters[String(chapterIndex)] || EMPTY_STATS;
+    const cleanMoves = Array.isArray(current.cleanMoves)
+        ? current.cleanMoves
+        : current.errors === 0 && Array.isArray(current.coveredMoves) ? current.coveredMoves : [];
+    const cleanCovered = cleanMoves.filter(moveId => catalog.has(moveId)).length;
+    return { cleanCovered, mastered: catalog.size > 0 && cleanCovered === catalog.size };
+}
+
 function chapterWeakness(stats, chapterIndex) {
     const current = stats.chapters[String(chapterIndex)] || EMPTY_STATS;
     const errorRate = current.attempts === 0 ? 0 : current.errors / current.attempts;
@@ -60,12 +75,13 @@ function chapterWeakness(stats, chapterIndex) {
     return { ...current, errorRate, level };
 }
 
-function weakChapterOrder(stats, chapterCount) {
+function weakChapterOrder(stats, chapterCount, catalogs = []) {
     return Array.from({ length: chapterCount }, (_, index) => ({
         index,
-        ...chapterWeakness(stats, index)
+        ...chapterWeakness(stats, index),
+        mastered: catalogs[index] ? chapterMastery(stats, index, catalogs[index]).mastered : false
     }))
-        .filter(chapter => chapter.errors > 0)
+        .filter(chapter => chapter.errors > 0 && !chapter.mastered)
         .sort((a, b) =>
             b.errors / (b.attempts + 5) - a.errors / (a.attempts + 5) ||
             b.errors - a.errors ||
@@ -73,4 +89,4 @@ function weakChapterOrder(stats, chapterCount) {
         .map(chapter => chapter.index);
 }
 
-export { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterWeakness, weakChapterOrder };
+export { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder };

@@ -223,9 +223,9 @@
           :aria-current="chapter.current ? 'true' : null"
           x-on:click="$dispatch('study-progress-open-chapter', { index: chapter.index })">
           <strong x-text="chapter.name"></strong>
-          <span class="chapter-progress-cues" x-show="chapter.current || (chapter.complete && chapter.errors === 0)">
+          <span class="chapter-progress-cues" x-show="chapter.current || (chapter.mastered)">
             <span class="chapter-progress-current" x-show="chapter.current"><%= dgettext("study", "Current chapter") %></span>
-            <span class="chapter-progress-solid" x-show="chapter.complete && chapter.errors === 0">✓ <%= dgettext("study", "Chapter complete") %></span>
+            <span class="chapter-progress-solid" x-show="chapter.mastered">✓ <%= dgettext("study", "Chapter complete") %></span>
           </span>
           <span x-text="chapter.metrics"></span>
         </button>
