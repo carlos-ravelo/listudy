@@ -22,7 +22,7 @@ import { StorageAdapter } from './storageAdapter.js';
 import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
-import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterWeakness, weakChapterOrder } from './modules/study/chapter_stats.js';
+import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder } from './modules/study/chapter_stats.js';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
@@ -249,7 +249,7 @@ function toggleWeakChapterRun() {
         stopWeakChapterRun();
         return;
     }
-    weakChapterQueue = weakChapterOrder(chapterStats, trees.length);
+    weakChapterQueue = weakChapterOrder(chapterStats, trees.length, chapterMoveCatalogs);
     if (weakChapterQueue.length === 0) return;
     weakChapterRunActive = true;
     window.dispatchEvent(new Event("study-puzzle-run-off"));
@@ -935,29 +935,29 @@ async function update_progress() {
     for (let tree_index in trees) {
         const weakness = chapterWeakness(chapterStats, tree_index);
         const coverage = chapterCoverage(chapterStats, tree_index, chapterMoveCatalogs[tree_index]);
-        const complete = coverage.total > 0 && coverage.covered === coverage.total;
+        const mastery = chapterMastery(chapterStats, tree_index, chapterMoveCatalogs[tree_index]);
         chapterSummaries.push({
             index: Number(tree_index),
             name: tree_chapter_name(tree_index),
             ...weakness,
             ...coverage,
-            complete,
-            level: weakness.errors > 0 ? weakness.level : complete ? "solid" : "unrated",
+            ...mastery,
+            level: mastery.mastered ? "solid" : weakness.errors > 0 ? weakness.level : "unrated",
             current: Number(tree_index) === Number(chapter),
             metrics: i18n.progress_practiced_moves + ": " + coverage.covered + "/" + coverage.total +
                 (weakness.attempts === 0 ? "" : " · " + i18n.progress_correct_moves + ": " + (weakness.attempts - weakness.errors) + " · " + i18n.progress_errors + ": " + weakness.errors)
         });
     }
 
-    chapterSummaries.sort((a, b) => b.errorRate - a.errorRate || b.errors - a.errors || a.index - b.index);
+    chapterSummaries.sort((a, b) => Number(a.mastered) - Number(b.mastered) || b.errorRate - a.errorRate || b.errors - a.errors || a.index - b.index);
     window.dispatchEvent(new CustomEvent("study-progress-updated", { detail: chapterSummaries }));
 
     let cp = document.getElementById("chapter_progress");
     const current = chapterWeakness(chapterStats, chapter);
     const coverage = chapterCoverage(chapterStats, chapter, chapterMoveCatalogs[chapter]);
-    const complete = coverage.total > 0 && coverage.covered === coverage.total;
+    const mastery = chapterMastery(chapterStats, chapter, chapterMoveCatalogs[chapter]);
     const bar = document.createElement("div");
-    bar.className = "progress-bar" + (complete && current.errors === 0 ? " progress-bar--solid" : "");
+    bar.className = "progress-bar" + (mastery.mastered ? " progress-bar--solid" : "");
     bar.setAttribute("role", "meter");
     bar.setAttribute("aria-valuemin", "0");
     bar.setAttribute("aria-valuemax", "100");
@@ -969,7 +969,7 @@ async function update_progress() {
     bar.appendChild(fill);
 
     const label = document.createElement("p");
-    label.className = "chapter-weakness chapter-weakness--" + current.level;
+    label.className = "chapter-weakness chapter-weakness--" + (mastery.mastered ? "solid" : current.errors > 0 ? current.level : "unrated");
     label.textContent = i18n.progress_practiced_moves + ": " + coverage.covered + "/" + coverage.total + " (" + coverage.percent + "%)";
     cp.replaceChildren(bar, label);
     updateWeakChapterRunUi();
