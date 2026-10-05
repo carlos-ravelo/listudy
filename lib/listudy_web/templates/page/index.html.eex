@@ -9,10 +9,12 @@
       <h2 id="home-studies-title"><%= dgettext "index", "Study chess" %></h2>
       <p><%= dgettext "index", "Explore opening studies and build a repertoire you can practice." %></p>
       <div class="home-path-actions">
-        <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "button button-primary" %>
         <%= if Pow.Plug.current_user(@conn) do %>
+          <%= link (dgettext "index", "Your Studies"), to: Routes.study_path(@conn, :index, @locale), class: "button button-primary" %>
           <%= link (dgettext "index", "🎲 Random Study"), to: Routes.study_path(@conn, :random, locale: @locale), class: "button" %>
-          <%= link (dgettext "index", "Your Studies"), to: Routes.study_path(@conn, :index, @locale), class: "home-text-link" %>
+          <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "home-text-link" %>
+        <% else %>
+          <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "button button-primary" %>
         <% end %>
       </div>
     </section>
