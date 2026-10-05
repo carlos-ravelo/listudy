@@ -76,6 +76,55 @@
     min-width: 26ch;
 }
 
+.study-heading {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+}
+
+.study-heading .study-feature-title { margin-bottom: 0; }
+.study-edit-link { font-size: 0.9rem; }
+
+.study-primary-actions,
+.study-quick-options,
+.study-settings-grid,
+.study-more-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.4rem 1rem;
+}
+
+.study-primary-actions { padding: 1rem 0; }
+.study-quick-options { padding-bottom: 0.75rem; }
+
+.study-primary-actions .option_item,
+.study-quick-options .option_item,
+.study-settings-grid .option_item,
+.study-more-grid .option_item {
+    min-width: 0;
+    margin: 0;
+}
+
+.study-controls-panel {
+    padding: 0.75rem 0;
+    border-top: 1px solid #eaeaea;
+}
+
+.study-controls-panel > summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.study-controls-panel > summary:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+}
+
+.study-controls-panel[open] > summary { margin-bottom: 0.75rem; }
+.study-about p { margin: 0.25rem 0 0.75rem; }
+.study-discussion h2 { display: none; }
+
 .option_item_progressbar {
     margin-right: 3rem;
     margin-bottom: 1em;
