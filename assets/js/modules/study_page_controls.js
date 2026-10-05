@@ -95,6 +95,12 @@ export function setupPuzzleRun(i18n) {
         mode = modes[(modes.indexOf(mode) + 1) % modes.length];
         localStorage.setItem('puzzleRunMode', mode);
         update();
+        window.dispatchEvent(new Event('study-puzzle-run-changed'));
     };
+    window.addEventListener('study-puzzle-run-off', () => {
+        mode = 'off';
+        localStorage.setItem('puzzleRunMode', mode);
+        update();
+    });
     update();
 }

@@ -35,4 +35,17 @@ function chapterWeakness(stats, chapterIndex) {
     return { ...current, errorRate, level };
 }
 
-export { readChapterStats, recordChapterAttempt, chapterWeakness };
+function weakChapterOrder(stats, chapterCount) {
+    return Array.from({ length: chapterCount }, (_, index) => ({
+        index,
+        ...chapterWeakness(stats, index)
+    }))
+        .filter(chapter => chapter.errors > 0)
+        .sort((a, b) =>
+            b.errors / (b.attempts + 5) - a.errors / (a.attempts + 5) ||
+            b.errors - a.errors ||
+            a.index - b.index)
+        .map(chapter => chapter.index);
+}
+
+export { readChapterStats, recordChapterAttempt, chapterWeakness, weakChapterOrder };

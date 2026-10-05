@@ -22,7 +22,7 @@ import { StorageAdapter } from './storageAdapter.js';
 import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
-import { readChapterStats, recordChapterAttempt, chapterWeakness } from './modules/study/chapter_stats.js';
+import { readChapterStats, recordChapterAttempt, chapterWeakness, weakChapterOrder } from './modules/study/chapter_stats.js';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
@@ -31,6 +31,8 @@ Alpine.start();
 
 let studyFeatureViews = [];
 let chapterStats = { version: 1, chapters: {} };
+let weakChapterRunActive = false;
+let weakChapterQueue = [];
 
 const mode_free = "free_mode";
 
@@ -171,15 +173,14 @@ async function handle_move(orig, dest) {
             // Auto-advance to the specific chapter type if Puzzle Run is active
             const currentRunMode = localStorage.getItem("puzzleRunMode");
 
-            if (currentRunMode === "next" || currentRunMode === "random") {
+            if (weakChapterRunActive) {
+                setTimeout(selectNextWeakChapter, 500);
+            } else if (currentRunMode === "next" || currentRunMode === "random") {
                 setTimeout(() => {
                     const targetBtnId = currentRunMode === "next" ? "next_chapter_btn" : "btn_random_chapter";
                     const autoBtn = document.getElementById(targetBtnId);
-
-                    if (autoBtn) {
-                        autoBtn.click();
-                    }
-                }, 500); // 500ms delay to allow the user to read the success message
+                    if (autoBtn) autoBtn.click();
+                }, 500);
             } else {
                 if (board_review == i18n.review_slow) {
                     await sleep(3000);
@@ -202,6 +203,53 @@ async function handle_move(orig, dest) {
     store_trees();
     setup_move();
     update_progress();
+}
+
+function updateWeakChapterRunUi() {
+    const status = document.getElementById("weak_run_status");
+    status.hidden = !weakChapterRunActive;
+    status.textContent = weakChapterRunActive
+        ? i18n.weak_run_active + " · " + (weakChapterQueue.length + 1) + " " + i18n.weak_run_remaining
+        : "";
+    window.dispatchEvent(new CustomEvent("study-weak-run-updated", {
+        detail: { active: weakChapterRunActive }
+    }));
+}
+
+function stopWeakChapterRun() {
+    weakChapterRunActive = false;
+    weakChapterQueue = [];
+    updateWeakChapterRunUi();
+}
+
+function selectNextWeakChapter() {
+    if (!weakChapterRunActive) return;
+    const next = weakChapterQueue.shift();
+    if (next === undefined) {
+        stopWeakChapterRun();
+        set_text(success_div, i18n.weak_run_complete);
+        return;
+    }
+    const select = document.getElementById("chapter_select");
+    select.value = String(next);
+    select.dispatchEvent(new CustomEvent("change", {
+        bubbles: true,
+        detail: { weakRun: true }
+    }));
+    updateWeakChapterRunUi();
+}
+
+function toggleWeakChapterRun() {
+    if (weakChapterRunActive) {
+        stopWeakChapterRun();
+        return;
+    }
+    weakChapterQueue = weakChapterOrder(chapterStats, trees.length);
+    if (weakChapterQueue.length === 0) return;
+    weakChapterRunActive = true;
+    window.dispatchEvent(new Event("study-puzzle-run-off"));
+    document.getElementById("progress_modal").style.display = "none";
+    selectNextWeakChapter();
 }
 
 function chapter_stats_key() {
@@ -553,6 +601,8 @@ function setup_chapter_select() {
         select.dispatchEvent(new Event("change", { bubbles: true }));
         document.getElementById("progress_modal").style.display = "none";
     });
+    document.getElementById("progress_modal").addEventListener("study-progress-toggle-weak-run", toggleWeakChapterRun);
+    window.addEventListener("study-puzzle-run-changed", stopWeakChapterRun);
     let selected = parseInt(StorageAdapter.getItem(select_key) || 0);
 
     const linkedChapter = chapterFromUrl(window.location.search, trees.map((_, index) => tree_chapter_name(index)));
@@ -571,7 +621,8 @@ function setup_chapter_select() {
         select.appendChild(option);
     }
 
-    select.onchange = function() {
+    select.onchange = function(event) {
+        if (weakChapterRunActive && !(event.detail && event.detail.weakRun)) stopWeakChapterRun();
         let v = document.getElementById(select_id).value;
         StorageAdapter.setItem(select_key, v);
         window.chapter = Number(v);
@@ -907,12 +958,14 @@ async function update_progress() {
         ? i18n.progress_no_attempts
         : i18n.progress_correct_moves + ": " + correct + "/" + current.attempts + " (" + accuracy + "%)";
     cp.replaceChildren(bar, label);
+    updateWeakChapterRunUi();
 }
 
 async function setup_progress_reset() {
     let reset = document.getElementById("study_progress_reset");
     reset.onclick = function() {
         if (window.confirm(i18n.confirm_reset_progress)) {
+            if (weakChapterRunActive) stopWeakChapterRun();
             for (let c of trees) {
                 tree_value_add(c.root[0], -5);
             }
