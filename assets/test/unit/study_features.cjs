@@ -5,6 +5,15 @@ const load = async name => import('data:text/javascript;base64,' + fs.readFileSy
 
 (async () => {
     const { splitChapterPgn, chapterFromUrl } = await load('chapter_pgn.js');
+    const { readChapterStats, recordChapterAttempt, chapterWeakness } = await load('chapter_stats.js');
+    const stats = readChapterStats(null);
+    recordChapterAttempt(stats, 2, false);
+    assert.strictEqual(chapterWeakness(stats, 2).level, 'weak');
+    recordChapterAttempt(stats, 2, true);
+    recordChapterAttempt(stats, 2, false);
+    assert.deepStrictEqual(chapterWeakness(stats, 2), { attempts: 3, errors: 2, errorRate: 2 / 3, level: 'weak' });
+    assert.strictEqual(chapterWeakness(stats, 1).level, 'unrated');
+    assert.deepStrictEqual(readChapterStats('invalid'), { version: 1, chapters: {} });
     const first = '[Event "First *"]\n\n1. e4 {fake result * [Event "x"]} (1. d4 d5) e5 1-0';
     const second = '[Event "Second"]\n\n1. d4 ; fake result 0-1\n d5 *';
     assert.deepStrictEqual(splitChapterPgn(first + '\n\n' + second), [first, second]);

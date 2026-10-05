@@ -5,7 +5,7 @@ const Chess = require('chess.js')
 import { turn_color, non_turn_color, setup_chess, uci_to_san, cal_to_ucistr, move_to_ucistr } from './modules/chess_utils.js';
 import { string_hash } from './modules/hash.js';
 import { clear_local_storage, get_option_from_localstorage } from './modules/localstorage.js';
-import { tree_value_add, tree_progress, tree_move_index, tree_children, tree_possible_moves, has_children, tree_value,
+import { tree_value_add, tree_move_index, tree_children, tree_possible_moves, has_children, tree_value,
          need_hint, update_value, value_sort, tree_get_node, tree_children_filter_sort, tree_get_node_depth,
          tree_get_node_string, tree_size_weighted_random_move, tree_max_num_moves_deep } from './modules/tree_utils.js';
 import { generate_move_trees, annotate_pgn } from './modules/tree_from_pgn.js';
@@ -22,9 +22,15 @@ import { StorageAdapter } from './storageAdapter.js';
 import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
+import { readChapterStats, recordChapterAttempt, chapterWeakness } from './modules/study/chapter_stats.js';
+import Alpine from 'alpinejs';
+
+window.Alpine = Alpine;
+Alpine.start();
 
 
 let studyFeatureViews = [];
+let chapterStats = { version: 1, chapters: {} };
 
 const mode_free = "free_mode";
 
@@ -135,7 +141,10 @@ async function handle_move(orig, dest) {
         san = possible_promotion_san;
     }
 
-    if(possible_moves.indexOf(san) != -1) {
+    const wasCorrect = possible_moves.indexOf(san) != -1;
+    record_chapter_attempt(wasCorrect);
+
+    if(wasCorrect) {
         // console.log('curr_move', orig, dest, JSON.stringify(curr_move));
         // the move is one of the possible moves in the current position
         update_value(curr_move, 1, san);
@@ -193,6 +202,15 @@ async function handle_move(orig, dest) {
     store_trees();
     setup_move();
     update_progress();
+}
+
+function chapter_stats_key() {
+    return study_id + "_chapter_stats";
+}
+
+function record_chapter_attempt(wasCorrect) {
+    recordChapterAttempt(chapterStats, chapter, wasCorrect);
+    StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
 }
 
 /**
@@ -528,6 +546,13 @@ function setup_chapter_select() {
     let select_key = study_id + "_selected";
     let select_id = "chapter_select"
     let select = document.getElementById(select_id);
+    document.getElementById("study_progress").addEventListener("study-progress-open-chapter", event => {
+        const index = event.detail.index;
+        if (!Number.isInteger(index) || index < 0 || index >= trees.length) return;
+        select.value = String(index);
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        document.getElementById("progress_modal").style.display = "none";
+    });
     let selected = parseInt(StorageAdapter.getItem(select_key) || 0);
 
     const linkedChapter = chapterFromUrl(window.location.search, trees.map((_, index) => tree_chapter_name(index)));
@@ -843,33 +868,45 @@ function reset_line() {
  * Updates the progress modal html
  */
 async function update_progress() {
-    let d = document.getElementById("study_progress");
-    d.innerHTML = "";
+    const chapterSummaries = [];
 
     for (let tree_index in trees) {
-        let chapter_name = tree_chapter_name(tree_index);
-        let tree = trees[tree_index];
-        let progress = tree_progress(trees[tree_index].root[0]);
-        let percent = parseInt( (progress[0] / progress[1]) * 100);
-        let name = document.createElement("b");
-        name.innerText = `${chapter_name} (${percent}%)`;
-        d.appendChild(name);
-        d.innerHTML += `
-        <div class="progress-bar">
-            <span id="progress" class="progress-bar-fill" style="width: ${percent}%;"></span>
-        </div>
-        `
+        const weakness = chapterWeakness(chapterStats, tree_index);
+        chapterSummaries.push({
+            index: Number(tree_index),
+            name: tree_chapter_name(tree_index),
+            ...weakness,
+            metrics: weakness.attempts === 0
+                ? i18n.progress_no_attempts
+                : i18n.progress_correct_moves + ": " + (weakness.attempts - weakness.errors) + " · " + i18n.progress_errors + ": " + weakness.errors
+        });
     }
 
+    chapterSummaries.sort((a, b) => b.errorRate - a.errorRate || b.errors - a.errors || a.index - b.index);
+    window.dispatchEvent(new CustomEvent("study-progress-updated", { detail: chapterSummaries }));
+
     let cp = document.getElementById("chapter_progress");
-    let chapter_index = parseInt(chapter);
-    let progress = tree_progress(trees[chapter].root[0]);
-    let percent = parseInt( (progress[0] / progress[1]) * 100);
-    cp.innerHTML = `
-    <div class="progress-bar" title="${percent}%">
-        <span id="progress" class="progress-bar-fill" style="width: ${percent}%;"></span>
-    </div>
-    `
+    const current = chapterWeakness(chapterStats, chapter);
+    const correct = current.attempts - current.errors;
+    const accuracy = current.attempts === 0 ? 0 : Math.round(correct / current.attempts * 100);
+    const bar = document.createElement("div");
+    bar.className = "progress-bar";
+    bar.setAttribute("role", "meter");
+    bar.setAttribute("aria-valuemin", "0");
+    bar.setAttribute("aria-valuemax", "100");
+    bar.setAttribute("aria-valuenow", String(accuracy));
+    bar.setAttribute("aria-label", i18n.progress_correct_moves);
+    const fill = document.createElement("span");
+    fill.className = "progress-bar-fill";
+    fill.style.width = accuracy + "%";
+    bar.appendChild(fill);
+
+    const label = document.createElement("p");
+    label.className = "chapter-weakness chapter-weakness--" + current.level;
+    label.textContent = current.attempts === 0
+        ? i18n.progress_no_attempts
+        : i18n.progress_correct_moves + ": " + correct + "/" + current.attempts + " (" + accuracy + "%)";
+    cp.replaceChildren(bar, label);
 }
 
 async function setup_progress_reset() {
@@ -879,6 +916,8 @@ async function setup_progress_reset() {
             for (let c of trees) {
                 tree_value_add(c.root[0], -5);
             }
+            chapterStats = { version: 1, chapters: {} };
+            StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
             store_trees();
             update_progress();
             display_arrows(false);
@@ -989,6 +1028,7 @@ async function main() {
     setup_ground();
     setup_chess();
     setup_trees();
+    chapterStats = readChapterStats(StorageAdapter.getItem(chapter_stats_key()));
     setup_chapter_select();
     const chapterPgns = splitChapterPgn(pgn);
     const getCurrentChapter = () => chapterPgns[chapter] ? {

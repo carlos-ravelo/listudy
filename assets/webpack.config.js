@@ -11,8 +11,8 @@ module.exports = (env, options) => {
   return {
     optimization: {
       minimizer: [
-        new TerserPlugin({ cache: true, parallel: true, sourceMap: devMode }),
-        new OptimizeCSSAssetsPlugin({})
+        new TerserPlugin({ cache: true, parallel: false, sourceMap: devMode }),
+        new OptimizeCSSAssetsPlugin({ parallel: false })
       ]
     },
     entry: {
@@ -40,6 +40,16 @@ module.exports = (env, options) => {
     devtool: devMode ? 'source-map' : undefined,
     module: {
       rules: [
+        {
+          test: /\.js$/,
+          include: path.resolve(__dirname, 'node_modules/alpinejs'),
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: [['@babel/preset-env', { targets: { safari: '13' } }]]
+            }
+          }
+        },
         {
           test: /\.js$/,
           exclude: /node_modules/,
