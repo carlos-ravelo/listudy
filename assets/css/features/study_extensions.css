@@ -14,6 +14,7 @@
 .chapter-choice-status { flex: none; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
 .chapter-choice-status--mistakes { background: var(--error-bg); color: var(--error-color); }
 .chapter-choice-status--in-progress { background: var(--info-bg); color: var(--info-color); }
+.chapter-choice-status--due { background: var(--warning-bg, rgba(217, 119, 6, 0.12)); color: #a65f00; }
 .chapter-choice-status--solid { background: var(--success-bg); color: var(--success-color); }
 .chapter-choice-status--new { background: var(--bg-highlight-color); color: var(--font-color); }
 .chapter-active { font-weight: bold; background: var(--bg-highlight-color, #e2e8f0); }

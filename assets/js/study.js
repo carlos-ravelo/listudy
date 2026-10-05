@@ -23,6 +23,7 @@ import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js'
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
 import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder } from './modules/study/chapter_stats.js';
+import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus, dueChapterOrder } from './modules/study/chapter_review.js';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
@@ -32,6 +33,14 @@ Alpine.start();
 let studyFeatureViews = [];
 let chapterStats = { version: 1, chapters: {} };
 let chapterMoveCatalogs = [];
+let chapterReviewSignatures = [];
+let chapterReviews = emptyChapterReviews();
+let spacedReviewRunActive = false;
+let spacedReviewQueue = [];
+let lineReviewRecorded = false;
+let lineEligibleForReview = true;
+let trainingSessionId = 0;
+let reviewRefreshTimer;
 const studyColor = color;
 let weakChapterRunActive = false;
 let weakChapterQueue = [];
@@ -127,6 +136,7 @@ function possible_promotion(moves, san) {
 }
 
 async function handle_move(orig, dest) {
+    const sessionId = trainingSessionId;
 
     clear_all_text();
 
@@ -150,6 +160,7 @@ async function handle_move(orig, dest) {
         ? [...curr_move.slice(1).map((_, depth) => tree_get_node(curr_move.slice(0, depth + 2)).move), san].join('|')
         : null;
     record_chapter_attempt(wasCorrect, moveId);
+    if (!wasCorrect && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
 
     if(wasCorrect) {
         // console.log('curr_move', orig, dest, JSON.stringify(curr_move));
@@ -159,8 +170,9 @@ async function handle_move(orig, dest) {
         combo_count += 1;
         set_text(success_div, right_move_text());
         let reply = ai_move(curr_move);
-        let end_of_line = reply == undefined;
-        if (!end_of_line && max_depth !== DEPTH_MAX) {
+        const naturalEnd = reply == undefined;
+        let end_of_line = naturalEnd;
+        if (!end_of_line && !spacedReviewRunActive && max_depth !== DEPTH_MAX) {
             let curr_node = tree_get_node(curr_move);
             let curr_depth = tree_get_node_depth(curr_node);
             if (key_moves_mode == i18n.key_move_disabled || window.first_variation === null) {
@@ -171,14 +183,18 @@ async function handle_move(orig, dest) {
             // console.log('CURR_DEPTH', end_of_line, curr_node.move, curr_node.move_index, curr_depth);
         }
         await sleep(get_move_delay()); // instant play by the ai feels weird
+        if (sessionId !== trainingSessionId) return;
         if (end_of_line) {
+            if (naturalEnd && !lineReviewRecorded && lineEligibleForReview) record_line_review(true);
             achievement_end_of_line();
             set_text(success_div, right_move_text() + "\n" + i18n.success_end_of_line);
 
             // Auto-advance to the specific chapter type if Puzzle Run is active
             const currentRunMode = localStorage.getItem("puzzleRunMode");
 
-            if (weakChapterRunActive) {
+            if (spacedReviewRunActive) {
+                setTimeout(selectNextDueChapter, 500);
+            } else if (weakChapterRunActive) {
                 setTimeout(selectNextWeakChapter, 500);
             } else if (currentRunMode === "next" || currentRunMode === "random") {
                 setTimeout(() => {
@@ -212,12 +228,17 @@ async function handle_move(orig, dest) {
 
 function updateWeakChapterRunUi() {
     const status = document.getElementById("weak_run_status");
-    status.hidden = !weakChapterRunActive;
-    status.textContent = weakChapterRunActive
-        ? i18n.weak_run_active + " · " + (weakChapterQueue.length + 1) + " " + i18n.weak_run_remaining
-        : "";
+    status.hidden = !weakChapterRunActive && !spacedReviewRunActive;
+    status.textContent = spacedReviewRunActive
+        ? i18n.spaced_review_active + " · " + (spacedReviewQueue.length + 1) + " " + i18n.weak_run_remaining
+        : weakChapterRunActive
+            ? i18n.weak_run_active + " · " + (weakChapterQueue.length + 1) + " " + i18n.weak_run_remaining
+            : "";
     window.dispatchEvent(new CustomEvent("study-weak-run-updated", {
         detail: { active: weakChapterRunActive }
+    }));
+    window.dispatchEvent(new CustomEvent("study-spaced-run-updated", {
+        detail: { active: spacedReviewRunActive }
     }));
 }
 
@@ -251,14 +272,62 @@ function toggleWeakChapterRun() {
     }
     weakChapterQueue = weakChapterOrder(chapterStats, trees.length, chapterMoveCatalogs);
     if (weakChapterQueue.length === 0) return;
+    if (spacedReviewRunActive) stopSpacedReviewRun();
     weakChapterRunActive = true;
     window.dispatchEvent(new Event("study-puzzle-run-off"));
     document.getElementById("progress_modal").style.display = "none";
     selectNextWeakChapter();
 }
 
+function stopSpacedReviewRun() {
+    spacedReviewRunActive = false;
+    spacedReviewQueue = [];
+    updateWeakChapterRunUi();
+}
+
+function selectNextDueChapter() {
+    if (!spacedReviewRunActive) return;
+    const next = spacedReviewQueue.shift();
+    if (next === undefined) {
+        stopSpacedReviewRun();
+        set_text(success_div, i18n.spaced_review_complete);
+        return;
+    }
+    const select = document.getElementById("chapter_select");
+    select.value = String(next);
+    select.dispatchEvent(new CustomEvent("change", {
+        bubbles: true,
+        detail: { spacedRun: true }
+    }));
+    updateWeakChapterRunUi();
+}
+
+function toggleSpacedReviewRun() {
+    if (spacedReviewRunActive) {
+        stopSpacedReviewRun();
+        return;
+    }
+    spacedReviewQueue = dueChapterOrder(chapterReviews, chapterReviewSignatures);
+    if (spacedReviewQueue.length === 0) return;
+    if (weakChapterRunActive) stopWeakChapterRun();
+    spacedReviewRunActive = true;
+    window.dispatchEvent(new Event("study-puzzle-run-off"));
+    document.getElementById("progress_modal").style.display = "none";
+    selectNextDueChapter();
+}
+
 function chapter_stats_key() {
     return study_id + "_chapter_stats";
+}
+
+function chapter_reviews_key() {
+    return study_id + "_chapter_reviews";
+}
+
+function record_line_review(wasClean) {
+    recordLineReview(chapterReviews, chapter, chapterReviewSignatures[chapter], wasClean);
+    StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
+    lineReviewRecorded = true;
 }
 
 function record_chapter_attempt(wasCorrect, moveId) {
@@ -503,6 +572,9 @@ function play_move(san) {
 }
 
 function start_training() {
+    trainingSessionId += 1;
+    lineReviewRecorded = false;
+    lineEligibleForReview = true;
     window.curr_move = [chapter];
     window.first_variation = trees[chapter].first_variation;
     // this fen is the normal chess starting position
@@ -523,7 +595,7 @@ function start_training() {
     
     // Pass the active color to auto-rotate the board
     ground_init_state(fen, color);
-    if (key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
+    if (!spacedReviewRunActive && key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
         for (let ki = 0; ki < window.first_variation; ++ki) {
             // Moves that are not fully trained are not skipped
             if (tree_children(curr_move)[0].value != 5) { break; }
@@ -533,6 +605,7 @@ function start_training() {
             let stored_sound = sound_enabled;
             sound_enabled = false;
             play_move(ai_move(curr_move));
+            lineEligibleForReview = false;
             sound_enabled = stored_sound;
         }
     }
@@ -584,6 +657,7 @@ function setup_trees() {
     }
     
     window.trees = trees;
+    chapterReviewSignatures = trees.map(tree => chapterReviewSignature(tree.root, tree.headers.FEN));
     const standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
     chapterMoveCatalogs = trees.map(tree => {
         const fen = tree.headers.FEN || standardFen;
@@ -613,7 +687,9 @@ function setup_chapter_select() {
         document.getElementById("progress_modal").style.display = "none";
     });
     document.getElementById("progress_modal").addEventListener("study-progress-toggle-weak-run", toggleWeakChapterRun);
+    document.getElementById("progress_modal").addEventListener("study-progress-toggle-spaced-run", toggleSpacedReviewRun);
     window.addEventListener("study-puzzle-run-changed", stopWeakChapterRun);
+    window.addEventListener("study-puzzle-run-changed", stopSpacedReviewRun);
     let selected = parseInt(StorageAdapter.getItem(select_key) || 0);
 
     const linkedChapter = chapterFromUrl(window.location.search, trees.map((_, index) => tree_chapter_name(index)));
@@ -634,6 +710,7 @@ function setup_chapter_select() {
 
     select.onchange = function(event) {
         if (weakChapterRunActive && !(event.detail && event.detail.weakRun)) stopWeakChapterRun();
+        if (spacedReviewRunActive && !(event.detail && event.detail.spacedRun)) stopSpacedReviewRun();
         let v = document.getElementById(select_id).value;
         StorageAdapter.setItem(select_key, v);
         window.chapter = Number(v);
@@ -931,17 +1008,23 @@ function reset_line() {
  */
 async function update_progress() {
     const chapterSummaries = [];
+    const now = new Date();
 
     for (let tree_index in trees) {
         const weakness = chapterWeakness(chapterStats, tree_index);
         const coverage = chapterCoverage(chapterStats, tree_index, chapterMoveCatalogs[tree_index]);
         const mastery = chapterMastery(chapterStats, tree_index, chapterMoveCatalogs[tree_index]);
+        const review = chapterReviewStatus(chapterReviews, tree_index, chapterReviewSignatures[tree_index], now);
         chapterSummaries.push({
             index: Number(tree_index),
             name: tree_chapter_name(tree_index),
             ...weakness,
             ...coverage,
             ...mastery,
+            reviewDue: review.due,
+            reviewDueAt: review.dueAt ? review.dueAt.getTime() : null,
+            reviewLabel: review.due ? i18n.spaced_review_due
+                : review.dueAt ? i18n.spaced_review_next + ": " + review.dueAt.toLocaleString() : null,
             level: mastery.mastered ? "solid" : weakness.errors > 0 ? weakness.level : "unrated",
             current: Number(tree_index) === Number(chapter),
             recovery: weakness.errors > 0 && !mastery.mastered
@@ -952,8 +1035,15 @@ async function update_progress() {
         });
     }
 
-    chapterSummaries.sort((a, b) => Number(a.mastered) - Number(b.mastered) || b.errorRate - a.errorRate || b.errors - a.errors || a.index - b.index);
+    chapterSummaries.sort((a, b) => Number(b.reviewDue) - Number(a.reviewDue) || Number(a.mastered) - Number(b.mastered) || b.errorRate - a.errorRate || b.errors - a.errors || a.index - b.index);
     window.dispatchEvent(new CustomEvent("study-progress-updated", { detail: chapterSummaries }));
+    clearTimeout(reviewRefreshTimer);
+    const nextDueAt = chapterSummaries
+        .filter(summary => summary.reviewDueAt && summary.reviewDueAt > now.getTime())
+        .reduce((earliest, summary) => Math.min(earliest, summary.reviewDueAt), Infinity);
+    if (Number.isFinite(nextDueAt)) {
+        reviewRefreshTimer = setTimeout(update_progress, Math.min(nextDueAt - now.getTime() + 1000, 2147483647));
+    }
 
     let cp = document.getElementById("chapter_progress");
     const current = chapterWeakness(chapterStats, chapter);
@@ -997,6 +1087,9 @@ async function setup_progress_reset() {
     reset.onclick = function() {
         if (window.confirm(i18n.confirm_reset_progress)) {
             if (weakChapterRunActive) stopWeakChapterRun();
+            if (spacedReviewRunActive) stopSpacedReviewRun();
+            chapterReviews = emptyChapterReviews();
+            StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
             for (let c of trees) {
                 tree_value_add(c.root[0], -5);
             }
@@ -1113,6 +1206,7 @@ async function main() {
     setup_chess();
     setup_trees();
     chapterStats = readChapterStats(StorageAdapter.getItem(chapter_stats_key()));
+    chapterReviews = readChapterReviews(StorageAdapter.getItem(chapter_reviews_key()));
     setup_chapter_select();
     const chapterPgns = splitChapterPgn(pgn);
     const getCurrentChapter = () => chapterPgns[chapter] ? {
@@ -1124,7 +1218,7 @@ async function main() {
     } : null;
     studyFeatureViews = [
         setupStudyCollections({ getCurrentChapter }),
-        setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward, progressLabels: { unpracticed: i18n.progress_not_practiced, practiced: i18n.progress_practiced_moves, needsPractice: i18n.progress_needs_practice } })
+        setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward, progressLabels: { unpracticed: i18n.progress_not_practiced, practiced: i18n.progress_practiced_moves, needsPractice: i18n.progress_needs_practice, reviewDue: i18n.spaced_review_due } })
     ];
     setupPuzzleRun(i18n);
     set_options_values();
@@ -1148,7 +1242,9 @@ window.onresize = onresize;
 main();
 
 function go_back() {
+    if (spacedReviewRunActive) return;
     if (curr_move.length > 1) {
+        lineEligibleForReview = false;
         curr_move.pop();
         chess.undo();
         
@@ -1165,6 +1261,8 @@ function go_back() {
 }
 
 function go_forward() {
+    if (spacedReviewRunActive) return;
+    lineEligibleForReview = false;
     let possible_moves = tree_possible_moves(curr_move);
     if (!possible_moves) return;
 
