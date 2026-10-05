@@ -185,6 +185,9 @@
   i18n.comments_always_on = "<%= dgettext "study", "Comments: always on" %>";
   i18n.comments_hidden = "<%= dgettext "study", "Comments: hidden" %>";
   i18n.confirm_reset_progress = "<%= dgettext "study", "Are you sure you want to delete your study progress?" %>";
+  i18n.progress_errors = "<%= dgettext "study", "Errors" %>";
+  i18n.progress_correct_moves = "<%= dgettext "study", "Correct moves" %>";
+  i18n.progress_no_attempts = "<%= dgettext "study", "Not practiced yet" %>";
   i18n.response = "<%= dgettext "study", "response" %>";
   i18n.max_depth = "<%= dgettext "study", "Max depth: " %>";
   i18n.overlay_playable_move = "<%= dgettext "study", "Opaque arrows with a black outline are playable moves" %>";
@@ -198,7 +201,18 @@
   <div class="modal-content">
     <span class="modal_close">&times;</span>
     <h3><%= dgettext("study","Study Progress")%></h3>
-    <div class="study_progress" id="study_progress"></div>
+    <div class="study_progress" id="study_progress"
+      x-data="{ chapters: [] }"
+      x-on:study-progress-updated.window="chapters = &#36;event.detail">
+      <template x-for="chapter in chapters" :key="chapter.index">
+        <button type="button" class="chapter-progress-summary"
+          :class="'chapter-progress-summary--' + chapter.level"
+          x-on:click="$dispatch('study-progress-open-chapter', { index: chapter.index })">
+          <strong x-text="chapter.name"></strong>
+          <span x-text="chapter.metrics"></span>
+        </button>
+      </template>
+    </div>
     <button id="study_progress_reset" class="primary"><%= dgettext("study", "Reset progress") %></button>
   </div>
 </div>

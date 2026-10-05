@@ -112,9 +112,44 @@
 }
 
 .study_progress {
-    overflow-y: scroll;
+    overflow-y: auto;
     max-height: 20em;
 }
+
+.chapter-progress-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    height: auto;
+    padding: 0.65em 0.85em;
+    margin: 0 0 0.35em;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: normal;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: normal;
+    border: 1px solid transparent;
+    border-left: 4px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.chapter-progress-summary > strong,
+.chapter-progress-summary > span {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+.chapter-progress-summary > span { margin-top: 0.2em; }
+.chapter-progress-summary:hover, .chapter-progress-summary:focus-visible { border-color: currentColor; }
+.chapter-progress-summary--watch { border-left-color: #d97706; background: rgba(217, 119, 6, 0.08); }
+.chapter-progress-summary--weak { border-left-color: #c53030; background: rgba(197, 48, 48, 0.1); }
+.chapter-progress-summary span, .chapter-weakness { font-size: 0.85em; }
+.chapter-weakness { margin: 0.35em 0 0; }
+.chapter-weakness--watch { color: #a65f00; }
+.chapter-weakness--weak { color: #c53030; }
 
 .max_depth_label {
     display: inline-block;
