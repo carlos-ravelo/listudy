@@ -51,3 +51,4 @@ assets/package-lock.json
 # Python analysis artifacts
 __pycache__/
 *.pyc
+docs/*
