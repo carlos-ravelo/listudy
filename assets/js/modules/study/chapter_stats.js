@@ -13,14 +13,39 @@ function readChapterStats(raw) {
     }
 }
 
-function recordChapterAttempt(stats, chapterIndex, wasCorrect) {
+function recordChapterAttempt(stats, chapterIndex, wasCorrect, moveId) {
     const key = String(chapterIndex);
     const current = stats.chapters[key] || EMPTY_STATS;
+    const coveredMoves = Array.isArray(current.coveredMoves) ? current.coveredMoves : [];
     stats.chapters[key] = {
+        ...current,
         attempts: current.attempts + 1,
-        errors: current.errors + (wasCorrect ? 0 : 1)
+        errors: current.errors + (wasCorrect ? 0 : 1),
+        ...(wasCorrect && moveId && !coveredMoves.includes(moveId)
+            ? { coveredMoves: [...coveredMoves, moveId] }
+            : {})
     };
     return stats;
+}
+
+function chapterMoveCatalog(root, playerFirst) {
+    const moves = new Set();
+    function visit(nodes, path, playerTurn) {
+        for (const node of nodes || []) {
+            const moveId = [...path, node.move].join('|');
+            if (playerTurn) moves.add(moveId);
+            visit(node.children, [...path, node.move], !playerTurn);
+        }
+    }
+    visit(root, [], playerFirst);
+    return moves;
+}
+
+function chapterCoverage(stats, chapterIndex, catalog) {
+    const current = stats.chapters[String(chapterIndex)] || EMPTY_STATS;
+    const coveredMoves = Array.isArray(current.coveredMoves) ? current.coveredMoves : [];
+    const covered = coveredMoves.filter(moveId => catalog.has(moveId)).length;
+    return { covered, total: catalog.size, percent: catalog.size ? Math.round(covered / catalog.size * 100) : 0 };
 }
 
 function chapterWeakness(stats, chapterIndex) {
@@ -48,4 +73,4 @@ function weakChapterOrder(stats, chapterCount) {
         .map(chapter => chapter.index);
 }
 
-export { readChapterStats, recordChapterAttempt, chapterWeakness, weakChapterOrder };
+export { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterWeakness, weakChapterOrder };
