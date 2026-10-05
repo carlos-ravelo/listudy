@@ -194,6 +194,8 @@
   i18n.progress_errors_lower = "<%= dgettext "study", "mistakes" %>";
   i18n.progress_correct_moves = "<%= dgettext "study", "Correct moves" %>";
   i18n.progress_practiced_moves = "<%= dgettext "study", "Moves practiced" %>";
+  i18n.progress_clean_moves = "<%= dgettext "study", "Clean moves since last mistake" %>";
+  i18n.progress_needs_practice = "<%= dgettext "study", "Needs practice" %>";
   i18n.progress_correct = "<%= dgettext "study", "correct" %>";
   i18n.progress_not_practiced = "<%= dgettext "study", "Not practiced" %>";
   i18n.progress_no_attempts = "<%= dgettext "study", "Not practiced yet" %>";
@@ -228,12 +230,13 @@
             <span class="chapter-progress-solid" x-show="chapter.mastered">✓ <%= dgettext("study", "Chapter complete") %></span>
           </span>
           <span x-text="chapter.metrics"></span>
+          <span x-show="chapter.recovery" x-text="chapter.recovery"></span>
         </button>
       </template>
     </div>
     <div class="study-progress-actions">
       <button type="button" class="secondary" id="practice_weak_chapters"
-        x-show="weakRunActive || chapters.some(chapter => chapter.errors > 0)"
+        x-show="weakRunActive || chapters.some(chapter => chapter.errors > 0 && !chapter.mastered)"
         x-on:click="$dispatch('study-progress-toggle-weak-run')"
         data-start-label="<%= dgettext("study", "Practice weak chapters") %>"
         data-stop-label="<%= dgettext("study", "Stop weak practice") %>"

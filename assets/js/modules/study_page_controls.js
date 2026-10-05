@@ -1,4 +1,4 @@
-export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, progressLabels = { one: 'mistake', many: 'mistakes', unpracticed: 'Not practiced', correct: 'correct' } }) {
+export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, progressLabels = { unpracticed: 'Not practiced', practiced: 'Moves practiced', needsPractice: 'Needs practice' } }) {
     const select = document.getElementById('chapter_select');
     const previous = document.getElementById('prev_chapter_btn');
     const next = document.getElementById('next_chapter_btn');
@@ -40,7 +40,7 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
                 badge.textContent = `✓ ${chapter.covered}/${chapter.total} ${progressLabels.practiced}`;
             } else if (chapter.errors > 0) {
                 badge.className = 'chapter-choice-status chapter-choice-status--mistakes';
-                badge.textContent = `${chapter.errors} ${chapter.errors === 1 ? progressLabels.one : progressLabels.many}`;
+                badge.textContent = `${progressLabels.needsPractice} · ${chapter.cleanCovered}/${chapter.total}`;
             } else {
                 badge.className = 'chapter-choice-status chapter-choice-status--in-progress';
                 badge.textContent = `${chapter.covered}/${chapter.total} ${progressLabels.practiced}`;
