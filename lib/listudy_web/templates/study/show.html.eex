@@ -189,8 +189,13 @@
   i18n.comments_always_on = "<%= dgettext "study", "Comments: always on" %>";
   i18n.comments_hidden = "<%= dgettext "study", "Comments: hidden" %>";
   i18n.confirm_reset_progress = "<%= dgettext "study", "Are you sure you want to delete your study progress?" %>";
-  i18n.progress_errors = "<%= dgettext "study", "Errors" %>";
+  i18n.progress_errors = "<%= dgettext "study", "Mistakes" %>";
+  i18n.progress_error = "<%= dgettext "study", "mistake" %>";
+  i18n.progress_errors_lower = "<%= dgettext "study", "mistakes" %>";
   i18n.progress_correct_moves = "<%= dgettext "study", "Correct moves" %>";
+  i18n.progress_practiced_moves = "<%= dgettext "study", "Moves practiced" %>";
+  i18n.progress_correct = "<%= dgettext "study", "correct" %>";
+  i18n.progress_not_practiced = "<%= dgettext "study", "Not practiced" %>";
   i18n.progress_no_attempts = "<%= dgettext "study", "Not practiced yet" %>";
   i18n.weak_run_active = "<%= dgettext "study", "Practicing weak chapters" %>";
   i18n.weak_run_remaining = "<%= dgettext "study", "chapters left" %>";
@@ -214,9 +219,14 @@
     <div class="study_progress" id="study_progress">
       <template x-for="chapter in chapters" :key="chapter.index">
         <button type="button" class="chapter-progress-summary"
-          :class="'chapter-progress-summary--' + chapter.level"
+          :class="'chapter-progress-summary--' + chapter.level + (chapter.current ? ' chapter-progress-summary--current' : '')"
+          :aria-current="chapter.current ? 'true' : null"
           x-on:click="$dispatch('study-progress-open-chapter', { index: chapter.index })">
           <strong x-text="chapter.name"></strong>
+          <span class="chapter-progress-cues" x-show="chapter.current || (chapter.complete && chapter.errors === 0)">
+            <span class="chapter-progress-current" x-show="chapter.current"><%= dgettext("study", "Current chapter") %></span>
+            <span class="chapter-progress-solid" x-show="chapter.complete && chapter.errors === 0">✓ <%= dgettext("study", "Chapter complete") %></span>
+          </span>
           <span x-text="chapter.metrics"></span>
         </button>
       </template>

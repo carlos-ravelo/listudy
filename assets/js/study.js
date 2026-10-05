@@ -22,7 +22,7 @@ import { StorageAdapter } from './storageAdapter.js';
 import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
-import { readChapterStats, recordChapterAttempt, chapterWeakness, weakChapterOrder } from './modules/study/chapter_stats.js';
+import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterWeakness, weakChapterOrder } from './modules/study/chapter_stats.js';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
@@ -31,6 +31,8 @@ Alpine.start();
 
 let studyFeatureViews = [];
 let chapterStats = { version: 1, chapters: {} };
+let chapterMoveCatalogs = [];
+const studyColor = color;
 let weakChapterRunActive = false;
 let weakChapterQueue = [];
 
@@ -144,7 +146,10 @@ async function handle_move(orig, dest) {
     }
 
     const wasCorrect = possible_moves.indexOf(san) != -1;
-    record_chapter_attempt(wasCorrect);
+    const moveId = wasCorrect
+        ? [...curr_move.slice(1).map((_, depth) => tree_get_node(curr_move.slice(0, depth + 2)).move), san].join('|')
+        : null;
+    record_chapter_attempt(wasCorrect, moveId);
 
     if(wasCorrect) {
         // console.log('curr_move', orig, dest, JSON.stringify(curr_move));
@@ -256,8 +261,8 @@ function chapter_stats_key() {
     return study_id + "_chapter_stats";
 }
 
-function record_chapter_attempt(wasCorrect) {
-    recordChapterAttempt(chapterStats, chapter, wasCorrect);
+function record_chapter_attempt(wasCorrect, moveId) {
+    recordChapterAttempt(chapterStats, chapter, wasCorrect, moveId);
     StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
 }
 
@@ -579,6 +584,12 @@ function setup_trees() {
     }
     
     window.trees = trees;
+    const standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+    chapterMoveCatalogs = trees.map(tree => {
+        const fen = tree.headers.FEN || standardFen;
+        const customPosition = fen.split(" ").slice(0, 4).join(" ") !== standardFen;
+        return chapterMoveCatalog(tree.root, customPosition || studyColor === "white");
+    });
 }
 
 /*
@@ -923,13 +934,18 @@ async function update_progress() {
 
     for (let tree_index in trees) {
         const weakness = chapterWeakness(chapterStats, tree_index);
+        const coverage = chapterCoverage(chapterStats, tree_index, chapterMoveCatalogs[tree_index]);
+        const complete = coverage.total > 0 && coverage.covered === coverage.total;
         chapterSummaries.push({
             index: Number(tree_index),
             name: tree_chapter_name(tree_index),
             ...weakness,
-            metrics: weakness.attempts === 0
-                ? i18n.progress_no_attempts
-                : i18n.progress_correct_moves + ": " + (weakness.attempts - weakness.errors) + " · " + i18n.progress_errors + ": " + weakness.errors
+            ...coverage,
+            complete,
+            level: weakness.errors > 0 ? weakness.level : complete ? "solid" : "unrated",
+            current: Number(tree_index) === Number(chapter),
+            metrics: i18n.progress_practiced_moves + ": " + coverage.covered + "/" + coverage.total +
+                (weakness.attempts === 0 ? "" : " · " + i18n.progress_correct_moves + ": " + (weakness.attempts - weakness.errors) + " · " + i18n.progress_errors + ": " + weakness.errors)
         });
     }
 
@@ -938,27 +954,39 @@ async function update_progress() {
 
     let cp = document.getElementById("chapter_progress");
     const current = chapterWeakness(chapterStats, chapter);
-    const correct = current.attempts - current.errors;
-    const accuracy = current.attempts === 0 ? 0 : Math.round(correct / current.attempts * 100);
+    const coverage = chapterCoverage(chapterStats, chapter, chapterMoveCatalogs[chapter]);
+    const complete = coverage.total > 0 && coverage.covered === coverage.total;
     const bar = document.createElement("div");
-    bar.className = "progress-bar";
+    bar.className = "progress-bar" + (complete && current.errors === 0 ? " progress-bar--solid" : "");
     bar.setAttribute("role", "meter");
     bar.setAttribute("aria-valuemin", "0");
     bar.setAttribute("aria-valuemax", "100");
-    bar.setAttribute("aria-valuenow", String(accuracy));
-    bar.setAttribute("aria-label", i18n.progress_correct_moves);
+    bar.setAttribute("aria-valuenow", String(coverage.percent));
+    bar.setAttribute("aria-label", i18n.progress_practiced_moves);
     const fill = document.createElement("span");
     fill.className = "progress-bar-fill";
-    fill.style.width = accuracy + "%";
+    fill.style.width = coverage.percent + "%";
     bar.appendChild(fill);
 
     const label = document.createElement("p");
     label.className = "chapter-weakness chapter-weakness--" + current.level;
-    label.textContent = current.attempts === 0
-        ? i18n.progress_no_attempts
-        : i18n.progress_correct_moves + ": " + correct + "/" + current.attempts + " (" + accuracy + "%)";
+    label.textContent = i18n.progress_practiced_moves + ": " + coverage.covered + "/" + coverage.total + " (" + coverage.percent + "%)";
     cp.replaceChildren(bar, label);
     updateWeakChapterRunUi();
+}
+
+function setup_progress_modal() {
+    const opener = document.getElementById("progress");
+    const list = document.getElementById("study_progress");
+    opener.addEventListener("click", event => {
+        event.preventDefault();
+        requestAnimationFrame(() => {
+            const current = list.querySelector('[aria-current="true"]');
+            if (!current) return;
+            const offset = current.getBoundingClientRect().top - list.getBoundingClientRect().top;
+            list.scrollTop += offset - (list.clientHeight - current.clientHeight) / 2;
+        });
+    });
 }
 
 async function setup_progress_reset() {
@@ -1093,7 +1121,7 @@ async function main() {
     } : null;
     studyFeatureViews = [
         setupStudyCollections({ getCurrentChapter }),
-        setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward })
+        setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward, progressLabels: { one: i18n.progress_error, many: i18n.progress_errors_lower, unpracticed: i18n.progress_not_practiced, practiced: i18n.progress_practiced_moves } })
     ];
     setupPuzzleRun(i18n);
     set_options_values();
@@ -1109,6 +1137,7 @@ async function main() {
     start_training();
     setup_configs();
     update_progress();
+    setup_progress_modal();
     setup_progress_reset();
 }
 

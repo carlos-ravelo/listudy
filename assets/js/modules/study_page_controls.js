@@ -1,4 +1,4 @@
-export function setupStudyNavigation({ getCurrentChapter, goBack, goForward }) {
+export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, progressLabels = { one: 'mistake', many: 'mistakes', unpracticed: 'Not practiced', correct: 'correct' } }) {
     const select = document.getElementById('chapter_select');
     const previous = document.getElementById('prev_chapter_btn');
     const next = document.getElementById('next_chapter_btn');
@@ -16,10 +16,34 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward }) {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'chapter-choice';
-        item.textContent = `${index + 1}. ${option.text}`;
+        const label = document.createElement('span');
+        label.className = 'chapter-choice-label';
+        label.textContent = `${index + 1}. ${option.text}`;
+        const status = document.createElement('span');
+        status.className = 'chapter-choice-status';
+        status.hidden = true;
+        item.append(label, status);
         item.onclick = () => { choose(index); close(); title.focus(); };
         list.appendChild(item);
         return item;
+    });
+    window.addEventListener('study-progress-updated', event => {
+        const byIndex = new Map(event.detail.map(chapter => [chapter.index, chapter]));
+        items.forEach((item, index) => {
+            const badge = item.querySelector('.chapter-choice-status');
+            const chapter = byIndex.get(index);
+            if (!chapter || chapter.attempts === 0) {
+                badge.className = 'chapter-choice-status chapter-choice-status--new';
+                badge.textContent = progressLabels.unpracticed;
+            } else if (chapter.errors > 0) {
+                badge.className = 'chapter-choice-status chapter-choice-status--mistakes';
+                badge.textContent = `${chapter.errors} ${chapter.errors === 1 ? progressLabels.one : progressLabels.many}`;
+            } else {
+                badge.className = 'chapter-choice-status chapter-choice-status--' + (chapter.complete ? 'solid' : 'in-progress');
+                badge.textContent = `${chapter.complete ? '✓ ' : ''}${chapter.covered}/${chapter.total} ${progressLabels.practiced}`;
+            }
+            badge.hidden = false;
+        });
     });
     function choose(index) {
         if (index < 0 || index >= select.options.length) return;
@@ -36,7 +60,9 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward }) {
         previous.disabled = select.selectedIndex <= 0;
         next.disabled = select.selectedIndex >= select.options.length - 1;
     }
-    search.oninput = () => items.forEach(item => { item.hidden = !item.textContent.toLowerCase().includes(search.value.toLowerCase()); });
+    search.oninput = () => items.forEach(item => {
+        item.hidden = !item.querySelector('.chapter-choice-label').textContent.toLowerCase().includes(search.value.toLowerCase());
+    });
     title.onclick = event => {
         event.preventDefault();
         if (!list.hidden) { close(); return; }

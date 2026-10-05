@@ -5,7 +5,7 @@ const load = async name => import('data:text/javascript;base64,' + fs.readFileSy
 
 (async () => {
     const { splitChapterPgn, chapterFromUrl } = await load('chapter_pgn.js');
-    const { readChapterStats, recordChapterAttempt, chapterWeakness, weakChapterOrder } = await load('chapter_stats.js');
+    const { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterWeakness, weakChapterOrder } = await load('chapter_stats.js');
     const stats = readChapterStats(null);
     recordChapterAttempt(stats, 2, false);
     assert.strictEqual(chapterWeakness(stats, 2).level, 'weak');
@@ -19,6 +19,18 @@ const load = async name => import('data:text/javascript;base64,' + fs.readFileSy
     for (let i = 0; i < 8; i++) recordChapterAttempt(orderStats, 1, false);
     for (let i = 0; i < 12; i++) recordChapterAttempt(orderStats, 1, true);
     assert.deepStrictEqual(weakChapterOrder(orderStats, 3), [1, 0]);
+    const catalog = chapterMoveCatalog([
+        { move: 'e4', children: [{ move: 'e5', children: [{ move: 'Nf3', children: [] }] }] },
+        { move: 'd4', children: [{ move: 'd5', children: [] }] }
+    ], true);
+    assert.deepStrictEqual([...catalog], ['e4', 'e4|e5|Nf3', 'd4']);
+    assert.deepStrictEqual([...chapterMoveCatalog([{ move: 'e4', children: [{ move: 'e5', children: [] }] }], false)], ['e4|e5']);
+    const coverageStats = readChapterStats(null);
+    recordChapterAttempt(coverageStats, 0, true, 'e4');
+    recordChapterAttempt(coverageStats, 0, true, 'e4');
+    recordChapterAttempt(coverageStats, 0, false, 'd4');
+    assert.deepStrictEqual(chapterCoverage(coverageStats, 0, catalog), { covered: 1, total: 3, percent: 33 });
+    assert.strictEqual(chapterWeakness(coverageStats, 0).errors, 1);
 
     const first = '[Event "First *"]\n\n1. e4 {fake result * [Event "x"]} (1. d4 d5) e5 1-0';
     const second = '[Event "Second"]\n\n1. d4 ; fake result 0-1\n d5 *';
