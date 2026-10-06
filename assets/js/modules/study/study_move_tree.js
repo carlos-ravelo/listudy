@@ -82,6 +82,7 @@ export function setupStudyMoveTree({ element, onSelect, startLabel, variationLab
             ['white', 'black'].forEach(color => {
                 const move = turn[color];
                 const cell = move ? moveButton(move.san, move.path, move.label) : document.createElement('span');
+                if (move) cell.setAttribute('data-move-prefix', `${number}${color === 'black' ? '...' : '.'}`);
                 if (!move) {
                     cell.className = 'study-tree-empty';
                     cell.textContent = '—';

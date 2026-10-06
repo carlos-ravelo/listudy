@@ -69,7 +69,7 @@ the study trains Black. Jump to key move and Max depth do not shorten the line.
 The arrow buttons are visible on desktop as well as touch devices, and keyboard
 navigation remains available. Comments always appear, independent of the saved
 practice setting. A clickable move list appears beside the board on desktop and
-below it on mobile. Number, White and Black columns align each full move, with
+below it on mobile. Desktop Number, White and Black columns align each full move, with
 alternating row backgrounds and a soft panel surface. The current move uses a
 subtle outline and bold text without a colored background; nested variations fold with
 native disclosures and open automatically when navigating into them. Clicking a
@@ -77,6 +77,16 @@ move rebuilds its complete line from the chapter's starting position, preserving
 the history and analysis links. Move numbers respect custom FENs, including Black
 to move. A Starting position button returns to the beginning. Forward navigation
 follows the first continuation in PGN order.
+On mobile, Read sizes the board to at most 38% of the viewport height and limits
+the scrolling move list to 18%, leaving room for the selected move's comments.
+Moves wrap in a compact inline list with individual move-number prefixes instead
+of columns; foldable variations and the active-move outline remain available.
+In Read, the navigation arrows share the Moves heading instead of occupying a
+separate row below the board; switching to Practice restores their board location.
+Long comments initially show a six-rem preview with Show more / Show less.
+Navigating to another position collapses the preview again. Switching modes or
+resizing the viewport recalculates the board size; Practice keeps its full-width
+board and normal comment display.
 Moves may also be played on the board for either side. A move outside the chapter
 is undone and prompts the reader to choose a chapter continuation.
 

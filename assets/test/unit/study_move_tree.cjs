@@ -57,6 +57,7 @@ let active = all(element).filter(node => node.attributes.get('aria-current') ===
 assert.equal(active.length, 1);
 assert.equal(active[0].textContent, 'e4');
 assert.equal(active[0].attributes.get('aria-label'), '1. e4');
+assert.equal(active[0].attributes.get('data-move-prefix'), '1.');
 const firstRow = active[0].parentElement;
 assert.equal(firstRow.children[0].textContent, '1.');
 assert.equal(firstRow.children[1].textContent, 'e4');
@@ -86,6 +87,7 @@ view.update({ reading: true, chapter: 2, root: custom, fen, path: [0] });
 const blackMove = all(element).find(node => node.attributes.get('aria-current') === 'step');
 assert.equal(blackMove.textContent, 'Kd7');
 assert.equal(blackMove.attributes.get('aria-label'), '17... Kd7');
+assert.equal(blackMove.attributes.get('data-move-prefix'), '17...');
 assert.equal(blackMove.parentElement.children[0].textContent, '17.');
 assert.equal(blackMove.parentElement.children[1].textContent, '—');
 assert.equal(blackMove.parentElement.children[2], blackMove);
