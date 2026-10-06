@@ -4,7 +4,7 @@ defmodule ListudyWeb.LayoutView do
   def app_stylesheet_path(conn) do
     path = Routes.static_path(conn, "/css/app.css")
     separator = if String.contains?(path, "?"), do: "&", else: "?"
-    path <> separator <> "v=home-1"
+    path <> separator <> "v=home-quick-studies-4"
   end
 
   def is_halloween(date) do

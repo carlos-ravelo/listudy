@@ -8,14 +8,27 @@
     <section class="home-path" aria-labelledby="home-studies-title">
       <h2 id="home-studies-title"><%= dgettext "index", "Study chess" %></h2>
       <p><%= dgettext "index", "Explore opening studies and build a repertoire you can practice." %></p>
-      <div class="home-path-actions">
-        <%= if Pow.Plug.current_user(@conn) do %>
-          <%= link (dgettext "index", "Your Studies"), to: Routes.study_path(@conn, :index, @locale), class: "button button-primary" %>
-          <%= link (dgettext "index", "🎲 Random Study"), to: Routes.study_path(@conn, :random, locale: @locale), class: "button" %>
-          <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "home-text-link" %>
-        <% else %>
-          <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "button button-primary" %>
+      <div class="home-path-content">
+        <%= if @last_study do %>
+          <div class="home-quick-studies">
+            <%= link to: Routes.study_path(@conn, :show, @locale, @last_study.slug), class: "home-continue" do %>
+              <span class="home-continue-label"><%= dgettext "index", "Continue last study:" %></span>
+              <span class="home-continue-title"><%= @last_study.title %></span>
+            <% end %>
+          </div>
         <% end %>
+        <div class="home-path-actions home-study-actions">
+          <%= if Pow.Plug.current_user(@conn) do %>
+            <div class="home-study-links">
+              <%= link (dgettext "index", "Your Studies"), to: Routes.study_path(@conn, :index, @locale), class: "home-study-link" %>
+              <span class="home-study-divider" aria-hidden="true">|</span>
+              <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "home-study-link" %>
+            </div>
+            <%= link (dgettext "index", "🎲 Random Study"), to: Routes.study_path(@conn, :random, locale: @locale), class: "button button-outline home-random-study" %>
+          <% else %>
+            <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "button button-primary" %>
+          <% end %>
+        </div>
       </div>
     </section>
 

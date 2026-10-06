@@ -85,3 +85,19 @@ msgstr "Tus estudios"
 #, elixir-autogen, elixir-format
 msgid "🎲 Random Study"
 msgstr "🎲 Estudio aleatorio"
+
+#, elixir-format
+msgid "Pick up where you left off"
+msgstr "Retoma donde lo dejaste"
+
+#, elixir-format
+msgid "Continue: %{title}"
+msgstr "Continuar: %{title}"
+
+#, elixir-format
+msgid "Your favorites"
+msgstr "Tus favoritos"
+
+#, elixir-format
+msgid "View all"
+msgstr "Ver todos"
