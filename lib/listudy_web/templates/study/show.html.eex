@@ -7,10 +7,11 @@
 
 <%= render "_chapter_controls.html" %>
 
-<div class="with_sidebar">
+<div class="with_sidebar" x-data="{ reading: false, moves: [] }"
+     @study-reading-updated.window="reading = $event.detail.reading; moves = $event.detail.moves">
   <div id="game_container" class="sidebar_main">
     <%= render ListudyWeb.ComponentView, "chessground.html" %>
-    <nav class="study-move-navigation" aria-label="<%= dgettext("study", "Move navigation") %>">
+    <nav class="study-move-navigation" :class="{ 'study-move-navigation--reading': reading }" aria-label="<%= dgettext("study", "Move navigation") %>">
       <button type="button" id="study_previous_move" disabled aria-label="<%= dgettext("study", "Previous move") %>" title="<%= dgettext("study", "Previous move") %>">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6" /></svg>
       </button>
@@ -18,13 +19,21 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6" /></svg>
       </button>
     </nav>
+    <div class="study-reading-continuations" x-show="reading" x-cloak>
+      <span x-show="moves.length > 1"><%= dgettext("study", "Continue with") %></span>
+      <template x-for="(move, index) in moves" :key="index">
+        <button type="button" x-show="moves.length > 1" x-text="move"
+                @click="$dispatch('study-reading-move', { move })"></button>
+      </template>
+      <span x-show="moves.length === 0"><%= dgettext("study", "End of line") %></span>
+    </div>
   </div>  
   <div class="sidebar clicking_turns_on_hints">
     <div class="sidebar_innercontainer">
       <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
 
       <div class="sidebar_padded">
-        <div style="margin-bottom: 1em">
+        <div style="margin-bottom: 1em" x-show="!reading">
           <a class="icon large_clickarea" data-icon="-" id="hints" role="button"><%= dgettext("study", "Show hints for this move!") %></a><br>
         </div>
         
@@ -38,6 +47,16 @@
 
 <!-- Actions used while training -->
 <div class="study-primary-actions">
+  <div class="option_item">
+    <button type="button" id="study_mode" class="icon study-mode-toggle" data-icon=">"
+            x-data="{ reading: false }"
+            @study-reading-updated.window="reading = $event.detail.reading"
+            aria-pressed="false" :aria-pressed="reading"
+            @click="$dispatch('study-reading-change', { reading: !reading })">
+      <span x-show="!reading"><%= dgettext("study", "Mode: Practice") %></span>
+      <span x-show="reading" x-cloak><%= dgettext("study", "Mode: Read") %></span>
+    </button>
+  </div>
 <div class="option_item">
     <a class="icon" data-icon="." id="reset_line"><%= dgettext("study", "Reset line") %></a>
   </div>
@@ -47,8 +66,6 @@
 <div class="option_item">
     <a class="icon" data-icon="/" id="analysis_board" href="https://lichess.org/analysis" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
   </div>
-</div>
-<div class="study-quick-options">
 <div class="option_item">
     <a class="icon" data-icon="-" id="arrows_toggle">placeholder</a>
   </div>
@@ -162,6 +179,7 @@
 
   let i18n = {};
   i18n.info_intro = "<%= dgettext "study", "Starting training." %>";
+  i18n.read_choose_continuation = "<%= dgettext "study", "Choose a continuation from this chapter." %>";
   i18n.info_arrows = "<%= dgettext "study", "By default arrows will provide hints to show which moves are in this study. Using the options below you can control for how many moves the arrows/hints should stay visible. By default they stay visible until all moves in a position has been played twice. Any non-playable arrow annotations from the study or PGN file will appear as transparent arrows." %>";
   i18n.error_wrong_move = "<%= dgettext "study", "This move is not in the study, try again." %>";
   i18n.success_right_move = "<%= dgettext "study", "Right move!" %>";
@@ -266,4 +284,3 @@
     </div>
   </div>
 </div>
-
