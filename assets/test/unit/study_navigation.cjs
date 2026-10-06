@@ -5,12 +5,15 @@ const vm = require('node:vm');
 const parser = require('@babel/parser');
 const chessModule = require('chess.js');
 const Chess = chessModule.Chess || chessModule;
+const moveTreeContext = vm.createContext({ require });
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/study_move_tree.js'), 'utf8')
+    .replace(/^export /gm, ''), moveTreeContext);
 
 const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
 const names = new Set([
     'handle_move', 'play_move', 'setup_move', 'change_analysis_board',
     'change_play_stockfish', 'refresh_manual_navigation', 'go_back', 'go_forward',
-    'update_read_mode_ui', 'set_read_mode', 'play_read_move'
+    'update_read_mode_ui', 'set_read_mode', 'play_read_move', 'seek_read_move'
 ]);
 const declarations = parser.parse(source, { sourceType: 'module' }).program.body;
 const functions = declarations
@@ -37,6 +40,8 @@ function fixture(moves, fen) {
         ground: { set: state => Object.assign(board, state), setShapes() {}, redrawAll() {} },
         ground_move() {}, ground_undo_last_move() {},
         studyMoveNavigation: { update() {} },
+        studyMoveTree: { update() {} },
+        readChapterPosition: moveTreeContext.readChapterPosition,
         overlay_manager: { mark_current_overlays_seen() {}, clear_overlays() {} },
         CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
         Event: class { constructor(type) { this.type = type; } },
@@ -127,6 +132,20 @@ function assertSynchronized({ context, board, links }) {
     reader.go_back();
     reader.go_forward();
     assert.deepEqual(reader.chess.history(), ['e4', 'e5']);
+    assert.equal(reader.seek_read_move([0, 1]), true);
+    assert.deepEqual(reader.chess.history(), ['e4', 'c5']);
+    assertSynchronized(reading);
+    assert.equal(reader.seek_read_move([0, 0, 0]), true);
+    assert.deepEqual(reader.chess.history(), ['e4', 'e5', 'Nf3']);
+    assertSynchronized(reading);
+    const beforeInvalidPath = reader.chess.fen();
+    assert.equal(reader.seek_read_move([0, 99]), false);
+    assert.equal(reader.chess.fen(), beforeInvalidPath);
+    assert.equal(reader.seek_read_move([]), true);
+    assert.equal(reader.chess.history().length, 0);
+    assert.equal(reader.attempts, 0);
+    assert.equal(reader.reviews, 0);
+    assertSynchronized(reading);
 
     reader.show_comments = 'hidden';
     reader.give_hints = () => false;
@@ -136,6 +155,7 @@ function assertSynchronized({ context, board, links }) {
     reader.display_comments(false);
     assert.equal(reader.renderedComment.comments[0].text, 'Chapter explanation');
     reader.set_read_mode(false);
+    assert.equal(reader.seek_read_move([]), false);
     assert.equal(reader.readMode, false);
     assert.equal(reader.lineEligibleForReview, true);
     assert.deepEqual(reader.chess.history(), ['e4']);
