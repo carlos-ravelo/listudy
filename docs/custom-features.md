@@ -45,6 +45,11 @@ as the keyboard. Each button has a 44-pixel touch target and an accessible
 label. Buttons are disabled at the corresponding end of a line and during
 scheduled reviews. Manual navigation disqualifies the current run from a
 clean FSRS result, just as keyboard navigation does.
+Both input methods synchronize the position, turn, check indicator, last-move
+highlight, legal moves, comments and analysis links. Navigating cancels pending
+automatic replies, line resets and chapter advances from the previous position;
+it does not record a correct move or a mistake. Navigation regression checks:
+`node assets/test/unit/study_navigation.cjs`.
 
 Unversioned static files revalidate with ETags instead of being cached for a year.
 The study script URL includes a one-time revision to bypass previously cached
