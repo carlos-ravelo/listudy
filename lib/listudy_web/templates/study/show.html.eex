@@ -10,6 +10,14 @@
 <div class="with_sidebar">
   <div id="game_container" class="sidebar_main">
     <%= render ListudyWeb.ComponentView, "chessground.html" %>
+    <nav class="study-move-navigation" aria-label="<%= dgettext("study", "Move navigation") %>">
+      <button type="button" id="study_previous_move" disabled aria-label="<%= dgettext("study", "Previous move") %>" title="<%= dgettext("study", "Previous move") %>">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6" /></svg>
+      </button>
+      <button type="button" id="study_next_move" disabled aria-label="<%= dgettext("study", "Next move") %>" title="<%= dgettext("study", "Next move") %>">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6" /></svg>
+      </button>
+    </nav>
   </div>  
   <div class="sidebar clicking_turns_on_hints">
     <div class="sidebar_innercontainer">
@@ -258,5 +266,4 @@
     </div>
   </div>
 </div>
-
 

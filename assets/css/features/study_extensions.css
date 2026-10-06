@@ -1,4 +1,13 @@
 /* Custom study controls and collections. */
+.study-move-navigation { display: none; justify-content: flex-end; gap: 4px; padding-top: 4px; }
+.study-move-navigation button { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; margin: 0; border: none; background: transparent; color: var(--font-color); touch-action: manipulation; }
+.study-move-navigation button:disabled { opacity: .25; cursor: default; }
+.study-move-navigation button:not(:disabled):hover,
+.study-move-navigation button:not(:disabled):active { background: var(--bg-highlight-color); }
+.study-move-navigation button:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+@media (max-width: 600px), (any-pointer: coarse) {
+    .study-move-navigation { display: flex; }
+}
 .study-feature-title { font-size: 1.8rem; margin-bottom: 10px; }
 .study-feature-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0 20px; }
 .study-feature-actions .button { flex: 1; min-width: 120px; margin: 0; text-align: center; white-space: normal; height: auto; padding: 8px; }

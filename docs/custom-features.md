@@ -39,6 +39,13 @@ comparison tolerates the whitespace around parentheses and braces added by the
 study page’s PGN cleaner, including in Event headers. The chapter picker displays
 chapter numbers so identically named lines can be distinguished.
 
+On small screens and devices with a touch pointer, two compact arrow buttons
+below the board navigate to the previous or next move using the same actions
+as the keyboard. Each button has a 44-pixel touch target and an accessible
+label. Buttons are disabled at the corresponding end of a line and during
+scheduled reviews. Manual navigation disqualifies the current run from a
+clean FSRS result, just as keyboard navigation does.
+
 Unversioned static files revalidate with ETags instead of being cached for a year.
 The study script URL includes a one-time revision to bypass previously cached
 copies. Phoenix digest URLs keep their existing long-lived cache policy. Changes
@@ -279,4 +286,3 @@ FEN remains available for the board. Different played mistakes at the same
 position still appear separately. Multiple repertoire moves are accepted as
 valid answers. The browser creates the position indicators once and only
 updates indicators whose state changes.
-

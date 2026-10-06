@@ -115,6 +115,21 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
     return { update };
 }
 
+export function setupStudyMoveNavigation({ goBack, goForward, getState }) {
+    const previous = document.getElementById('study_previous_move');
+    const next = document.getElementById('study_next_move');
+    function update() {
+        const { canGoBack, canGoForward } = getState();
+        if (previous) previous.disabled = !canGoBack;
+        if (next) next.disabled = !canGoForward;
+    }
+    if (previous) previous.onclick = () => { goBack(); update(); };
+    if (next) next.onclick = () => { goForward(); update(); };
+    window.addEventListener('study-spaced-run-updated', update);
+    update();
+    return { update };
+}
+
 export function setupPuzzleRun(i18n) {
     const button = document.getElementById('puzzle_run');
     if (!button) return;

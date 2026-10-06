@@ -21,7 +21,7 @@ import { array_contains } from './modules/utils.js';
 import { StorageAdapter } from './storageAdapter.js';
 import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
 import { setupStudyCollections } from './modules/study_collections.js';
-import { setupStudyNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
+import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
 import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder } from './modules/study/chapter_stats.js';
 import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus, dueChapterOrder } from './modules/study/chapter_review.js';
 import Alpine from 'alpinejs';
@@ -31,6 +31,7 @@ Alpine.start();
 
 
 let studyFeatureViews = [];
+let studyMoveNavigation = { update() {} };
 let chapterStats = { version: 1, chapters: {} };
 let chapterMoveCatalogs = [];
 let chapterReviewSignatures = [];
@@ -569,6 +570,7 @@ function play_move(san) {
     let m = chess.move(san);
     ground_move(m);
     curr_move.push(tree_move_index(curr_move, san));
+    studyMoveNavigation.update();
 }
 
 function start_training() {
@@ -623,6 +625,7 @@ function start_training() {
     ground.redrawAll();
 
     window.mode = mode_free;
+    studyMoveNavigation.update();
 }
 
 /*
@@ -1232,6 +1235,14 @@ async function main() {
     setup_intro();
 
     start_training();
+    studyMoveNavigation = setupStudyMoveNavigation({
+        goBack: go_back,
+        goForward: go_forward,
+        getState: () => ({
+            canGoBack: !spacedReviewRunActive && curr_move.length > 1,
+            canGoForward: !spacedReviewRunActive && tree_children(curr_move).length > 0
+        })
+    });
     setup_configs();
     update_progress();
     setup_progress_modal();
@@ -1257,6 +1268,7 @@ function go_back() {
         
         if (typeof display_arrows === "function") display_arrows();
         if (typeof display_comments === "function") display_comments(false);
+        studyMoveNavigation.update();
     }
 }
 
