@@ -113,7 +113,10 @@ defmodule ListudyWeb.StudyController do
       file = unique_id <> ".pgn"
       {_, pgn} = File.read(get_path(file))
       study = Map.put(study, :pgn, pgn)
-      render(conn, "show.html", study: study, noindex: noindex, opening: opening)
+      conn
+      |> put_session(:last_study_slug, study.slug)
+      |> put_session(:last_study_user_id, if(user_id == -1, do: nil, else: user_id))
+      |> render("show.html", study: study, noindex: noindex, opening: opening)
     else
       show(conn, id, nil)
     end

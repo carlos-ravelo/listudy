@@ -44,6 +44,31 @@ defmodule ListudyWeb.PageControllerTest do
     assert html_response(conn, 200) =~ "Register"
   end
 
+  test "home hides quick access without favorites or a last study", %{conn: conn} do
+    response = conn |> get("/en") |> html_response(200)
+    refute response =~ ~s(class="home-quick-studies")
+  end
+
+  test "home ignores a deleted last study", %{conn: conn} do
+    response =
+      conn
+      |> init_test_session(%{last_study_slug: "deleted-study", last_study_user_id: nil})
+      |> get("/en")
+      |> html_response(200)
+
+    refute response =~ "home-continue"
+  end
+
+  test "home ignores a last study from another account", %{regular_user_conn: conn} do
+    response =
+      conn
+      |> init_test_session(%{last_study_slug: "another-users-study", last_study_user_id: 1})
+      |> get("/en")
+      |> html_response(200)
+
+    refute response =~ "home-continue"
+  end
+
   test "GET /de", %{conn: conn} do
     conn = get(conn, "/de")
     assert html_response(conn, 200) =~ "Listudy"

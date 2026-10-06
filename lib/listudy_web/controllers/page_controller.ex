@@ -19,7 +19,32 @@ defmodule ListudyWeb.PageController do
     case locale in @languages do
       true ->
         tactic = ListudyWeb.TacticController.daily_tactic()
-        render(conn, "index.html", tactic: tactic)
+        user = Pow.Plug.current_user(conn)
+        user_id = if user, do: user.id, else: nil
+        last_slug = get_session(conn, :last_study_slug)
+        last_user_id = get_session(conn, :last_study_user_id)
+
+        last_study =
+          if last_slug && last_user_id == user_id do
+            Listudy.Studies.get_study_by_slug!(last_slug)
+          end
+
+        last_study =
+          if last_study && (!last_study.private || last_study.user_id == user_id),
+            do: last_study,
+            else: nil
+
+        favorites =
+          if user do
+            Listudy.Studies.get_studies_by_favorite!(user.id)
+            |> Enum.filter(&(!&1.private || &1.user_id == user.id))
+            |> Enum.sort_by(&String.downcase(&1.title))
+            |> Enum.take(3)
+          else
+            []
+          end
+
+        render(conn, "index.html", tactic: tactic, last_study: last_study, favorites: favorites)
 
       _ ->
         conn

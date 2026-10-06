@@ -69,6 +69,89 @@
   outline-offset: 3px;
 }
 
+.home-path-content {
+  min-width: 0;
+}
+
+.home-quick-studies {
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+.home-continue {
+  display: inline-block;
+  padding: 8px 0;
+  margin-bottom: 10px;
+  color: var(--font-color);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.home-continue-label {
+  color: #7f8c8d;
+  font-weight: normal;
+  font-size: .9em;
+}
+
+.home-continue-title {
+  margin-left: 6px;
+  color: #2980b9;
+  font-weight: bold;
+}
+
+.home-study-actions {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.home-study-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+}
+
+.home-study-link {
+  color: #2980b9;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.home-study-divider {
+  color: #ccc;
+}
+
+.home-study-actions .home-random-study {
+  padding: 0 15px;
+  height: 34px;
+  line-height: 34px;
+  max-width: 160px;
+}
+
+.home-study-link:hover,
+.home-continue:hover .home-continue-title {
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+
+.home-study-link:focus-visible,
+.home-continue:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+[data-theme="dark"] .home-continue-label {
+  color: var(--font-color);
+}
+
+[data-theme="dark"] .home-continue-title,
+[data-theme="dark"] .home-study-link {
+  color: #6ab2e1;
+}
+
 .home-daily {
   max-width: 700px;
   padding-top: 1.5rem;
