@@ -9,9 +9,11 @@ const Chess = chessModule.Chess || chessModule;
 const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
 const names = new Set([
     'handle_move', 'play_move', 'setup_move', 'change_analysis_board',
-    'change_play_stockfish', 'refresh_manual_navigation', 'go_back', 'go_forward'
+    'change_play_stockfish', 'refresh_manual_navigation', 'go_back', 'go_forward',
+    'update_read_mode_ui', 'set_read_mode', 'play_read_move'
 ]);
-const functions = parser.parse(source, { sourceType: 'module' }).program.body
+const declarations = parser.parse(source, { sourceType: 'module' }).program.body;
+const functions = declarations
     .filter(node => node.type === 'FunctionDeclaration' && names.has(node.id.name))
     .map(node => source.slice(node.start, node.end)).join('\n');
 
@@ -28,14 +30,17 @@ function fixture(moves, fen) {
         chess: new Chess(fen), chapter: 0, curr_move: [0],
         trees: [{ root, headers: fen ? { SetUp: '1', FEN: fen } : {} }],
         trainingSessionId: 0, lineEligibleForReview: true, lineReviewRecorded: false,
-        spacedReviewRunActive: false, weakChapterRunActive: false,
+        spacedReviewRunActive: false, weakChapterRunActive: false, readMode: false,
         total_moves: 0, combo_count: 0, attempts: 0, reviews: 0, resets: 0, advances: 0,
         max_depth: 100, DEPTH_MAX: 100, board_review: 'slow',
-        i18n: { review_slow: 'slow' }, success_div: {}, error_div: {},
-        ground: { set: state => Object.assign(board, state) },
+        i18n: { review_slow: 'slow', key_move_enabled: 'enabled' }, success_div: {}, error_div: {}, info_div: {},
+        ground: { set: state => Object.assign(board, state), setShapes() {}, redrawAll() {} },
         ground_move() {}, ground_undo_last_move() {},
         studyMoveNavigation: { update() {} },
-        overlay_manager: { mark_current_overlays_seen() {} },
+        overlay_manager: { mark_current_overlays_seen() {}, clear_overlays() {} },
+        CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
+        Event: class { constructor(type) { this.type = type; } },
+        dispatchEvent: event => { context.lastEvent = event; },
         document: { getElementById: id => links[id] || { click: () => context.advances++ } },
         localStorage: { getItem: () => context.puzzleMode || 'off' },
         turn_color: chess => chess.turn() === 'w' ? 'white' : 'black',
@@ -45,6 +50,7 @@ function fixture(moves, fen) {
             return move.san;
         },
         tree_possible_moves: access => access.slice(1).reduce((nodes, index) => nodes[index].children, root),
+        tree_children: access => context.tree_possible_moves(access),
         tree_move_index: (access, san) => context.tree_possible_moves(access).findIndex(node => node.move === san),
         ai_move: access => context.tree_possible_moves(access)[0]?.move,
         ground_set_moves: () => { board.legalMoves = context.chess.moves(); },
@@ -59,6 +65,11 @@ function fixture(moves, fen) {
         start_training: () => context.resets++,
         selectNextDueChapter: () => context.advances++,
         selectNextWeakChapter: () => context.advances++,
+        stopWeakChapterRun: () => { context.weakChapterRunActive = false; },
+        stopSpacedReviewRun: () => { context.spacedReviewRunActive = false; },
+        color: 'white', key_moves_mode: 'disabled', mode_free: 'free',
+        setup_chess: fen => { context.chess = new Chess(fen); },
+        ground_init_state() {},
         console
     });
     context.window = context;
@@ -82,6 +93,60 @@ function assertSynchronized({ context, board, links }) {
 }
 
 (async () => {
+    const reading = fixture(['e4', 'e5', 'Nf3']);
+    const { context: reader } = reading;
+    const install = name => {
+        const node = declarations.find(node => node.type === 'FunctionDeclaration' && node.id.name === name);
+        vm.runInContext(source.slice(node.start, node.end), reader);
+    };
+    install('start_training');
+    reader.color = 'black';
+    reader.trees[0].first_variation = null;
+    reader.weakChapterRunActive = true;
+    reader.set_read_mode(true);
+    assert.equal(reader.weakChapterRunActive, false);
+    assert.equal(reader.chess.history().length, 0);
+    assert.equal(reader.lineEligibleForReview, false);
+    assert.equal(reader.lastEvent.detail.reading, true);
+    await reader.handle_move('e2', 'e4');
+    assert.deepEqual(reader.chess.history(), ['e4']);
+    assert.equal(reading.waits.length, 0);
+    assert.equal(reader.attempts, 0);
+    assert.equal(reader.total_moves, 0);
+    assert.equal(reader.reviews, 0);
+    await reader.handle_move('c7', 'c5');
+    assert.deepEqual(reader.chess.history(), ['e4']);
+    assert.equal(reader.attempts, 0);
+    assertSynchronized(reading);
+    reader.tree_children([0, 0]).push({ move: 'c5', children: [] });
+    reader.setup_move();
+    assert.equal(JSON.stringify(reader.lastEvent.detail.moves), JSON.stringify(['e5', 'c5']));
+    assert.equal(reader.play_read_move('c5'), true);
+    assert.deepEqual(reader.chess.history(), ['e4', 'c5']);
+    assertSynchronized(reading);
+    reader.go_back();
+    reader.go_forward();
+    assert.deepEqual(reader.chess.history(), ['e4', 'e5']);
+
+    reader.show_comments = 'hidden';
+    reader.give_hints = () => false;
+    reader.tree_get_node = () => ({ comments: [{ text: 'Chapter explanation' }] });
+    reader.create_comment_list = (id, move) => { reader.renderedComment = move; };
+    install('display_comments');
+    reader.display_comments(false);
+    assert.equal(reader.renderedComment.comments[0].text, 'Chapter explanation');
+    reader.set_read_mode(false);
+    assert.equal(reader.readMode, false);
+    assert.equal(reader.lineEligibleForReview, true);
+    assert.deepEqual(reader.chess.history(), ['e4']);
+    reader.set_read_mode(true);
+    assert.equal(reader.chess.history().length, 0);
+    reader.trees[0].headers = { SetUp: '1', FEN: '4k3/P7/8/8/8/8/8/4K3 w - - 0 1' };
+    reader.start_training();
+    assert.equal(reader.chess.fen(), reader.trees[0].headers.FEN);
+    assert.equal(reader.attempts, 0);
+    assert.equal(reader.reviews, 0);
+
     for (const [moves, fen] of [
         [['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'O-O']],
         [['e4', 'a6', 'e5', 'd5', 'exd6']],

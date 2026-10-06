@@ -1,5 +1,12 @@
 /* Custom study controls and collections. */
+.study-mode-toggle { height: auto; min-height: 44px; margin: 0; padding: 0; border: none; background: transparent; color: var(--font-color); font: inherit; text-transform: none; letter-spacing: normal; touch-action: manipulation; }
+.study-mode-toggle [x-cloak] { display: none !important; }
+.study-mode-toggle:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.study-reading-continuations { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: .85rem; }
+.study-reading-continuations[x-cloak] { display: none !important; }
+.study-reading-continuations button { height: 44px; margin: 0; padding: 0 12px; text-transform: none; letter-spacing: normal; font-size: .9rem; }
 .study-move-navigation { display: none; justify-content: flex-end; gap: 4px; padding-top: 4px; }
+.study-move-navigation--reading { display: flex; }
 .study-move-navigation button { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; margin: 0; border: none; background: transparent; color: var(--font-color); touch-action: manipulation; }
 .study-move-navigation button:disabled { opacity: .25; cursor: default; }
 .study-move-navigation button:not(:disabled):hover,

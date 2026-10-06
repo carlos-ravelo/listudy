@@ -5,6 +5,7 @@
 - [Custom Listudy features](#custom-listudy-features)
   - [Table of content](#table-of-content)
   - [Study page](#study-page)
+    - [Reading a chapter](#reading-a-chapter)
     - [Chapter progress and recovery](#chapter-progress-and-recovery)
     - [Practice modes and spaced repetition](#practice-modes-and-spaced-repetition)
     - [Storage, reset and study layout](#storage-reset-and-study-layout)
@@ -55,6 +56,28 @@ Unversioned static files revalidate with ETags instead of being cached for a yea
 The study script URL includes a one-time revision to bypass previously cached
 copies. Phoenix digest URLs keep their existing long-lived cache policy. Changes
 to the endpoint cache policy require the running application to reload/restart.
+
+### Reading a chapter
+
+The compact **Mode: Practice / Mode: Read** toggle below the board changes how the chapter
+is played. Practice is the default; the selected mode is not saved between visits.
+Switching modes restarts the current chapter and cancels pending automatic actions.
+
+In Read, the chapter starts at its initial position or custom FEN, including when
+the study trains Black. Jump to key move and Max depth do not shorten the line.
+The arrow buttons are visible on desktop as well as touch devices, and keyboard
+navigation remains available. Comments always appear, independent of the saved
+practice setting. At a branch, Alpine.js renders buttons for the available SAN
+continuations; forward navigation follows the first continuation in PGN order.
+Moves may also be played on the board for either side. A move outside the chapter
+is undone and prompts the reader to choose a chapter continuation.
+
+Reading does not record attempts, mistakes, coverage, recovery, move scores or
+FSRS results. There are no automatic opponent replies, line resets or chapter
+advances, and the reader can stay at the end of a line. Entering Read stops active
+weak-chapter, scheduled-review and puzzle runs. Starting one of those practice
+flows switches back to Practice. Regression coverage for mode changes, branching,
+comments and read-only statistics is in `assets/test/unit/study_navigation.cjs`.
 
 ### Chapter progress and recovery
 

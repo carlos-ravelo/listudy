@@ -32,6 +32,7 @@ Alpine.start();
 
 let studyFeatureViews = [];
 let studyMoveNavigation = { update() {} };
+let readMode = false;
 let chapterStats = { version: 1, chapters: {} };
 let chapterMoveCatalogs = [];
 let chapterReviewSignatures = [];
@@ -137,6 +138,16 @@ function possible_promotion(moves, san) {
 }
 
 async function handle_move(orig, dest) {
+    if (readMode) {
+        let san = uci_to_san(chess, orig, dest);
+        const moves = tree_children(curr_move).map(node => node.move);
+        san = possible_promotion(moves, san) || san;
+        if (!play_read_move(san)) {
+            setup_move();
+            set_text(info_div, i18n.read_choose_continuation);
+        }
+        return;
+    }
     const sessionId = trainingSessionId;
 
     clear_all_text();
@@ -280,6 +291,7 @@ function toggleWeakChapterRun() {
     }
     weakChapterQueue = weakChapterOrder(chapterStats, trees.length, chapterMoveCatalogs);
     if (weakChapterQueue.length === 0) return;
+    set_read_mode(false);
     if (spacedReviewRunActive) stopSpacedReviewRun();
     weakChapterRunActive = true;
     window.dispatchEvent(new Event("study-puzzle-run-off"));
@@ -317,6 +329,7 @@ function toggleSpacedReviewRun() {
     }
     spacedReviewQueue = dueChapterOrder(chapterReviews, chapterReviewSignatures);
     if (spacedReviewQueue.length === 0) return;
+    set_read_mode(false);
     if (weakChapterRunActive) stopWeakChapterRun();
     spacedReviewRunActive = true;
     window.dispatchEvent(new Event("study-puzzle-run-off"));
@@ -493,7 +506,7 @@ function display_comments(once) {
     let current_move = undefined;
     let response_moves = [];
 
-    if (once || show_comments == i18n.comments_always_on ||
+    if (readMode || once || show_comments == i18n.comments_always_on ||
         show_comments == i18n.comments_when_arrows && give_hints(once)) {
 
         // Get current move if it has a comment
@@ -554,10 +567,15 @@ function setup_move() {
     change_play_stockfish();
     change_analysis_board();
     ground_set_moves(); // the legal moves of the position
-    display_arrows(false);  // must come after ground_set_moves(), because it needs the legal_moves
-    show_suggestions();  // must come after display_arrows(), beacuse it needs the arrows
+    if (readMode) {
+        ground.setShapes([]);
+    } else {
+        display_arrows(false);  // must come after ground_set_moves(), because it needs the legal_moves
+        show_suggestions();  // must come after display_arrows(), beacuse it needs the arrows
+    }
     display_comments(false);
     studyMoveNavigation.update();
+    update_read_mode_ui();
 }
 
 /*
@@ -593,7 +611,7 @@ function play_move(san) {
 function start_training() {
     trainingSessionId += 1;
     lineReviewRecorded = false;
-    lineEligibleForReview = true;
+    lineEligibleForReview = !readMode;
     window.curr_move = [chapter];
     window.first_variation = trees[chapter].first_variation;
     // this fen is the normal chess starting position
@@ -614,7 +632,7 @@ function start_training() {
     
     // Pass the active color to auto-rotate the board
     ground_init_state(fen, color);
-    if (!spacedReviewRunActive && key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
+    if (!readMode && !spacedReviewRunActive && key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
         for (let ki = 0; ki < window.first_variation; ++ki) {
             // Moves that are not fully trained are not skipped
             if (tree_children(curr_move)[0].value != 5) { break; }
@@ -628,7 +646,7 @@ function start_training() {
             sound_enabled = stored_sound;
         }
     }
-    if (color != turn_color(chess)) {
+    if (!readMode && color != turn_color(chess)) {
         play_move(ai_move(curr_move));
     }
     setup_move();
@@ -811,6 +829,7 @@ function setup_intro() {
 }
 
 function turn_on_hints_for_current_move() {
+    if (readMode) return;
     display_arrows(true);
     display_comments(true);
 }
@@ -1261,6 +1280,9 @@ async function main() {
         })
     });
     setup_configs();
+    window.addEventListener('study-reading-change', event => set_read_mode(event.detail.reading));
+    window.addEventListener('study-reading-move', event => play_read_move(event.detail.move));
+    window.addEventListener('study-puzzle-run-changed', () => set_read_mode(false));
     update_progress();
     setup_progress_modal();
     setup_progress_reset();
@@ -1268,6 +1290,31 @@ async function main() {
 
 window.onresize = onresize;
 main();
+
+function update_read_mode_ui() {
+    window.dispatchEvent(new CustomEvent('study-reading-updated', {
+        detail: { reading: readMode, moves: readMode ? tree_children(curr_move).map(node => node.move) : [] }
+    }));
+}
+
+function set_read_mode(reading) {
+    if (readMode === reading) return;
+    readMode = reading;
+    if (reading) {
+        if (weakChapterRunActive) stopWeakChapterRun();
+        if (spacedReviewRunActive) stopSpacedReviewRun();
+        window.dispatchEvent(new Event('study-puzzle-run-off'));
+    }
+    clear_all_text();
+    start_training();
+}
+
+function play_read_move(san) {
+    if (!readMode || !tree_children(curr_move).some(node => node.move === san)) return false;
+    play_move(san);
+    refresh_manual_navigation();
+    return true;
+}
 
 function refresh_manual_navigation() {
     trainingSessionId += 1;
@@ -1285,7 +1332,7 @@ function go_back() {
 
 function go_forward() {
     if (spacedReviewRunActive) return;
-    const nextNode = tree_possible_moves(curr_move)[0];
+    const nextNode = tree_children(curr_move)[0];
     if (!nextNode) return;
     play_move(nextNode.move);
     refresh_manual_navigation();
