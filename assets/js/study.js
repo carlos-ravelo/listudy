@@ -1292,6 +1292,13 @@ async function main() {
     window.addEventListener('study-reading-change', event => set_read_mode(event.detail.reading));
     window.addEventListener('study-reading-move', event => play_read_move(event.detail.move));
     window.addEventListener('study-puzzle-run-changed', () => set_read_mode(false));
+    window.addEventListener('study-reading-layout-updated', () => {
+        const navigation = document.getElementById('study_move_navigation');
+        const container = document.getElementById(readMode ? 'study_moves_heading' : 'game_container');
+        if (navigation.parentElement !== container) container.appendChild(navigation);
+        resize_ground();
+        overlay_manager.on_resize();
+    });
     update_progress();
     setup_progress_modal();
     setup_progress_reset();

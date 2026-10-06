@@ -7,11 +7,14 @@
 
 <%= render "_chapter_controls.html" %>
 
-<div class="with_sidebar" x-data="{ reading: false }"
-     @study-reading-updated.window="reading = $event.detail.reading">
+<div id="study_layout" class="with_sidebar" x-data="{ reading: false, expanded: false, overflowing: false }"
+     :class="{ 'study-reading-layout': reading }"
+     @study-reading-updated.window="if (reading !== $event.detail.reading) { reading = $event.detail.reading; $nextTick(() => $dispatch('study-reading-layout-updated')); } expanded = false; $nextTick(() => overflowing = $refs.comments.scrollHeight > $refs.comments.clientHeight)">
   <div id="game_container" class="sidebar_main">
-    <%= render ListudyWeb.ComponentView, "chessground.html" %>
-    <nav class="study-move-navigation" :class="{ 'study-move-navigation--reading': reading }" aria-label="<%= dgettext("study", "Move navigation") %>">
+    <div class="study-board-frame">
+      <%= render ListudyWeb.ComponentView, "chessground.html" %>
+    </div>
+    <nav id="study_move_navigation" class="study-move-navigation" :class="{ 'study-move-navigation--reading': reading }" aria-label="<%= dgettext("study", "Move navigation") %>">
       <button type="button" id="study_previous_move" disabled aria-label="<%= dgettext("study", "Previous move") %>" title="<%= dgettext("study", "Previous move") %>">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6" /></svg>
       </button>
@@ -26,7 +29,9 @@
 
       <div class="sidebar_padded">
         <section class="study-reading-tree" x-show="reading" x-cloak aria-label="<%= dgettext("study", "Chapter moves") %>">
-          <h3><%= dgettext("study", "Moves") %></h3>
+          <div id="study_moves_heading" class="study-moves-heading">
+            <h3><%= dgettext("study", "Moves") %></h3>
+          </div>
           <div class="study-tree-columns" aria-hidden="true">
             <span>#</span><span><%= dgettext("study", "White") %></span><span><%= dgettext("study", "Black") %></span>
           </div>
@@ -36,7 +41,15 @@
           <a class="icon large_clickarea" data-icon="-" id="hints" role="button"><%= dgettext("study", "Show hints for this move!") %></a><br>
         </div>
         
-        <div id="comments" class="study_comments"></div>
+        <div class="study-comment-panel" :class="{ 'study-comments-expanded': expanded }">
+          <div id="comments" class="study_comments" x-ref="comments"></div>
+          <button type="button" class="study-read-comment-toggle" x-cloak
+                  x-show="reading && (overflowing || expanded)" :aria-expanded="expanded"
+                  aria-controls="comments" @click="expanded = !expanded">
+            <span x-show="!expanded"><%= dgettext("study", "Show more") %></span>
+            <span x-show="expanded"><%= dgettext("study", "Show less") %></span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

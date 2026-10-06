@@ -59,11 +59,13 @@ function setup_ground(fen) {
  */
 function onresize() {
     // Don't resize ground if the window width is unchanged
-    if (window.innerWidth === window.window_width) {
+    const reading = document.getElementById("study_layout")?.classList.contains("study-reading-layout");
+    if (window.innerWidth === window.window_width && (!reading || window.innerHeight === window.window_height)) {
         return;
     }
 
     window.window_width = window.innerWidth;
+    window.window_height = window.innerHeight;
     resize_ground();
     window.overlay_manager.on_resize();
 }
@@ -73,7 +75,8 @@ function onresize() {
  */
 function calculate_width() {
     let gc = document.getElementById("game_container");
-    let gc_width = gc.offsetWidth;
+    const frame = gc.querySelector(".study-board-frame");
+    let gc_width = (frame || gc).offsetWidth;
     let width = gc_width ;//- 7; // for the numbers on the side of the ground
     //width -= width % 8; // fix chrome alignment errors; https://github.com/ornicar/lila/pull/3881
     // shouldn't be neccessary any longer https://github.com/lichess-org/chessground/pull/191
