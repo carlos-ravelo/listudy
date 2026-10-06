@@ -14,7 +14,7 @@ import { getRandomIntFromRange } from './modules/random.js';
 import { unescape_string } from './modules/security_related.js';
 import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_moves,
          ground_undo_last_move, setup_move_handler, setup_click_handler, ground_move,
-         create_arrow_from_move, create_pgn_arrow, create_pgn_circle, create_playable_arrow, get_doubled_playable_move_objects, ground_set_moves_from_instance } from './modules/ground.js';
+         create_arrow_from_move, create_pgn_arrow, create_pgn_circle, create_playable_arrow, get_doubled_playable_move_objects } from './modules/ground.js';
 import { TextOverlayId, TextOverlayManager } from './modules/overlays.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { array_contains } from './modules/utils.js';
@@ -183,6 +183,7 @@ async function handle_move(orig, dest) {
             }
             // console.log('CURR_DEPTH', end_of_line, curr_node.move, curr_node.move_index, curr_depth);
         }
+        store_trees();
         await sleep(get_move_delay()); // instant play by the ai feels weird
         if (sessionId !== trainingSessionId) return;
         if (end_of_line) {
@@ -194,11 +195,16 @@ async function handle_move(orig, dest) {
             const currentRunMode = localStorage.getItem("puzzleRunMode");
 
             if (spacedReviewRunActive) {
-                setTimeout(selectNextDueChapter, 500);
+                setTimeout(() => {
+                    if (sessionId === trainingSessionId) selectNextDueChapter();
+                }, 500);
             } else if (weakChapterRunActive) {
-                setTimeout(selectNextWeakChapter, 500);
+                setTimeout(() => {
+                    if (sessionId === trainingSessionId) selectNextWeakChapter();
+                }, 500);
             } else if (currentRunMode === "next" || currentRunMode === "random") {
                 setTimeout(() => {
+                    if (sessionId !== trainingSessionId) return;
                     const targetBtnId = currentRunMode === "next" ? "next_chapter_btn" : "btn_random_chapter";
                     const autoBtn = document.getElementById(targetBtnId);
                     if (autoBtn) autoBtn.click();
@@ -207,6 +213,7 @@ async function handle_move(orig, dest) {
                 if (board_review == i18n.review_slow) {
                     await sleep(3000);
                 }
+                if (sessionId !== trainingSessionId) return;
                 start_training();
             }
         } else {
@@ -537,12 +544,20 @@ function change_analysis_board() {
 }
 
 function setup_move() {
+    const lastMove = chess.history({ verbose: true }).slice(-1)[0];
+    ground.set({
+        fen: chess.fen(),
+        turnColor: turn_color(chess),
+        check: chess.in_check(),
+        lastMove: lastMove ? [lastMove.from, lastMove.to] : undefined
+    });
     change_play_stockfish();
     change_analysis_board();
     ground_set_moves(); // the legal moves of the position
     display_arrows(false);  // must come after ground_set_moves(), because it needs the legal_moves
     show_suggestions();  // must come after display_arrows(), beacuse it needs the arrows
     display_comments(false);
+    studyMoveNavigation.update();
 }
 
 /*
@@ -570,6 +585,8 @@ function play_move(san) {
     let m = chess.move(san);
     ground_move(m);
     curr_move.push(tree_move_index(curr_move, san));
+    change_play_stockfish();
+    change_analysis_board();
     studyMoveNavigation.update();
 }
 
@@ -1252,41 +1269,24 @@ async function main() {
 window.onresize = onresize;
 main();
 
+function refresh_manual_navigation() {
+    trainingSessionId += 1;
+    lineEligibleForReview = false;
+    clear_all_text();
+    setup_move();
+}
+
 function go_back() {
-    if (spacedReviewRunActive) return;
-    if (curr_move.length > 1) {
-        lineEligibleForReview = false;
-        curr_move.pop();
-        chess.undo();
-        
-        if (typeof ground_undo_last_move === "function") ground_undo_last_move();
-        
-        // Esta función nativa lee el estado de chess.js y reactiva la interactividad del ratón
-        if (typeof ground_set_moves_from_instance === "function") {
-            ground_set_moves_from_instance(chess);
-        }
-        
-        if (typeof display_arrows === "function") display_arrows();
-        if (typeof display_comments === "function") display_comments(false);
-        studyMoveNavigation.update();
-    }
+    if (spacedReviewRunActive || curr_move.length <= 1) return;
+    chess.undo();
+    curr_move.pop();
+    refresh_manual_navigation();
 }
 
 function go_forward() {
     if (spacedReviewRunActive) return;
-    lineEligibleForReview = false;
-    let possible_moves = tree_possible_moves(curr_move);
-    if (!possible_moves) return;
-
-    let nextNode = Array.isArray(possible_moves) ? possible_moves[0] : possible_moves;
-    let moveToPlay = nextNode.san || nextNode.move || (typeof nextNode === 'string' ? nextNode : null);
-
-    if (moveToPlay) {
-        play_move(moveToPlay);
-    } else {
-        console.warn("Could not find move string in:", nextNode);
-    }
-    
-    if (typeof display_arrows === "function") display_arrows();
-    if (typeof display_comments === "function") display_comments(false);
+    const nextNode = tree_possible_moves(curr_move)[0];
+    if (!nextNode) return;
+    play_move(nextNode.move);
+    refresh_manual_navigation();
 }
