@@ -27,6 +27,7 @@ view's `update()` after a chapter change.
 - `modules/study/chapter_pgn.js`: shared raw PGN extraction and chapter-link resolution.
 - `modules/study/chapter_stats.js`: mistakes, distinct move coverage and recovery.
 - `modules/study/chapter_review.js`: chapter review cards and FSRS scheduling.
+- `modules/study/study_move_tree.js`: clickable chapter notation, collapsible variations and position reconstruction with the existing chess library.
 - `templates/study/_chapter_controls.html.eex` and `_collection_modal.html.eex`: static markup.
 - `assets/css/features/study_extensions.css` and `study.css`: feature and progress styling.
 - `templates/study/show.html.eex`: training controls and the Alpine-powered progress modal.
@@ -67,8 +68,15 @@ In Read, the chapter starts at its initial position or custom FEN, including whe
 the study trains Black. Jump to key move and Max depth do not shorten the line.
 The arrow buttons are visible on desktop as well as touch devices, and keyboard
 navigation remains available. Comments always appear, independent of the saved
-practice setting. At a branch, Alpine.js renders buttons for the available SAN
-continuations; forward navigation follows the first continuation in PGN order.
+practice setting. A clickable move list appears beside the board on desktop and
+below it on mobile. Number, White and Black columns align each full move, with
+alternating row backgrounds and a soft panel surface. The current move uses a
+subtle outline and bold text without a colored background; nested variations fold with
+native disclosures and open automatically when navigating into them. Clicking a
+move rebuilds its complete line from the chapter's starting position, preserving
+the history and analysis links. Move numbers respect custom FENs, including Black
+to move. A Starting position button returns to the beginning. Forward navigation
+follows the first continuation in PGN order.
 Moves may also be played on the board for either side. A move outside the chapter
 is undone and prompts the reader to choose a chapter continuation.
 
@@ -78,6 +86,15 @@ advances, and the reader can stay at the end of a line. Entering Read stops acti
 weak-chapter, scheduled-review and puzzle runs. Starting one of those practice
 flows switches back to Practice. Regression coverage for mode changes, branching,
 comments and read-only statistics is in `assets/test/unit/study_navigation.cjs`.
+
+Existing viewers were considered: [Lichess PGN Viewer](https://github.com/lichess-org/pgn-viewer)
+and [mliebelt PGN Viewer](https://github.com/mliebelt/pgn-viewer) provide complete
+game viewers with their own board and navigation state. This integration adds a
+notation view over Listudy's existing parsed tree and reuses `chess.js` to replay
+selected paths. Alpine controls Read visibility; native disclosure elements fold
+variations. No additional PGN parser, chess engine or viewer dependency is added.
+Tree numbering, branching, disclosure behavior and chapter switches are checked
+with `node assets/test/unit/study_move_tree.cjs`.
 
 ### Chapter progress and recovery
 

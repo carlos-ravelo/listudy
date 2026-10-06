@@ -7,8 +7,8 @@
 
 <%= render "_chapter_controls.html" %>
 
-<div class="with_sidebar" x-data="{ reading: false, moves: [] }"
-     @study-reading-updated.window="reading = $event.detail.reading; moves = $event.detail.moves">
+<div class="with_sidebar" x-data="{ reading: false }"
+     @study-reading-updated.window="reading = $event.detail.reading">
   <div id="game_container" class="sidebar_main">
     <%= render ListudyWeb.ComponentView, "chessground.html" %>
     <nav class="study-move-navigation" :class="{ 'study-move-navigation--reading': reading }" aria-label="<%= dgettext("study", "Move navigation") %>">
@@ -19,20 +19,19 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6" /></svg>
       </button>
     </nav>
-    <div class="study-reading-continuations" x-show="reading" x-cloak>
-      <span x-show="moves.length > 1"><%= dgettext("study", "Continue with") %></span>
-      <template x-for="(move, index) in moves" :key="index">
-        <button type="button" x-show="moves.length > 1" x-text="move"
-                @click="$dispatch('study-reading-move', { move })"></button>
-      </template>
-      <span x-show="moves.length === 0"><%= dgettext("study", "End of line") %></span>
-    </div>
   </div>  
   <div class="sidebar clicking_turns_on_hints">
     <div class="sidebar_innercontainer">
       <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
 
       <div class="sidebar_padded">
+        <section class="study-reading-tree" x-show="reading" x-cloak aria-label="<%= dgettext("study", "Chapter moves") %>">
+          <h3><%= dgettext("study", "Moves") %></h3>
+          <div class="study-tree-columns" aria-hidden="true">
+            <span>#</span><span><%= dgettext("study", "White") %></span><span><%= dgettext("study", "Black") %></span>
+          </div>
+          <div id="study_read_moves" hidden></div>
+        </section>
         <div style="margin-bottom: 1em" x-show="!reading">
           <a class="icon large_clickarea" data-icon="-" id="hints" role="button"><%= dgettext("study", "Show hints for this move!") %></a><br>
         </div>
@@ -180,6 +179,8 @@
   let i18n = {};
   i18n.info_intro = "<%= dgettext "study", "Starting training." %>";
   i18n.read_choose_continuation = "<%= dgettext "study", "Choose a continuation from this chapter." %>";
+  i18n.read_start_position = "<%= dgettext "study", "Starting position" %>";
+  i18n.read_variation = "<%= dgettext "study", "Variation" %>";
   i18n.info_arrows = "<%= dgettext "study", "By default arrows will provide hints to show which moves are in this study. Using the options below you can control for how many moves the arrows/hints should stay visible. By default they stay visible until all moves in a position has been played twice. Any non-playable arrow annotations from the study or PGN file will appear as transparent arrows." %>";
   i18n.error_wrong_move = "<%= dgettext "study", "This move is not in the study, try again." %>";
   i18n.success_right_move = "<%= dgettext "study", "Right move!" %>";

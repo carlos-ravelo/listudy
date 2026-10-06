@@ -24,6 +24,7 @@ import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
 import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder } from './modules/study/chapter_stats.js';
 import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus, dueChapterOrder } from './modules/study/chapter_review.js';
+import { setupStudyMoveTree, readChapterPosition } from './modules/study/study_move_tree.js';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
@@ -32,6 +33,7 @@ Alpine.start();
 
 let studyFeatureViews = [];
 let studyMoveNavigation = { update() {} };
+let studyMoveTree = { update() {} };
 let readMode = false;
 let chapterStats = { version: 1, chapters: {} };
 let chapterMoveCatalogs = [];
@@ -1280,6 +1282,13 @@ async function main() {
         })
     });
     setup_configs();
+    studyMoveTree = setupStudyMoveTree({
+        element: document.getElementById('study_read_moves'),
+        onSelect: seek_read_move,
+        startLabel: i18n.read_start_position,
+        variationLabel: i18n.read_variation
+    });
+    update_read_mode_ui();
     window.addEventListener('study-reading-change', event => set_read_mode(event.detail.reading));
     window.addEventListener('study-reading-move', event => play_read_move(event.detail.move));
     window.addEventListener('study-puzzle-run-changed', () => set_read_mode(false));
@@ -1292,6 +1301,10 @@ window.onresize = onresize;
 main();
 
 function update_read_mode_ui() {
+    studyMoveTree.update({
+        reading: readMode, chapter, root: trees[chapter].root,
+        fen: trees[chapter].headers.FEN, path: curr_move.slice(1)
+    });
     window.dispatchEvent(new CustomEvent('study-reading-updated', {
         detail: { reading: readMode, moves: readMode ? tree_children(curr_move).map(node => node.move) : [] }
     }));
@@ -1312,6 +1325,16 @@ function set_read_mode(reading) {
 function play_read_move(san) {
     if (!readMode || !tree_children(curr_move).some(node => node.move === san)) return false;
     play_move(san);
+    refresh_manual_navigation();
+    return true;
+}
+
+function seek_read_move(path) {
+    if (!readMode) return false;
+    const position = readChapterPosition(trees[chapter].root, trees[chapter].headers.FEN, path);
+    if (!position) return false;
+    window.chess = position;
+    window.curr_move = [chapter, ...path];
     refresh_manual_navigation();
     return true;
 }
