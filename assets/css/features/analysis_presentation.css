@@ -1,0 +1,71 @@
+/* Neutral surfaces keep attention on games, moves, and repertoire feedback. */
+.analysis-workspace {
+  --analysis-divider: color-mix(in srgb, var(--font-color) 14%, transparent);
+  --analysis-muted: color-mix(in srgb, var(--font-color) 72%, var(--bg-color));
+  color: var(--font-color);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.analysis-workspace > h1,
+.analysis-workspace > h2,
+.analysis-workspace.training-container h2 { font-size: clamp(22px, 3vw, 30px); font-weight: 600; line-height: 1.25; letter-spacing: -.025em; }
+.analysis-workspace h3 { font-size: 18px; font-weight: 600; }
+.analysis-workspace h4 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+.analysis-workspace button,
+.analysis-workspace .button { height: auto; min-height: 36px; border-radius: 6px; border-color: var(--analysis-divider); box-shadow: none; font-size: 13px; font-weight: 500; line-height: 1.4; letter-spacing: normal; text-transform: none; }
+.analysis-workspace .button-primary { background: var(--font-color); color: var(--bg-color); border-color: var(--font-color); }
+.analysis-workspace input[type="text"],
+.analysis-workspace select,
+.analysis-workspace textarea { border-color: var(--analysis-divider); border-radius: 6px; background: var(--bg-color); color: var(--font-color); font-size: 14px; box-shadow: none; }
+.analysis-workspace :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid var(--font-color); outline-offset: 2px; }
+.analysis-workspace :is(.analysis-account-grid, .analysis-overview-grid) { gap: 16px; }
+.analysis-workspace :is(.analysis-account-card, .analysis-overview-card) { padding: 20px; border: 1px solid var(--analysis-divider); border-radius: 8px; background: transparent; box-shadow: none; }
+.analysis-workspace :is(.analysis-library, .analysis-quick-pgn, .analysis-overview-studies, .analysis-game-row, .training-chapters) { border-color: var(--analysis-divider); }
+.analysis-workspace :is(.analysis-account-meta, .analysis-account-count, .analysis-account-user, .analysis-library p, .analysis-overview-secondary, .analysis-games-count, .analysis-comparison-summary, .analysis-selection-hint, .analysis-position-label, .analysis-move-actor, .analysis-arrow-legend, .analysis-match-details, .analysis-group-count, .analysis-study-name, .analysis-match-help, .analysis-board-status, #mistake-info) { color: var(--analysis-muted); font-size: 13px; }
+.analysis-workspace :is(.analysis-library p strong, .analysis-overview-secondary strong, .analysis-comparison-summary strong, .analysis-group-move, .analysis-chapter-name, .analysis-outcome-note) { color: var(--font-color); }
+.analysis-workspace .analysis-library h3 { font-size: 16px; }
+.analysis-workspace .analysis-overview-primary strong { font-size: 28px; font-weight: 600; }
+.analysis-workspace .analysis-sync-status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; font-size: 13px; }
+.analysis-workspace .analysis-disconnect,
+.analysis-workspace .analysis-back-link { color: var(--analysis-muted); font-size: 13px; }
+.analysis-workspace .analysis-game-row { padding: 14px 8px; border-radius: 4px; }
+.analysis-workspace .analysis-game-row:hover { background: var(--bg-highlight-color); }
+.analysis-workspace .analysis-game-open { color: var(--analysis-muted); font-size: 13px; }
+.analysis-workspace .analysis-status { font-size: 12px; border-radius: 4px; }
+.analysis-workspace .analysis-result-navigation button { min-width: 36px; border-color: transparent; background: transparent; color: var(--font-color); }
+.analysis-workspace .analysis-result-navigation button:hover:not(:disabled) { background: var(--bg-highlight-color); }
+.analysis-workspace #analysis-moves button { min-height: 28px; border-color: transparent; background: transparent; color: var(--font-color); }
+.analysis-workspace #analysis-moves [aria-current] { border-color: var(--font-color); background: var(--bg-highlight-color); }
+.analysis-workspace .analysis-outcome { border-color: var(--analysis-divider); border-left-width: 1px; padding: 16px; border-radius: 8px; }
+.analysis-workspace .analysis-outcome-badge { font-size: 14px; }
+.analysis-workspace .analysis-move-comparison > div { border-color: var(--analysis-divider); background: transparent; padding: 12px; }
+.analysis-workspace .analysis-move-comparison dt { color: var(--analysis-muted); font-size: 12px; }
+.analysis-workspace :is(.analysis-played-move, .analysis-expected-move) { font-size: 18px; }
+.analysis-workspace .analysis-earlier-departures { border-color: var(--analysis-divider); background: transparent; }
+.analysis-workspace .analysis-transposition { background: var(--bg-highlight-color); color: var(--font-color); font-size: 13px; }
+.analysis-workspace .analysis-match-group { border-color: var(--analysis-divider); background: transparent; box-shadow: none; border-radius: 8px; }
+.analysis-workspace .analysis-match-group.is-selected { border-color: var(--font-color); background: var(--bg-highlight-color); box-shadow: none; }
+.analysis-workspace .analysis-group-choice { padding: 12px; }
+.analysis-workspace .analysis-group-choice:hover { background: var(--bg-highlight-color); }
+.analysis-workspace .analysis-group-state { font-size: 12px; font-weight: 500; }
+.analysis-workspace .analysis-group-move { font-size: 16px; }
+.analysis-workspace .analysis-chapter-list { padding: 0 12px 8px; border-color: var(--analysis-divider); }
+.analysis-workspace .analysis-chapter-list li { border-color: var(--analysis-divider); padding: 12px 0; }
+.analysis-workspace .analysis-chapter-list summary { font-size: 13px; font-weight: 500; }
+.analysis-workspace .analysis-chapter-name { font-size: 14px; font-weight: 600; }
+.analysis-workspace #time-filter { margin: 0; height: 36px; padding: 4px 8px; cursor: pointer; }
+.analysis-workspace #training-status { font-size: 16px; }
+.analysis-workspace .training-chapters { font-size: 13px; }
+@media (max-width: 600px) {
+  .analysis-workspace :is(.analysis-account-card, .analysis-overview-card) { padding: 14px; }
+  .analysis-workspace .analysis-comparison-layout { gap: 16px; }
+}
+@media (pointer: coarse) {
+  .analysis-workspace button,
+  .analysis-workspace .button,
+  .analysis-workspace #analysis-moves button,
+  .analysis-workspace #time-filter { min-height: 44px; }
+  .analysis-workspace input[type="text"],
+  .analysis-workspace select,
+  .analysis-workspace textarea { font-size: 16px; }
+}
