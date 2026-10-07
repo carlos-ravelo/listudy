@@ -1,99 +1,65 @@
-    <header>
-      <section class="container">
-        <nav role="navigation">
-          <div>
-            <div class="logo show">
-              <a href="/<%= @assigns.locale %>"><span class="logo_name">listudy</span><span class="logo_domain">.org</span></a>
-            </div>
-            
-            <div class="dropdowns_container">
-              <div class="dropdown">
-                <button class="dropbtn"><%= gettext "Study" %></button>
-                <div class="dropdown-content">
-                  <%= if Pow.Plug.current_user(@conn) do %>
-                  <%= link (gettext "Your Studies"), to: Routes.study_path(@conn, :index, @assigns.locale) %>
-                  <% end %>
-                  <%= link (gettext "Search for Studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @assigns.locale) %>
-                  <%= link (gettext "Create a new Study"), to: Routes.study_path(@conn, :new, @assigns.locale) %>
-                </div>
-              </div> 
-            </div>
-
-            <div class="dropdowns_container">
-              <div class="dropdown">
-                <button class="dropbtn"><%= gettext "Tactics"%></button>
-                <div class="dropdown-content">
-                  <%= link (gettext "Tactics"), to: Routes.tactic_path(@conn, :random, @assigns.locale) %>
-                  <%= link (gettext "Blind Tactics"), to: Routes.blind_tactic_path(@conn, :random, @assigns.locale) %>
-                  <%= link (gettext "Pieceless Tactics"), to: Routes.pieceless_tactic_path(@conn, :random, @assigns.locale) %>
-                </div>
-              </div> 
-            </div>
-
-            <div class="dropdowns_container">
-              <div class="dropdown">
-                <a href="<%= Routes.endgame_path(@conn, :index, @assigns.locale) %>">
-                  <button class="dropbtn dropdowns_single"><%= gettext "Endgames"%></button>
-                </a>
-              </div> 
-            </div>
-
-            <%= if Pow.Plug.current_user(@conn) do %>
-            <div class="dropdowns_container">
-              <div class="dropdown">
-                <a href="<%= Routes.analysis_path(@conn, :index) %>">
-                  <button class="dropbtn dropdowns_single"><%= gettext "Analysis"%></button>
-                </a>
-              </div> 
-            </div>
-            <% end %>
-
-            <div id="hamburger" class="hamburger_container">
-              <div class="burger1"></div>
-              <div class="burger2"></div>
-              <div class="burger3"></div>
-            </div> 
-
+<header class="site-header">
+  <nav class="container site-navigation" aria-label="<%= gettext("Main navigation") %>">
+    <a class="site-brand" href="/<%= @assigns.locale %>">listudy<span>.org</span></a>
+    <button type="button" class="site-menu-toggle" aria-expanded="false" aria-controls="site-navigation-links"><%= gettext("Menu") %></button>
+    <div id="site-navigation-links" class="site-navigation-links">
+      <div class="site-primary-navigation">
+        <%= if Pow.Plug.current_user(@conn) do %>
+          <%= link gettext("Your Studies"), to: Routes.study_path(@conn, :index, @assigns.locale), data: [nav_section: "studies"] %>
+          <%= link gettext("Analysis"), to: Routes.analysis_path(@conn, :index), data: [nav_section: "analysis"] %>
+        <% else %>
+          <%= link gettext("Search for Studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @assigns.locale), data: [nav_section: "studies"] %>
+        <% end %>
+        <details class="site-menu" data-nav-section="practice">
+          <summary><%= gettext("Practice") %></summary>
+          <div class="site-menu-panel">
+            <%= link gettext("Tactics"), to: Routes.tactic_path(@conn, :random, @assigns.locale) %>
+            <%= link gettext("Blind Tactics"), to: Routes.blind_tactic_path(@conn, :random, @assigns.locale) %>
+            <%= link gettext("Pieceless Tactics"), to: Routes.pieceless_tactic_path(@conn, :random, @assigns.locale) %>
+            <%= link gettext("Endgames"), to: Routes.endgame_path(@conn, :index, @assigns.locale) %>
           </div>
-
-          <div class="nav_right">
-          <%= if !Pow.Plug.current_user(@conn) do %>
-            <div class="nav_element">
-              <%= link (gettext "Register"), to: Routes.pow_registration_path(@conn, :new) %>
+        </details>
+        <%= if Pow.Plug.current_user(@conn) do %>
+          <details class="site-menu">
+            <summary><%= gettext("Explore") %></summary>
+            <div class="site-menu-panel">
+              <%= link gettext("Search for Studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @assigns.locale) %>
+              <%= link gettext("Create a new Study"), to: Routes.study_path(@conn, :new, @assigns.locale) %>
             </div>
-            <div class="nav_element">
-              <%= link (gettext "Sign in"), to: Routes.pow_session_path(@conn, :new) %>
-            </div>
-          <% end %>
-            <div class="dropdowns_container">
-              <div class="dropdown">
-                <button class="dropbtn"><%= gettext "Language" %></button>
-                <div class="dropdown-content">
-                  <%= raw ListudyWeb.Seo.lang_alternatives(@conn) %>
-                </div>
-              </div> 
-            </div>
-            <div class="dropdowns_container">
-              <div class="dropdown">
-                <button class="dropbtn"><%= gettext "Settings" %></button>
-                <div class="dropdown-content">
-                  <a href="#" id="toggle_dark_mode"><%= gettext "Toggle Darkmode" %></a>
-                  <a href="#" class="modal_open" id="sound_settings"><%= gettext "Sound Settings" %></a>
-                  <a href="#" class="modal_open" id="board_settings"><%= gettext "Board Settings" %></a>
-                  <hr class="no_margin">
-                  <a href="<%= Routes.page_path(@conn, :show, @assigns.locale, "achievements") %>"><%= gettext "Achievements" %></a>
-                <%= if Pow.Plug.current_user(@conn) do %>
-                  <%= link (gettext "User Settings"), to: Routes.pow_registration_path(@conn, :edit) %>
-                  <%= link (gettext "Profile"), to: Routes.user_profile_path(@conn, :show, @assigns.locale, @assigns.current_user.username) %>
-                  <%= link (gettext "Sign out"), to: Routes.pow_session_path(@conn, :delete), method: :delete, class: "hover_warn" %>
-                <% end %>
-                </div>
-              </div> 
-            </div>
+          </details>
+        <% end %>
+      </div>
+      <div class="site-account-navigation">
+        <details class="site-menu">
+          <summary><%= gettext("Preferences") %></summary>
+          <div class="site-menu-panel">
+            <a href="#" id="toggle_dark_mode"><%= gettext("Toggle Darkmode") %></a>
+            <a href="#" class="modal_open" id="sound_settings"><%= gettext("Sound Settings") %></a>
+            <a href="#" class="modal_open" id="board_settings"><%= gettext("Board Settings") %></a>
+            <details class="site-language-menu">
+              <summary><%= gettext("Language") %></summary>
+              <div><%= raw ListudyWeb.Seo.lang_alternatives(@conn) %></div>
+            </details>
           </div>
-        </nav>
-      </section>
-    </header>
+        </details>
+        <%= if user = Pow.Plug.current_user(@conn) do %>
+          <details class="site-menu">
+            <summary><%= user.username %></summary>
+            <div class="site-menu-panel">
+              <%= link gettext("Profile"), to: Routes.user_profile_path(@conn, :show, @assigns.locale, user.username) %>
+              <%= link gettext("User Settings"), to: Routes.pow_registration_path(@conn, :edit) %>
+              <%= link gettext("Achievements"), to: Routes.page_path(@conn, :show, @assigns.locale, "achievements") %>
+              <%= link gettext("Sign out"), to: Routes.pow_session_path(@conn, :delete), method: :delete %>
+            </div>
+          </details>
+        <% else %>
+          <%= link gettext("Sign in"), to: Routes.pow_session_path(@conn, :new) %>
+          <%= link gettext("Register"), to: Routes.pow_registration_path(@conn, :new) %>
+        <% end %>
+      </div>
+    </div>
+  </nav>
+</header>
 
 <div id="board_settings_modal" class="modal">
   <div class="modal-content">

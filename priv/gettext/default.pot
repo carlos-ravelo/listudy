@@ -353,3 +353,27 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Analysis"
 msgstr ""
+
+msgid "Main navigation"
+msgstr ""
+
+msgid "Menu"
+msgstr ""
+
+msgid "Practice"
+msgstr ""
+
+msgid "Explore"
+msgstr ""
+
+msgid "Preferences"
+msgstr ""
+
+msgid "Footer"
+msgstr ""
+
+msgid "Contact"
+msgstr ""
+
+msgid "More"
+msgstr ""

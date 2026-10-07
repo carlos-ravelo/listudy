@@ -1,0 +1,46 @@
+.site-header { border-bottom: 1px solid var(--bg-highlight-color); margin-bottom: 20px; }
+.site-header .site-navigation { display: flex; align-items: center; gap: 24px; min-height: 64px; font-variant: normal; }
+.site-header .site-brand { flex-shrink: 0; color: var(--font-color); font-size: 22px; font-weight: 600; letter-spacing: -.04em; text-decoration: none; }
+.site-brand span { font-weight: 400; opacity: .5; }
+.site-header .site-navigation-links { display: flex; flex: 1; justify-content: space-between; gap: 16px; padding: 0; }
+.site-primary-navigation, .site-account-navigation { display: flex; align-items: center; gap: 4px; }
+.site-header .site-navigation-links > div { padding: 0; }
+.site-header a, .site-header summary { color: var(--font-color); font-size: 13px; }
+.site-primary-navigation > a, .site-account-navigation > a,
+.site-menu > summary { display: flex; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 6px; text-decoration: none; cursor: pointer; }
+.site-menu { position: relative; margin: 0; }
+.site-menu > summary { list-style: none; max-width: 180px; overflow-wrap: anywhere; }
+.site-menu > summary::-webkit-details-marker { display: none; }
+.site-menu > summary::after { content: '⌄'; margin-left: 8px; opacity: .6; }
+.site-menu[open] > summary, .site-menu > summary:hover,
+.site-primary-navigation > a:hover, .site-account-navigation > a:hover,
+.site-header .is-current { background: var(--bg-highlight-color); }
+.site-header .is-current { border-radius: 6px; font-weight: 600; }
+.site-menu-panel { position: absolute; top: calc(100% + 4px); left: 0; min-width: 210px; max-width: min(300px, 85vw); padding: 6px; z-index: 200; background: var(--bg-color); border: 1px solid var(--bg-highlight-color); border-radius: 8px; }
+.site-account-navigation .site-menu-panel { left: auto; right: 0; }
+.site-menu-panel a, .site-language-menu > summary { display: block; padding: 10px 12px; border-radius: 4px; text-decoration: none; cursor: pointer; font-weight: 400; }
+.site-menu-panel a:hover, .site-language-menu > summary:hover { background: var(--bg-highlight-color); }
+.site-language-menu > div { max-height: 240px; overflow-y: auto; padding-left: 8px; }
+.site-header :is(a, button, summary):focus-visible { outline: 2px solid var(--font-color); outline-offset: 2px; }
+.site-header .site-menu-toggle { display: none; margin: 0; border: 0; background: transparent; color: var(--font-color); font-size: 13px; text-transform: none; letter-spacing: normal; }
+.site-footer { margin-top: 32px; padding-bottom: 24px; color: var(--font-color); font-size: 12px; line-height: 1.8; }
+.site-footer a { color: inherit; text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
+.site-footer hr { margin: 24px 0; border-color: var(--bg-highlight-color); }
+.site-footer-compact { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; border-top: 1px solid var(--bg-highlight-color); padding-top: 16px; }
+.site-footer-compact > span { opacity: .65; }
+.site-footer-compact nav { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; font-variant: normal; }
+.site-footer-more summary { cursor: pointer; }
+.site-footer-more a { display: block; }
+@media (max-width: 900px) {
+  .site-header .site-navigation { flex-wrap: wrap; gap: 0; padding-top: 8px; padding-bottom: 8px; }
+  .site-header .site-menu-toggle { display: block; margin-left: auto; min-height: 44px; }
+  .site-header .site-navigation-links { flex-basis: 100%; flex-direction: column; gap: 8px; padding: 8px 0; }
+  .site-header[data-navigation-ready]:not(.is-expanded) .site-navigation-links { display: none; }
+  .site-primary-navigation, .site-account-navigation { flex-direction: column; align-items: stretch; }
+  .site-account-navigation { padding-top: 8px !important; border-top: 1px solid var(--bg-highlight-color); }
+  .site-menu > summary { max-width: none; }
+  .site-primary-navigation > a, .site-account-navigation > a, .site-menu > summary { min-height: 44px; }
+  .site-menu-panel { position: static; max-width: none; min-width: 0; border: 0; border-left: 1px solid var(--bg-highlight-color); margin: 4px 12px; padding: 0 4px; }
+  .site-footer-compact { margin-top: 24px; }
+}
