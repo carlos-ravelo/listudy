@@ -34,6 +34,7 @@ defmodule ListudyWeb.StudyEditorControllerTest do
      study: study,
      path: path,
      pgn: pgn,
+     owner_user: owner,
      owner_conn: Pow.Plug.assign_current_user(conn, owner, []),
      other_conn: Pow.Plug.assign_current_user(conn, other, [])}
   end
@@ -53,6 +54,45 @@ defmodule ListudyWeb.StudyEditorControllerTest do
     save_url = Routes.study_path(conn, :save_chapter, "en", study)
     assert other |> post(save_url, %{}) |> json_response(403) == %{"error" => "Forbidden"}
     assert File.read!(path) == pgn
+  end
+
+  test "maintenance is owner-only and saves reordered chapters", %{
+    conn: conn,
+    owner_conn: owner,
+    other_conn: other,
+    study: study,
+    path: path,
+    pgn: pgn,
+    owner_user: user
+  } do
+    url = Routes.study_path(conn, :manage_chapters, "en", study)
+    assert conn |> post(url, %{}) |> json_response(403) == %{"error" => "Forbidden"}
+    assert other |> post(url, %{}) |> json_response(403) == %{"error" => "Forbidden"}
+
+    assert owner |> get(Routes.study_path(conn, :edit, "en", study)) |> html_response(200) =~
+             "studyMaintenance"
+
+    {:ok, %{"chapters" => chapters}} = Listudy.Games.ChessEngine.maintenance(pgn)
+    params = %{revision: Listudy.StudyPgn.revision(pgn), chapters: Enum.reverse(chapters)}
+
+    response =
+      owner
+      |> recycle()
+      |> Pow.Plug.assign_current_user(user, [])
+      |> post(url, params)
+      |> json_response(200)
+
+    assert response["url"] == Routes.study_path(conn, :edit, "en", study)
+    saved = File.read!(path)
+    assert saved =~ "ListudyChapterId"
+
+    assert owner
+           |> recycle()
+           |> Pow.Plug.assign_current_user(user, [])
+           |> post(url, params)
+           |> json_response(409)
+
+    assert File.read!(path) == saved
   end
 
   test "save validates moves, preserves other chapters and rejects stale revisions", %{

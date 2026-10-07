@@ -10,33 +10,33 @@
 msgid ""
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:52
+#: lib/listudy_web/templates/layout/_header.html.eex:62
 #: lib/listudy_web/templates/pow/registration/new.html.eex:29
 #, elixir-autogen, elixir-format
 msgid "Register"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:55
+#: lib/listudy_web/templates/layout/_header.html.eex:65
 #, elixir-autogen, elixir-format
 msgid "Sign in"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:78
+#: lib/listudy_web/templates/layout/_header.html.eex:88
 #, elixir-autogen, elixir-format
 msgid "Sign out"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:68
+#: lib/listudy_web/templates/layout/_header.html.eex:78
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:70
+#: lib/listudy_web/templates/layout/_header.html.eex:80
 #, elixir-autogen, elixir-format
 msgid "Toggle Darkmode"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:76
+#: lib/listudy_web/templates/layout/_header.html.eex:86
 #, elixir-autogen, elixir-format
 msgid "User Settings"
 msgstr ""
@@ -56,7 +56,7 @@ msgstr ""
 msgid "Your Studies"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:141
+#: lib/listudy_web/templates/layout/_header.html.eex:151
 #, elixir-autogen, elixir-format
 msgid "Error"
 msgstr ""
@@ -93,7 +93,7 @@ msgstr ""
 msgid "Imprint"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:60
+#: lib/listudy_web/templates/layout/_header.html.eex:70
 #, elixir-autogen, elixir-format
 msgid "Language"
 msgstr ""
@@ -120,7 +120,7 @@ msgstr ""
 msgid "Privacy Policy"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:77
+#: lib/listudy_web/templates/layout/_header.html.eex:87
 #, elixir-autogen, elixir-format
 msgid "Profile"
 msgstr ""
@@ -148,8 +148,8 @@ msgstr ""
 msgid "The provider of this website is Arne Vogel."
 msgstr ""
 
-#: lib/listudy_web/controllers/page_controller.ex:28
-#: lib/listudy_web/controllers/page_controller.ex:61
+#: lib/listudy_web/controllers/page_controller.ex:51
+#: lib/listudy_web/controllers/page_controller.ex:84
 #: lib/listudy_web/controllers/webmaster_controller.ex:21
 #, elixir-autogen, elixir-format
 msgid "This page does not exist"
@@ -176,7 +176,7 @@ msgstr ""
 msgid "Copyright"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_footer.html.eex:17
+#: lib/listudy_web/templates/layout/_footer.html.eex:18
 #: lib/listudy_web/templates/layout/_header.html.eex:27
 #, elixir-autogen, elixir-format
 msgid "Blind Tactics"
@@ -193,7 +193,7 @@ msgstr ""
 msgid "Created at"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_footer.html.eex:19
+#: lib/listudy_web/templates/layout/_footer.html.eex:20
 #, elixir-autogen, elixir-format
 msgid "Daily Puzzle"
 msgstr ""
@@ -214,7 +214,7 @@ msgstr ""
 msgid "Last updated"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_footer.html.eex:20
+#: lib/listudy_web/templates/layout/_footer.html.eex:21
 #, elixir-autogen, elixir-format
 msgid "Make your own Tactic"
 msgstr ""
@@ -230,7 +230,7 @@ msgstr ""
 msgid "This can not be reversed! Are you sure?"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:74
+#: lib/listudy_web/templates/layout/_header.html.eex:84
 #, elixir-autogen, elixir-format
 msgid "Achievements"
 msgstr ""
@@ -245,13 +245,13 @@ msgstr ""
 msgid "Before creating your account, please read the %{privacy_policy} and %{tos}. By creating the account, you agree to those terms."
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:72
-#: lib/listudy_web/templates/layout/_header.html.eex:91
+#: lib/listudy_web/templates/layout/_header.html.eex:82
+#: lib/listudy_web/templates/layout/_header.html.eex:101
 #, elixir-autogen, elixir-format
 msgid "Board Settings"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:139
+#: lib/listudy_web/templates/layout/_header.html.eex:149
 #, elixir-autogen, elixir-format
 msgid "Capture"
 msgstr ""
@@ -262,43 +262,43 @@ msgstr ""
 msgid "Endgames"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:138
+#: lib/listudy_web/templates/layout/_header.html.eex:148
 #, elixir-autogen, elixir-format
 msgid "Move"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:131
+#: lib/listudy_web/templates/layout/_header.html.eex:141
 #, elixir-autogen, elixir-format
 msgid "Play Sound"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:94
+#: lib/listudy_web/templates/layout/_header.html.eex:104
 #, elixir-autogen, elixir-format
 msgid "Select a color:"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:101
+#: lib/listudy_web/templates/layout/_header.html.eex:111
 #, elixir-autogen, elixir-format
 msgid "Select a piece set:"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:71
-#: lib/listudy_web/templates/layout/_header.html.eex:130
+#: lib/listudy_web/templates/layout/_header.html.eex:81
+#: lib/listudy_web/templates/layout/_header.html.eex:140
 #, elixir-autogen, elixir-format
 msgid "Sound Settings"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:140
+#: lib/listudy_web/templates/layout/_header.html.eex:150
 #, elixir-autogen, elixir-format
 msgid "Success"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:137
+#: lib/listudy_web/templates/layout/_header.html.eex:147
 #, elixir-autogen, elixir-format
 msgid "Test Sounds"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_header.html.eex:134
+#: lib/listudy_web/templates/layout/_header.html.eex:144
 #, elixir-autogen, elixir-format
 msgid "Volume"
 msgstr ""
@@ -328,7 +328,7 @@ msgstr ""
 msgid "Changelog"
 msgstr ""
 
-#: lib/listudy_web/templates/layout/_footer.html.eex:18
+#: lib/listudy_web/templates/layout/_footer.html.eex:19
 #: lib/listudy_web/templates/layout/_header.html.eex:28
 #, elixir-autogen, elixir-format
 msgid "Pieceless Tactics"
@@ -347,4 +347,9 @@ msgstr ""
 #: lib/listudy_web/templates/page/play_stockfish.html.eex:9
 #, elixir-autogen, elixir-format
 msgid "white"
+msgstr ""
+
+#: lib/listudy_web/templates/layout/_header.html.eex:45
+#, elixir-autogen, elixir-format
+msgid "Analysis"
 msgstr ""

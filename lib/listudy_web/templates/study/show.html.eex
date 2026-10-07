@@ -192,6 +192,7 @@
 
   let i18n = {};
   i18n.info_intro = "<%= dgettext "study", "Starting training." %>";
+  i18n.no_playable_chapters = "<%= dgettext "study", "Add moves to a chapter to start practicing." %>";
   i18n.read_choose_continuation = "<%= dgettext "study", "Choose a continuation from this chapter." %>";
   i18n.read_start_position = "<%= dgettext "study", "Starting position" %>";
   i18n.read_variation = "<%= dgettext "study", "Variation" %>";

@@ -14,6 +14,8 @@
     - [Processing and setup](#processing-and-setup)
   - [Imported games and sync](#imported-games-and-sync)
     - [Mistake training](#mistake-training)
+  - [Chapter editing](#chapter-editing)
+    - [Study maintenance](#study-maintenance)
 
 ## Study page
 
@@ -228,9 +230,14 @@ in that review. Hint use does not yet change the FSRS grade.
 server's `user_settings` table for signed-in users. Anonymous progress stays
 in the browser. The signature ignores comments and mutable training scores;
 editing the move tree or starting FEN invalidates the old review card for that
-chapter. Chapter statistics and review cards are indexed by chapter position,
-so substantial chapter reordering can misassociate historical statistics;
-there are no permanent chapter IDs in this data model. Existing attempt and
+chapter. Managed chapters carry a `ListudyChapterId` PGN header, and statistics
+and review cards use this identity rather than their position. The first
+maintenance save records `ListudyOriginalIndex` to migrate existing positional
+records, excluding blank source chapters from the old playback indexes.
+Reordering and renaming preserve progress; new and duplicated chapters start
+fresh. Unmanaged PGNs still use positional keys; replacing the complete PGN
+without retaining chapter identities does not guarantee progress continuity.
+Existing attempt and
 mistake totals are preserved when coverage fields are added, but past moves
 cannot be reconstructed, so distinct coverage begins with newly recorded
 moves. For old data without `cleanMoves`, a chapter with zero mistakes can
@@ -368,8 +375,9 @@ Owners can choose **Edit chapter** on a study or its metadata edit page. Select
 a position in the move tree, play a legal move to add a continuation or a
 variation, and edit the selected position's comment. Existing continuations are
 navigated rather than duplicated. The promotion selector supports underpromotion.
-This first version edits standard-chess chapters; it does not create/delete
-chapters, delete moves, collaborate, or run engine analysis.
+The move editor edits standard-chess chapters; chapter creation, duplication,
+reordering and deletion are available in the maintenance screen described below.
+The move editor does not delete individual moves, collaborate, or run engine analysis.
 
 Alpine owns the editor controls, draft indicators and save state. The pure chapter
 model stays independent of Alpine; Chessground and the move-tree renderer are
@@ -391,3 +399,27 @@ Checks: `node assets/test/unit/chapter_editor.cjs`,
 `node assets/test/unit/chapter_editor_browser.cjs` (requires built assets and
 Chrome), Python's `test_study_editor.py`, and the Elixir `study_pgn_test.exs` and
 `study_editor_controller_test.exs` suites.
+
+### Study maintenance
+
+The study's Edit link opens a chapter list. Owners can rename titles inline,
+move chapters up or down, and open the existing move/comment editor. A More menu
+contains Duplicate and Delete. Add chapter creates an empty draft; saving enables
+its editor link. New and duplicated chapters must be saved before editing moves.
+Each row remains usable on mobile, with the title above its actions.
+
+Changes remain in a draft until Save chapter changes. The save bar stays visible
+at the bottom while scrolling; Discard changes restores the original list.
+Deleting a chapter confirms its title, and at least one chapter must remain.
+Leaving or opening an editor with an unsaved draft asks before discarding it.
+Metadata, privacy and complete PGN replacement are in a separate expandable
+section; deletion of the whole study is another disclosure.
+
+The server checks ownership, validates chapter references and unique identities,
+and uses the existing whole-file revision and atomic writer. Concurrent edits
+return HTTP 409 and retain the local draft. Python-chess retains variations,
+comments, NAGs and custom starting positions when serializing maintained chapters.
+An all-empty study explains that moves must be added before practice can begin.
+
+Checks: `test_study_maintenance.py`, `study_pgn_test.exs`,
+`study_editor_controller_test.exs`, and `node assets/test/unit/chapter_identity.cjs`.

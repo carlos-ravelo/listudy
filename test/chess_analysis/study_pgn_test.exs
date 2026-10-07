@@ -35,6 +35,21 @@ defmodule Listudy.StudyPgnTest do
     assert File.read!(path) == pgn
   end
 
+  test "maintenance retains stable identities and rejects stale or invalid saves", %{
+    path: path,
+    pgn: pgn
+  } do
+    {:ok, %{"chapters" => chapters}} = ChessEngine.maintenance(pgn)
+    revision = StudyPgn.revision(pgn)
+    assert {:ok, :saved} = StudyPgn.manage_chapters(path, revision, Enum.reverse(chapters))
+    saved = File.read!(path)
+    {:ok, %{"chapters" => reordered}} = ChessEngine.maintenance(saved)
+    assert Enum.map(reordered, & &1["id"]) == Enum.map(Enum.reverse(chapters), & &1["id"])
+    assert {:error, :conflict} = StudyPgn.manage_chapters(path, revision, chapters)
+    assert {:error, _} = StudyPgn.manage_chapters(path, StudyPgn.revision(saved), [])
+    assert File.read!(path) == saved
+  end
+
   test "an uploaded replacement invalidates an open editor", %{path: path, pgn: pgn} do
     assert :ok = StudyPgn.replace(path, "1. c4 e5 *")
     assert {:error, :conflict} = StudyPgn.replace_chapter(path, StudyPgn.revision(pgn), 0, %{})
