@@ -120,31 +120,51 @@ which plies belong to the learner.
 | Measure | Meaning |
 | --- | --- |
 | Moves practiced | Distinct correct learner moves / all trainable learner moves in the chapter. The outside bar shows this percentage for the currently selected chapter, rounded to a whole number. |
-| Correct moves | Correct move attempts, including repeats. |
-| Mistakes | Incorrect move attempts, including repeats. Each wrong move increments the count immediately. This is a historical total, not the chapter's current status. |
+| Recent first-try accuracy | Moves correct on the first try / learner moves tested in the last five completed practices, rounded to a percentage. The number of contributing practices is displayed. |
+| Current / Last practice | Learner moves missed on the first try / moves tested in the ongoing practice, otherwise in the last ended practice. Interrupted practices are explicitly marked incomplete. |
 | Clean moves since last mistake | Distinct correct learner moves accumulated since the most recent mistake. A mistake clears this set. The chapter recovers when this set covers every trainable move, even across several complete lines. |
 
 One correct move can therefore make the bar 100% only when that is the chapter's
 only trainable move. A 100% coverage bar says every move has been practiced at
 least once; it does not claim that every attempt was correct. Green means all
 trainable moves have been played correctly since the last mistake. Historical
-mistakes remain visible after recovery, so a chapter can be green and still show
-past mistakes in its details. The recovery counter shows progress toward green
-when mistakes exist.
+mistake and correct-attempt totals are retained for internal calculations but are
+not displayed. The recent metrics begin with new practice records; historical
+totals cannot be converted into individual practice results. Older practice
+records without first-result data are also excluded rather than converted.
+Each decision is identified by its complete SAN path before the learner move.
+Repeated mistakes at that decision count as one missed move; eventually playing
+it correctly does not turn it into a first-try success. Only learner moves in
+the practiced line form the denominator, not every move in the chapter or the
+automatic opponent replies. For example, missing one of fifteen moves yields
+`Last: 1/15 moves missed` and 93% first-try accuracy. Until a practice
+completes, recent accuracy displays a dash. Read and manual navigation do not
+create completed practice results. Leaving a line, changing chapters, resetting,
+entering Read, reaching a depth cutoff or reloading marks an attempted practice
+incomplete; empty practices are discarded. Only natural line completions without
+manual navigation or key-move skipping enter the five-practice accuracy window.
+Mistakes do not disqualify a completed practice. Practice records carry the PGN
+signature so edited chapter content does not inherit recent results from old
+content. Check these calculations with `node assets/test/unit/chapter_practice.cjs`.
 
-The chapter picker above the board shows a compact status: Not practiced,
-Review due, a green practiced-move count for a recovered chapter, Needs
-practice with the clean-move count for a chapter with mistakes, or a neutral
-practiced-move count for other partial progress. The cues are gray for new,
+The chapter picker above the board prioritizes the current or last practice's
+missed/tested move ratio, using the same first-result data as Progress. Coverage
+is a secondary measure in Progress rather than the selector's primary badge.
+Its tooltip includes recent first-try accuracy and coverage. The cues are gray for new,
 amber for due, green for recovered, red for mistakes and neutral for other
 partial practice. Review due takes precedence in the picker when a chapter's
 scheduled review time arrives. The Progress
 modal lists chapters with due reviews first, then unrecovered chapters by
-historical mistake rate; it shows coverage, correct moves, mistakes, recovery
-progress and the next review time where applicable. Its chapter rows navigate
+recent mistake rate; it shows recent accuracy, mistakes in the current or
+last practice, distinct move coverage and the next review time where applicable.
+Its chapter rows navigate
 to the selected chapter. The current chapter is marked and scrolled into view
 when the modal opens. Alpine.js renders the list and action-button state from
 `study-progress-updated` and practice-run events.
+The selector, modal and outside bar share `chapterProgressState()` for coverage,
+recovery and status colors. Recent errors determine warning colors; historical
+mistake totals alone no longer color these views. Green still requires complete
+clean coverage, and pending reviews take precedence in the selector and modal.
 
 ### Practice modes and spaced repetition
 
