@@ -1,8 +1,8 @@
 <div class="study-feature-actions">
-  <a href="/random_study" class="button secondary">🎲 Random Study</a>
-  <button id="btn_random_chapter" class="button secondary">🎲 Random Chapter</button>
-  <a href="#" id="add_to_collection" class="button">➕ Add to Collection</a>
-  <a href="#" id="manage_collection" class="button secondary" hidden>📂 Manage Collection</a>
+  <a href="/random_study" class="button secondary">Random Study</a>
+  <button id="btn_random_chapter" class="button secondary">Random Chapter</button>
+  <a href="#" id="add_to_collection" class="button">Add to Collection</a>
+  <a href="#" id="manage_collection" class="button secondary" hidden>Manage Collection</a>
 </div>
 <div class="study-chapter-navigation">
   <select id="chapter_select" hidden aria-label="Chapter"></select>

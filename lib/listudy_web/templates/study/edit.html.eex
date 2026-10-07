@@ -1,7 +1,10 @@
-<div class="study-heading">
-  <h1><%= dgettext("study", "Manage study") %>: <%= @study.title %></h1>
+<div class="study-management-page">
+<div class="study-heading study-management-heading">
+  <h1><%= dgettext("study", "Manage study") %></h1>
   <%= link dgettext("study", "Back to study"), to: Routes.study_path(@conn, :show, @locale, @study), class: "study-edit-link" %>
 </div>
+
+<%= render "form.html", assigns: assigns, action: Routes.study_path(@conn, :update, @locale, @study) %>
 
 <%= if @maintenance_error do %>
   <p role="alert"><%= @maintenance_error %></p>
@@ -35,7 +38,7 @@
           <a :href="$el.closest('section').dataset.editorUrl + '?chapter_index=' + chapter.source_index"
              x-show="chapter.source_index !== null && !chapter.duplicate" @click="openEditor($event, chapter)"><%= dgettext("study", "Edit") %></a>
           <details @click.outside="$el.removeAttribute('open')">
-            <summary><%= dgettext("study", "More") %></summary>
+            <summary class="study-maintenance-overflow" aria-label="<%= dgettext("study", "More") %>" title="<%= dgettext("study", "More") %>"><span aria-hidden="true">⋯</span></summary>
             <div class="study-maintenance-menu">
               <button type="button" @click="$el.closest('details').removeAttribute('open'); duplicate(index)" :disabled="saving"><%= dgettext("study", "Duplicate") %></button>
               <button type="button" @click="$el.closest('details').removeAttribute('open'); remove(index)" :disabled="saving || chapters.length === 1"><%= dgettext("study", "Delete") %></button>
@@ -54,8 +57,7 @@
 </section>
 <% end %>
 
-<details class="study-controls-panel">
-<summary><%= dgettext("study", "Study details and PGN import") %></summary>
+
 
 <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
   /*
@@ -83,12 +85,11 @@
 </script>
 <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/remember_lichess_study.js") %>"></script>
 
-<%= render "form.html", assigns: assigns, action: Routes.study_path(@conn, :update, @locale, @study) %>
-</details>
 
-<details class="study-controls-panel">
-<summary><%= dgettext("study", "Delete Study") %></summary>
-<p><%= dgettext("study", "This can not be undone!") %></p>
-<%= link dgettext("study", "Delete"), to: Routes.study_path(@conn, :delete, @locale, @study), method: :delete, data: [confirm: dgettext("study", "Are you sure?")] %>
-</details>
+<footer class="study-management-danger">
+  <span><%= dgettext("study", "This can not be undone!") %></span>
+  <%= link dgettext("study", "Delete Study"), to: Routes.study_path(@conn, :delete, @locale, @study), method: :delete, data: [confirm: dgettext("study", "Are you sure?") <> " " <> dgettext("study", "This can not be undone!")], class: "study-management-delete" %>
+</footer>
 <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_maintenance.js") %>"></script>
+
+</div>
