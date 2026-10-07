@@ -1,4 +1,4 @@
-<div class="analysis-games-page">
+<div class="analysis-games-page analysis-workspace">
   <%= link "← Imported games", to: @back_path %>
   <h1>Your game and repertoire</h1>
   <p><strong><%= @game.white_player || "White" %> – <%= @game.black_player || "Black" %></strong> · <%= analysis_platform_label(@game.platform) %> · <%= Calendar.strftime(@game.played_at, "%d %b %Y, %H:%M UTC") %></p>

@@ -1,4 +1,4 @@
-<div class="whole">
+<div class="whole analysis-workspace">
   <h2>Analyze Games</h2>
 
   <%
@@ -16,7 +16,7 @@
         <% sync = @syncs[account.key] %>
         <article class="analysis-account-card" data-sync-platform="<%= account.key %>" data-sync-state="<%= if sync, do: sync.status, else: "idle" %>">
           <div class="analysis-account-heading">
-            <h4 style="color: #2c3e50; border-bottom: 3px solid #42b9e0; padding-bottom: 4px; display: inline-block; margin-bottom: 12px;"><%= account.name %></h4>
+            <h4><%= account.name %></h4>
             <%= if account.username do %>
               <span class="analysis-account-user">✓ <%= account.username %></span>
             <% else %>
@@ -32,8 +32,8 @@
                 0 imported games
               <% end %>
             </p>
-            <div style="font-size: 0.85em; color: #555; display: flex; align-items: center; gap: 8px; margin-top: 8px;" role="status" aria-live="polite" style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-              <strong style="font-weight: bold; color: #27ae60;" class=" analysis-sync-badge-<%= if sync, do: sync.status, else: "idle" %>" data-sync-badge>
+            <div class="analysis-sync-status" role="status" aria-live="polite">
+              <strong class=" analysis-sync-badge-<%= if sync, do: sync.status, else: "idle" %>" data-sync-badge>
                 <%= case sync && sync.status do
                   "running" -> "Syncing"
                   "completed" -> "Sync complete"
@@ -65,7 +65,7 @@
     </div>
   </section>
 
-  <section class="analysis-library" aria-label="Imported games" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eaeaea; padding-bottom: 10px;">
+  <section class="analysis-library" aria-label="Imported games">
     <div>
       <h3>Game library</h3>
       <p><strong><%= @lichess_count + @chesscom_count %></strong> imported games</p>
@@ -109,7 +109,7 @@
           
           <!-- Columna 1: Apertura -->
           <div style="flex: 2;">
-            <h4 style="margin: 0; color: #2c3e50; font-size: 1rem; font-weight: bold;"><%= String.replace(stat.study.title, "_", " ") %></h4>
+            <h4><%= String.replace(stat.study.title, "_", " ") %></h4>
           </div>
 
           <!-- Columna 2: Errores -->

@@ -1,6 +1,6 @@
 <% groups = comparison_groups(@choices) %>
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
-<div id="analysis-comparison" class="analysis-result-container"
+<div id="analysis-comparison" class="analysis-result-container analysis-workspace"
   data-comparisons="<%= Jason.encode!(Enum.map(groups, &Map.take(&1, [:result, :color]))) %>">
   <%= link (if assigns[:imported_game], do: "← Imported games", else: "← Back to Analysis"), to: assigns[:back_path] || Routes.analysis_path(@conn, :index), class: "button" %>
   <h1>Your game and repertoire</h1>

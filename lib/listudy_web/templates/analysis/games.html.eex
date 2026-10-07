@@ -1,4 +1,4 @@
-<div class="analysis-games-page">
+<div class="analysis-games-page analysis-workspace">
   <%= link "← Analysis overview", to: Routes.analysis_path(@conn, :index) %>
   <h1>Imported games</h1>
   <p>Choose a game to compare it with your current repertoire. Results in the list come from the last sync.</p>
