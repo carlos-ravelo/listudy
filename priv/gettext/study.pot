@@ -998,3 +998,15 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "practices"
 msgstr ""
+
+msgid "Search your studies"
+msgstr ""
+
+msgid "Study color"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "No studies match these filters."
+msgstr ""

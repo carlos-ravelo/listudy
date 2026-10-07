@@ -1,0 +1,19 @@
+<ul class="study-library-list">
+  <%= for study <- @studies do %>
+    <li class="study-library-row" data-library-row data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>">
+      <a class="study-library-content" href="<%= Routes.study_path(@conn, :show, @locale, study.slug) %>">
+        <span class="study-library-title"><%= study.title %></span>
+        <span class="study-library-description"><%= study.description %></span>
+      </a>
+      <%= if study.color in ["white", "black"] do %>
+        <span class="study-library-color" title="<%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %>">
+          <span aria-hidden="true"><%= if study.color == "white", do: "♔", else: "♚" %></span>
+          <span class="study-library-color-label"><%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %></span>
+        </span>
+      <% end %>
+      <%= if @editable do %>
+        <a class="study-library-edit" href="<%= Routes.study_path(@conn, :edit, @locale, study.slug) %>" aria-label="<%= dgettext("study", "Edit") %>: <%= study.title %>"><%= dgettext("study", "Edit") %></a>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

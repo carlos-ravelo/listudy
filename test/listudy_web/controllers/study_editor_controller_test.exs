@@ -39,6 +39,14 @@ defmodule ListudyWeb.StudyEditorControllerTest do
      other_conn: Pow.Plug.assign_current_user(conn, other, [])}
   end
 
+  test "library renders owned studies with compact navigation", %{owner_conn: owner, study: study} do
+    html = owner |> get(Routes.study_path(owner, :index, "en")) |> html_response(200)
+    assert html =~ "data-study-library"
+    assert html =~ "data-library-row"
+    assert html =~ study.title
+    assert html =~ Routes.study_path(owner, :edit, "en", study.slug)
+  end
+
   test "only the owner can open and save the editor", %{
     conn: conn,
     other_conn: other,

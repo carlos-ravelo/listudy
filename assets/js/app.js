@@ -21,6 +21,7 @@ import "./components/sound_settings.js"
 import "./components/achievements.js"
 import "./components/hamburger.js"
 import "./components/site_navigation.js"
+import "./components/study_library.js"
 import "./components/chessboard_settings.js"
 import "./components/support.js"
 
