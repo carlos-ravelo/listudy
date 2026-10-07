@@ -1,3 +1,4 @@
+import "./components/analysis_repertoires.js";
 const Chess = require('chess.js');
 
 document.addEventListener("DOMContentLoaded", () => {
