@@ -1,0 +1,72 @@
+.chapter-editor-toolbar,
+.chapter-editor-navigation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.chapter-editor-toolbar label,
+.chapter-editor-toolbar select,
+.chapter-editor-toolbar .button,
+.chapter-editor-navigation label,
+.chapter-editor-navigation select,
+.chapter-editor-navigation button {
+  margin: 0;
+}
+
+.chapter-editor-toolbar select {
+  max-width: 100%;
+}
+
+.chapter-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.chapter-editor .cg-wrap {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.chapter-editor-navigation {
+  margin-top: 1rem;
+}
+
+.chapter-editor-details {
+  min-width: 0;
+}
+
+.chapter-editor .study-move-tree {
+  max-height: 350px;
+  overflow: auto;
+  margin-bottom: 1rem;
+  border: 1px solid var(--secondary-color);
+  border-radius: 6px;
+  padding: .75rem;
+}
+
+.chapter-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+}
+
+.chapter-editor button:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+#editor_status {
+  min-height: 1.5em;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 650px) {
+  .chapter-editor-layout {
+    grid-template-columns: 1fr;
+  }
+}

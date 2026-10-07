@@ -1,0 +1,52 @@
+<div class="study-heading">
+  <h1><%= dgettext "study", "Edit chapter" %>: <%= @study.title %></h1>
+  <%= link dgettext("study", "Back to study"), to: Routes.study_path(@conn, :show, @locale, @study), class: "study-edit-link" %>
+</div>
+
+<section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)"
+         data-editor="<%= @editor_json %>" data-revision="<%= @revision %>"
+         data-save-url="<%= Routes.study_path(@conn, :save_chapter, @locale, @study) %>"
+         data-color="<%= @study.color %>"
+         data-start="<%= dgettext "study", "Starting position" %>"
+         data-variation="<%= dgettext "study", "Variation" %>"
+         data-discard-prompt="<%= dgettext "study", "Discard your unsaved chapter changes?" %>"
+         data-unsaved="<%= dgettext "study", "Unsaved changes" %>"
+         data-saving="<%= dgettext "study", "Saving…" %>"
+         data-invalid-move="<%= dgettext "study", "Choose a legal move." %>"
+         data-save-error="<%= dgettext "study", "The chapter could not be saved. Your changes are still in the editor." %>">
+  <div class="chapter-editor-toolbar">
+    <label for="editor_chapter"><%= dgettext "study", "Chapter" %></label>
+    <select id="editor_chapter" :disabled="saving" :value="chapter" @change="changeChapter($event)">
+      <template x-for="(option, index) in options" :key="index">
+        <option :value="index" x-text="option.title" :selected="index === chapter"></option>
+      </template>
+    </select>
+    <button type="button" id="editor_save" class="button button-primary" :disabled="saving || !dirty" @click="save()" disabled><%= dgettext "study", "Save chapter" %></button>
+    <button type="button" id="editor_discard" class="button" :disabled="saving || !dirty" @click="discard()" disabled><%= dgettext "study", "Discard changes" %></button>
+  </div>
+  <p><%= dgettext "study", "Select a position and play a move to add a continuation or variation. Add a comment to the selected position." %></p>
+  <div class="chapter-editor-layout">
+    <div>
+      <div id="editor_board" class="cg-wrap" x-ref="board"></div>
+      <div class="chapter-editor-navigation">
+        <button type="button" id="editor_previous" :disabled="saving || !hasPrevious" @click="previous()" disabled><%= dgettext "study", "Previous move" %></button>
+        <button type="button" id="editor_next" :disabled="saving || !hasNext" @click="next()" disabled><%= dgettext "study", "Next move" %></button>
+        <label for="editor_promotion"><%= dgettext "study", "Promote to" %></label>
+        <select id="editor_promotion" x-model="promotion" :disabled="saving">
+          <option value="q"><%= dgettext "study", "Queen" %></option>
+          <option value="r"><%= dgettext "study", "Rook" %></option>
+          <option value="b"><%= dgettext "study", "Bishop" %></option>
+          <option value="n"><%= dgettext "study", "Knight" %></option>
+        </select>
+      </div>
+    </div>
+    <div class="chapter-editor-details">
+      <div id="editor_moves" class="study-move-tree" x-ref="moves" aria-label="<%= dgettext "study", "Moves and variations" %>"></div>
+      <label for="editor_comment"><%= dgettext "study", "Comment" %></label>
+      <textarea id="editor_comment" rows="5" maxlength="20000" x-model="comment" :disabled="saving" @input="updateComment($event.target.value)"></textarea>
+    </div>
+  </div>
+  <p id="editor_status" role="status" aria-live="polite" x-text="status"></p>
+</section>
+<link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
+<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_editor.js") %>"></script>

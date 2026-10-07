@@ -7,7 +7,7 @@ defmodule ListudyWeb.StudyView do
 
     # Escape existing one-year browser caches for the old unversioned URL.
     # Subsequent undigested requests revalidate under the endpoint's policy.
-    path <> separator <> "v=chapter-links-2"
+    path <> separator <> "v=chapter-editor-1"
   end
 
   def selected_opening(assigns) do

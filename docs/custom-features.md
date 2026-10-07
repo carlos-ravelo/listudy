@@ -361,3 +361,33 @@ FEN remains available for the board. Different played mistakes at the same
 position still appear separately. Multiple repertoire moves are accepted as
 valid answers. The browser creates the position indicators once and only
 updates indicators whose state changes.
+
+### Chapter editor
+
+Owners can choose **Edit chapter** on a study or its metadata edit page. Select
+a position in the move tree, play a legal move to add a continuation or a
+variation, and edit the selected position's comment. Existing continuations are
+navigated rather than duplicated. The promotion selector supports underpromotion.
+This first version edits standard-chess chapters; it does not create/delete
+chapters, delete moves, collaborate, or run engine analysis.
+
+Alpine owns the editor controls, draft indicators and save state. The pure chapter
+model stays independent of Alpine; Chessground and the move-tree renderer are
+contained in the component lifecycle and kept outside reactive state.
+
+Drafts are isolated from the study and training progress. **Save chapter** saves
+one chapter and returns to playback. **Discard changes** restores its initial
+snapshot. Switching chapters or leaving a dirty editor asks before discarding;
+there is no automatic draft recovery after closing the page.
+
+The server uses the existing python-chess dependency to validate every variation
+and preserve headers, comments and NAGs. Only the edited chapter is reserialized;
+other chapters retain their source text. A whole-file SHA-256 revision rejects
+stale saves with HTTP 409. Upload replacements and editor saves share a locked,
+atomic PGN writer. Existing review signatures already invalidate scheduled cards
+when the chapter's move structure changes; comment-only edits keep those cards.
+
+Checks: `node assets/test/unit/chapter_editor.cjs`,
+`node assets/test/unit/chapter_editor_browser.cjs` (requires built assets and
+Chrome), Python's `test_study_editor.py`, and the Elixir `study_pgn_test.exs` and
+`study_editor_controller_test.exs` suites.

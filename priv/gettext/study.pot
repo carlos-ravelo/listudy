@@ -516,3 +516,95 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Hints: playable moves only"
 msgstr ""
+
+#, elixir-format
+msgid "Edit chapter"
+msgstr ""
+
+#, elixir-format
+msgid "Back to study"
+msgstr ""
+
+#, elixir-format
+msgid "Starting position"
+msgstr ""
+
+#, elixir-format
+msgid "Variation"
+msgstr ""
+
+#, elixir-format
+msgid "Discard your unsaved chapter changes?"
+msgstr ""
+
+#, elixir-format
+msgid "Unsaved changes"
+msgstr ""
+
+#, elixir-format
+msgid "Saving…"
+msgstr ""
+
+#, elixir-format
+msgid "Choose a legal move."
+msgstr ""
+
+#, elixir-format
+msgid "The chapter could not be saved. Your changes are still in the editor."
+msgstr ""
+
+#, elixir-format
+msgid "Save chapter"
+msgstr ""
+
+#, elixir-format
+msgid "Discard changes"
+msgstr ""
+
+#, elixir-format
+msgid "Select a position and play a move to add a continuation or variation. Add a comment to the selected position."
+msgstr ""
+
+#, elixir-format
+msgid "Previous move"
+msgstr ""
+
+#, elixir-format
+msgid "Next move"
+msgstr ""
+
+#, elixir-format
+msgid "Promote to"
+msgstr ""
+
+#, elixir-format
+msgid "Queen"
+msgstr ""
+
+#, elixir-format
+msgid "Rook"
+msgstr ""
+
+#, elixir-format
+msgid "Bishop"
+msgstr ""
+
+#, elixir-format
+msgid "Knight"
+msgstr ""
+
+#, elixir-format
+msgid "Moves and variations"
+msgstr ""
+
+#, elixir-format
+msgid "Comment"
+msgstr ""
+
+#, elixir-format
+msgid "This study could not be opened in the editor."
+msgstr ""
+
+#, elixir-format
+msgid "This study changed while you were editing. Reload it before saving."
+msgstr ""
