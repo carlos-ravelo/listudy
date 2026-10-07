@@ -1,3 +1,4 @@
+<div class="study-workspace">
 <div class="study-heading">
   <h1 class="clicking_turns_on_hints study-feature-title"><%= String.replace(@study.title, "_", " ") %></h1>
   <%= if @study.is_owner do %>
@@ -309,4 +310,6 @@
       <button id="study_progress_reset" class="primary"><%= dgettext("study", "Reset progress") %></button>
     </div>
   </div>
+</div>
+
 </div>

@@ -1,0 +1,78 @@
+/* Shared, neutral presentation for the study and its management page. */
+.study-workspace,
+.study-management-page {
+  --study-divider: color-mix(in srgb, var(--font-color) 14%, transparent);
+  --study-muted: color-mix(in srgb, var(--font-color) 72%, var(--bg-color));
+}
+
+.study-workspace .study-heading { gap: 8px 16px; margin-bottom: 12px; }
+.study-workspace .study-feature-title { flex: 1 1 240px; font-size: clamp(22px, 3vw, 30px); font-weight: 600; line-height: 1.25; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.study-workspace .study-edit-link,
+.study-management-page .study-edit-link { color: var(--study-muted); font-size: 13px; text-decoration: none; }
+.study-workspace .study-edit-link:hover,
+.study-management-page .study-edit-link:hover { color: var(--font-color); text-decoration: underline; }
+
+.study-workspace .study-feature-actions { gap: 4px 12px; margin: 0 0 12px; }
+.study-workspace .study-feature-actions .button { flex: 0 1 auto; min-width: 0; padding: 4px 8px; border: 0; border-radius: 6px; background: transparent; box-shadow: none; color: var(--study-muted); font-size: 13px; font-weight: 400; line-height: 1.5; letter-spacing: normal; text-transform: none; }
+.study-workspace .study-feature-actions .button:hover { color: var(--font-color); background: var(--bg-highlight-color); }
+.study-workspace .study-chapter-navigation { margin: 0 0 12px; }
+.study-workspace .study-chapter-buttons { gap: 4px; }
+.study-workspace .study-chapter-buttons button { border-color: transparent; border-radius: 6px; background: transparent; color: var(--font-color); font-size: 13px; font-weight: 500; letter-spacing: normal; text-transform: none; }
+.study-workspace #current_chapter_title { border-color: var(--study-divider); }
+.study-workspace .study-chapter-buttons button:hover:not(:disabled) { background: var(--bg-highlight-color); }
+.study-workspace .study-chapter-list { border-color: var(--study-divider); border-radius: 8px; box-shadow: none; }
+.study-workspace .chapter-search,
+.study-workspace .chapter-choice { border-bottom-color: var(--study-divider); font-size: 14px; }
+.study-workspace .chapter-choice-status { font-size: 12px; }
+.study-workspace .study-primary-actions { gap: 4px 12px; padding: 12px 0; }
+.study-workspace .study-primary-actions .option_item > a,
+.study-workspace .study-primary-actions .option_item > button { font-size: 13px; color: var(--font-color); }
+.study-workspace .study-controls-panel { padding: 12px 0; border-color: var(--study-divider); }
+.study-workspace .study-controls-panel > summary { font-size: 14px; font-weight: 500; }
+.study-workspace .study-controls-panel > summary:focus-visible { outline-color: currentColor; }
+.study-workspace .study-reading-tree { border: 1px solid var(--study-divider); background: transparent; }
+.study-workspace .study-moves-heading h3 { font-size: 13px; font-weight: 600; }
+.study-workspace .study_comments { font-size: 14px; line-height: 1.6; }
+
+.study-management-page .study-management-heading { margin: 0 0 8px; }
+.study-management-page .study-management-heading h1 { font-size: 12px; font-weight: 500; color: var(--study-muted); opacity: 1; }
+.study-management-page .study-metadata-title input { font-size: clamp(22px, 3vw, 30px); line-height: 1.25; letter-spacing: -.025em; }
+.study-management-page .study-metadata-line .big_input { font-size: 13px; color: var(--study-muted); }
+.study-management-page .study-metadata-line .big_input:focus { color: var(--font-color); }
+.study-management-page .study-management-settings { font-size: 13px; margin-top: 8px; }
+.study-management-page .study-maintenance { margin-top: 24px; }
+.study-management-page .study-maintenance-heading h2 { font-size: 16px; font-weight: 600; }
+.study-management-page .study-maintenance-heading h2 span { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--study-muted); }
+.study-management-page .study-maintenance > p { font-size: 13px; color: var(--study-muted); margin: 8px 0; }
+.study-management-page .study-maintenance-row { border-color: var(--study-divider); }
+.study-management-page .study-maintenance-number { font-size: 12px; font-variant-numeric: tabular-nums; }
+.study-management-page .study-maintenance-title input { font-size: 14px; }
+.study-management-page .study-maintenance-title > span { font-size: 12px; color: var(--study-muted); }
+.study-management-page .study-maintenance-actions { font-size: 13px; }
+.study-management-page .study-maintenance-actions > a { color: var(--study-muted); text-decoration: none; }
+.study-management-page .study-maintenance-actions > a:hover { color: var(--font-color); text-decoration: underline; }
+.study-management-page .study-maintenance-menu { border-color: var(--study-divider); box-shadow: none; padding: 4px; }
+.study-management-page .study-maintenance-menu button { font-size: 13px; }
+.study-management-page .study-maintenance-heading > button,
+.study-management-page .study-maintenance-save button,
+.study-management-page .study-management-form button { border-radius: 6px; border-color: var(--study-divider); font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: normal; }
+.study-management-page .study-maintenance-save { gap: 8px; padding: 12px 0; border-color: var(--study-divider); }
+.study-management-page .study-maintenance-save > span { font-size: 12px; color: var(--study-muted); margin-right: auto; }
+.study-management-page .study-maintenance-save .button-primary,
+.study-management-page .study-management-form button.primary { background: var(--font-color); color: var(--bg-color); border-color: var(--font-color); }
+.study-management-page .study-management-danger { border-color: var(--study-divider); font-size: 12px; margin-top: 24px; }
+.study-management-page .study-management-delete:hover { color: var(--font-color); text-decoration-thickness: 2px; }
+
+@media (max-width: 600px) {
+  .study-workspace .study-feature-actions { flex-wrap: wrap; gap: 0 4px; margin-bottom: 4px; }
+  .study-workspace .study-feature-actions .button { min-height: 44px; font-size: 12px; }
+  .study-workspace .study-heading { margin-bottom: 4px; }
+  .study-workspace .study-chapter-navigation { margin-bottom: 8px; }
+  .study-management-page .study-maintenance { margin-top: 16px; }
+}
+
+@media (pointer: coarse) {
+  .study-management-page .study-metadata-title input,
+  .study-management-page .study-metadata-line .big_input { min-height: 44px; }
+  .study-management-page .study-metadata-line .big_input { font-size: 16px; }
+}

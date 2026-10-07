@@ -18,10 +18,58 @@
 .study-maintenance-actions summary { display: flex; align-items: center; min-height: 32px; box-sizing: border-box; padding: .25rem .5rem; cursor: pointer; }
 .study-maintenance-menu { position: absolute; right: 0; top: 100%; z-index: 5; min-width: 130px; padding: .5rem; border: 1px solid var(--bg-highlight-color); border-radius: 6px; background: var(--bg-color); box-shadow: 0 3px 10px rgba(0,0,0,.15); }
 .study-maintenance-menu button { display: block; width: 100%; margin: .25rem 0; padding: 0 .5rem; }
+.study-maintenance-actions .study-maintenance-overflow { justify-content: center; width: 32px; padding: 0; border-radius: 4px; font-size: 2rem; line-height: 1; list-style: none; }
+.study-maintenance-overflow::-webkit-details-marker { display: none; }
+.study-maintenance-overflow:hover, details[open] > .study-maintenance-overflow { background: var(--bg-highlight-color); }
+.study-maintenance-menu button { height: auto; min-height: 36px; border: 0; text-align: left; text-transform: none; letter-spacing: normal; font: inherit; }
+.study-maintenance-menu button:hover { background: var(--bg-highlight-color); }
+.study-management-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.study-management-heading h1 { font-size: 2rem; margin: 0; }
+.study-management-heading a { flex-shrink: 0; }
+.study-management-details { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--bg-highlight-color); }
+.study-management-details h2 { font-size: 1.3rem; margin-bottom: 1rem; }
+.study-management-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: .5rem; max-width: 680px; }
+.study-management-form label { margin: .5rem 0 0; font-size: .9em; font-weight: normal; }
+.study-management-form .big_input { width: 100%; margin-bottom: .5rem; box-sizing: border-box; border-radius: 6px; }
+.study-management-form textarea { min-height: 100px; resize: vertical; }
+.study-management-form .select2-container { max-width: 100%; }
+.study-management-import { margin: 1rem 0; }
+.study-management-import summary { cursor: pointer; font-size: .9em; }
+.study-management-import .pgn_choice { padding-top: 1rem; }
+.study-management-form button { margin: .5rem 0 0; }
+.study-management-page .study-management-heading { margin-bottom: .5rem; }
+.study-management-page .study-management-heading h1 { font-size: .9rem; opacity: .65; }
+.study-management-page .study-management-form { max-width: none; gap: .25rem; margin-bottom: 1rem; }
+.study-management-form .study-metadata-title label,
+.study-management-form .study-metadata-line label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.study-management-form .study-metadata-title input { font-size: 2rem; font-weight: 600; height: auto; padding: .25rem 0; }
+.study-management-form .study-metadata-line { display: flex; align-items: flex-start; gap: 1rem; }
+.study-management-form .study-metadata-description { flex: 1; min-width: 0; }
+.study-management-form .study-metadata-opening { flex: 0 1 240px; min-width: 0; }
+.study-management-form .study-metadata-title input,
+.study-management-form .study-metadata-line .big_input { background: transparent; border: 1px solid transparent; box-shadow: none; color: inherit; margin: 0; cursor: text; }
+.study-management-form .study-metadata-line .big_input { font-size: .85rem; padding: .25rem; height: 32px; min-height: 32px; }
+.study-management-form .study-metadata-line textarea { resize: none; overflow: hidden; }
+.study-management-form .study-metadata-line select { cursor: pointer; }
+.study-management-form .study-metadata-title input:hover,
+.study-management-form .study-metadata-line .big_input:hover { background: var(--bg-highlight-color); }
+.study-management-form .study-metadata-title input:focus,
+.study-management-form .study-metadata-line .big_input:focus { border-color: var(--font-color); outline: none; }
+.study-management-form .study-metadata-line textarea:focus { height: 100px; overflow: auto; resize: vertical; }
+.study-management-settings { margin-top: .5rem; font-size: .85rem; }
+.study-management-settings > summary { cursor: pointer; opacity: .7; }
+.study-management-settings[open] { padding-bottom: 1rem; }
+.study-management-danger { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: 2rem 0; padding-top: 1rem; border-top: 1px solid var(--bg-highlight-color); font-size: .85em; }
+.study-management-danger > span { opacity: .65; }
+.study-management-delete { color: var(--font-color); text-decoration: underline; text-underline-offset: 3px; }
+.study-management-delete:hover { color: #c44; }
 .study-maintenance-save { position: sticky; bottom: 0; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: .5rem; padding: .75rem; background: var(--bg-color); border-top: 1px solid var(--bg-highlight-color); z-index: 4; }
 .study-maintenance-save button { margin: 0; }
 .study-maintenance button:disabled { opacity: .45; cursor: default; }
 @media (max-width: 600px) {
+  .study-management-form .study-metadata-line { flex-wrap: wrap; gap: .25rem; }
+  .study-management-form .study-metadata-description { flex-basis: 100%; }
+  .study-management-heading { flex-wrap: wrap; }
   .study-maintenance-row { flex-wrap: wrap; gap: .5rem; }
   .study-maintenance-title { flex-basis: calc(100% - 3rem); }
   .study-maintenance-actions { margin-left: auto; }
@@ -30,6 +78,7 @@
 }
 
 @media (pointer: coarse) {
+  .study-maintenance-actions .study-maintenance-overflow { width: 44px; }
   .study-maintenance-title input { height: 44px; }
   .study-maintenance-actions > button { width: 44px; height: 44px; }
   .study-maintenance-actions > a, .study-maintenance-actions summary { min-height: 44px; }
