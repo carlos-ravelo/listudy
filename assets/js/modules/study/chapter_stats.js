@@ -1,5 +1,39 @@
 const EMPTY_STATS = { attempts: 0, errors: 0 };
 
+function beginChapterPractice(stats, chapterIndex, signature, now = Date.now()) {
+    finishChapterPractice(stats, chapterIndex, false, now);
+    const key = String(chapterIndex);
+    const current = stats.chapters[key] || EMPTY_STATS;
+    stats.chapters[key] = { ...current, activePractice: {
+        attempts: 0, errors: 0, testedMoves: 0, missedMoves: 0, firstResults: {}, signature, startedAt: now
+    } };
+}
+
+function finishChapterPractice(stats, chapterIndex, completed, now = Date.now()) {
+    const current = stats.chapters[String(chapterIndex)];
+    if (!current || !current.activePractice) return;
+    const practice = { ...current.activePractice, completed, endedAt: now };
+    delete practice.firstResults;
+    delete current.activePractice;
+    if (practice.attempts === 0) return;
+    current.lastPractice = practice;
+    if (completed) current.practiceSessions = [...(current.practiceSessions || []), practice].slice(-5);
+}
+
+function recentPracticePerformance(stats, chapterIndex, signature) {
+    const current = stats.chapters[String(chapterIndex)] || EMPTY_STATS;
+    const valid = practice => practice?.signature === signature && practice.testedMoves > 0 && Number.isInteger(practice.missedMoves);
+    const sessions = (current.practiceSessions || []).filter(valid).slice(-5);
+    const moves = sessions.reduce((sum, practice) => sum + practice.testedMoves, 0);
+    const missed = sessions.reduce((sum, practice) => sum + practice.missedMoves, 0);
+    return {
+        count: sessions.length,
+        accuracy: moves ? Math.round((moves - missed) / moves * 100) : null,
+        last: valid(current.lastPractice) ? current.lastPractice : null,
+        active: valid(current.activePractice) ? current.activePractice : null
+    };
+}
+
 function readChapterStats(raw) {
     if (!raw) return { version: 1, chapters: {} };
     try {
@@ -7,13 +41,14 @@ function readChapterStats(raw) {
         if (parsed.version !== 1 || typeof parsed.chapters !== 'object' || parsed.chapters === null) {
             return { version: 1, chapters: {} };
         }
+        Object.keys(parsed.chapters).forEach(index => finishChapterPractice(parsed, index, false));
         return parsed;
     } catch (_error) {
         return { version: 1, chapters: {} };
     }
 }
 
-function recordChapterAttempt(stats, chapterIndex, wasCorrect, moveId) {
+function recordChapterAttempt(stats, chapterIndex, wasCorrect, moveId, positionId = moveId) {
     const key = String(chapterIndex);
     const current = stats.chapters[key] || EMPTY_STATS;
     const coveredMoves = Array.isArray(current.coveredMoves) ? current.coveredMoves : [];
@@ -31,6 +66,17 @@ function recordChapterAttempt(stats, chapterIndex, wasCorrect, moveId) {
             ? { coveredMoves: [...coveredMoves, moveId] }
             : {})
     };
+    if (stats.chapters[key].activePractice) {
+        const practice = stats.chapters[key].activePractice;
+        practice.attempts += 1;
+        practice.errors += wasCorrect ? 0 : 1;
+        if (practice.firstResults && positionId !== undefined && positionId !== null &&
+            !Object.prototype.hasOwnProperty.call(practice.firstResults, positionId)) {
+            practice.firstResults[positionId] = wasCorrect;
+            practice.testedMoves += 1;
+            practice.missedMoves += wasCorrect ? 0 : 1;
+        }
+    }
     return stats;
 }
 
@@ -75,6 +121,18 @@ function chapterWeakness(stats, chapterIndex) {
     return { ...current, errorRate, level };
 }
 
+function chapterProgressState(stats, chapterIndex, catalog, signature) {
+    const coverage = chapterCoverage(stats, chapterIndex, catalog);
+    const mastery = chapterMastery(stats, chapterIndex, catalog);
+    const recent = recentPracticePerformance(stats, chapterIndex, signature);
+    const practice = recent.active || recent.last;
+    const errorRate = recent.accuracy !== null ? (100 - recent.accuracy) / 100
+        : practice ? practice.missedMoves / practice.testedMoves : 0;
+    const hasRecentMistakes = errorRate > 0 || (practice && practice.missedMoves > 0);
+    const level = mastery.mastered ? 'solid' : hasRecentMistakes ? errorRate >= .5 ? 'weak' : 'watch' : 'unrated';
+    return { ...coverage, ...mastery, recent, errorRate, level };
+}
+
 function weakChapterOrder(stats, chapterCount, catalogs = []) {
     return Array.from({ length: chapterCount }, (_, index) => ({
         index,
@@ -89,4 +147,4 @@ function weakChapterOrder(stats, chapterCount, catalogs = []) {
         .map(chapter => chapter.index);
 }
 
-export { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder };
+export { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder, beginChapterPractice, finishChapterPractice, recentPracticePerformance, chapterProgressState };

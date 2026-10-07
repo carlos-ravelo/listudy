@@ -233,6 +233,16 @@
   i18n.progress_error = "<%= dgettext "study", "mistake" %>";
   i18n.progress_errors_lower = "<%= dgettext "study", "mistakes" %>";
   i18n.progress_correct_moves = "<%= dgettext "study", "Correct moves" %>";
+  i18n.progress_recent_accuracy = "<%= dgettext "study", "Recent first-try accuracy" %>";
+  i18n.progress_moves_missed = "<%= dgettext "study", "moves missed" %>";
+  i18n.progress_last_short = "<%= dgettext "study", "Last" %>";
+  i18n.progress_current_short = "<%= dgettext "study", "Current" %>";
+  i18n.progress_no_recent_practice = "<%= dgettext "study", "No recent practice" %>";
+  i18n.progress_last_practice = "<%= dgettext "study", "Last practice" %>";
+  i18n.progress_current_practice = "<%= dgettext "study", "Current practice" %>";
+  i18n.progress_practice = "<%= dgettext "study", "practice" %>";
+  i18n.progress_practices = "<%= dgettext "study", "practices" %>";
+  i18n.progress_incomplete = "<%= dgettext "study", "incomplete" %>";
   i18n.progress_practiced_moves = "<%= dgettext "study", "Moves practiced" %>";
   i18n.progress_clean_moves = "<%= dgettext "study", "Clean moves since last mistake" %>";
   i18n.progress_needs_practice = "<%= dgettext "study", "Needs practice" %>";

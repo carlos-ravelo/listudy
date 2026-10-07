@@ -32,21 +32,13 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
         items.forEach((item, index) => {
             const badge = item.querySelector('.chapter-choice-status');
             const chapter = byIndex.get(index);
-            if (!chapter || chapter.attempts === 0) {
+            if (!chapter) {
                 badge.className = 'chapter-choice-status chapter-choice-status--new';
                 badge.textContent = progressLabels.unpracticed;
-            } else if (chapter.reviewDue) {
-                badge.className = 'chapter-choice-status chapter-choice-status--due';
-                badge.textContent = progressLabels.reviewDue;
-            } else if (chapter.mastered) {
-                badge.className = 'chapter-choice-status chapter-choice-status--solid';
-                badge.textContent = `✓ ${chapter.covered}/${chapter.total} ${progressLabels.practiced}`;
-            } else if (chapter.errors > 0) {
-                badge.className = 'chapter-choice-status chapter-choice-status--mistakes';
-                badge.textContent = `${progressLabels.needsPractice} · ${chapter.cleanCovered}/${chapter.total}`;
             } else {
-                badge.className = 'chapter-choice-status chapter-choice-status--in-progress';
-                badge.textContent = `${chapter.covered}/${chapter.total} ${progressLabels.practiced}`;
+                badge.className = `chapter-choice-status chapter-choice-status--${chapter.pickerTone}`;
+                badge.textContent = (chapter.reviewDue ? progressLabels.reviewDue + ' · ' : chapter.mastered ? '✓ ' : '') + chapter.pickerMetrics;
+                badge.title = chapter.metrics + ' · ' + chapter.recovery;
             }
             badge.hidden = false;
         });
