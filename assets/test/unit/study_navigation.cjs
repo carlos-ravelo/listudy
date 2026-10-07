@@ -5,6 +5,9 @@ const vm = require('node:vm');
 const parser = require('@babel/parser');
 const chessModule = require('chess.js');
 const Chess = chessModule.Chess || chessModule;
+const statsContext = vm.createContext({});
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_stats.js'), 'utf8')
+    .replace(/export \{[^}]+\};/, ''), statsContext);
 const moveTreeContext = vm.createContext({ require });
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/study_move_tree.js'), 'utf8')
     .replace(/^export /gm, ''), moveTreeContext);
@@ -13,7 +16,8 @@ const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8'
 const names = new Set([
     'handle_move', 'play_move', 'setup_move', 'change_analysis_board',
     'change_play_stockfish', 'refresh_manual_navigation', 'go_back', 'go_forward',
-    'update_read_mode_ui', 'set_read_mode', 'play_read_move', 'seek_read_move'
+    'update_read_mode_ui', 'set_read_mode', 'play_read_move', 'seek_read_move',
+    'finish_chapter_practice', 'chapter_stats_key'
 ]);
 const declarations = parser.parse(source, { sourceType: 'module' }).program.body;
 const functions = declarations
@@ -33,6 +37,11 @@ function fixture(moves, fen) {
         chess: new Chess(fen), chapter: 0, curr_move: [0],
         trees: [{ root, headers: fen ? { SetUp: '1', FEN: fen } : {} }],
         trainingSessionId: 0, lineEligibleForReview: true, lineReviewRecorded: false,
+        chapterStats: { version: 1, chapters: {} }, practiceChapter: null,
+        chapterReviewSignatures: ['chapter'], study_id: 'study',
+        beginChapterPractice: statsContext.beginChapterPractice,
+        finishChapterPractice: statsContext.finishChapterPractice,
+        StorageAdapter: { setItem() {} },
         spacedReviewRunActive: false, weakChapterRunActive: false, readMode: false,
         total_moves: 0, combo_count: 0, attempts: 0, reviews: 0, resets: 0, advances: 0,
         max_depth: 100, DEPTH_MAX: 100, board_review: 'slow',
@@ -60,7 +69,10 @@ function fixture(moves, fen) {
         ai_move: access => context.tree_possible_moves(access)[0]?.move,
         ground_set_moves: () => { board.legalMoves = context.chess.moves(); },
         possible_promotion: () => '', update_value() {}, store_trees() {}, update_progress() {},
-        record_chapter_attempt: () => context.attempts++,
+        record_chapter_attempt: (correct, moveId, positionId) => {
+            context.attempts++;
+            statsContext.recordChapterAttempt(context.chapterStats, context.chapter, correct, moveId, positionId);
+        },
         record_line_review: () => { context.reviews++; context.lineReviewRecorded = true; },
         display_arrows() {}, display_comments() {}, show_suggestions() {}, clear_all_text() {},
         set_text() {}, right_move_text: () => '', achievement_end_of_line() {},
@@ -159,8 +171,10 @@ function assertSynchronized({ context, board, links }) {
     assert.equal(reader.readMode, false);
     assert.equal(reader.lineEligibleForReview, true);
     assert.deepEqual(reader.chess.history(), ['e4']);
+    assert.equal(reader.chapterStats.chapters[0].activePractice.attempts, 0);
     reader.set_read_mode(true);
     assert.equal(reader.chess.history().length, 0);
+    assert.equal(reader.chapterStats.chapters[0].activePractice, undefined);
     reader.trees[0].headers = { SetUp: '1', FEN: '4k3/P7/8/8/8/8/8/4K3 w - - 0 1' };
     reader.start_training();
     assert.equal(reader.chess.fen(), reader.trees[0].headers.FEN);
@@ -217,6 +231,22 @@ function assertSynchronized({ context, board, links }) {
     await pendingReset;
     assert.equal(reset.context.resets, 0);
     assertSynchronized(reset);
+
+    const missed = fixture(['e4']);
+    missed.context.beginChapterPractice(missed.context.chapterStats, 0, 'chapter');
+    missed.context.practiceChapter = 0;
+    missed.context.puzzleMode = 'next';
+    await missed.context.handle_move('d2', 'd4');
+    await missed.context.handle_move('g1', 'f3');
+    const corrected = missed.context.handle_move('e2', 'e4');
+    missed.waits.shift()();
+    await corrected;
+    const practice = missed.context.chapterStats.chapters[0].lastPractice;
+    assert.equal(practice.completed, true);
+    assert.equal(practice.testedMoves, 1);
+    assert.equal(practice.missedMoves, 1);
+    assert.equal(practice.errors, 2);
+    assert.equal(statsContext.recentPracticePerformance(missed.context.chapterStats, 0, 'chapter').accuracy, 0);
 
     const advance = fixture(['e4']);
     advance.context.puzzleMode = 'next';

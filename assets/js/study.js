@@ -22,7 +22,7 @@ import { StorageAdapter } from './storageAdapter.js';
 import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
-import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder } from './modules/study/chapter_stats.js';
+import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder, beginChapterPractice, finishChapterPractice, recentPracticePerformance, chapterProgressState } from './modules/study/chapter_stats.js';
 import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus, dueChapterOrder } from './modules/study/chapter_review.js';
 import { setupStudyMoveTree, readChapterPosition } from './modules/study/study_move_tree.js';
 import Alpine from 'alpinejs';
@@ -36,6 +36,7 @@ let studyMoveNavigation = { update() {} };
 let studyMoveTree = { update() {} };
 let readMode = false;
 let chapterStats = { version: 1, chapters: {} };
+let practiceChapter = null;
 let chapterMoveCatalogs = [];
 let chapterReviewSignatures = [];
 let chapterReviews = emptyChapterReviews();
@@ -170,10 +171,11 @@ async function handle_move(orig, dest) {
     }
 
     const wasCorrect = possible_moves.indexOf(san) != -1;
+    const positionId = curr_move.slice(1).map((_, depth) => tree_get_node(curr_move.slice(0, depth + 2)).move).join('|');
     const moveId = wasCorrect
-        ? [...curr_move.slice(1).map((_, depth) => tree_get_node(curr_move.slice(0, depth + 2)).move), san].join('|')
+        ? (positionId ? positionId + '|' : '') + san
         : null;
-    record_chapter_attempt(wasCorrect, moveId);
+    record_chapter_attempt(wasCorrect, moveId, positionId);
     if (!wasCorrect && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
 
     if(wasCorrect) {
@@ -200,6 +202,7 @@ async function handle_move(orig, dest) {
         await sleep(get_move_delay()); // instant play by the ai feels weird
         if (sessionId !== trainingSessionId) return;
         if (end_of_line) {
+            finish_chapter_practice(naturalEnd && lineEligibleForReview);
             if (naturalEnd && !lineReviewRecorded && lineEligibleForReview) record_line_review(true);
             achievement_end_of_line();
             set_text(success_div, right_move_text() + "\n" + i18n.success_end_of_line);
@@ -353,9 +356,35 @@ function record_line_review(wasClean) {
     lineReviewRecorded = true;
 }
 
-function record_chapter_attempt(wasCorrect, moveId) {
-    recordChapterAttempt(chapterStats, chapter, wasCorrect, moveId);
+function record_chapter_attempt(wasCorrect, moveId, positionId) {
+    recordChapterAttempt(chapterStats, chapter, wasCorrect, moveId, positionId);
     StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
+}
+
+function finish_chapter_practice(completed) {
+    if (practiceChapter === null) return;
+    finishChapterPractice(chapterStats, practiceChapter, completed);
+    practiceChapter = null;
+    StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
+    update_progress();
+}
+
+function chapter_performance_text(index, recent = recentPracticePerformance(chapterStats, index, chapterReviewSignatures[index])) {
+    const accuracy = i18n.progress_recent_accuracy + ': ' + (recent.accuracy === null ? '—' : recent.accuracy + '%') +
+        (recent.count ? ' (' + recent.count + ' ' + (recent.count === 1 ? i18n.progress_practice : i18n.progress_practices) + ')' : '');
+    const practice = recent.active || recent.last;
+    if (!practice) return accuracy;
+    return accuracy + ' · ' + chapter_practice_text(recent);
+}
+
+function chapter_practice_text(recent, compact = false) {
+    const practice = recent.active || recent.last;
+    if (!practice) return i18n.progress_no_recent_practice;
+    const label = compact
+        ? (recent.active ? i18n.progress_current_short : i18n.progress_last_short)
+        : (recent.active ? i18n.progress_current_practice : i18n.progress_last_practice);
+    return label + ': ' + practice.missedMoves + '/' + practice.testedMoves + ' ' + i18n.progress_moves_missed +
+        (!recent.active && !practice.completed ? ' (' + i18n.progress_incomplete + ')' : '');
 }
 
 /**
@@ -611,6 +640,7 @@ function play_move(san) {
 }
 
 function start_training() {
+    finish_chapter_practice(false);
     trainingSessionId += 1;
     lineReviewRecorded = false;
     lineEligibleForReview = !readMode;
@@ -650,6 +680,11 @@ function start_training() {
     }
     if (!readMode && color != turn_color(chess)) {
         play_move(ai_move(curr_move));
+    }
+    if (!readMode) {
+        beginChapterPractice(chapterStats, chapter, chapterReviewSignatures[chapter]);
+        practiceChapter = chapter;
+        StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     }
     setup_move();
 
@@ -1053,26 +1088,23 @@ async function update_progress() {
 
     for (let tree_index in trees) {
         const weakness = chapterWeakness(chapterStats, tree_index);
-        const coverage = chapterCoverage(chapterStats, tree_index, chapterMoveCatalogs[tree_index]);
-        const mastery = chapterMastery(chapterStats, tree_index, chapterMoveCatalogs[tree_index]);
+        const state = chapterProgressState(chapterStats, tree_index, chapterMoveCatalogs[tree_index], chapterReviewSignatures[tree_index]);
         const review = chapterReviewStatus(chapterReviews, tree_index, chapterReviewSignatures[tree_index], now);
         chapterSummaries.push({
             index: Number(tree_index),
             name: tree_chapter_name(tree_index),
             ...weakness,
-            ...coverage,
-            ...mastery,
+            ...state,
             reviewDue: review.due,
             reviewDueAt: review.dueAt ? review.dueAt.getTime() : null,
             reviewLabel: review.due ? i18n.spaced_review_due
                 : review.dueAt ? i18n.spaced_review_next + ": " + review.dueAt.toLocaleString() : null,
-            level: mastery.mastered ? "solid" : weakness.errors > 0 ? weakness.level : "unrated",
+            pickerTone: review.due ? 'due' : state.mastered ? 'solid'
+                : state.level === 'weak' || state.level === 'watch' ? 'mistakes' : state.covered > 0 ? 'in-progress' : 'new',
+            pickerMetrics: chapter_practice_text(state.recent, true),
             current: Number(tree_index) === Number(chapter),
-            recovery: weakness.errors > 0 && !mastery.mastered
-                ? i18n.progress_clean_moves + ": " + mastery.cleanCovered + "/" + coverage.total
-                : null,
-            metrics: i18n.progress_practiced_moves + ": " + coverage.covered + "/" + coverage.total +
-                (weakness.attempts === 0 ? "" : " · " + i18n.progress_correct_moves + ": " + (weakness.attempts - weakness.errors) + " · " + i18n.progress_errors + ": " + weakness.errors)
+            recovery: i18n.progress_practiced_moves + ': ' + state.covered + '/' + state.total + ' (' + state.percent + '%)',
+            metrics: chapter_performance_text(tree_index, state.recent)
         });
     }
 
@@ -1087,9 +1119,9 @@ async function update_progress() {
     }
 
     let cp = document.getElementById("chapter_progress");
-    const current = chapterWeakness(chapterStats, chapter);
-    const coverage = chapterCoverage(chapterStats, chapter, chapterMoveCatalogs[chapter]);
-    const mastery = chapterMastery(chapterStats, chapter, chapterMoveCatalogs[chapter]);
+    const current = chapterSummaries.find(summary => summary.current);
+    const coverage = current;
+    const mastery = current;
     const bar = document.createElement("div");
     bar.className = "progress-bar" + (mastery.mastered ? " progress-bar--solid" : "");
     bar.setAttribute("role", "meter");
@@ -1103,9 +1135,12 @@ async function update_progress() {
     bar.appendChild(fill);
 
     const label = document.createElement("p");
-    label.className = "chapter-weakness chapter-weakness--" + (mastery.mastered ? "solid" : current.errors > 0 ? current.level : "unrated");
+    label.className = "chapter-weakness chapter-weakness--" + current.level;
     label.textContent = i18n.progress_practiced_moves + ": " + coverage.covered + "/" + coverage.total + " (" + coverage.percent + "%)";
-    cp.replaceChildren(bar, label);
+    const performance = document.createElement('p');
+    performance.className = 'chapter-performance';
+    performance.textContent = current.metrics;
+    cp.replaceChildren(bar, label, performance);
     updateWeakChapterRunUi();
 }
 
@@ -1135,6 +1170,12 @@ async function setup_progress_reset() {
                 tree_value_add(c.root[0], -5);
             }
             chapterStats = { version: 1, chapters: {} };
+            practiceChapter = null;
+            if (!readMode) {
+                beginChapterPractice(chapterStats, chapter, chapterReviewSignatures[chapter]);
+                practiceChapter = chapter;
+                lineEligibleForReview = false;
+            }
             StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
             store_trees();
             update_progress();
@@ -1347,6 +1388,7 @@ function seek_read_move(path) {
 }
 
 function refresh_manual_navigation() {
+    finish_chapter_practice(false);
     trainingSessionId += 1;
     lineEligibleForReview = false;
     clear_all_text();
