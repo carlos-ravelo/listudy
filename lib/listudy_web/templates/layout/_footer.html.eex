@@ -1,3 +1,20 @@
+<%= if Regex.match?(~r{/(studies|analysis)(/|$)}, @conn.request_path) do %>
+<footer class="container site-footer site-footer-compact">
+  <span>Listudy · Open Source</span>
+  <nav aria-label="<%= gettext("Footer") %>">
+    <%= link gettext("Privacy"), to: Routes.page_path(@conn, :show, @conn.assigns.locale, "privacy") %>
+    <%= link gettext("Terms of Service"), to: Routes.page_path(@conn, :show, @conn.assigns.locale, "terms-of-service") %>
+    <a href="mailto:arne@listudy.org"><%= gettext("Contact") %></a>
+    <a href="https://github.com/ArneVogel/listudy" rel="nofollow">GitHub</a>
+    <details class="site-footer-more">
+      <summary><%= gettext("More") %></summary>
+      <%= link gettext("Copyright"), to: Routes.page_path(@conn, :show, @conn.assigns.locale, "copyright") %>
+      <%= link gettext("Imprint"), to: Routes.page_path(@conn, :show, @conn.assigns.locale, "imprint") %>
+    </details>
+  </nav>
+</footer>
+<% else %>
+<footer class="site-footer">
 <div class="container">
   <hr>
   <div class="row">
@@ -28,3 +45,6 @@
   </div>
 
 </div>
+
+</footer>
+<% end %>
