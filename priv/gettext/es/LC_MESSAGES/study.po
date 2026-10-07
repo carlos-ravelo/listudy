@@ -517,3 +517,95 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Hints: playable moves only"
 msgstr ""
+
+#, elixir-format
+msgid "Edit chapter"
+msgstr "Editar capítulo"
+
+#, elixir-format
+msgid "Back to study"
+msgstr "Volver al estudio"
+
+#, elixir-format
+msgid "Starting position"
+msgstr "Posición inicial"
+
+#, elixir-format
+msgid "Variation"
+msgstr "Variante"
+
+#, elixir-format
+msgid "Discard your unsaved chapter changes?"
+msgstr "¿Descartar los cambios sin guardar del capítulo?"
+
+#, elixir-format
+msgid "Unsaved changes"
+msgstr "Cambios sin guardar"
+
+#, elixir-format
+msgid "Saving…"
+msgstr "Guardando…"
+
+#, elixir-format
+msgid "Choose a legal move."
+msgstr "Elige una jugada legal."
+
+#, elixir-format
+msgid "The chapter could not be saved. Your changes are still in the editor."
+msgstr "No se pudo guardar el capítulo. Tus cambios siguen en el editor."
+
+#, elixir-format
+msgid "Save chapter"
+msgstr "Guardar capítulo"
+
+#, elixir-format
+msgid "Discard changes"
+msgstr "Descartar cambios"
+
+#, elixir-format
+msgid "Select a position and play a move to add a continuation or variation. Add a comment to the selected position."
+msgstr "Selecciona una posición y juega para añadir una continuación o variante. Añade un comentario a la posición seleccionada."
+
+#, elixir-format
+msgid "Previous move"
+msgstr "Jugada anterior"
+
+#, elixir-format
+msgid "Next move"
+msgstr "Jugada siguiente"
+
+#, elixir-format
+msgid "Promote to"
+msgstr "Promocionar a"
+
+#, elixir-format
+msgid "Queen"
+msgstr "Dama"
+
+#, elixir-format
+msgid "Rook"
+msgstr "Torre"
+
+#, elixir-format
+msgid "Bishop"
+msgstr "Alfil"
+
+#, elixir-format
+msgid "Knight"
+msgstr "Caballo"
+
+#, elixir-format
+msgid "Moves and variations"
+msgstr "Jugadas y variantes"
+
+#, elixir-format
+msgid "Comment"
+msgstr "Comentario"
+
+#, elixir-format
+msgid "This study could not be opened in the editor."
+msgstr "No se pudo abrir este estudio en el editor."
+
+#, elixir-format
+msgid "This study changed while you were editing. Reload it before saving."
+msgstr "Este estudio cambió mientras lo editabas. Vuelve a cargarlo antes de guardar."

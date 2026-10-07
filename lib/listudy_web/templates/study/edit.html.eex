@@ -1,5 +1,7 @@
 <h1>Edit Study</h1>
 
+<%= link dgettext("study", "Edit chapter"), to: Routes.study_path(@conn, :editor, @locale, @study), class: "button" %>
+
 <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
   /*
    * "Cleans" pgn files, 

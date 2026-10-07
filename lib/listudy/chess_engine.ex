@@ -20,6 +20,12 @@ defmodule Listudy.Games.ChessEngine do
     run("training_chapters", Jason.encode!(%{pgn: pgn, mistakes: positions}))
   end
 
+  def editor(pgn), do: run("editor", Jason.encode!(%{pgn: pgn}))
+
+  def replace_chapter(pgn, chapter_index, tree) do
+    run("replace_chapter", Jason.encode!(%{pgn: pgn, chapter_index: chapter_index, tree: tree}))
+  end
+
   defp run(mode, input) do
     path =
       Path.join(
@@ -42,6 +48,12 @@ defmodule Listudy.Games.ChessEngine do
 
             {:ok, %{"chapters" => chapters} = data}
             when mode == "training_chapters" and is_list(chapters) ->
+              {:ok, data}
+
+            {:ok, %{"editor" => editor} = data} when mode == "editor" and is_map(editor) ->
+              {:ok, data}
+
+            {:ok, %{"pgn" => pgn} = data} when mode == "replace_chapter" and is_binary(pgn) ->
               {:ok, data}
 
             _ ->

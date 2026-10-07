@@ -1290,6 +1290,16 @@ async function main() {
     chapterStats = readChapterStats(StorageAdapter.getItem(chapter_stats_key()));
     chapterReviews = readChapterReviews(StorageAdapter.getItem(chapter_reviews_key()));
     setup_chapter_select();
+    const editChapter = document.getElementById('edit_chapter');
+    if (editChapter) {
+        const updateEditorLink = () => {
+            const url = new URL(editChapter.href);
+            url.searchParams.set('chapter_index', trees[chapter].sourceIndex);
+            editChapter.href = url.toString();
+        };
+        document.getElementById('chapter_select').addEventListener('change', updateEditorLink);
+        updateEditorLink();
+    }
     const chapterPgns = splitChapterPgn(pgn);
     const getCurrentChapter = () => chapterPgns[chapter] ? {
         pgn: chapterPgns[chapter],

@@ -113,6 +113,7 @@ defmodule ListudyWeb.StudyController do
       file = unique_id <> ".pgn"
       {_, pgn} = File.read(get_path(file))
       study = Map.put(study, :pgn, pgn)
+
       conn
       |> put_session(:last_study_slug, study.slug)
       |> put_session(:last_study_user_id, if(user_id == -1, do: nil, else: user_id))
@@ -125,6 +126,80 @@ defmodule ListudyWeb.StudyController do
   def show(conn, %{"id" => id}) do
     study = Studies.get_study_by_slug!(id)
     show(conn, id, study)
+  end
+
+  def editor(conn, %{"id" => id}) do
+    study = Studies.get_study_by_slug!(id)
+    user = Pow.Plug.current_user(conn)
+
+    if study && user && allowed(study, user) do
+      with {:ok, pgn} <- File.read(get_path(id_from_slug(study.slug) <> ".pgn")),
+           {:ok, %{"editor" => editor}} <- Listudy.Games.ChessEngine.editor(pgn) do
+        render(conn, "editor.html",
+          study: study,
+          editor_json: Jason.encode!(editor),
+          revision: Listudy.StudyPgn.revision(pgn)
+        )
+      else
+        _ ->
+          conn
+          |> put_flash(:error, dgettext("study", "This study could not be opened in the editor."))
+          |> redirect(to: Routes.study_path(conn, :edit, conn.assigns.locale, study))
+      end
+    else
+      conn |> put_status(:forbidden) |> text("Forbidden")
+    end
+  end
+
+  def save_chapter(conn, %{"id" => id} = params) do
+    study = Studies.get_study_by_slug!(id)
+    user = Pow.Plug.current_user(conn)
+
+    if study && user && allowed(study, user) do
+      path = get_path(id_from_slug(study.slug) <> ".pgn")
+
+      case Listudy.StudyPgn.replace_chapter(
+             path,
+             params["revision"],
+             params["chapter_index"],
+             params["tree"]
+           ) do
+        {:ok, playback_index} ->
+          json(conn, %{
+            url:
+              Routes.study_path(conn, :show, conn.assigns.locale, study,
+                chapter_index: playback_index
+              )
+          })
+
+        {:error, :conflict} ->
+          conn
+          |> put_status(:conflict)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "This study changed while you were editing. Reload it before saving."
+              )
+          })
+
+        {:error, reason} when is_binary(reason) ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: reason})
+
+        _ ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "The chapter could not be saved. Your changes are still in the editor."
+              )
+          })
+      end
+    else
+      conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    end
   end
 
   def edit(conn, %{"id" => id}) do
@@ -242,7 +317,7 @@ defmodule ListudyWeb.StudyController do
 
     case File.stat(file) do
       {:ok, %{size: size}} ->
-        if size < 15000000 do
+        if size < 15_000_000 do
           {:ok, file}
         else
           {:error, dgettext("study", "PGN is too big, only 50kb allowed")}
@@ -324,7 +399,7 @@ defmodule ListudyWeb.StudyController do
   # pgn is the path to the pgn file
   # target_file is the name the file should be saved as
   defp save_pgn(pgn, file_name) do
-    File.cp(pgn, get_path(file_name))
+    :ok = Listudy.StudyPgn.replace(get_path(file_name), File.read!(pgn))
     File.rm(pgn)
   end
 

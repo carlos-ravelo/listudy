@@ -4,6 +4,7 @@ import sys
 from chess_analysis.positions import game_positions
 from chess_analysis.repertoire import cached_index
 from chess_analysis.matching import match_chapters
+from chess_analysis.study_editor import editor_data, replace_chapter
 
 
 def analyze_batch(payload):
@@ -58,6 +59,10 @@ def main():
         return analyze_batch(json.loads(text))
     if mode == 'training_chapters':
         return training_chapters(json.loads(text))
+    if mode == 'editor':
+        return editor_data(json.loads(text))
+    if mode == 'replace_chapter':
+        return replace_chapter(json.loads(text))
     if mode == 'repertoire':
         return {'repertoire_map': cached_index(text)}
     if mode == 'early_exit':
