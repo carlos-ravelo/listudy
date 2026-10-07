@@ -200,6 +200,7 @@ defmodule ListudyWeb.Router do
 
     get "/studies/:id/editor", StudyController, :editor
     post "/studies/:id/editor", StudyController, :save_chapter
+    post "/studies/:id/chapters", StudyController, :manage_chapters
     resources "/studies", StudyController
     get "/blog", PostController, :index
     get "/blog/:id", PostController, :show

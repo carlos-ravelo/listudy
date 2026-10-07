@@ -1,6 +1,61 @@
-<h1>Edit Study</h1>
+<div class="study-heading">
+  <h1><%= dgettext("study", "Manage study") %>: <%= @study.title %></h1>
+  <%= link dgettext("study", "Back to study"), to: Routes.study_path(@conn, :show, @locale, @study), class: "study-edit-link" %>
+</div>
 
-<%= link dgettext("study", "Edit chapter"), to: Routes.study_path(@conn, :editor, @locale, @study), class: "button" %>
+<%= if @maintenance_error do %>
+  <p role="alert"><%= @maintenance_error %></p>
+<% else %>
+<section class="study-maintenance" x-data="studyMaintenance" @beforeunload.window="beforeLeave($event)"
+         data-chapters="<%= @chapters_json %>" data-revision="<%= @revision %>"
+         data-save-url="<%= Routes.study_path(@conn, :manage_chapters, @locale, @study) %>"
+         data-editor-url="<%= Routes.study_path(@conn, :editor, @locale, @study) %>"
+         data-new-chapter="<%= dgettext("study", "New chapter") %>" data-copy-label="<%= dgettext("study", "Copy") %>"
+         data-delete-prompt="<%= dgettext("study", "Delete chapter %s? This takes effect when you save.") %>"
+         data-discard-prompt="<%= dgettext("study", "Discard your unsaved chapter changes?") %>"
+         data-saving="<%= dgettext("study", "Saving…") %>"
+         data-save-error="<%= dgettext("study", "The chapter changes could not be saved.") %>">
+  <div class="study-maintenance-heading">
+    <h2><%= dgettext("study", "Chapters") %> <span x-text="'(' + chapters.length + ')' "></span></h2>
+    <button type="button" @click="add()" :disabled="saving"><%= dgettext("study", "Add chapter") %></button>
+  </div>
+  <p><%= dgettext("study", "Rename and reorder your chapters here. Open a chapter to edit its moves and comments.") %></p>
+  <ol class="study-maintenance-list">
+    <template x-for="(chapter, index) in chapters" :key="chapter.id">
+      <li class="study-maintenance-row">
+        <span class="study-maintenance-number" x-text="index + 1"></span>
+        <div class="study-maintenance-title">
+          <input type="text" maxlength="200" x-model="chapter.title" :disabled="saving"
+                 aria-label="<%= dgettext("study", "Chapter title") %>">
+          <span x-show="chapter.source_index === null || chapter.duplicate"><%= dgettext("study", "Save changes to edit this chapter") %></span>
+        </div>
+        <div class="study-maintenance-actions">
+          <button type="button" @click="move(index, -1)" :disabled="saving || index === 0" aria-label="<%= dgettext("study", "Move chapter up") %>">↑</button>
+          <button type="button" @click="move(index, 1)" :disabled="saving || index === chapters.length - 1" aria-label="<%= dgettext("study", "Move chapter down") %>">↓</button>
+          <a :href="$el.closest('section').dataset.editorUrl + '?chapter_index=' + chapter.source_index"
+             x-show="chapter.source_index !== null && !chapter.duplicate" @click="openEditor($event, chapter)"><%= dgettext("study", "Edit") %></a>
+          <details @click.outside="$el.removeAttribute('open')">
+            <summary><%= dgettext("study", "More") %></summary>
+            <div class="study-maintenance-menu">
+              <button type="button" @click="$el.closest('details').removeAttribute('open'); duplicate(index)" :disabled="saving"><%= dgettext("study", "Duplicate") %></button>
+              <button type="button" @click="$el.closest('details').removeAttribute('open'); remove(index)" :disabled="saving || chapters.length === 1"><%= dgettext("study", "Delete") %></button>
+            </div>
+          </details>
+        </div>
+      </li>
+    </template>
+  </ol>
+  <div class="study-maintenance-save">
+    <span x-show="dirty"><%= dgettext("study", "Unsaved changes") %></span>
+    <button type="button" @click="discard()" :disabled="saving || !dirty"><%= dgettext("study", "Discard changes") %></button>
+    <button type="button" class="button-primary" @click="save()" :disabled="saving || !dirty"><%= dgettext("study", "Save chapter changes") %></button>
+  </div>
+  <p role="status" aria-live="polite" x-text="status"></p>
+</section>
+<% end %>
+
+<details class="study-controls-panel">
+<summary><%= dgettext("study", "Study details and PGN import") %></summary>
 
 <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
   /*
@@ -29,7 +84,11 @@
 <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/remember_lichess_study.js") %>"></script>
 
 <%= render "form.html", assigns: assigns, action: Routes.study_path(@conn, :update, @locale, @study) %>
+</details>
 
-<h2><%= dgettext("study", "Delete Study") %></h2>
+<details class="study-controls-panel">
+<summary><%= dgettext("study", "Delete Study") %></summary>
 <p><%= dgettext("study", "This can not be undone!") %></p>
 <%= link dgettext("study", "Delete"), to: Routes.study_path(@conn, :delete, @locale, @study), method: :delete, data: [confirm: dgettext("study", "Are you sure?")] %>
+</details>
+<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_maintenance.js") %>"></script>

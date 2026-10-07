@@ -22,7 +22,7 @@ import { StorageAdapter } from './storageAdapter.js';
 import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
-import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder, beginChapterPractice, finishChapterPractice, recentPracticePerformance, chapterProgressState } from './modules/study/chapter_stats.js';
+import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder, beginChapterPractice, finishChapterPractice, recentPracticePerformance, chapterProgressState, bindChapterIdentities } from './modules/study/chapter_stats.js';
 import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus, dueChapterOrder } from './modules/study/chapter_review.js';
 import { setupStudyMoveTree, readChapterPosition } from './modules/study/study_move_tree.js';
 import Alpine from 'alpinejs';
@@ -1165,11 +1165,13 @@ async function setup_progress_reset() {
             if (weakChapterRunActive) stopWeakChapterRun();
             if (spacedReviewRunActive) stopSpacedReviewRun();
             chapterReviews = emptyChapterReviews();
+            bindChapterIdentities(chapterReviews, trees);
             StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
             for (let c of trees) {
                 tree_value_add(c.root[0], -5);
             }
             chapterStats = { version: 1, chapters: {} };
+            bindChapterIdentities(chapterStats, trees);
             practiceChapter = null;
             if (!readMode) {
                 beginChapterPractice(chapterStats, chapter, chapterReviewSignatures[chapter]);
@@ -1287,8 +1289,18 @@ async function main() {
     setup_ground();
     setup_chess();
     setup_trees();
+    if (!trees.length) {
+        resize_ground();
+        set_text(info_div, i18n.no_playable_chapters);
+        document.getElementById('current_chapter_title').textContent = i18n.no_playable_chapters;
+        document.getElementById('current_chapter_title').disabled = true;
+        document.getElementById('chapter_progress').textContent = i18n.no_playable_chapters;
+        return;
+    }
     chapterStats = readChapterStats(StorageAdapter.getItem(chapter_stats_key()));
     chapterReviews = readChapterReviews(StorageAdapter.getItem(chapter_reviews_key()));
+    if (bindChapterIdentities(chapterStats, trees)) StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
+    if (bindChapterIdentities(chapterReviews, trees)) StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
     setup_chapter_select();
     const editChapter = document.getElementById('edit_chapter');
     if (editChapter) {

@@ -202,6 +202,65 @@ defmodule ListudyWeb.StudyController do
     end
   end
 
+  def manage_chapters(conn, %{"id" => id} = params) do
+    study = Studies.get_study_by_slug!(id)
+    user = Pow.Plug.current_user(conn)
+
+    if user && allowed(study, user) do
+      path = get_path(id_from_slug(study.slug) <> ".pgn")
+
+      case Listudy.StudyPgn.manage_chapters(path, params["revision"], params["chapters"]) do
+        {:ok, :saved} ->
+          json(conn, %{url: Routes.study_path(conn, :edit, conn.assigns.locale, study)})
+
+        {:error, :conflict} ->
+          conn
+          |> put_status(:conflict)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "This study changed while you were editing. Reload it before saving."
+              )
+          })
+
+        {:error, reason} when is_binary(reason) ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: reason})
+
+        _ ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: dgettext("study", "The chapter changes could not be saved.")})
+      end
+    else
+      conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    end
+  end
+
+  defp render_edit(conn, study, changeset) do
+    pgn =
+      case File.read(get_path(id_from_slug(study.slug) <> ".pgn")) do
+        {:ok, content} -> content
+        _ -> ""
+      end
+
+    {chapters, error} =
+      case Listudy.Games.ChessEngine.maintenance(pgn) do
+        {:ok, %{"chapters" => chapters}} -> {chapters, nil}
+        _ -> {[], dgettext("study", "This study could not be opened in the editor.")}
+      end
+
+    render(conn, "edit.html",
+      study: Map.put(study, :pgn, pgn),
+      changeset: changeset,
+      openings: Listudy.Openings.list_openings_study_form(),
+      chapters_json: Jason.encode!(chapters),
+      revision: Listudy.StudyPgn.revision(pgn),
+      maintenance_error: error,
+      maintenance: true
+    )
+  end
+
   def edit(conn, %{"id" => id}) do
     study = Studies.get_study_by_slug!(id)
 
@@ -212,9 +271,7 @@ defmodule ListudyWeb.StudyController do
     study = Map.put(study, :pgn, pgn)
 
     if allowed(study, user) do
-      openings = Listudy.Openings.list_openings_study_form()
-      changeset = Studies.change_study(study)
-      render(conn, "edit.html", study: study, changeset: changeset, openings: openings)
+      render_edit(conn, study, Studies.change_study(study))
     else
       conn
       |> put_flash(:error, "This study is private.")
@@ -260,7 +317,7 @@ defmodule ListudyWeb.StudyController do
           end
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render(conn, "edit.html", study: study, changeset: changeset)
+          render_edit(conn, study, changeset)
       end
     else
       conn

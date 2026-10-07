@@ -21,6 +21,7 @@ msgid "Comment"
 msgstr ""
 
 #: lib/listudy_web/templates/comment/show_comments.html.eex:3
+#: lib/listudy_web/templates/study/show.html.eex:150
 #, elixir-autogen, elixir-format
 msgid "Comments"
 msgstr ""

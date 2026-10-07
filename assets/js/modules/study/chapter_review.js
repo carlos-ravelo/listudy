@@ -32,14 +32,14 @@ function chapterReviewSignature(root, fen) {
 }
 
 function savedCard(reviews, chapterIndex, signature) {
-    const entry = reviews.chapters[String(chapterIndex)];
+    const entry = reviews.chapters[reviews.chapterIds?.[chapterIndex] || String(chapterIndex)];
     if (!entry || entry.signature !== signature || !entry.card) return null;
     const due = new Date(entry.card.due);
     return Number.isFinite(due.getTime()) ? entry.card : null;
 }
 
 function recordLineReview(reviews, chapterIndex, signature, wasClean, now = new Date()) {
-    const key = String(chapterIndex);
+    const key = reviews.chapterIds?.[chapterIndex] || String(chapterIndex);
     const previous = savedCard(reviews, key, signature) || createEmptyCard(now);
     const rating = wasClean ? Rating.Good : Rating.Again;
     let result;

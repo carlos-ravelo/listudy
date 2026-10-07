@@ -20,6 +20,20 @@ defmodule Listudy.StudyPgn do
 
   def replace(path, pgn), do: locked(path, fn -> write_atomic(path, pgn) end)
 
+  def manage_chapters(path, expected_revision, chapters) do
+    locked(path, fn ->
+      with {:ok, current} <- File.read(path),
+           true <- revision(current) == expected_revision,
+           {:ok, %{"pgn" => edited}} <- ChessEngine.manage_chapters(current, chapters),
+           :ok <- write_atomic(path, edited) do
+        {:ok, :saved}
+      else
+        false -> {:error, :conflict}
+        error -> error
+      end
+    end)
+  end
+
   defp locked(path, operation) do
     :global.trans({{__MODULE__, Path.expand(path)}, self()}, operation)
   end

@@ -10,7 +10,7 @@
 msgid ""
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:37
+#: lib/listudy_web/templates/page/index.html.eex:52
 #, elixir-autogen, elixir-format
 msgid "Daily Puzzle"
 msgstr ""
@@ -20,22 +20,22 @@ msgstr ""
 msgid "Welcome to %{name}!"
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:38
+#: lib/listudy_web/templates/page/index.html.eex:53
 #, elixir-autogen, elixir-format
 msgid "A quick position to solve when you have a moment."
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:21
+#: lib/listudy_web/templates/page/index.html.eex:36
 #, elixir-autogen, elixir-format
 msgid "Analyze your games"
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:22
+#: lib/listudy_web/templates/page/index.html.eex:37
 #, elixir-autogen, elixir-format
 msgid "Compare a PGN or your Chess.com and Lichess games with your studies."
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:28
+#: lib/listudy_web/templates/page/index.html.eex:43
 #, elixir-autogen, elixir-format
 msgid "Create an account"
 msgstr ""
@@ -50,22 +50,23 @@ msgstr ""
 msgid "Explore opening studies and build a repertoire you can practice."
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:12
+#: lib/listudy_web/templates/page/index.html.eex:25
+#: lib/listudy_web/templates/page/index.html.eex:29
 #, elixir-autogen, elixir-format
 msgid "Explore studies"
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:40
+#: lib/listudy_web/templates/page/index.html.eex:55
 #, elixir-autogen, elixir-format
 msgid "More tactics"
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:25
+#: lib/listudy_web/templates/page/index.html.eex:40
 #, elixir-autogen, elixir-format
 msgid "Open game analysis"
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:27
+#: lib/listudy_web/templates/page/index.html.eex:42
 #, elixir-autogen, elixir-format
 msgid "Sign in to analyze"
 msgstr ""
@@ -75,28 +76,17 @@ msgstr ""
 msgid "Study chess"
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:15
+#: lib/listudy_web/templates/page/index.html.eex:23
 #, elixir-autogen, elixir-format
 msgid "Your Studies"
 msgstr ""
 
-#: lib/listudy_web/templates/page/index.html.eex:14
+#: lib/listudy_web/templates/page/index.html.eex:27
 #, elixir-autogen, elixir-format
 msgid "🎲 Random Study"
 msgstr ""
 
-#, elixir-format
-msgid "Pick up where you left off"
-msgstr ""
-
-#, elixir-format
-msgid "Continue: %{title}"
-msgstr ""
-
-#, elixir-format
-msgid "Your favorites"
-msgstr ""
-
-#, elixir-format
-msgid "View all"
+#: lib/listudy_web/templates/page/index.html.eex:15
+#, elixir-autogen, elixir-format
+msgid "Continue last study:"
 msgstr ""

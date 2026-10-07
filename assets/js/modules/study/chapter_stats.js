@@ -1,8 +1,31 @@
 const EMPTY_STATS = { attempts: 0, errors: 0 };
 
+function chapterStorageKey(data, index) {
+    return data.chapterIds?.[index] || String(index);
+}
+
+function bindChapterIdentities(data, trees) {
+    const ids = trees.map((tree, index) => tree.headers.ListudyChapterId || String(index));
+    const migrated = [];
+    trees.forEach((tree, index) => {
+        const id = tree.headers.ListudyChapterId;
+        const original = tree.headers.ListudyOriginalIndex;
+        if (!id || original === undefined || !/^\d+$/.test(original) || data.chapters[id]) return;
+        const previousKey = chapterStorageKey(data, original);
+        if (previousKey === String(original) && data.chapters[previousKey]) {
+            data.chapters[id] = data.chapters[previousKey];
+            migrated.push(previousKey);
+        }
+    });
+    migrated.forEach(key => { if (!ids.includes(key)) delete data.chapters[key]; });
+    const changed = JSON.stringify(data.chapterIds) !== JSON.stringify(ids);
+    data.chapterIds = ids;
+    return changed;
+}
+
 function beginChapterPractice(stats, chapterIndex, signature, now = Date.now()) {
     finishChapterPractice(stats, chapterIndex, false, now);
-    const key = String(chapterIndex);
+    const key = chapterStorageKey(stats, chapterIndex);
     const current = stats.chapters[key] || EMPTY_STATS;
     stats.chapters[key] = { ...current, activePractice: {
         attempts: 0, errors: 0, testedMoves: 0, missedMoves: 0, firstResults: {}, signature, startedAt: now
@@ -10,7 +33,7 @@ function beginChapterPractice(stats, chapterIndex, signature, now = Date.now()) 
 }
 
 function finishChapterPractice(stats, chapterIndex, completed, now = Date.now()) {
-    const current = stats.chapters[String(chapterIndex)];
+    const current = stats.chapters[chapterStorageKey(stats, chapterIndex)];
     if (!current || !current.activePractice) return;
     const practice = { ...current.activePractice, completed, endedAt: now };
     delete practice.firstResults;
@@ -21,7 +44,7 @@ function finishChapterPractice(stats, chapterIndex, completed, now = Date.now())
 }
 
 function recentPracticePerformance(stats, chapterIndex, signature) {
-    const current = stats.chapters[String(chapterIndex)] || EMPTY_STATS;
+    const current = stats.chapters[chapterStorageKey(stats, chapterIndex)] || EMPTY_STATS;
     const valid = practice => practice?.signature === signature && practice.testedMoves > 0 && Number.isInteger(practice.missedMoves);
     const sessions = (current.practiceSessions || []).filter(valid).slice(-5);
     const moves = sessions.reduce((sum, practice) => sum + practice.testedMoves, 0);
@@ -49,7 +72,7 @@ function readChapterStats(raw) {
 }
 
 function recordChapterAttempt(stats, chapterIndex, wasCorrect, moveId, positionId = moveId) {
-    const key = String(chapterIndex);
+    const key = chapterStorageKey(stats, chapterIndex);
     const current = stats.chapters[key] || EMPTY_STATS;
     const coveredMoves = Array.isArray(current.coveredMoves) ? current.coveredMoves : [];
     const cleanMoves = Array.isArray(current.cleanMoves)
@@ -94,14 +117,14 @@ function chapterMoveCatalog(root, playerFirst) {
 }
 
 function chapterCoverage(stats, chapterIndex, catalog) {
-    const current = stats.chapters[String(chapterIndex)] || EMPTY_STATS;
+    const current = stats.chapters[chapterStorageKey(stats, chapterIndex)] || EMPTY_STATS;
     const coveredMoves = Array.isArray(current.coveredMoves) ? current.coveredMoves : [];
     const covered = coveredMoves.filter(moveId => catalog.has(moveId)).length;
     return { covered, total: catalog.size, percent: catalog.size ? Math.round(covered / catalog.size * 100) : 0 };
 }
 
 function chapterMastery(stats, chapterIndex, catalog) {
-    const current = stats.chapters[String(chapterIndex)] || EMPTY_STATS;
+    const current = stats.chapters[chapterStorageKey(stats, chapterIndex)] || EMPTY_STATS;
     const cleanMoves = Array.isArray(current.cleanMoves)
         ? current.cleanMoves
         : current.errors === 0 && Array.isArray(current.coveredMoves) ? current.coveredMoves : [];
@@ -110,7 +133,7 @@ function chapterMastery(stats, chapterIndex, catalog) {
 }
 
 function chapterWeakness(stats, chapterIndex) {
-    const current = stats.chapters[String(chapterIndex)] || EMPTY_STATS;
+    const current = stats.chapters[chapterStorageKey(stats, chapterIndex)] || EMPTY_STATS;
     const errorRate = current.attempts === 0 ? 0 : current.errors / current.attempts;
     let level = 'unrated';
     if (current.errors > 0) {
@@ -147,4 +170,4 @@ function weakChapterOrder(stats, chapterCount, catalogs = []) {
         .map(chapter => chapter.index);
 }
 
-export { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder, beginChapterPractice, finishChapterPractice, recentPracticePerformance, chapterProgressState };
+export { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder, beginChapterPractice, finishChapterPractice, recentPracticePerformance, chapterProgressState, bindChapterIdentities };

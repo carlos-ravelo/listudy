@@ -27,6 +27,7 @@ module.exports = (env, options) => {
       'remember_lichess_study': glob.sync('./vendor/**/*.js').concat(['./js/remember_lichess_study.js']),
       'study': glob.sync('./vendor/**/*.js').concat(['./js/study.js']),
       'study_editor': glob.sync('./vendor/**/*.js').concat(['./js/study_editor.js']),
+      'study_maintenance': glob.sync('./vendor/**/*.js').concat(['./js/study_maintenance.js']),
       'train_mistakes': glob.sync('./vendor/**/*.js').concat(['./js/train_mistakes.js']),
       'analysis_overview': glob.sync('./vendor/**/*.js').concat(['./js/analysis_overview.js']),
       'quick_result': glob.sync('./vendor/**/*.js').concat(['./js/quick_result.js'])

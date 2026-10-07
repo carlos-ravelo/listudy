@@ -1,9 +1,75 @@
 """Edit one chapter using python-chess; preserve all other source text."""
 import io
+import copy
+import re
+import uuid
 import chess.pgn
 
 MAX_NODES = 10000
 MAX_DEPTH = 128
+CHAPTER_ID = 'ListudyChapterId'
+ORIGINAL_INDEX = 'ListudyOriginalIndex'
+
+
+def maintenance_data(payload):
+    chapters = []
+    seen = set()
+    for index, (game, _, _) in enumerate(chapters_with_spans(payload['pgn'])):
+        identity = game.headers.get(CHAPTER_ID, '')
+        if not re.fullmatch(r'[a-f0-9]{32}', identity) or identity in seen:
+            identity = uuid.uuid4().hex
+        seen.add(identity)
+        chapters.append({'id': identity, 'source_index': index,
+                         'title': game.headers.get('Event') or f'Chapter {index + 1}',
+                         'moves': sum(1 for _ in game.mainline_moves())})
+    return {'chapters': chapters}
+
+
+def manage_chapters(payload):
+    originals = chapters_with_spans(payload['pgn'])
+    entries = payload.get('chapters')
+    if not isinstance(entries, list) or not 1 <= len(entries) <= 1000:
+        raise ValueError('Keep at least one chapter; a study supports up to 1000 chapters.')
+    seen = set()
+    original_seen = set()
+    original_ids = {g.headers.get(CHAPTER_ID) for g, _, _ in originals}
+    output = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError('Invalid chapter.')
+        identity, title = entry.get('id'), entry.get('title')
+        if not isinstance(identity, str) or not re.fullmatch(r'[a-f0-9]{32}', identity) or identity in seen:
+            raise ValueError('Invalid or repeated chapter identity.')
+        if not isinstance(title, str) or not title.strip() or len(title) > 200:
+            raise ValueError('Each chapter needs a title of up to 200 characters.')
+        seen.add(identity)
+        index = entry.get('source_index')
+        if index is None:
+            if identity in original_ids:
+                raise ValueError('A new chapter needs its own identity.')
+            game = chess.pgn.Game()
+        else:
+            if type(index) is not int or not 0 <= index < len(originals):
+                raise ValueError('Choose an existing chapter.')
+            original = originals[index][0]
+            original_id = original.headers.get(CHAPTER_ID, '')
+            duplicate = entry.get('duplicate') is True
+            if duplicate:
+                if identity in original_ids:
+                    raise ValueError('A duplicate needs its own identity.')
+            else:
+                if index in original_seen or (re.fullmatch(r'[a-f0-9]{32}', original_id) and identity != original_id):
+                    raise ValueError('An existing chapter must keep its identity.')
+                original_seen.add(index)
+            game = copy.deepcopy(original)
+            if duplicate:
+                game.headers.pop(ORIGINAL_INDEX, None)
+            elif not re.fullmatch(r'[a-f0-9]{32}', original_id) and game.variations:
+                game.headers[ORIGINAL_INDEX] = str(sum(bool(g.variations) for g, _, _ in originals[:index]))
+        game.headers[CHAPTER_ID] = identity
+        game.headers['Event'] = title.strip()
+        output.append(game.accept(chess.pgn.StringExporter(headers=True, variations=True, comments=True)))
+    return {'pgn': '\n\n'.join(output) + '\n'}
 
 
 def chapters_with_spans(pgn):
