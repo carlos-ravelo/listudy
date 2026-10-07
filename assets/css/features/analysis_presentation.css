@@ -1,4 +1,29 @@
 /* Neutral surfaces keep attention on games, moves, and repertoire feedback. */
+.analysis-repertoires [hidden] { display: none !important; }
+.analysis-repertoire-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 12px; }
+.analysis-repertoire-tools input[type="search"] { flex: 1 1 200px; max-width: 360px; min-width: 0; margin: 0; border: 1px solid var(--analysis-divider); border-radius: 6px; background: var(--bg-color); color: var(--font-color); font-size: 14px; }
+.analysis-repertoire-tools label { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 400; cursor: pointer; }
+.analysis-repertoire-tools input[type="checkbox"] { margin: 0; }
+.analysis-repertoire-list { list-style: none; margin: 0; padding: 0; }
+.analysis-repertoire-row { display: flex; align-items: center; gap: 16px; min-height: 42px; margin: 0; padding: 2px 8px; border-bottom: 1px solid var(--analysis-divider); }
+.analysis-repertoire-row:hover { background: var(--bg-highlight-color); }
+.analysis-repertoire-title { flex: 1; min-width: 0; color: var(--font-color); font-size: 14px; font-weight: 500; line-height: 1.4; text-decoration: none; overflow-wrap: anywhere; }
+.analysis-repertoire-title:hover { text-decoration: underline; }
+.analysis-repertoire-stat { flex-shrink: 0; color: var(--analysis-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.analysis-repertoire-stat strong { color: var(--font-color); }
+.analysis-repertoire-action { flex: 0 0 40px; text-align: right; }
+.analysis-repertoire-action a { display: inline-flex; align-items: center; min-height: 36px; color: var(--font-color); font-size: 13px; }
+.analysis-repertoire-pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; font-size: 12px; color: var(--analysis-muted); }
+.analysis-repertoire-pagination nav { display: flex; gap: 8px; font-variant: normal; }
+.analysis-repertoire-pagination button { margin: 0; padding: 4px 12px; }
+@media (max-width: 600px) {
+  .analysis-repertoire-tools input[type="search"] { max-width: none; flex-basis: 100%; }
+  .analysis-repertoire-row { gap: 10px; padding-left: 0; padding-right: 0; }
+}
+@media (pointer: coarse) {
+  .analysis-repertoire-title, .analysis-repertoire-action a { display: inline-flex; align-items: center; min-height: 44px; }
+  .analysis-repertoire-tools input[type="search"] { font-size: 16px; min-height: 44px; }
+}
 .analysis-workspace {
   --analysis-divider: color-mix(in srgb, var(--font-color) 14%, transparent);
   --analysis-muted: color-mix(in srgb, var(--font-color) 72%, var(--bg-color));

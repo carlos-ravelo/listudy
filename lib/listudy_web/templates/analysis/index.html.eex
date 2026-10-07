@@ -103,30 +103,35 @@
       </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 8px;">
-      <%= for stat <- @studies_stats do %>
-        <article style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fff; border: 1px solid #eaeaea; border-radius: 4px;">
-          
-          <!-- Columna 1: Apertura -->
-          <div style="flex: 2;">
-            <h4><%= String.replace(stat.study.title, "_", " ") %></h4>
-          </div>
-
-          <!-- Columna 2: Errores -->
-          <div style="flex: 1; text-align: right; padding-right: 20px;">
-            <strong style="font-size: 1.1rem; color: #e74c3c;"><%= stat.deviations %></strong> 
-            <span style="color: #666; font-size: 0.85em;">deviations</span>
-          </div>
-
-          <!-- Columna 3: Acción -->
-          <div>
-            <%= if stat.deviations > 0 do %>
-              <%= link "Train", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), class: "button button-outline", style: "margin: 0; padding: 0 15px; height: 34px; line-height: 34px;" %>
-            <% end %>
-          </div>
-          
-        </article>
+    <div class="analysis-repertoires" data-repertoires>
+      <div class="analysis-repertoire-tools" data-repertoire-tools hidden>
+        <input type="search" data-repertoire-search placeholder="Search repertoires" aria-label="Search repertoires">
+        <label><input type="checkbox" data-repertoire-deviations> With deviations</label>
+      </div>
+      <ul class="analysis-repertoire-list">
+        <%= for stat <- @studies_stats do %>
+          <li class="analysis-repertoire-row" data-repertoire-row data-title="<%= String.replace(stat.study.title, "_", " ") %>" data-deviations="<%= stat.deviations %>">
+            <%= link String.replace(stat.study.title, "_", " "), to: Routes.study_path(@conn, :show, @locale, stat.study.slug), class: "analysis-repertoire-title" %>
+            <span class="analysis-repertoire-stat"><strong><%= stat.deviations %></strong> deviations</span>
+            <span class="analysis-repertoire-action">
+              <%= if stat.deviations > 0 do %>
+                <%= link "Train", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), aria: [label: "Train: " <> stat.study.title] %>
+              <% end %>
+            </span>
+          </li>
+        <% end %>
+      </ul>
+      <%= if @studies_stats == [] do %>
+        <p>No repertoires to show.</p>
       <% end %>
+      <p data-repertoire-empty hidden>No repertoires match these filters.</p>
+      <div class="analysis-repertoire-pagination" data-repertoire-pagination hidden>
+        <span data-repertoire-count role="status" aria-live="polite"></span>
+        <nav aria-label="Repertoire pages">
+          <button type="button" data-repertoire-previous>Previous</button>
+          <button type="button" data-repertoire-next>Next</button>
+        </nav>
+      </div>
     </div>
   </section>
 </div>
