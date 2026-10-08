@@ -98,10 +98,16 @@ defmodule ListudyWeb.Router do
   end
 
   scope "/analysis", ListudyWeb do
+    pipe_through [:api_session, :logged_in]
+
+    get "/sync-status", AnalysisController, :sync_status
+    get "/new-games/:platform", AnalysisController, :new_games
+  end
+
+  scope "/analysis", ListudyWeb do
     pipe_through [:browser, :logged_in]
 
     get "/", AnalysisController, :index
-    get "/sync-status", AnalysisController, :sync_status
     get "/games", AnalysisController, :games
     get "/games/:id", AnalysisController, :game
     get "/games/:id/compare", AnalysisController, :compare_game

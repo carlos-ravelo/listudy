@@ -9,6 +9,76 @@ defmodule Listudy.Games.ChessClient do
   @default_history_years 1
   @seconds_in_a_year 365 * 24 * 60 * 60
 
+  # Availability probes never import or analyze games.
+  def recent_game_ids(platform, username, request \\ &HTTPoison.get/3)
+
+  def recent_game_ids("lichess", username, request) do
+    username = URI.encode(username, &URI.char_unreserved?/1)
+    url = "#{@lichess_url}#{username}?max=1&moves=false&ongoing=false&finished=true"
+
+    with {:ok, body} <- availability_request(url, [{"Accept", "application/x-ndjson"}], request) do
+      body
+      |> String.split("\n", trim: true)
+      |> Enum.reduce_while({:ok, []}, fn line, {:ok, ids} ->
+        case Jason.decode(line) do
+          {:ok, %{"id" => id}} when is_binary(id) -> {:cont, {:ok, [id | ids]}}
+          _ -> {:halt, {:error, :invalid_response}}
+        end
+      end)
+    end
+  end
+
+  def recent_game_ids("chess_com", username, request) do
+    username = URI.encode(String.downcase(username), &URI.char_unreserved?/1)
+    base = "#{@chess_com_url}#{username}/games"
+
+    with {:ok, body} <- availability_request(base <> "/archives", [], request),
+         {:ok, %{"archives" => archives}} when is_list(archives) <- Jason.decode(body) do
+      case Enum.max(archives, fn -> nil end) do
+        nil ->
+          {:ok, []}
+
+        archive when is_binary(archive) ->
+          # Build the URL ourselves; remote response data cannot choose a host.
+          case Regex.run(~r"/games/(\d{4})/(0[1-9]|1[0-2])$", archive) do
+            [_, year, month] ->
+              with {:ok, month_body} <-
+                     availability_request("#{base}/#{year}/#{month}", [], request),
+                   {:ok, %{"games" => games}} when is_list(games) <- Jason.decode(month_body) do
+                Enum.reduce_while(games, {:ok, []}, fn game, {:ok, ids} ->
+                  case game do
+                    %{"url" => url, "end_time" => time}
+                    when is_binary(url) and is_integer(time) ->
+                      id = url |> String.trim_trailing("/") |> String.split("/") |> List.last()
+                      {:cont, {:ok, [id | ids]}}
+
+                    _ ->
+                      {:halt, {:error, :invalid_response}}
+                  end
+                end)
+              else
+                _ -> {:error, :invalid_response}
+              end
+
+            _ ->
+              {:error, :invalid_response}
+          end
+
+        _ ->
+          {:error, :invalid_response}
+      end
+    else
+      _ -> {:error, :invalid_response}
+    end
+  end
+
+  defp availability_request(url, headers, request) do
+    case request.(url, headers, timeout: 5_000, recv_timeout: 8_000) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} -> {:ok, body}
+      _ -> {:error, :unavailable}
+    end
+  end
+
   @doc """
   Fetches games for a Lichess user. If since_ms is provided, only fetches games after that epoch.
   If nil, defaults to the last #{@default_history_years} years to maintain consistency with Chess.com.

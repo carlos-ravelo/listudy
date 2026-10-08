@@ -335,6 +335,10 @@ node assets/test/unit/study_features_browser.cjs
 
 ## Imported games and sync
 
+The analysis overview opens with **Last week** selected and orders training targets by the number of deviations, highest first (ties use the study title). Explicit **All time** and **Last month** choices still work, and training links carry the selected period.
+
+Connected account cards check for newer finished games in the background on page load. Lichess needs one metadata request for the latest game; Chess.com needs its archive list and latest monthly archive. Returned IDs are compared only with the signed-in user's imported games. A notice beside **Sync games** indicates when recent games are available. Running syncs skip the probe; API failures show a neutral message and keep manual syncing available. This is a recent-game check, not a historical gap scan. Chess.com's API may serve cached data, so newly finished games can take time to appear.
+
 `Listudy.Games.ImportedGames` reads saved Chess.com and Lichess games in pages of
 20. The list selects metadata only, then fetches study summaries for those games.
 It shows a filtered total and supports newer/older cursor navigation. Filters
