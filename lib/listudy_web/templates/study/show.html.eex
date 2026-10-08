@@ -146,7 +146,7 @@
 <b><%= dgettext("study", "Opening") %></b>
 <p><%= link @opening.name, to: Routes.opening_path(@conn, :show, @locale, @opening.slug) %></p>
 </details>
-<%= render "_collection_modal.html" %>
+<%= render "_collection_modal.html", conn: @conn %>
 <details class="study-controls-panel study-discussion">
 <summary><%= dgettext("comments", "Comments") %></summary>
 <%= render ListudyWeb.CommentView, "show_comments.html", type: "study", id: Integer.to_string(@study.id), action: Routes.comment_path(@conn, :new_comment), conn: @conn %>
