@@ -11,6 +11,12 @@ defmodule ListudyWeb.ProgressController do
   Upserts a key/value pair into the user_settings table for the authenticated user.
   It uses Postgres' ON CONFLICT DO UPDATE clause for robust upserts.
   """
+  def sync(conn, %{"key" => "study_collections_v1"}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> json(%{error: "Use the collections endpoint to save collections."})
+  end
+
   def sync(conn, %{"key" => key, "value" => value}) do
     # This depends on your auth implementation. Pow/phx.gen.auth puts it here.
     user = Pow.Plug.current_user(conn) || conn.assigns[:current_user]
@@ -28,7 +34,9 @@ defmodule ListudyWeb.ProgressController do
     user = Pow.Plug.current_user(conn) || conn.assigns[:current_user]
 
     settings =
-      Repo.all(from s in UserSetting, where: s.user_id == ^user.id)
+      Repo.all(
+        from s in UserSetting, where: s.user_id == ^user.id and s.key != "study_collections_v1"
+      )
       |> Enum.into(%{}, fn s -> {s.key, s.value} end)
 
     json(conn, settings)
@@ -38,7 +46,9 @@ defmodule ListudyWeb.ProgressController do
     %UserSetting{}
     |> UserSetting.changeset(%{user_id: user.id, key: key, value: value})
     |> Repo.insert(
-      on_conflict: [set: [value: value, updated_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)]],
+      on_conflict: [
+        set: [value: value, updated_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)]
+      ],
       conflict_target: [:user_id, :key]
     )
   end

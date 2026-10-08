@@ -4,7 +4,7 @@ import sys
 from chess_analysis.positions import game_positions
 from chess_analysis.repertoire import cached_index
 from chess_analysis.matching import match_chapters
-from chess_analysis.study_editor import editor_data, replace_chapter, maintenance_data, manage_chapters
+from chess_analysis.study_editor import editor_data, replace_chapter, maintenance_data, manage_chapters, collection_study
 
 
 def analyze_batch(payload):
@@ -63,6 +63,8 @@ def main():
         return editor_data(json.loads(text))
     if mode == 'maintenance':
         return maintenance_data(json.loads(text))
+    if mode == 'collection_study':
+        return collection_study(json.loads(text))
     if mode == 'manage_chapters':
         return manage_chapters(json.loads(text))
     if mode == 'replace_chapter':
