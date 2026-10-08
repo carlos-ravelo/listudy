@@ -22,6 +22,7 @@ defmodule Listudy.Games.ChessEngine do
 
   def editor(pgn), do: run("editor", Jason.encode!(%{pgn: pgn}))
   def maintenance(pgn), do: run("maintenance", Jason.encode!(%{pgn: pgn}))
+  def collection_study(items), do: run("collection_study", Jason.encode!(%{items: items}))
 
   def manage_chapters(pgn, chapters),
     do: run("manage_chapters", Jason.encode!(%{pgn: pgn, chapters: chapters}))
@@ -58,7 +59,8 @@ defmodule Listudy.Games.ChessEngine do
               {:ok, data}
 
             {:ok, %{"pgn" => pgn} = data}
-            when mode in ["replace_chapter", "manage_chapters"] and is_binary(pgn) ->
+            when mode in ["replace_chapter", "manage_chapters", "collection_study"] and
+                   is_binary(pgn) ->
               {:ok, data}
 
             _ ->

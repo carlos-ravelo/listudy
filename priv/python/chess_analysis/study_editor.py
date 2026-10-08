@@ -11,6 +11,40 @@ CHAPTER_ID = 'ListudyChapterId'
 ORIGINAL_INDEX = 'ListudyOriginalIndex'
 
 
+def collection_study(payload):
+    items = payload.get('items')
+    if not isinstance(items, list) or not 1 <= len(items) <= 500:
+        raise ValueError('Choose between 1 and 500 chapters.')
+    output = []
+    for item in items:
+        chapters = chapters_with_spans(item['pgn'])
+        if len(chapters) != 1:
+            raise ValueError('Each collection entry must contain exactly one chapter.')
+        game = chapters[0][0]
+        if type(game.board()) is not chess.Board or game.board().chess960:
+            raise ValueError('Only standard chess chapters are supported.')
+        stack = [(game, 0)]
+        count = 0
+        while stack:
+            node, depth = stack.pop()
+            count += 1
+            if count > MAX_NODES or depth > MAX_DEPTH:
+                raise ValueError('A chapter has too many moves or variations.')
+            stack.extend((child, depth + 1) for child in node.variations)
+        game.headers[CHAPTER_ID] = uuid.uuid4().hex
+        game.headers.pop(ORIGINAL_INDEX, None)
+        def header(value):
+            return value.replace('"', "'").replace('\\', '/').replace('\n', ' ').replace('\r', ' ')
+        if item.get('title'):
+            game.headers['Event'] = header(item['title'][:200])
+        game.headers['ListudySourceStudy'] = header(item.get('study') or 'Unknown Study')
+        path = item.get('studyPath') or ''
+        if path.startswith('/') and not path.startswith('//'):
+            game.headers['ListudySourcePath'] = header(path)
+        output.append(str(game))
+    return {'pgn': '\n\n'.join(output) + '\n'}
+
+
 def maintenance_data(payload):
     chapters = []
     seen = set()
