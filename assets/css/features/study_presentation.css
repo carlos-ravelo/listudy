@@ -19,6 +19,10 @@
 .study-workspace .study-chapter-buttons { gap: 4px; }
 .study-workspace .study-chapter-buttons button { border-color: transparent; border-radius: 6px; background: transparent; color: var(--font-color); font-size: 13px; font-weight: 500; letter-spacing: normal; text-transform: none; }
 .study-workspace #current_chapter_title { border-color: var(--study-divider); }
+.study-workspace #current_chapter_title { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 10px; height: auto; min-height: 38px; }
+.chapter-current-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.study-workspace .chapter-current-status { flex-shrink: 0; max-width: 60%; font-size: 12px; font-weight: 500; line-height: 1.5; letter-spacing: normal; text-transform: none; }
+.chapter-current-status[hidden] { display: none; }
 .study-workspace .study-chapter-buttons button:hover:not(:disabled) { background: var(--bg-highlight-color); }
 .study-workspace .study-chapter-list { border-color: var(--study-divider); border-radius: 8px; box-shadow: none; }
 .study-workspace .chapter-search,
@@ -64,6 +68,9 @@
 .study-management-page .study-management-delete:hover { color: var(--font-color); text-decoration-thickness: 2px; }
 
 @media (max-width: 600px) {
+  .study-workspace #current_chapter_title { flex-direction: column; justify-content: center; gap: 2px; min-height: 44px; }
+  .study-workspace .chapter-current-label { max-width: 100%; }
+  .study-workspace .chapter-current-status { max-width: 100%; font-size: 11px; }
   .study-workspace .study-feature-actions { flex-wrap: wrap; gap: 0 4px; margin-bottom: 4px; }
   .study-workspace .study-feature-actions .button { min-height: 44px; font-size: 12px; }
   .study-workspace .study-heading { margin-bottom: 4px; }

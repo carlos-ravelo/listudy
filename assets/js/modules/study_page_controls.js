@@ -6,6 +6,21 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
     const list = document.getElementById('custom_chapter_list');
     const copy = document.getElementById('copy_line_to_clipboard');
     if (!select || !title || !list) return { update() {} };
+    const currentLabel = document.createElement('span');
+    currentLabel.className = 'chapter-current-label';
+    const currentBadge = document.createElement('span');
+    title.replaceChildren(currentLabel, currentBadge);
+    let summaries = new Map();
+    function renderBadge(badge, chapter) {
+        const tone = chapter ? chapter.pickerTone : 'new';
+        badge.className = `chapter-choice-status chapter-choice-status--${tone}` +
+            (badge === currentBadge ? ' chapter-current-status' : '');
+        badge.textContent = chapter
+            ? (chapter.reviewDue ? progressLabels.reviewDue + ' · ' : chapter.mastered ? '✓ ' : '') + chapter.pickerMetrics
+            : progressLabels.unpracticed;
+        badge.title = chapter ? chapter.metrics + ' · ' + chapter.recovery : '';
+        badge.hidden = false;
+    }
     const search = document.createElement('input');
     search.type = 'search';
     search.placeholder = 'Search chapter...';
@@ -28,20 +43,12 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
         return item;
     });
     window.addEventListener('study-progress-updated', event => {
-        const byIndex = new Map(event.detail.map(chapter => [chapter.index, chapter]));
+        summaries = new Map(event.detail.map(chapter => [chapter.index, chapter]));
         items.forEach((item, index) => {
             const badge = item.querySelector('.chapter-choice-status');
-            const chapter = byIndex.get(index);
-            if (!chapter) {
-                badge.className = 'chapter-choice-status chapter-choice-status--new';
-                badge.textContent = progressLabels.unpracticed;
-            } else {
-                badge.className = `chapter-choice-status chapter-choice-status--${chapter.pickerTone}`;
-                badge.textContent = (chapter.reviewDue ? progressLabels.reviewDue + ' · ' : chapter.mastered ? '✓ ' : '') + chapter.pickerMetrics;
-                badge.title = chapter.metrics + ' · ' + chapter.recovery;
-            }
-            badge.hidden = false;
+            renderBadge(badge, summaries.get(index));
         });
+        renderBadge(currentBadge, summaries.get(select.selectedIndex));
     });
     function choose(index) {
         if (index < 0 || index >= select.options.length) return;
@@ -51,9 +58,11 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
     function close() { list.hidden = true; title.setAttribute('aria-expanded', 'false'); }
     function update() {
         const selected = select.options[select.selectedIndex];
-        title.textContent = selected
+        currentLabel.textContent = selected
             ? `${select.selectedIndex + 1} / ${select.options.length} · ${selected.text}`
             : 'No chapters';
+        renderBadge(currentBadge, summaries.get(select.selectedIndex));
+        currentBadge.hidden = !selected;
         items.forEach((item, index) => item.classList.toggle('chapter-active', index === select.selectedIndex));
         previous.disabled = select.selectedIndex <= 0;
         next.disabled = select.selectedIndex >= select.options.length - 1;
