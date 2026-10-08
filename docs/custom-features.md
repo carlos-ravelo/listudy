@@ -15,6 +15,7 @@
   - [Imported games and sync](#imported-games-and-sync)
     - [Mistake training](#mistake-training)
   - [Chapter editing](#chapter-editing)
+  - [Collections and derived studies](#collections-and-derived-studies)
     - [Study maintenance](#study-maintenance)
 
 ## Study page
@@ -34,8 +35,7 @@ view's `update()` after a chapter change.
 - `assets/css/features/study_extensions.css` and `study.css`: feature and progress styling.
 - `templates/study/show.html.eex`: training controls and the Alpine-powered progress modal.
 
-Collections remain browser-local. Migration saves the replacement before deleting
-legacy data; unreadable storage is preserved. Chapter links include a zero-based
+Anonymous collections remain browser-local. Signed-in collections use an account-scoped local cache and revision-checked server storage in `user_settings`. Migration preserves browser data and only assigns it to the first account that imports it; unreadable storage is preserved. Chapter links include a zero-based
 index and title. A unique title can recover a link after reordering. These are
 positional references, not permanent chapter IDs across simultaneous renames and
 reordering. Legacy title-only links must match a unique title, never a substring. Title
@@ -427,3 +427,15 @@ An all-empty study explains that moves must be added before practice can begin.
 
 Checks: `test_study_maintenance.py`, `study_pgn_test.exs`,
 `study_editor_controller_test.exs`, and `node assets/test/unit/chapter_identity.cjs`.
+
+## Collections and derived studies
+
+The collections dialog lists collection names and chapter counts in a visible side panel (horizontal choices on mobile). **Add to collection** directly adds the current chapter to the active collection and confirms it with **Added to collection**. **Collections** opens the dialog to switch collections and manage chapters; **Add current chapter** also saves to the selected collection from inside the dialog. Chapters can be reordered, moved, removed, or exported as PGN.
+
+Collection names can be edited inline. PGN export sits beside the title; the overflow menu contains only destructive actions. Save recovery controls appear only when account synchronization needs attention. Empty collections disable study creation, and source study headers visually separate chapter groups.
+
+Signed-in users automatically save collections through `/api/collections`, backed by the existing `user_settings` table; no migration is required. Local caches are scoped by user ID. Server revisions and transaction locks reject stale writes across tabs or devices instead of silently overwriting them. Failed saves keep the local draft, with **Retry save**, **Reload saved collections**, and PGN export available. Reloading explicitly replaces the local draft. Browser collections are merged into the first account that claims them, preserving server collections and deduplicating identical PGNs. Anonymous use continues locally.
+
+**Create study** asks for a title and practice side, saves outstanding collection edits, and creates a private study owned by the signed-in user. Chapters retain order, comments, variations and starting positions, but receive fresh `ListudyChapterId` values and no legacy index markers. PGN provenance headers retain the source study and local study path. Practice history and spaced repetition start fresh. The source studies and collection are retained; derived chapters are independent snapshots. The new study opens in maintenance.
+
+Collections support up to 100 names, 500 chapters per collection and 2 MB in total. Creating a study validates every chapter using python-chess and requires one standard-chess game per entry. Invalid PGN is rejected before creating the study or writing its PGN file.

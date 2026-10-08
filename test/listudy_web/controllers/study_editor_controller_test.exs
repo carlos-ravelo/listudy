@@ -39,6 +39,16 @@ defmodule ListudyWeb.StudyEditorControllerTest do
      other_conn: Pow.Plug.assign_current_user(conn, other, [])}
   end
 
+  test "study page renders the collection dialog with the signed-in account", %{
+    owner_conn: owner,
+    study: study,
+    owner_user: user
+  } do
+    html = owner |> get(Routes.study_path(owner, :show, "en", study)) |> html_response(200)
+    assert html =~ "collection_modal"
+    assert html =~ "data-user-id=\"#{user.id}\""
+  end
+
   test "library renders owned studies with compact navigation", %{owner_conn: owner, study: study} do
     html = owner |> get(Routes.study_path(owner, :index, "en")) |> html_response(200)
     assert html =~ "data-study-library"

@@ -10,13 +10,14 @@ function migrateItem(item) {
 }
 
 export class CollectionStore {
-    constructor(storage) {
+    constructor(storage, key = STORAGE_KEY) {
         this.storage = storage;
+        this.key = key;
     }
 
     read() {
-        const raw = this.storage.getItem(STORAGE_KEY);
-        const legacy = this.storage.getItem(LEGACY_KEY);
+        const raw = this.storage.getItem(this.key);
+        const legacy = this.key === STORAGE_KEY ? this.storage.getItem(LEGACY_KEY) : null;
         let data;
         try {
             data = raw ? JSON.parse(raw) : { active: 'Default', collections: { Default: JSON.parse(legacy || '[]') } };
@@ -39,7 +40,8 @@ export class CollectionStore {
     }
 
     save(data) {
-        this.storage.setItem(STORAGE_KEY, JSON.stringify(data));
+        this.storage.setItem(this.key, JSON.stringify(data));
+        if (this.onSave) this.onSave();
     }
 
     change(operation) {
