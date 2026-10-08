@@ -9,7 +9,9 @@ defmodule ListudyWeb.AnalysisController do
 
   def index(conn, params) do
     user = Repo.get!(Listudy.Users.User, conn.assigns.current_user.id)
-    filter = if params["filter"] in ~w(last_week last_month), do: params["filter"], else: "all"
+
+    filter =
+      if params["filter"] in ~w(all last_week last_month), do: params["filter"], else: "last_week"
 
     oldest_game_date =
       Repo.aggregate(
@@ -94,6 +96,9 @@ defmodule ListudyWeb.AnalysisController do
           )
       })
       |> Repo.all()
+      |> Enum.sort_by(fn stat ->
+        {-stat.deviations, String.downcase(stat.study.title), stat.study.id}
+      end)
 
     render(conn, "index.html",
       studies_stats: base_stats,
@@ -106,6 +111,42 @@ defmodule ListudyWeb.AnalysisController do
       syncs: GameSync.for_user(user.id)
     )
   end
+
+  def new_games(conn, %{"platform" => platform}) when platform in ~w(lichess chess_com) do
+    user = Repo.get!(Listudy.Users.User, conn.assigns.current_user.id)
+    username = if platform == "lichess", do: user.lichess_username, else: user.chess_com_username
+    sync = GameSync.for_user(user.id)[platform]
+
+    cond do
+      is_nil(username) or username == "" ->
+        json(conn, %{status: "disconnected"})
+
+      sync && sync.status == "running" ->
+        json(conn, %{status: "syncing"})
+
+      true ->
+        case Listudy.Games.ChessClient.recent_game_ids(platform, username) do
+          {:ok, ids} ->
+            saved =
+              Repo.all(
+                from g in Listudy.Games.UserGame,
+                  where:
+                    g.user_id == ^user.id and g.platform == ^platform and
+                      g.game_id_on_platform in ^ids,
+                  select: g.game_id_on_platform
+              )
+
+            available = Enum.any?(ids, &(&1 not in saved))
+            json(conn, %{status: if(available, do: "available", else: "current")})
+
+          {:error, _reason} ->
+            json(conn, %{status: "unavailable"})
+        end
+    end
+  end
+
+  def new_games(conn, _params),
+    do: conn |> put_status(:bad_request) |> json(%{error: "Unknown platform"})
 
   def sync_status(conn, _params) do
     syncs = GameSync.for_user(conn.assigns.current_user.id)
