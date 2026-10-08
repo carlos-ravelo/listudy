@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const next = root.querySelector('[data-repertoire-next]');
     const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
     const titles = rows.map(row => normalize(row.dataset.title));
-    const pageSize = 10;
+    const pageSize = 6;
     let page = 0;
     function render() {
         const query = normalize(search.value.trim());
