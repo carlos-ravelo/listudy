@@ -13,6 +13,14 @@
       <% end %>
       <%= if @editable do %>
         <a class="study-library-edit" href="<%= Routes.study_path(@conn, :edit, @locale, study.slug) %>" aria-label="<%= dgettext("study", "Edit") %>: <%= study.title %>"><%= dgettext("study", "Edit") %></a>
+        <%= link to: Routes.study_path(@conn, :delete, @locale, study), method: :delete,
+          data: [confirm: study.title <> " — " <> dgettext("study", "Are you sure?") <> " " <> dgettext("study", "This can not be undone!")],
+          class: "study-library-delete", title: dgettext("study", "Delete Study"),
+          aria: [label: dgettext("study", "Delete Study") <> ": " <> study.title] do %>
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" />
+          </svg>
+        <% end %>
       <% end %>
     </li>
   <% end %>

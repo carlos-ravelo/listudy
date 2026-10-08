@@ -55,6 +55,9 @@ defmodule ListudyWeb.StudyEditorControllerTest do
     assert html =~ "data-library-row"
     assert html =~ study.title
     assert html =~ Routes.study_path(owner, :edit, "en", study.slug)
+    assert html =~ "study-library-delete"
+    assert html =~ "data-method=\"delete\""
+    assert html =~ "data-confirm="
   end
 
   test "only the owner can open and save the editor", %{

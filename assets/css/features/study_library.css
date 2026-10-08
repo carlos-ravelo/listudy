@@ -19,6 +19,8 @@
 .study-library-color > span:first-child { font-size: 19px; }
 .study-library-edit { display: inline-flex; align-items: center; min-height: 36px; color: var(--font-color); font-size: 13px; text-decoration: none; }
 .study-library-edit:hover, .study-library-content:hover .study-library-title { text-decoration: underline; text-underline-offset: 3px; }
+.study-library-delete { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; min-height: 36px; border-radius: 5px; color: var(--font-color); opacity: .65; }
+.study-library-delete:hover, .study-library-delete:focus-visible { color: var(--error-color, #b42318); background: var(--bg-highlight-color); opacity: 1; }
 .study-library-favorites { margin-top: 28px; }
 .study-library-favorites h2 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
 .study-library-empty { padding: 24px 0; font-size: 14px; }
@@ -30,6 +32,7 @@
   .study-library-color-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
 @media (pointer: coarse) {
-  .study-library-edit, .study-library-filters button, .study-library .study-library-create { min-height: 44px; }
+  .study-library-edit, .study-library-delete, .study-library-filters button, .study-library .study-library-create { min-height: 44px; }
+  .study-library-delete { width: 44px; }
   .study-library-toolbar input { min-height: 44px; font-size: 16px; }
 }
