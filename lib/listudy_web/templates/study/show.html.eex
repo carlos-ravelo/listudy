@@ -3,7 +3,7 @@
   <h1 class="clicking_turns_on_hints study-feature-title"><%= String.replace(@study.title, "_", " ") %></h1>
   <%= if @study.is_owner do %>
     <%= link dgettext("study", "Edit chapter"), to: Routes.study_path(@conn, :editor, @locale, @study), class: "study-edit-link", id: "edit_chapter" %>
-    <%= link dgettext("study", "Edit"), to: Routes.study_path(@conn, :edit, @locale, @study), class: "study-edit-link" %>
+    <%= link dgettext("study", "Edit study"), to: Routes.study_path(@conn, :edit, @locale, @study), class: "study-edit-link" %>
   <% end %>
 </div>
 
