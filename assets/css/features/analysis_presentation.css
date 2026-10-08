@@ -1,4 +1,45 @@
 /* Neutral surfaces keep attention on games, moves, and repertoire feedback. */
+.analysis-overview-page .analysis-pgn-launch { margin: 0; padding: 8px 12px; background: var(--font-color); color: var(--bg-color); white-space: nowrap; }
+.analysis-overview-page .analysis-account-heading .analysis-account-count { width: 100%; margin: 0; font-size: 11px; }
+.analysis-overview-page .analysis-account-history[open] { grid-column: 1 / -1; grid-row: 3; border-top: 1px solid var(--analysis-divider); padding-top: 6px; }
+.analysis-overview-page .analysis-account-history > summary { white-space: nowrap; font-size: 11px; }
+.analysis-overview-page .analysis-repertoire-action a { min-height: 30px; }
+.analysis-overview-page .analysis-repertoire-title { font-size: 13px; }
+.analysis-overview-page .analysis-section-description { display: none; }
+.analysis-overview-page .analysis-library { padding-top: 8px; padding-bottom: 8px; }
+.analysis-pgn-dialog { width: min(600px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-sizing: border-box; padding: 20px; border: 1px solid var(--analysis-divider); border-radius: 8px; background: var(--bg-color); color: var(--font-color); }
+.analysis-pgn-dialog::backdrop { background: rgb(0 0 0 / .35); }
+.analysis-pgn-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.analysis-pgn-heading h2 { margin: 0; font-size: 20px; }
+.analysis-pgn-heading button { margin: 0; padding: 0 12px; border: 0; font-size: 24px; }
+.analysis-pgn-dialog textarea { width: 100%; box-sizing: border-box; min-height: 180px; resize: vertical; }
+.analysis-pgn-dialog form { margin: 0; }
+@media (pointer: coarse) {
+  .analysis-overview-page .analysis-repertoire-action a { min-height: 44px; }
+}
+.analysis-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.analysis-page-heading h1 { margin: 0 0 6px; font-size: clamp(26px, 3vw, 32px); font-weight: 600; letter-spacing: -.035em; line-height: 1.2; }
+.analysis-page-heading p { margin: 0; font-size: 14px; color: var(--analysis-muted); }
+.analysis-overview-page .analysis-accounts { margin-top: 0; }
+.analysis-overview-page .analysis-section-label { margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--analysis-muted); }
+.analysis-overview-page .analysis-library { margin: 12px 0 0; padding: 12px 16px; border: 1px solid var(--analysis-divider); border-radius: 8px; }
+.analysis-overview-page .analysis-library > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.analysis-overview-page .analysis-library h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.analysis-overview-page .analysis-library-link { font-size: 13px; color: var(--font-color); }
+.analysis-overview-page .analysis-overview-studies { margin-top: 18px; padding-top: 0; border-top: 0; }
+.analysis-overview-page .analysis-section-heading { margin-bottom: 10px; align-items: flex-start; gap: 12px; }
+.analysis-overview-page .analysis-section-heading h2 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.025em; }
+.analysis-section-description { margin: 4px 0 0; font-size: 13px; color: var(--analysis-muted); }
+.analysis-overview-page .analysis-repertoires { border: 1px solid var(--analysis-divider); border-radius: 8px; overflow: hidden; }
+.analysis-overview-page .analysis-repertoire-tools { margin: 0; padding: 8px 12px; background: color-mix(in srgb, var(--font-color) 3%, var(--bg-color)); border-bottom: 1px solid var(--analysis-divider); }
+.analysis-overview-page .analysis-repertoire-row { padding-left: 16px; padding-right: 16px; min-height: 32px; }
+.analysis-overview-page .analysis-repertoire-row:last-child { border-bottom: 0; }
+.analysis-overview-page .analysis-repertoire-pagination { margin: 0; padding: 6px 12px; border-top: 1px solid var(--analysis-divider); }
+.analysis-overview-page .analysis-repertoires > p { margin: 0; padding: 16px; }
+.analysis-overview-page .analysis-quick-pgn { margin-top: 24px; padding: 16px 0; font-size: 13px; color: var(--analysis-muted); }
+.analysis-overview-page .analysis-quick-pgn > summary { font-weight: 500; }
+.analysis-new-games { margin: 8px 0; font-size: 13px; color: var(--analysis-muted); }
+.analysis-new-games--available { color: var(--font-color); font-weight: 500; }
 .analysis-repertoires [hidden] { display: none !important; }
 .analysis-repertoire-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 12px; }
 .analysis-repertoire-tools input[type="search"] { flex: 1 1 200px; max-width: 360px; min-width: 0; margin: 0; border: 1px solid var(--analysis-divider); border-radius: 6px; background: var(--bg-color); color: var(--font-color); font-size: 14px; }
@@ -17,6 +58,9 @@
 .analysis-repertoire-pagination nav { display: flex; gap: 8px; font-variant: normal; }
 .analysis-repertoire-pagination button { margin: 0; padding: 4px 12px; }
 @media (max-width: 600px) {
+  .analysis-workspace.analysis-overview-page .analysis-account-grid { grid-template-columns: minmax(0, 1fr); }
+  .analysis-page-heading { margin-bottom: 12px; }
+  .analysis-overview-page .analysis-overview-studies { margin-top: 16px; }
   .analysis-repertoire-tools input[type="search"] { max-width: none; flex-basis: 100%; }
   .analysis-repertoire-row { gap: 10px; padding-left: 0; padding-right: 0; }
 }
@@ -51,6 +95,20 @@
 .analysis-workspace .analysis-library h3 { font-size: 16px; }
 .analysis-workspace .analysis-overview-primary strong { font-size: 28px; font-weight: 600; }
 .analysis-workspace .analysis-sync-status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; font-size: 13px; }
+.analysis-workspace .analysis-account-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.analysis-workspace .analysis-account-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-content: start; gap: 4px 12px; padding: 10px 12px; border: 1px solid var(--analysis-divider); border-radius: 8px; background: color-mix(in srgb, var(--font-color) 3%, var(--bg-color)); }
+.analysis-workspace .analysis-account-heading { grid-column: 1; grid-row: 1; justify-content: flex-start; align-items: center; gap: 8px; }
+.analysis-workspace .analysis-account-heading h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.analysis-workspace .analysis-account-user { padding: 0; background: transparent; font-size: 12px; font-weight: 400; }
+.analysis-workspace .analysis-account-count { grid-column: 1; grid-row: 2; font-size: 12px; font-weight: 400; }
+.analysis-workspace .analysis-account-count a { color: var(--analysis-muted); }
+.analysis-workspace .analysis-account-actions { grid-column: 2; grid-row: 1; flex-direction: column; align-items: flex-end; margin: 0; gap: 4px; }
+.analysis-workspace .analysis-account-actions button { min-height: 32px; }
+.analysis-workspace .analysis-new-games { grid-column: 1; grid-row: 2; font-size: 12px; line-height: 1.4; padding-top: 0; }
+.analysis-account-history { grid-column: 2; grid-row: 2; font-size: 12px; color: var(--analysis-muted); }
+.analysis-account-history summary { cursor: pointer; }
+.analysis-account-history summary strong { font-size: 12px; font-weight: 400; background: transparent; padding: 0; }
+.analysis-account-history[open] > p { padding-top: 6px; }
 .analysis-workspace .analysis-disconnect,
 .analysis-workspace .analysis-back-link { color: var(--analysis-muted); font-size: 13px; }
 .analysis-workspace .analysis-game-row { padding: 14px 8px; border-radius: 4px; }
@@ -82,7 +140,11 @@
 .analysis-workspace #training-status { font-size: 16px; }
 .analysis-workspace .training-chapters { font-size: 13px; }
 @media (max-width: 600px) {
-  .analysis-workspace :is(.analysis-account-card, .analysis-overview-card) { padding: 14px; }
+  .analysis-workspace .analysis-account-card { grid-template-columns: minmax(0, 1fr) auto; padding: 12px; gap: 4px 12px; }
+  .analysis-workspace .analysis-account-count { grid-column: 1; grid-row: 2; }
+  .analysis-workspace .analysis-account-actions { grid-column: 2; grid-row: 1; flex-direction: column; align-items: flex-end; }
+  .analysis-workspace .analysis-new-games { grid-column: 1; grid-row: 2; }
+  .analysis-workspace .analysis-overview-card { padding: 14px; }
   .analysis-workspace .analysis-comparison-layout { gap: 16px; }
 }
 @media (pointer: coarse) {

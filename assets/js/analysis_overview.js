@@ -1,4 +1,5 @@
 import "./components/analysis_repertoires.js";
+import "./components/game_availability.js";
 const Chess = require('chess.js');
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -87,4 +88,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setTimeout(pollSyncs, 2500);
+});
+
+// Native dialog provides focus containment and Escape dismissal.
+document.addEventListener('DOMContentLoaded', () => {
+    const dialog = document.querySelector('.analysis-pgn-dialog');
+    const opener = document.querySelector('[data-open-pgn]');
+    if (!dialog || !opener) return;
+    opener.addEventListener('click', () => {
+        dialog.showModal();
+        dialog.querySelector('textarea').focus();
+    });
+    dialog.querySelector('[data-close-pgn]').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', event => {
+        if (event.target !== dialog) return;
+        const bounds = dialog.getBoundingClientRect();
+        if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
+    });
+    dialog.addEventListener('close', () => opener.focus());
 });

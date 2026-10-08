@@ -1,5 +1,8 @@
-<div class="whole analysis-workspace">
-  <h2>Analyze Games</h2>
+<div class="whole analysis-workspace analysis-overview-page">
+  <div class="analysis-page-heading">
+    <h1>Analyze Games</h1>
+    <button type="button" class="analysis-pgn-launch" data-open-pgn>Analyze a PGN</button>
+  </div>
 
   <%
     accounts = [
@@ -10,21 +13,20 @@
     ]
   %>
 
-  <section class="analysis-accounts" data-sync-status-url="<%= Routes.analysis_path(@conn, :sync_status) %>">
+  <section class="analysis-accounts" aria-labelledby="analysis-accounts-title" data-sync-status-url="<%= Routes.analysis_path(@conn, :sync_status) %>">
+    <h2 id="analysis-accounts-title" class="analysis-section-label">Connected accounts</h2>
     <div class="analysis-account-grid">
       <%= for account <- accounts do %>
         <% sync = @syncs[account.key] %>
-        <article class="analysis-account-card" data-sync-platform="<%= account.key %>" data-sync-state="<%= if sync, do: sync.status, else: "idle" %>">
+        <article class="analysis-account-card" data-sync-platform="<%= account.key %>" data-sync-state="<%= if sync, do: sync.status, else: "idle" %>"
+          data-new-games-url="<%= if account.username, do: Routes.analysis_path(@conn, :new_games, account.key) %>">
           <div class="analysis-account-heading">
-            <h4><%= account.name %></h4>
+            <h3><%= account.name %></h3>
             <%= if account.username do %>
               <span class="analysis-account-user">✓ <%= account.username %></span>
             <% else %>
               <span class="analysis-account-user analysis-account-user-empty">Not connected</span>
             <% end %>
-          </div>
-
-          <%= if account.username do %>
             <p class="analysis-account-count">
               <%= if account.count > 0 do %>
                 <%= link "#{account.count} imported games", to: Routes.analysis_path(@conn, :games, platform: account.key) %>
@@ -32,7 +34,13 @@
                 0 imported games
               <% end %>
             </p>
-            <div class="analysis-sync-status" role="status" aria-live="polite">
+          </div>
+
+          <%= if account.username do %>
+            <p class="analysis-new-games" data-new-games-status role="status" aria-live="polite">Checking for newer games…</p>
+
+            <details class="analysis-account-history">
+              <summary>
               <strong class=" analysis-sync-badge-<%= if sync, do: sync.status, else: "idle" %>" data-sync-badge>
                 <%= case sync && sync.status do
                   "running" -> "Syncing"
@@ -41,20 +49,22 @@
                   _ -> "Not synced yet"
                 end %>
               </strong>
-              <span data-sync-details><%= if sync, do: sync.details %></span>
-            </div>
+              </summary>
+              <p data-sync-details><%= if sync, do: sync.details %></p>
             <%= if sync && sync.status != "running" do %>
               <p class="analysis-account-meta"><%= if sync.status == "failed", do: "Last attempt", else: "Last checked" %> <time datetime="<%= NaiveDateTime.to_iso8601(sync.updated_at) %>Z"><%= Calendar.strftime(sync.updated_at, "%d %b %Y, %H:%M UTC") %></time></p>
             <% end %>
+              <%= unless sync && sync.status == "running" do %>
+                <%= link "Disconnect", to: Routes.analysis_path(@conn, :disconnect, platform: account.key), method: :post, class: "analysis-disconnect" %>
+              <% end %>
+            </details>
           <% end %>
 
           <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [class: "analysis-account-actions"], fn f -> %>
             <%= hidden_input f, :platform, value: account.key %>
             <%= if account.username do %>
               <%= submit "Sync games", class: "button button-outline", disabled: sync && sync.status == "running" %>
-              <%= unless sync && sync.status == "running" do %>
-                <%= link "Disconnect", to: Routes.analysis_path(@conn, :disconnect, platform: account.key), method: :post, class: "analysis-disconnect" %>
-              <% end %>
+
             <% else %>
               <%= text_input f, :username, placeholder: "#{account.name} username", required: true, "aria-label": "#{account.name} username" %>
               <%= submit "Connect", class: "button button-primary" %>
@@ -67,32 +77,19 @@
 
   <section class="analysis-library" aria-label="Imported games">
     <div>
-      <h3>Game library</h3>
+      <h2>Game library</h2>
       <p><strong><%= @lichess_count + @chesscom_count %></strong> imported games</p>
     </div>
     <%= link "Browse games →", to: Routes.analysis_path(@conn, :games), class: "analysis-library-link" %>
   </section>
 
-  <details class="analysis-quick-pgn">
-    <summary>Analyze a PGN</summary>
-    <div class="mt-4">
-      <%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), fn f -> %>
-        <div class="field">
-          <label class="label">Paste a PGN</label>
-          <div class="control">
-            <%= textarea f, :pgn, class: "textarea", rows: 6, placeholder: "1. e4 c5 2. Nf3..." %>
-          </div>
-        </div>
-        <div class="control mt-2">
-          <%= submit "Analyze Game", class: "button is-primary" %>
-        </div>
-      <% end %>
-    </div>
-  </details>
 
   <section class="analysis-overview-studies">
     <div class="analysis-section-heading">
-      <h3>Training Targets</h3>
+      <div>
+        <h2>Training targets</h2>
+        <p class="analysis-section-description">Your repertoires, ordered by deviations in the selected period.</p>
+      </div>
       <div class="analysis-repertoire-filter">
         <label for="time-filter">Period</label>
         <select id="time-filter">
@@ -134,6 +131,23 @@
       </div>
     </div>
   </section>
+  <dialog class="analysis-pgn-dialog" aria-labelledby="analysis-pgn-title">
+    <div class="analysis-pgn-heading"><h2 id="analysis-pgn-title">Analyze a PGN</h2><button type="button" data-close-pgn aria-label="Close">×</button></div>
+    <div class="mt-4">
+      <%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), fn f -> %>
+        <div class="field">
+          <label class="label">Paste a PGN</label>
+          <div class="control">
+            <%= textarea f, :pgn, class: "textarea", rows: 6, placeholder: "1. e4 c5 2. Nf3..." %>
+          </div>
+        </div>
+        <div class="control mt-2">
+          <%= submit "Analyze Game", class: "button is-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </dialog>
+
 </div>
 
 <script defer type="text/javascript" src="/js/analysis_overview.js"></script>
