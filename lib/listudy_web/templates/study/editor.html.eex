@@ -11,12 +11,15 @@
          data-saved="<%= dgettext "study", "Chapter saved" %>"
          data-saving="<%= dgettext "study", "Saving…" %>"
          data-invalid-move="<%= dgettext "study", "Choose a legal move." %>"
+         data-invalid-pgn="<%= dgettext "study", "Invalid PGN. Check the moves and variations. Your chapter has not changed." %>"
+         data-single-chapter="<%= dgettext "study", "Paste exactly one chapter." %>"
+         data-same-position="<%= dgettext "study", "The PGN must use this chapter's starting position." %>"
          data-save-error="<%= dgettext "study", "The chapter could not be saved. Your changes are still in the editor." %>">
   <div class="chapter-editor-topbar">
     <span class="chapter-editor-context"><%= dgettext "study", "Edit chapter" %>: <%= @study.title %></span>
     <nav class="chapter-editor-switcher" aria-label="<%= dgettext "study", "Chapter" %>">
       <label for="editor_chapter"><%= dgettext "study", "Chapter" %></label>
-      <select id="editor_chapter" :disabled="saving" :value="chapter" @change="changeChapter($event)">
+      <select id="editor_chapter" :disabled="pendingPromotion || saving" :value="chapter" @change="changeChapter($event)">
         <template x-for="(option, index) in options" :key="index">
           <option :value="index" x-text="option.title" :selected="index === chapter"></option>
         </template>
@@ -26,45 +29,69 @@
   </div>
   <div class="chapter-editor-title">
     <h1 x-show="!editingTitle">
-      <button type="button" class="chapter-editor-title-button" :disabled="saving" @click="beginTitleEdit()"
+      <button type="button" class="chapter-editor-title-button" :disabled="pendingPromotion || saving" @click="beginTitleEdit()"
               aria-label="<%= dgettext "study", "Edit chapter title" %>">
         <span x-text="title"></span>
         <svg class="chapter-editor-pencil" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m16 3 5 5L8 21H3v-5L16 3Z"/><path d="m14 5 5 5"/></svg>
       </button>
     </h1>
     <input x-cloak x-show="editingTitle" x-ref="titleInput" type="text" id="editor_title" maxlength="200" required
-           aria-label="<%= dgettext "study", "Chapter title" %>" x-model="title" :disabled="saving"
+           aria-label="<%= dgettext "study", "Chapter title" %>" x-model="title" :disabled="pendingPromotion || saving"
            @input="updateTitle($event.target.value)" @blur="editingTitle = false"
            @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="cancelTitleEdit()" />
   </div>
   <div class="chapter-editor-toolbar chapter-editor-actions">
-    <button type="button" id="editor_save" class="button" :class="{ 'button-primary': dirty }" :disabled="saving || !dirty" @click="save()" disabled><%= dgettext "study", "Save chapter" %></button>
-    <button type="button" id="editor_discard" class="button" :disabled="saving || !dirty" @click="discard()" disabled><%= dgettext "study", "Discard changes" %></button>
+    <button type="button" id="editor_save" class="button" :class="{ 'button-primary': dirty }" :disabled="pendingPromotion || saving || !dirty" @click="save()" disabled><%= dgettext "study", "Save chapter" %></button>
+    <button type="button" id="editor_discard" class="button" :disabled="pendingPromotion || saving || (!dirty && !pgnEdited)" @click="discard()" disabled><%= dgettext "study", "Discard changes" %></button>
   </div>
   <p><%= dgettext "study", "Select a position and play a move to add a continuation or variation. Add a comment to the selected position." %></p>
   <div class="chapter-editor-layout">
     <div>
-      <div id="editor_board" class="cg-wrap" x-ref="board"></div>
-      <div class="chapter-editor-navigation">
-        <button type="button" id="editor_previous" :disabled="saving || !hasPrevious" @click="previous()" disabled><%= dgettext "study", "Previous move" %></button>
-        <button type="button" id="editor_next" :disabled="saving || !hasNext" @click="next()" disabled><%= dgettext "study", "Next move" %></button>
-        <a id="editor_analysis" class="button" :href="analysisUrl" target="_blank" rel="noopener noreferrer"><%= dgettext "study", "Analyze position" %></a>
-        <label for="editor_promotion"><%= dgettext "study", "Promote to" %></label>
-        <select id="editor_promotion" x-model="promotion" :disabled="saving">
-          <option value="q"><%= dgettext "study", "Queen" %></option>
-          <option value="r"><%= dgettext "study", "Rook" %></option>
-          <option value="b"><%= dgettext "study", "Bishop" %></option>
-          <option value="n"><%= dgettext "study", "Knight" %></option>
-        </select>
+      <div class="chapter-editor-board">
+        <div id="editor_board" class="cg-wrap" x-ref="board" tabindex="-1"></div>
+        <div class="chapter-editor-promotion-overlay" x-cloak x-show="pendingPromotion" @click.self="cancelPromotion()">
+          <div class="chapter-editor-promotion-choices" x-ref="promotionChoices" role="group"
+               aria-label="<%= dgettext "study", "Promote to" %>" :style="{ left: promotionLeft, top: promotionBottom ? 'auto' : '0', bottom: promotionBottom ? '0' : 'auto' }"
+               :class="{ 'from-bottom': promotionBottom }">
+            <button type="button" @click="choosePromotion('q')" aria-label="<%= dgettext "study", "Queen" %>" title="<%= dgettext "study", "Queen" %>"><piece aria-hidden="true" :class="'queen ' + promotionColor"></piece></button>
+            <button type="button" @click="choosePromotion('n')" aria-label="<%= dgettext "study", "Knight" %>" title="<%= dgettext "study", "Knight" %>"><piece aria-hidden="true" :class="'knight ' + promotionColor"></piece></button>
+            <button type="button" @click="choosePromotion('r')" aria-label="<%= dgettext "study", "Rook" %>" title="<%= dgettext "study", "Rook" %>"><piece aria-hidden="true" :class="'rook ' + promotionColor"></piece></button>
+            <button type="button" @click="choosePromotion('b')" aria-label="<%= dgettext "study", "Bishop" %>" title="<%= dgettext "study", "Bishop" %>"><piece aria-hidden="true" :class="'bishop ' + promotionColor"></piece></button>
+          </div>
+          <button type="button" class="chapter-editor-promotion-cancel" @click="cancelPromotion()" aria-label="<%= dgettext "study", "Cancel" %>">×</button>
+        </div>
       </div>
+      <div class="chapter-editor-pgn">
+        <label for="editor_pgn"><%= dgettext "study", "PGN" %></label>
+        <textarea id="editor_pgn" x-ref="pgn" x-model="exportPgn" @input="pgnEdited = true" :disabled="pendingPromotion || saving" rows="8" spellcheck="false"></textarea>
+        <button type="button" id="editor_apply_pgn" class="button" :disabled="pendingPromotion || saving" @click="applyChapterPgn()"><%= dgettext "study", "Import PGN" %></button>
+      </div>
+
+
     </div>
     <div class="chapter-editor-details">
+      <div class="chapter-editor-navigation" role="group" aria-label="<%= dgettext "study", "Moves and variations" %>">
+        <button type="button" id="editor_previous" class="chapter-editor-icon" :disabled="pendingPromotion || saving || !hasPrevious" @click="previous()" disabled
+                aria-label="<%= dgettext "study", "Previous move" %>" title="<%= dgettext "study", "Previous move" %>">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+        </button>
+        <button type="button" id="editor_next" class="chapter-editor-icon" :disabled="pendingPromotion || saving || !hasNext" @click="next()" disabled
+                aria-label="<%= dgettext "study", "Next move" %>" title="<%= dgettext "study", "Next move" %>">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+        <a id="editor_analysis" class="chapter-editor-icon" :href="analysisUrl" target="_blank" rel="noopener noreferrer"
+           aria-label="<%= dgettext "study", "Analyze position" %>" title="<%= dgettext "study", "Analyze position" %>">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+        </a>
+
+      </div>
       <div id="editor_moves" class="study-move-tree" x-ref="moves" aria-label="<%= dgettext "study", "Moves and variations" %>"></div>
       <label for="editor_comment"><%= dgettext "study", "Comment" %></label>
-      <textarea id="editor_comment" rows="5" maxlength="20000" x-model="comment" :disabled="saving" @input="updateComment($event.target.value)"></textarea>
+      <textarea id="editor_comment" rows="2" maxlength="20000" x-model="comment" :disabled="pendingPromotion || saving" @input="updateComment($event.target.value)"></textarea>
     </div>
   </div>
   <p id="editor_status" role="status" aria-live="polite" x-text="status"></p>
+
 </section>
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
 <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_editor.js") %>"></script>

@@ -52,7 +52,76 @@
 }
 
 .chapter-editor-navigation {
-  margin-top: 1rem;
+  margin: 0 0 .5rem;
+  gap: .25rem;
+}
+
+.chapter-editor-navigation .chapter-editor-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--font-color);
+  line-height: 1;
+  text-decoration: none;
+}
+
+.chapter-editor-icon:hover:not(:disabled) {
+  background: var(--secondary-color);
+}
+
+.chapter-editor-icon:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+ .chapter-editor-board { position: relative; }
+.chapter-editor-promotion-overlay { position: absolute; inset: 0; z-index: 10; background: rgba(0, 0, 0, .35); }
+.chapter-editor-promotion-choices { position: absolute; width: 12.5%; display: flex; flex-direction: column; }
+.chapter-editor-promotion-choices.from-bottom { flex-direction: column-reverse; }
+.chapter-editor-promotion-choices button { position: relative; width: 100%; height: auto; aspect-ratio: 1; padding: 0; margin: 0; border: 0; border-radius: 0; background: #f0d9b5; }
+.chapter-editor-promotion-choices button:hover { background: #b58863; }
+.chapter-editor-promotion-choices button:focus-visible { outline: 3px solid var(--font-color); outline-offset: -3px; z-index: 1; }
+.chapter-editor-promotion-choices piece { position: absolute; inset: 0; width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; pointer-events: none; }
+.chapter-editor-promotion-cancel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; padding: 0; width: 36px; height: 36px; background: var(--bg-color); color: var(--font-color); font-size: 24px; line-height: 1; }
+
+.chapter-editor-pgn {
+  position: relative;
+  margin-top: 1.5rem;
+}
+
+.chapter-editor-pgn label {
+  font-size: .85rem;
+  font-weight: normal;
+}
+
+.chapter-editor-pgn textarea {
+  display: block;
+  margin-bottom: 0;
+  padding: .75rem .75rem 3.25rem;
+  font-family: monospace;
+  font-size: .85rem;
+}
+
+.chapter-editor-pgn .button {
+  position: absolute;
+  right: .75rem;
+  bottom: .75rem;
+  margin: 0;
+  height: auto;
+  padding: .4rem .9rem;
+  line-height: 1.5;
+  font-size: .8rem;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .chapter-editor-details {
@@ -72,6 +141,14 @@
   box-sizing: border-box;
   width: 100%;
   resize: vertical;
+}
+
+.chapter-editor #editor_comment {
+  height: 4.5rem;
+  min-height: 4.5rem;
+  margin-bottom: 0;
+  padding: .5rem .75rem;
+  line-height: 1.4;
 }
 
 .chapter-editor button:disabled {
