@@ -8,6 +8,7 @@
          data-variation="<%= dgettext "study", "Variation" %>"
          data-discard-prompt="<%= dgettext "study", "Discard your unsaved chapter changes?" %>"
          data-unsaved="<%= dgettext "study", "Unsaved changes" %>"
+         data-saved="<%= dgettext "study", "Chapter saved" %>"
          data-saving="<%= dgettext "study", "Saving…" %>"
          data-invalid-move="<%= dgettext "study", "Choose a legal move." %>"
          data-save-error="<%= dgettext "study", "The chapter could not be saved. Your changes are still in the editor." %>">

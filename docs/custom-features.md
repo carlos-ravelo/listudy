@@ -249,7 +249,8 @@ reordering and deletion are available in the maintenance screen described below.
 The move editor does not delete individual moves, collaborate, or run engine analysis.
 
 Drafts are isolated from the study and training progress. **Save chapter** saves
-one chapter and returns to playback. **Discard changes** restores its initial
+one chapter in place, keeping the selected position. **Back to study** leaves
+the editor. **Discard changes** restores its initial
 snapshot. Switching chapters or leaving a dirty editor asks before discarding;
 there is no automatic draft recovery after closing the page.
 
