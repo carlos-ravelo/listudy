@@ -6,10 +6,10 @@ import { ground_legal_moves } from './modules/chess_utils.js';
 import Alpine from 'alpinejs';
 
 Alpine.data('chapterEditor', () => {
-    let chapters, editor, ground, moveTree, config;
+    let chapters, editor, ground, moveTree, config, pgnSnapshot;
 
     return {
-        options: [], chapter: 0, title: '', comment: '', promotion: 'q', analysisUrl: '',
+        exportPgn: '', pgnEdited: false, options: [], chapter: 0, title: '', comment: '', pendingPromotion: null, promotionColor: 'white', promotionLeft: '0%', promotionBottom: false, analysisUrl: '',
         editingTitle: false, titleBeforeEdit: '', saving: false, dirty: false, hasPrevious: false, hasNext: false, status: '',
 
         init() {
@@ -37,7 +37,17 @@ Alpine.data('chapterEditor', () => {
 
         destroy() { ground?.destroy(); },
 
+        syncPgn(force = false) {
+            const snapshot = JSON.stringify([this.chapter, editor.tree]);
+            if (force || snapshot !== pgnSnapshot) {
+                this.exportPgn = editor.pgn();
+                this.pgnEdited = false;
+                pgnSnapshot = snapshot;
+            }
+        },
+
         refresh() {
+            this.syncPgn();
             const position = editor.position();
             const color = position.turn() === 'w' ? 'white' : 'black';
             const move = position.history({ verbose: true }).slice(-1)[0];
@@ -49,7 +59,7 @@ Alpine.data('chapterEditor', () => {
             ground.set({
                 fen: position.fen(), turnColor: color, check: position.in_check(),
                 lastMove: move ? [move.from, move.to] : undefined,
-                movable: { color: this.saving ? undefined : color, dests: this.saving ? new Map() : ground_legal_moves(position) }
+                movable: { color: (this.saving || this.pendingPromotion) ? undefined : color, dests: (this.saving || this.pendingPromotion) ? new Map() : ground_legal_moves(position) }
             });
             const orientation = ground.state.orientation;
             const customStart = position.header().SetUp !== undefined;
@@ -60,10 +70,23 @@ Alpine.data('chapterEditor', () => {
                 fen: chapters[this.chapter].fen, path: editor.path });
         },
 
-        play(from, to) {
-            if (this.saving) return;
+        play(from, to, promotion) {
+            if (this.saving || this.pendingPromotion) return;
+            const position = editor.position();
+            const choices = position.moves({ verbose: true }).filter(move => move.from === from && move.to === to && move.promotion);
+            if (choices.length && !promotion) {
+                this.pendingPromotion = { from, to };
+                this.promotionColor = position.turn() === 'w' ? 'white' : 'black';
+                const flipped = ground.state.orientation === 'black';
+                const file = to.charCodeAt(0) - 97;
+                this.promotionLeft = `${(flipped ? 7 - file : file) * 12.5}%`;
+                this.promotionBottom = (to[1] === '1') !== flipped;
+                this.refresh();
+                this.$nextTick(() => this.$refs.promotionChoices?.querySelector('button')?.focus());
+                return;
+            }
             try {
-                if (!editor.play(from, to, this.promotion)) throw new Error('Invalid move');
+                if (!editor.play(from, to, promotion || 'q')) throw new Error('Invalid move');
                 this.status = editor.dirty ? config.unsaved : '';
             } catch (_error) {
                 this.status = config.invalidMove;
@@ -71,8 +94,23 @@ Alpine.data('chapterEditor', () => {
             this.refresh();
         },
 
+        choosePromotion(role) {
+            const move = this.pendingPromotion;
+            if (!move || !['q', 'n', 'r', 'b'].includes(role)) return;
+            this.pendingPromotion = null;
+            this.play(move.from, move.to, role);
+            this.$refs.board.focus();
+        },
+
+        cancelPromotion() {
+            if (!this.pendingPromotion) return;
+            this.pendingPromotion = null;
+            this.refresh();
+            this.$refs.board.focus();
+        },
+
         selectPosition(path) {
-            if (this.saving) return;
+            if (this.saving || this.pendingPromotion) return;
             editor.select(path);
             this.refresh();
         },
@@ -90,6 +128,13 @@ Alpine.data('chapterEditor', () => {
         },
 
         navigateKey(event) {
+            if (this.pendingPromotion) {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    this.cancelPromotion();
+                }
+                return;
+            }
             if (this.saving || event.defaultPrevented || event.isComposing ||
                 event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
             if (event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
@@ -104,12 +149,13 @@ Alpine.data('chapterEditor', () => {
 
         updateComment(value) {
             editor.setComment(value);
+            this.syncPgn();
             this.dirty = editor.dirty;
             this.status = this.dirty ? config.unsaved : '';
         },
 
         beginTitleEdit() {
-            if (this.saving) return;
+            if (this.saving || this.pendingPromotion) return;
             this.titleBeforeEdit = this.title;
             this.editingTitle = true;
             this.$nextTick(() => {
@@ -126,37 +172,58 @@ Alpine.data('chapterEditor', () => {
 
         updateTitle(value) {
             editor.setTitle(value);
+            this.syncPgn();
             this.dirty = editor.dirty;
             this.status = this.dirty ? config.unsaved : '';
         },
 
+        applyChapterPgn() {
+            if (this.saving || this.pendingPromotion) return;
+            try {
+                editor.loadPgn(this.exportPgn);
+                this.syncPgn(true);
+                this.editingTitle = false;
+                this.status = config.unsaved;
+                this.refresh();
+            } catch (error) {
+                this.status = config[error.message] || config.invalidPgn;
+            }
+        },
+
         discard() {
+            if (this.pendingPromotion) return;
             if (!window.confirm(config.discardPrompt)) return;
             editor = createChapterEditor(chapters[this.chapter]);
+            this.syncPgn(true);
             this.status = '';
             this.refresh();
         },
 
         changeChapter(event) {
-            if (this.dirty && !window.confirm(config.discardPrompt)) {
+            if (this.pendingPromotion) {
+                event.target.value = String(this.chapter);
+                return;
+            }
+            if ((this.dirty || this.pgnEdited) && !window.confirm(config.discardPrompt)) {
                 event.target.value = String(this.chapter);
                 return;
             }
             this.editingTitle = false;
             this.chapter = Number(event.target.value);
             editor = createChapterEditor(chapters[this.chapter]);
+            this.syncPgn(true);
             this.status = '';
             this.refresh();
         },
 
         beforeLeave(event) {
-            if (!this.dirty) return;
+            if (!this.dirty && !this.pgnEdited) return;
             event.preventDefault();
             event.returnValue = '';
         },
 
         async save() {
-            if (this.saving || !this.dirty) return;
+            if (this.saving || this.pendingPromotion || !this.dirty) return;
             this.saving = true;
             this.status = config.saving;
             this.refresh();

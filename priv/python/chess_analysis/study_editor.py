@@ -146,6 +146,7 @@ def editor_data(payload):
         if type(game.board()) is not chess.Board or game.board().chess960:
             raise ValueError('The editor currently supports standard chess only.')
         chapters.append({'title': game.headers.get('Event') or f'Chapter {index + 1}',
+                         'headers': dict(game.headers),
                          'fen': game.board().fen(), 'comment': game.comment,
                          'root': children(game)})
     return {'editor': {'chapters': chapters}}
