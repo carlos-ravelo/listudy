@@ -125,7 +125,13 @@
 }
 
 .chapter-editor-details {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+}
+
+.chapter-editor-details > :not(#editor_comment) {
+  flex-shrink: 0;
 }
 
 .chapter-editor .study-move-tree {
@@ -144,8 +150,9 @@
 }
 
 .chapter-editor #editor_comment {
-  height: 4.5rem;
-  min-height: 4.5rem;
+  flex: 1;
+  height: 12em;
+  min-height: 12em;
   margin-bottom: 0;
   padding: .5rem .75rem;
   line-height: 1.4;
@@ -164,5 +171,9 @@
 @media (max-width: 650px) {
   .chapter-editor-layout {
     grid-template-columns: 1fr;
+  }
+
+  .chapter-editor #editor_comment {
+    flex: none;
   }
 }
