@@ -29,7 +29,7 @@ const html = `<html><head><meta name="viewport" content="width=device-width, ini
                 assert.equal(request.headers['x-csrf-token'], 'test');
                 response.statusCode = conflict ? 409 : 200;
                 response.setHeader('Content-Type', 'application/json');
-                response.end(JSON.stringify(conflict ? { error: 'Study changed' } : { url: '/saved' }));
+                response.end(JSON.stringify(conflict ? { error: 'Study changed' } : { revision: 'saved-revision', chapters: saved.chapters.map((chapter, source_index) => ({ ...chapter, source_index, duplicate: false })) }));
             });
             return;
         }
@@ -85,7 +85,14 @@ const html = `<html><head><meta name="viewport" content="width=device-width, ini
         assert.equal(saved.chapters[2].title, 'Fresh');
         conflict = false;
         await save.click();
-        await page.waitForURL('**/saved');
+        await page.waitForFunction(() => document.querySelector('[role="status"]').textContent === 'Study saved');
+        assert(page.url().endsWith('/'));
+        const saveButton = page.getByRole('button', { name: 'Save chapter changes', exact: true });
+        assert.equal(await saveButton.isDisabled(), true);
+        await page.locator('.study-maintenance-title input').first().fill('Saved again');
+        await saveButton.click();
+        await page.waitForFunction(() => document.querySelector('[role="status"]').textContent === 'Study saved');
+        assert.equal(saved.revision, 'saved-revision');
         assert.deepEqual(errors, []);
         console.log('Study maintenance browser checks passed.');
     } finally {

@@ -212,7 +212,14 @@ defmodule ListudyWeb.StudyController do
 
       case Listudy.StudyPgn.manage_chapters(path, params["revision"], params["chapters"]) do
         {:ok, :saved} ->
-          json(conn, %{url: Routes.study_path(conn, :edit, conn.assigns.locale, study)})
+          {:ok, pgn} = File.read(path)
+          {:ok, %{"chapters" => chapters}} = Listudy.Games.ChessEngine.maintenance(pgn)
+
+          json(conn, %{
+            url: Routes.study_path(conn, :edit, conn.assigns.locale, study),
+            revision: Listudy.StudyPgn.revision(pgn),
+            chapters: chapters
+          })
 
         {:error, :conflict} ->
           conn
@@ -235,6 +242,32 @@ defmodule ListudyWeb.StudyController do
       end
     else
       conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    end
+  end
+
+  defp update_response(conn, study, params, pgn_changed) do
+    if params["_stay"] == "true" do
+      {:ok, pgn} = File.read(get_path(id_from_slug(study.slug) <> ".pgn"))
+
+      chapters =
+        case Listudy.Games.ChessEngine.maintenance(pgn) do
+          {:ok, %{"chapters" => chapters}} -> chapters
+          _ -> []
+        end
+
+      json(conn, %{
+        action: Routes.study_path(conn, :update, conn.assigns.locale, study),
+        study_url: Routes.study_path(conn, :show, conn.assigns.locale, study),
+        save_url: Routes.study_path(conn, :manage_chapters, conn.assigns.locale, study),
+        editor_url: Routes.study_path(conn, :editor, conn.assigns.locale, study),
+        revision: Listudy.StudyPgn.revision(pgn),
+        chapters: chapters,
+        pgn_changed: pgn_changed
+      })
+    else
+      conn
+      |> put_flash(:info, dgettext("study", "Study info updated."))
+      |> redirect(to: Routes.study_path(conn, :show, conn.assigns.locale, study))
     end
   end
 
@@ -287,7 +320,7 @@ defmodule ListudyWeb.StudyController do
     end
   end
 
-  def update(conn, %{"id" => id, "study" => study_params}) do
+  def update(conn, %{"id" => id, "study" => study_params} = params) do
     study = Studies.get_study_by_slug!(id)
     {_, user} = get_user(conn)
     [unique_id | _] = id |> String.split("-")
@@ -303,22 +336,22 @@ defmodule ListudyWeb.StudyController do
             {:ok, pgn} ->
               save_pgn(pgn, file)
 
-              conn
-              |> put_flash(:info, dgettext("study", "Study info updated, PGN changed."))
-              |> redirect(
-                to: Routes.study_path(conn, :show, conn.private.plug_session["locale"], study)
-              )
+              update_response(conn, study, params, true)
 
             {:error, _} ->
-              conn
-              |> put_flash(:info, dgettext("study", "Study info updated, no PGN change."))
-              |> redirect(
-                to: Routes.study_path(conn, :show, conn.private.plug_session["locale"], study)
-              )
+              update_response(conn, study, params, false)
           end
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render_edit(conn, study, changeset)
+          if params["_stay"] == "true" do
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              error: dgettext("study", "The study could not be saved. Check the entered values.")
+            })
+          else
+            render_edit(conn, study, changeset)
+          end
       end
     else
       conn
