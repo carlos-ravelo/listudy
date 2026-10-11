@@ -47,6 +47,7 @@
       <div class="chapter-editor-navigation">
         <button type="button" id="editor_previous" :disabled="saving || !hasPrevious" @click="previous()" disabled><%= dgettext "study", "Previous move" %></button>
         <button type="button" id="editor_next" :disabled="saving || !hasNext" @click="next()" disabled><%= dgettext "study", "Next move" %></button>
+        <a id="editor_analysis" class="button" :href="analysisUrl" target="_blank" rel="noopener noreferrer"><%= dgettext "study", "Analyze position" %></a>
         <label for="editor_promotion"><%= dgettext "study", "Promote to" %></label>
         <select id="editor_promotion" x-model="promotion" :disabled="saving">
           <option value="q"><%= dgettext "study", "Queen" %></option>

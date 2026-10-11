@@ -9,7 +9,7 @@ Alpine.data('chapterEditor', () => {
     let chapters, editor, ground, moveTree, config;
 
     return {
-        options: [], chapter: 0, title: '', comment: '', promotion: 'q',
+        options: [], chapter: 0, title: '', comment: '', promotion: 'q', analysisUrl: '',
         editingTitle: false, titleBeforeEdit: '', saving: false, dirty: false, hasPrevious: false, hasNext: false, status: '',
 
         init() {
@@ -51,6 +51,7 @@ Alpine.data('chapterEditor', () => {
                 lastMove: move ? [move.from, move.to] : undefined,
                 movable: { color: this.saving ? undefined : color, dests: this.saving ? new Map() : ground_legal_moves(position) }
             });
+            this.analysisUrl = `https://lichess.org/analysis/${position.fen()}?color=${ground.state.orientation}`;
             moveTree.update({ reading: true, chapter: this.chapter, root: editor.tree.root,
                 fen: chapters[this.chapter].fen, path: editor.path });
         },
