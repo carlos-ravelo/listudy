@@ -10,7 +10,7 @@ Alpine.data('chapterEditor', () => {
 
     return {
         options: [], chapter: 0, title: '', comment: '', promotion: 'q',
-        saving: false, dirty: false, hasPrevious: false, hasNext: false, status: '',
+        editingTitle: false, titleBeforeEdit: '', saving: false, dirty: false, hasPrevious: false, hasNext: false, status: '',
 
         init() {
             config = this.$el.dataset;
@@ -93,6 +93,22 @@ Alpine.data('chapterEditor', () => {
             this.status = this.dirty ? config.unsaved : '';
         },
 
+        beginTitleEdit() {
+            if (this.saving) return;
+            this.titleBeforeEdit = this.title;
+            this.editingTitle = true;
+            this.$nextTick(() => {
+                this.$refs.titleInput.focus();
+                this.$refs.titleInput.select();
+            });
+        },
+
+        cancelTitleEdit() {
+            this.title = this.titleBeforeEdit;
+            this.updateTitle(this.title);
+            this.editingTitle = false;
+        },
+
         updateTitle(value) {
             editor.setTitle(value);
             this.dirty = editor.dirty;
@@ -111,6 +127,7 @@ Alpine.data('chapterEditor', () => {
                 event.target.value = String(this.chapter);
                 return;
             }
+            this.editingTitle = false;
             this.chapter = Number(event.target.value);
             editor = createChapterEditor(chapters[this.chapter]);
             this.status = '';

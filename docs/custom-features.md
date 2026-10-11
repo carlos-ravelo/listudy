@@ -232,7 +232,8 @@ valid answers.
 ## Chapter editing
 
 Owners can choose **Edit chapter** on a study or its metadata edit page. Select
-the chapter title field to rename it or copy its selected text. Title changes
+the chapter title heading to rename it or copy its selected text. The chapter
+selector sits beside Back to study, separate from the editing actions. Title changes
 are saved with **Save chapter**.
 Select
 a position with the move list, navigation buttons or Left / Right arrow keys.

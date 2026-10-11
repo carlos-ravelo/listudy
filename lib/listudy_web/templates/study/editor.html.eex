@@ -1,8 +1,3 @@
-<div class="study-heading">
-  <h1><%= dgettext "study", "Edit chapter" %>: <%= @study.title %></h1>
-  <%= link dgettext("study", "Back to study"), to: Routes.study_path(@conn, :show, @locale, @study), class: "study-edit-link" %>
-</div>
-
 <section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)"
          @keydown.window="navigateKey($event)"
          data-editor="<%= @editor_json %>" data-revision="<%= @revision %>"
@@ -15,19 +10,35 @@
          data-saving="<%= dgettext "study", "Saving…" %>"
          data-invalid-move="<%= dgettext "study", "Choose a legal move." %>"
          data-save-error="<%= dgettext "study", "The chapter could not be saved. Your changes are still in the editor." %>">
-  <div class="chapter-editor-toolbar">
-    <label for="editor_chapter"><%= dgettext "study", "Chapter" %></label>
-    <select id="editor_chapter" :disabled="saving" :value="chapter" @change="changeChapter($event)">
-      <template x-for="(option, index) in options" :key="index">
-        <option :value="index" x-text="option.title" :selected="index === chapter"></option>
-      </template>
-    </select>
-    <button type="button" id="editor_save" class="button button-primary" :disabled="saving || !dirty" @click="save()" disabled><%= dgettext "study", "Save chapter" %></button>
+  <div class="chapter-editor-topbar">
+    <span class="chapter-editor-context"><%= dgettext "study", "Edit chapter" %>: <%= @study.title %></span>
+    <nav class="chapter-editor-switcher" aria-label="<%= dgettext "study", "Chapter" %>">
+      <label for="editor_chapter"><%= dgettext "study", "Chapter" %></label>
+      <select id="editor_chapter" :disabled="saving" :value="chapter" @change="changeChapter($event)">
+        <template x-for="(option, index) in options" :key="index">
+          <option :value="index" x-text="option.title" :selected="index === chapter"></option>
+        </template>
+      </select>
+      <%= link dgettext("study", "Back to study"), to: Routes.study_path(@conn, :show, @locale, @study), class: "study-edit-link" %>
+    </nav>
+  </div>
+  <div class="chapter-editor-title">
+    <h1 x-show="!editingTitle">
+      <button type="button" class="chapter-editor-title-button" :disabled="saving" @click="beginTitleEdit()"
+              aria-label="<%= dgettext "study", "Edit chapter title" %>">
+        <span x-text="title"></span>
+        <svg class="chapter-editor-pencil" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m16 3 5 5L8 21H3v-5L16 3Z"/><path d="m14 5 5 5"/></svg>
+      </button>
+    </h1>
+    <input x-cloak x-show="editingTitle" x-ref="titleInput" type="text" id="editor_title" maxlength="200" required
+           aria-label="<%= dgettext "study", "Chapter title" %>" x-model="title" :disabled="saving"
+           @input="updateTitle($event.target.value)" @blur="editingTitle = false"
+           @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="cancelTitleEdit()" />
+  </div>
+  <div class="chapter-editor-toolbar chapter-editor-actions">
+    <button type="button" id="editor_save" class="button" :class="{ 'button-primary': dirty }" :disabled="saving || !dirty" @click="save()" disabled><%= dgettext "study", "Save chapter" %></button>
     <button type="button" id="editor_discard" class="button" :disabled="saving || !dirty" @click="discard()" disabled><%= dgettext "study", "Discard changes" %></button>
   </div>
-  <label for="editor_title"><%= dgettext "study", "Chapter title" %></label>
-  <input type="text" id="editor_title" maxlength="200" required x-model="title" :disabled="saving"
-         @input="updateTitle($event.target.value)" @focus="$event.target.select()" />
   <p><%= dgettext "study", "Select a position and play a move to add a continuation or variation. Add a comment to the selected position." %></p>
   <div class="chapter-editor-layout">
     <div>
