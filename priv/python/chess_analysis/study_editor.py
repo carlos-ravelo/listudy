@@ -162,6 +162,13 @@ def replace_chapter(payload):
     if not isinstance(tree, dict):
         raise ValueError('Invalid chapter data.')
     edited = chess.pgn.Game(headers=dict(game.headers))
+    if 'title' in tree:
+        title = tree['title']
+        if not isinstance(title, str) or not title.strip() or len(title) > 200:
+            raise ValueError('Each chapter needs a title of up to 200 characters.')
+        if any(character in title for character in ['"', '\\', '\n', '\r']):
+            raise ValueError('Chapter titles cannot contain quotes, backslashes or line breaks.')
+        edited.headers['Event'] = title.strip()
     count = 0
 
     def comment(value):

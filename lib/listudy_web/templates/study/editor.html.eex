@@ -25,6 +25,9 @@
     <button type="button" id="editor_save" class="button button-primary" :disabled="saving || !dirty" @click="save()" disabled><%= dgettext "study", "Save chapter" %></button>
     <button type="button" id="editor_discard" class="button" :disabled="saving || !dirty" @click="discard()" disabled><%= dgettext "study", "Discard changes" %></button>
   </div>
+  <label for="editor_title"><%= dgettext "study", "Chapter title" %></label>
+  <input type="text" id="editor_title" maxlength="200" required x-model="title" :disabled="saving"
+         @input="updateTitle($event.target.value)" @focus="$event.target.select()" />
   <p><%= dgettext "study", "Select a position and play a move to add a continuation or variation. Add a comment to the selected position." %></p>
   <div class="chapter-editor-layout">
     <div>
