@@ -74,6 +74,16 @@ Alpine.data('chapterEditor', () => {
         previous() { this.selectPosition(editor.path.slice(0, -1)); },
         next() { this.selectPosition([...editor.path, 0]); },
 
+        copyCurrentMove(event) {
+            if (event.defaultPrevented || !event.clipboardData || window.getSelection()?.toString()) return;
+            if (event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+            if (!editor.path.length) return;
+            const move = this.$refs.moves.querySelector('[aria-current="step"]');
+            if (!move) return;
+            event.clipboardData.setData('text/plain', move.getAttribute('aria-label'));
+            event.preventDefault();
+        },
+
         navigateKey(event) {
             if (this.saving || event.defaultPrevented || event.isComposing ||
                 event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;

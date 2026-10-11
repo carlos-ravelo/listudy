@@ -238,6 +238,9 @@ are saved with **Save chapter**.
 Select
 a position with the move list, navigation buttons or Left / Right arrow keys.
 Keyboard navigation remains available outside comment fields and other inputs. Select
+Copy the highlighted move with Ctrl+C (Cmd+C on macOS), including its move number.
+Selected text and text fields retain their normal copy behavior.
+Select
 a position in the move tree, play a legal move to add a continuation or a
 variation, and edit the selected position's comment. Existing continuations are
 navigated rather than duplicated. The promotion selector supports underpromotion.

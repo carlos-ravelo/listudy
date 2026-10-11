@@ -1,5 +1,6 @@
 <section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)"
          @keydown.window="navigateKey($event)"
+         @copy.window="copyCurrentMove($event)"
          data-editor="<%= @editor_json %>" data-revision="<%= @revision %>"
          data-save-url="<%= Routes.study_path(@conn, :save_chapter, @locale, @study) %>"
          data-color="<%= @study.color %>"
