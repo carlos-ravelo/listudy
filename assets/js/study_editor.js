@@ -168,10 +168,15 @@ Alpine.data('chapterEditor', () => {
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || config.saveError);
+                const path = editor.path;
+                config.revision = result.revision;
                 chapters[this.chapter] = { ...chapters[this.chapter], ...editor.tree };
                 editor = createChapterEditor(chapters[this.chapter]);
-                this.dirty = false;
-                window.location.assign(result.url);
+                editor.select(path);
+                this.options[this.chapter].title = chapters[this.chapter].title;
+                this.saving = false;
+                this.status = config.saved;
+                this.refresh();
             } catch (error) {
                 console.error('Chapter save failed:', error);
                 this.status = error.message || config.saveError;

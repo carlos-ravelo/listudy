@@ -164,8 +164,9 @@ defmodule ListudyWeb.StudyController do
              params["chapter_index"],
              params["tree"]
            ) do
-        {:ok, playback_index} ->
+        {:ok, %{playback_index: playback_index, revision: revision}} ->
           json(conn, %{
+            revision: revision,
             url:
               Routes.study_path(conn, :show, conn.assigns.locale, study,
                 chapter_index: playback_index

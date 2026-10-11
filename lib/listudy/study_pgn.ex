@@ -10,7 +10,7 @@ defmodule Listudy.StudyPgn do
            {:ok, %{"pgn" => edited, "playback_index" => playback_index}} <-
              ChessEngine.replace_chapter(current, index, tree),
            :ok <- write_atomic(path, edited) do
-        {:ok, playback_index}
+        {:ok, %{playback_index: playback_index, revision: revision(edited)}}
       else
         false -> {:error, :conflict}
         error -> error

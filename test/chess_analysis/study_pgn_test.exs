@@ -23,7 +23,7 @@ defmodule Listudy.StudyPgnTest do
       end)
       |> Enum.map(&Task.await(&1, 15000))
 
-    assert Enum.count(results, &(&1 == {:ok, 0})) == 1
+    assert Enum.count(results, &match?({:ok, %{playback_index: 0, revision: _}}, &1)) == 1
     assert {:error, :conflict} in results
     assert File.read!(path) =~ "New comment"
     assert File.read!(path) =~ "[Event \"Second\"]\n\n1. d4 d5 *\n"
