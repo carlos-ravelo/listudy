@@ -105,6 +105,8 @@ defmodule ListudyWeb.StudyEditorControllerTest do
 
     assert response["url"] == Routes.study_path(conn, :edit, "en", study)
     saved = File.read!(path)
+    assert response["revision"] == Listudy.StudyPgn.revision(saved)
+    assert Enum.map(response["chapters"], & &1["source_index"]) == [0, 1]
     assert saved =~ "ListudyChapterId"
 
     assert owner

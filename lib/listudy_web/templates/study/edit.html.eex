@@ -9,7 +9,7 @@
 <%= if @maintenance_error do %>
   <p role="alert"><%= @maintenance_error %></p>
 <% else %>
-<section class="study-maintenance" x-data="studyMaintenance" @beforeunload.window="beforeLeave($event)"
+<section class="study-maintenance" x-data="studyMaintenance" @study-saved.window="metadataSaved($event.detail)" @beforeunload.window="beforeLeave($event)"
          data-chapters="<%= @chapters_json %>" data-revision="<%= @revision %>"
          data-save-url="<%= Routes.study_path(@conn, :manage_chapters, @locale, @study) %>"
          data-editor-url="<%= Routes.study_path(@conn, :editor, @locale, @study) %>"
@@ -17,6 +17,7 @@
          data-delete-prompt="<%= dgettext("study", "Delete chapter %s? This takes effect when you save.") %>"
          data-discard-prompt="<%= dgettext("study", "Discard your unsaved chapter changes?") %>"
          data-saving="<%= dgettext("study", "Saving…") %>"
+         data-saved="<%= dgettext("study", "Study saved") %>"
          data-save-error="<%= dgettext("study", "The chapter changes could not be saved.") %>">
   <div class="study-maintenance-heading">
     <h2><%= dgettext("study", "Chapters") %> <span x-text="'(' + chapters.length + ')' "></span></h2>

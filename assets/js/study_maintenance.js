@@ -1,5 +1,32 @@
 import Alpine from 'alpinejs';
 
+Alpine.data('studyMetadata', () => ({
+    changed: false, saving: false, status: '',
+    async save(event) {
+        event.preventDefault();
+        if (this.saving) return;
+        this.saving = true;
+        const maintenance = document.querySelector('.study-maintenance');
+        this.status = maintenance?.dataset.saving || '';
+        try {
+            const body = new FormData(this.$el);
+            body.set('_stay', 'true');
+            const response = await fetch(this.$el.action, { method: 'POST', credentials: 'same-origin', body });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || maintenance?.dataset.saveError);
+            this.$el.action = result.action;
+            document.querySelector('.study-management-heading .study-edit-link')?.setAttribute('href', result.study_url);
+            window.dispatchEvent(new CustomEvent('study-saved', { detail: result }));
+            this.changed = false;
+            this.status = maintenance?.dataset.saved || '';
+        } catch (error) {
+            this.status = error.message;
+        } finally {
+            this.saving = false;
+        }
+    }
+}));
+
 Alpine.data('studyMaintenance', () => {
     let config, original;
     const identity = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), value => value.toString(16).padStart(2, '0')).join('');
@@ -10,6 +37,16 @@ Alpine.data('studyMaintenance', () => {
             config = this.$el.dataset;
             this.chapters = JSON.parse(config.chapters);
             original = JSON.stringify(this.chapters);
+        },
+        metadataSaved(result) {
+            config.saveUrl = result.save_url;
+            config.editorUrl = result.editor_url;
+            if (result.pgn_changed) {
+                this.chapters = result.chapters;
+                config.revision = result.revision;
+                original = JSON.stringify(this.chapters);
+                this.endDrag();
+            }
         },
         get dirty() { return JSON.stringify(this.chapters) !== original; },
         startDrag(event, chapter) {
@@ -87,8 +124,11 @@ Alpine.data('studyMaintenance', () => {
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || config.saveError);
-                this.discarding = true;
-                window.location.assign(result.url);
+                this.chapters = result.chapters;
+                original = JSON.stringify(this.chapters);
+                config.revision = result.revision;
+                this.saving = false;
+                this.status = config.saved;
             } catch (error) {
                 this.status = error.message || config.saveError;
                 this.saving = false;
