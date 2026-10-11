@@ -51,7 +51,11 @@ Alpine.data('chapterEditor', () => {
                 lastMove: move ? [move.from, move.to] : undefined,
                 movable: { color: this.saving ? undefined : color, dests: this.saving ? new Map() : ground_legal_moves(position) }
             });
-            this.analysisUrl = `https://lichess.org/analysis/${position.fen()}?color=${ground.state.orientation}`;
+            const orientation = ground.state.orientation;
+            const customStart = position.header().SetUp !== undefined;
+            this.analysisUrl = customStart
+                ? `https://lichess.org/analysis/${position.fen()}?color=${orientation}`
+                : `https://lichess.org/analysis/pgn/${encodeURIComponent(position.pgn())}?color=${orientation}`;
             moveTree.update({ reading: true, chapter: this.chapter, root: editor.tree.root,
                 fen: chapters[this.chapter].fen, path: editor.path });
         },
