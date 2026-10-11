@@ -5,12 +5,42 @@ Alpine.data('studyMaintenance', () => {
     const identity = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), value => value.toString(16).padStart(2, '0')).join('');
     return {
         chapters: [], saving: false, status: '', discarding: false,
+        draggedId: null, dropId: null, dropAfter: false,
         init() {
             config = this.$el.dataset;
             this.chapters = JSON.parse(config.chapters);
             original = JSON.stringify(this.chapters);
         },
         get dirty() { return JSON.stringify(this.chapters) !== original; },
+        startDrag(event, chapter) {
+            if (this.saving) { event.preventDefault(); return; }
+            this.draggedId = chapter.id;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', chapter.id);
+            event.dataTransfer.setDragImage(event.target.closest('.study-maintenance-row'), 20, 20);
+        },
+        dragOver(event, chapter) {
+            if (this.saving || !this.draggedId || chapter.id === this.draggedId) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            const bounds = event.currentTarget.getBoundingClientRect();
+            this.dropId = chapter.id;
+            this.dropAfter = event.clientY > bounds.top + bounds.height / 2;
+        },
+        drop(event, chapter) {
+            if (this.saving || !this.draggedId || chapter.id === this.draggedId) { this.endDrag(); return; }
+            event.preventDefault();
+            const source = this.chapters.findIndex(item => item.id === this.draggedId);
+            const target = this.chapters.findIndex(item => item.id === chapter.id);
+            if (source < 0 || target < 0) { this.endDrag(); return; }
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const after = event.clientY > bounds.top + bounds.height / 2;
+            const moved = this.chapters.splice(source, 1)[0];
+            const destination = this.chapters.findIndex(item => item.id === chapter.id) + (after ? 1 : 0);
+            this.chapters.splice(destination, 0, moved);
+            this.endDrag();
+        },
+        endDrag() { this.draggedId = null; this.dropId = null; this.dropAfter = false; },
         move(index, delta) {
             const target = index + delta;
             if (this.saving || target < 0 || target >= this.chapters.length) return;
@@ -31,6 +61,7 @@ Alpine.data('studyMaintenance', () => {
         },
         discard() {
             if (!window.confirm(config.discardPrompt)) return;
+            this.endDrag();
             this.chapters = JSON.parse(original);
             this.status = '';
         },
