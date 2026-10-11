@@ -19,54 +19,40 @@
   <%= error_tag f, :description %>
 
   </div>
+  </div>
+
+  <div class="study-management-settings-row">
   <div class="study-metadata-opening">
   <%= label f, :opening_id, dgettext("study", "Opening") %>
   <%= select(f, :opening_id, Enum.map(@assigns.openings, fn %{name: name, id: id} -> [key: name, value: id] end), selected: selected_opening(@assigns), class: "study_opening_id big_input") %>
 
   </div>
+    <div class="study-management-side">
+      <%= label f, :color, dgettext("study", "For which side is this study") %>
+      <%= select(f, :color, ["White": "white", "Black": "black"]) %>
+    </div>
+    <div class="study-management-private">
+      <%= label f, :private, dgettext("study", "Keep this study private") %>
+      <%= checkbox f, :private %>
+    </div>
   </div>
 
-  <%= if Map.get(@assigns, :maintenance, false) do %>
-    <details class="study-management-settings">
-      <summary><%= dgettext("study", "Study details and PGN import") %></summary>
-    <details class="study-management-import">
-      <summary><%= dgettext("study", "Select a PGN to upload") %> / Lichess</summary>
-  <% end %>
-  <div class="pgn_choice">
-    <p><%= dgettext("study", "Either upload a PGN file or provide a link to a public Lichess study:") %></p>
-    <div class="row">
-      <div class="one-half column">
+  <div class="study-management-import-card pgn_choice">
+    <h3 style="margin-top:0; font-size: 14px;"><%= dgettext("study", "Import PGN or Lichess Study") %></h3>
+    <div class="study-management-import-grid">
+      <div>
         <%= label f, :pgn, dgettext("study", "Select a PGN to upload") %>
         <%= file_input f, :pgn %>
       </div>
-
-      <div class="one-half column">
+      <div>
         <%= label f, :lichess_study, dgettext("study", "Lichess Study") %>
         <%= text_input f, :lichess_study, placeholder: "https://lichess.org/study/ZWHbJIPd", class: "big_input" %>
         <%= error_tag f, :lichess_study %>
       </div>
     </div>
   </div>
-
-
   <%= if Map.get(@assigns, :maintenance, false) do %>
-    </details>
-  <% end %>
-
-  <div class="row study_below_highlight">
-    <div class="one-half column">
-      <%= label f, :color, dgettext("study", "For which side is this study") %>
-      <%= select(f, :color, ["White": "white", "Black": "black"]) %>
-    </div>
-
-    <div class="one-half column">
-      <%= label f, :private, dgettext("study", "Keep this study private") %>
-      <%= checkbox f, :private %>
-    </div>
-  </div>
-
-  <%= if Map.get(@assigns, :maintenance, false) do %>
-    </details>
+    <p class="study-management-status" role="status" x-text="status"></p>
   <% end %>
 
   <script type="text/javascript" src="<%= Routes.static_path(@assigns.conn, "/js/jquery-3.5.1.min.js") %>"></script>
@@ -97,7 +83,4 @@ $(document).ready(function() {
     <button class="go-back tertiary"><%= dgettext("study", "Back") %></button>
   <% end %>
 </div>
-<%= if Map.get(@assigns, :maintenance, false) do %>
-<p role="status" x-text="status"></p>
-<% end %>
 <% end %>
