@@ -118,6 +118,7 @@ export function setupStudyMoveTree({ element, onSelect, startLabel, variationLab
         }
         const selected = buttons.get(path.join('.'));
         if (selected === active) return;
+        const moveHasFocus = active && document.activeElement === active;
         if (active) active.removeAttribute('aria-current');
         active = selected;
         if (!active) return;
@@ -126,6 +127,7 @@ export function setupStudyMoveTree({ element, onSelect, startLabel, variationLab
             if (parent.tagName === 'DETAILS') parent.open = true;
         }
         const panel = element.getBoundingClientRect();
+        if (moveHasFocus) active.focus({ preventScroll: true });
         const move = active.getBoundingClientRect();
         if (move.top < panel.top) element.scrollTop += move.top - panel.top;
         else if (move.bottom > panel.bottom) element.scrollTop += move.bottom - panel.bottom;
