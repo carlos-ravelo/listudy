@@ -73,6 +73,19 @@ Alpine.data('chapterEditor', () => {
         previous() { this.selectPosition(editor.path.slice(0, -1)); },
         next() { this.selectPosition([...editor.path, 0]); },
 
+        navigateKey(event) {
+            if (this.saving || event.defaultPrevented || event.isComposing ||
+                event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+            if (event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+            if (event.key === 'ArrowLeft' && this.hasPrevious) {
+                event.preventDefault();
+                this.previous();
+            } else if (event.key === 'ArrowRight' && this.hasNext) {
+                event.preventDefault();
+                this.next();
+            }
+        },
+
         updateComment(value) {
             editor.setComment(value);
             this.dirty = editor.dirty;
