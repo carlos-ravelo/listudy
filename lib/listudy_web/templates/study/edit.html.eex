@@ -25,7 +25,13 @@
   <p><%= dgettext("study", "Rename and reorder your chapters here. Open a chapter to edit its moves and comments.") %></p>
   <ol class="study-maintenance-list">
     <template x-for="(chapter, index) in chapters" :key="chapter.id">
-      <li class="study-maintenance-row">
+      <li class="study-maintenance-row" @dragover="dragOver($event, chapter)" @drop="drop($event, chapter)"
+          @dragleave="if (!$el.contains($event.relatedTarget)) dropId = null"
+          :class="{ 'is-dragging': draggedId === chapter.id, 'drop-before': dropId === chapter.id && !dropAfter, 'drop-after': dropId === chapter.id && dropAfter }">
+        <span class="study-maintenance-drag" :draggable="!saving" @dragstart="startDrag($event, chapter)" @dragend="endDrag()"
+              title="<%= dgettext("study", "Drag to reorder chapter") %>" aria-label="<%= dgettext("study", "Drag to reorder chapter") %>">
+          <svg aria-hidden="true" width="16" height="20" viewBox="0 0 16 20" fill="currentColor"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="10" r="1.5"/><circle cx="11" cy="10" r="1.5"/><circle cx="5" cy="16" r="1.5"/><circle cx="11" cy="16" r="1.5"/></svg>
+        </span>
         <span class="study-maintenance-number" x-text="index + 1"></span>
         <div class="study-maintenance-title">
           <input type="text" maxlength="200" x-model="chapter.title" :disabled="saving"
