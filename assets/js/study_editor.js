@@ -9,7 +9,7 @@ Alpine.data('chapterEditor', () => {
     let chapters, editor, ground, moveTree, config;
 
     return {
-        options: [], chapter: 0, comment: '', promotion: 'q',
+        options: [], chapter: 0, title: '', comment: '', promotion: 'q',
         saving: false, dirty: false, hasPrevious: false, hasNext: false, status: '',
 
         init() {
@@ -42,6 +42,7 @@ Alpine.data('chapterEditor', () => {
             const color = position.turn() === 'w' ? 'white' : 'black';
             const move = position.history({ verbose: true }).slice(-1)[0];
             this.comment = editor.node().comment;
+            this.title = editor.tree.title;
             this.dirty = editor.dirty;
             this.hasPrevious = editor.path.length > 0;
             this.hasNext = (this.hasPrevious ? editor.node().children : editor.tree.root).length > 0;
@@ -88,6 +89,12 @@ Alpine.data('chapterEditor', () => {
 
         updateComment(value) {
             editor.setComment(value);
+            this.dirty = editor.dirty;
+            this.status = this.dirty ? config.unsaved : '';
+        },
+
+        updateTitle(value) {
+            editor.setTitle(value);
             this.dirty = editor.dirty;
             this.status = this.dirty ? config.unsaved : '';
         },

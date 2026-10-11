@@ -2,7 +2,7 @@ const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 
 export function createChapterEditor(chapter) {
-    const tree = JSON.parse(JSON.stringify({ root: chapter.root, comment: chapter.comment }));
+    const tree = JSON.parse(JSON.stringify({ title: chapter.title, root: chapter.root, comment: chapter.comment }));
     const original = JSON.stringify(tree);
     let path = [];
 
@@ -40,6 +40,7 @@ export function createChapterEditor(chapter) {
             path = [...at];
         },
         setComment(comment) { node().comment = comment; },
+        setTitle(title) { tree.title = title; },
         play(from, to, promotion = 'q') {
             const board = position();
             const move = board.move({ from, to, promotion });
