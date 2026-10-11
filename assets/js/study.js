@@ -575,15 +575,15 @@ function change_play_stockfish() {
  */
 function change_analysis_board() {
     let link = document.getElementById("analysis_board");
+    const orientation = ground.state.orientation;
     // The PGN standard requires a SetUp header when there is another start position
     let starts_midgame = trees[chapter].headers.SetUp != undefined;
     if (starts_midgame) {
         let fen = chess.fen();
-        link.href = `https://lichess.org/analysis/${fen}`;
+        link.href = `https://lichess.org/analysis/${fen}?color=${orientation}`;
     } else {
         let pgn = encodeURIComponent(chess.pgn());
-        let color = turn_color(chess);
-        link.href = `https://lichess.org/analysis/pgn/${pgn}?color=${color}`;
+        link.href = `https://lichess.org/analysis/pgn/${pgn}?color=${orientation}`;
     }
 }
 

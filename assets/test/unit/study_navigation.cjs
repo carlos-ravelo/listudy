@@ -24,13 +24,13 @@ const functions = declarations
     .filter(node => node.type === 'FunctionDeclaration' && names.has(node.id.name))
     .map(node => source.slice(node.start, node.end)).join('\n');
 
-function fixture(moves, fen) {
+function fixture(moves, fen, orientation = 'white') {
     const root = moves.reduceRight((children, move) => [{ move, children }], []);
     const links = {
         analysis_board: { href: 'https://lichess.org/analysis' },
         play_stockfish: { href: '/play-stockfish' }
     };
-    const board = {};
+    const board = { orientation };
     const waits = [];
     const timers = [];
     const context = vm.createContext({
@@ -46,7 +46,7 @@ function fixture(moves, fen) {
         total_moves: 0, combo_count: 0, attempts: 0, reviews: 0, resets: 0, advances: 0,
         max_depth: 100, DEPTH_MAX: 100, board_review: 'slow',
         i18n: { review_slow: 'slow', key_move_enabled: 'enabled' }, success_div: {}, error_div: {}, info_div: {},
-        ground: { set: state => Object.assign(board, state), setShapes() {}, redrawAll() {} },
+        ground: { state: board, set: state => Object.assign(board, state), setShapes() {}, redrawAll() {} },
         ground_move() {}, ground_undo_last_move() {},
         studyMoveNavigation: { update() {} },
         studyMoveTree: { update() {} },
@@ -84,9 +84,9 @@ function fixture(moves, fen) {
         selectNextWeakChapter: () => context.advances++,
         stopWeakChapterRun: () => { context.weakChapterRunActive = false; },
         stopSpacedReviewRun: () => { context.spacedReviewRunActive = false; },
-        color: 'white', key_moves_mode: 'disabled', mode_free: 'free',
+        color: orientation, key_moves_mode: 'disabled', mode_free: 'free',
         setup_chess: fen => { context.chess = new Chess(fen); },
-        ground_init_state() {},
+        ground_init_state: (fen, orientation) => Object.assign(board, { fen, orientation }),
         console
     });
     context.window = context;
@@ -104,12 +104,34 @@ function assertSynchronized({ context, board, links }) {
     const last = chess.history({ verbose: true }).slice(-1)[0];
     assert.equal(JSON.stringify(board.lastMove), JSON.stringify(last ? [last.from, last.to] : undefined));
     assert.equal(links.play_stockfish.href, `/play-stockfish#${chess.fen()}`);
-    assert.equal(links.analysis_board.href, context.trees[0].headers.SetUp
-        ? `https://lichess.org/analysis/${chess.fen()}`
-        : `https://lichess.org/analysis/pgn/${encodeURIComponent(chess.pgn())}?color=${context.turn_color(chess)}`);
+    assert.equal(links.analysis_board.href, context.trees[context.chapter].headers.SetUp
+        ? `https://lichess.org/analysis/${chess.fen()}?color=${board.orientation}`
+        : `https://lichess.org/analysis/pgn/${encodeURIComponent(chess.pgn())}?color=${board.orientation}`);
 }
 
 (async () => {
+    for (const orientation of ['white', 'black']) {
+        for (const reading of [false, true]) {
+            for (const [moves, fen] of [
+                [['e4', 'e5']],
+                [['a8=Q+', 'Kd7'], '4k3/P7/8/8/8/8/8/4K3 w - - 0 1'],
+                [['a1=Q+', 'Kd2'], '4k3/8/8/8/8/8/p7/4K3 b - - 0 1']
+            ]) {
+                const test = fixture(moves, fen, orientation);
+                test.context.readMode = reading;
+                assertSynchronized(test);
+                for (const move of moves) {
+                    test.context.play_move(move);
+                    test.context.setup_move();
+                    assertSynchronized(test);
+                    assert.equal(new URL(test.links.analysis_board.href).searchParams.get('color'), orientation);
+                }
+                test.context.go_back();
+                assertSynchronized(test);
+            }
+        }
+    }
+
     const reading = fixture(['e4', 'e5', 'Nf3']);
     const { context: reader } = reading;
     const install = name => {
@@ -121,6 +143,8 @@ function assertSynchronized({ context, board, links }) {
     reader.trees[0].first_variation = null;
     reader.weakChapterRunActive = true;
     reader.set_read_mode(true);
+    assert.equal(reading.board.orientation, 'black');
+    assertSynchronized(reading);
     assert.equal(reader.weakChapterRunActive, false);
     assert.equal(reader.chess.history().length, 0);
     assert.equal(reader.lineEligibleForReview, false);
@@ -167,6 +191,8 @@ function assertSynchronized({ context, board, links }) {
     reader.display_comments(false);
     assert.equal(reader.renderedComment.comments[0].text, 'Chapter explanation');
     reader.set_read_mode(false);
+    assert.equal(reading.board.orientation, 'black');
+    assertSynchronized(reading);
     assert.equal(reader.seek_read_move([]), false);
     assert.equal(reader.readMode, false);
     assert.equal(reader.lineEligibleForReview, true);
@@ -177,6 +203,8 @@ function assertSynchronized({ context, board, links }) {
     assert.equal(reader.chapterStats.chapters[0].activePractice, undefined);
     reader.trees[0].headers = { SetUp: '1', FEN: '4k3/P7/8/8/8/8/8/4K3 w - - 0 1' };
     reader.start_training();
+    assert.equal(reading.board.orientation, 'white');
+    assertSynchronized(reading);
     assert.equal(reader.chess.fen(), reader.trees[0].headers.FEN);
     assert.equal(reader.attempts, 0);
     assert.equal(reader.reviews, 0);
