@@ -180,6 +180,52 @@ defmodule Listudy.Studies do
       {:error, %Ecto.Changeset{}}
 
   """
+  def clone_study(%Study{} = source, user_id, copy_label) do
+    title =
+      String.slice(source.title, 0, max(0, 100 - String.length(copy_label) - 3)) <>
+        " (" <> copy_label <> ")"
+
+    file_id = Listudy.Slug.random_alnum()
+    source_id = source.slug |> String.split("-") |> hd()
+    path = Path.join("priv/static/study_pgn", file_id <> ".pgn")
+    source_path = Path.join("priv/static/study_pgn", source_id <> ".pgn")
+
+    attrs = source |> Map.take([:description, :color, :opening_id])
+
+    attrs =
+      Map.merge(attrs, %{
+        title: title,
+        slug: file_id <> "-" <> Listudy.Slug.slugify(title),
+        user_id: user_id,
+        private: true
+      })
+
+    with {:ok, pgn} <- File.read(source_path) do
+      result =
+        Repo.transaction(fn ->
+          case create_study(attrs) do
+            {:ok, study} ->
+              case Listudy.StudyPgn.replace(path, pgn) do
+                :ok -> study
+                {:error, reason} -> Repo.rollback(reason)
+              end
+
+            {:error, changeset} ->
+              Repo.rollback(changeset)
+          end
+        end)
+
+      case result do
+        {:ok, study} ->
+          {:ok, study}
+
+        {:error, reason} ->
+          File.rm(path)
+          {:error, reason}
+      end
+    end
+  end
+
   def create_study(attrs \\ %{}) do
     %Study{}
     |> Study.changeset(attrs)

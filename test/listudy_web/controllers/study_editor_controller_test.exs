@@ -60,6 +60,63 @@ defmodule ListudyWeb.StudyEditorControllerTest do
     assert html =~ "data-confirm="
   end
 
+  test "cloning creates an independent private study and opens its edit page", %{
+    owner_conn: conn,
+    study: source,
+    path: source_path,
+    pgn: pgn,
+    owner_user: user
+  } do
+    response = post(conn, Routes.study_path(conn, :clone, "en", source))
+    copy = Repo.get_by!(Listudy.Studies.Study, title: source.title <> " (Copy)")
+    copy_id = copy.slug |> String.split("-") |> hd()
+    copy_path = Path.join("priv/static/study_pgn", copy_id <> ".pgn")
+    on_exit(fn -> File.rm(copy_path) end)
+
+    assert redirected_to(response) == Routes.study_path(conn, :edit, "en", copy)
+    assert copy.id != source.id
+    assert copy.slug != source.slug
+    assert copy.user_id == user.id
+    assert copy.private
+    assert copy.description == source.description
+    assert copy.color == source.color
+    assert File.read!(copy_path) == pgn
+    File.write!(copy_path, "changed copy")
+    assert File.read!(source_path) == pgn
+  end
+
+  test "cloning requires authentication and rejects another user's private study", %{
+    conn: conn,
+    other_conn: other,
+    study: study
+  } do
+    url = Routes.study_path(conn, :clone, "en", study)
+    assert conn |> post(url) |> redirected_to() == Routes.pow_session_path(conn, :new)
+    assert other |> post(url) |> html_response(404)
+    assert Repo.aggregate(Listudy.Studies.Study, :count, :id) == 1
+  end
+
+  test "public studies can be cloned into the current account", %{
+    other_conn: conn,
+    study: source
+  } do
+    source = source |> Ecto.Changeset.change(private: false) |> Repo.update!()
+    response = post(conn, Routes.study_path(conn, :clone, "es", source))
+    copy = Repo.get_by!(Listudy.Studies.Study, title: source.title <> " (Copia)")
+    copy_id = copy.slug |> String.split("-") |> hd()
+    on_exit(fn -> File.rm(Path.join("priv/static/study_pgn", copy_id <> ".pgn")) end)
+    assert copy.user_id == Repo.get_by!(Listudy.Users.User, username: "OtherEditor").id
+    assert copy.private
+    assert redirected_to(response) == Routes.study_path(conn, :edit, "es", copy)
+  end
+
+  test "missing PGN does not leave a cloned study", %{owner_conn: conn, study: study, path: path} do
+    File.rm!(path)
+    response = post(conn, Routes.study_path(conn, :clone, "en", study))
+    assert redirected_to(response) == Routes.study_path(conn, :index, "en")
+    assert Repo.aggregate(Listudy.Studies.Study, :count, :id) == 1
+  end
+
   test "only the owner can open and save the editor", %{
     conn: conn,
     other_conn: other,

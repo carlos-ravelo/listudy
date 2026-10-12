@@ -207,6 +207,7 @@ defmodule ListudyWeb.Router do
     get "/books/:slug", BookController, :show
     live "/books", BookSearchLive, layout: {ListudyWeb.LayoutView, :live}, as: :book_search
 
+    post "/studies/:id/clone", StudyController, :clone
     get "/studies/:id/editor", StudyController, :editor
     post "/studies/:id/editor", StudyController, :save_chapter
     post "/studies/:id/chapters", StudyController, :manage_chapters
