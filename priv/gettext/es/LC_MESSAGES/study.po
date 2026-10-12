@@ -1011,3 +1011,12 @@ msgstr "Todos"
 
 msgid "No studies match these filters."
 msgstr "Ningún estudio coincide con estos filtros."
+
+msgid "Clone study"
+msgstr "Clonar estudio"
+
+msgid "Study cloned successfully."
+msgstr "Estudio clonado correctamente."
+
+msgid "This study could not be cloned."
+msgstr "No se pudo clonar este estudio."

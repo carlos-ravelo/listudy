@@ -11,6 +11,10 @@
           <span class="study-library-color-label"><%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %></span>
         </span>
       <% end %>
+      <%= if !study.private || @editable do %>
+        <%= link dgettext("study", "Clone study"), to: Routes.study_path(@conn, :clone, @locale, study), method: :post,
+          class: "study-library-edit", aria: [label: dgettext("study", "Clone study") <> ": " <> study.title] %>
+      <% end %>
       <%= if @editable do %>
         <a class="study-library-edit" href="<%= Routes.study_path(@conn, :edit, @locale, study.slug) %>" aria-label="<%= dgettext("study", "Edit") %>: <%= study.title %>"><%= dgettext("study", "Edit") %></a>
         <%= link to: Routes.study_path(@conn, :delete, @locale, study), method: :delete,

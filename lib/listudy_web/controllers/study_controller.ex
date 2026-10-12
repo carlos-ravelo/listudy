@@ -18,6 +18,34 @@ defmodule ListudyWeb.StudyController do
     render(conn, "index.html", studies: studies, favorites: favorites)
   end
 
+  def clone(conn, %{"id" => id}) do
+    case get_user(conn) do
+      {:ok, user} ->
+        study = Studies.get_study_by_slug!(id)
+
+        if study && (!study.private || study.user_id == user.id) do
+          case Studies.clone_study(study, user.id, dgettext("study", "Copy")) do
+            {:ok, copy} ->
+              conn
+              |> put_flash(:info, dgettext("study", "Study cloned successfully."))
+              |> redirect(to: Routes.study_path(conn, :edit, conn.assigns.locale, copy))
+
+            {:error, _} ->
+              conn
+              |> put_flash(:error, dgettext("study", "This study could not be cloned."))
+              |> redirect(to: Routes.study_path(conn, :index, conn.assigns.locale))
+          end
+        else
+          conn |> put_status(:not_found) |> put_view(ListudyWeb.ErrorView) |> render("404.html")
+        end
+
+      {:error, error} ->
+        conn
+        |> put_flash(:info, error)
+        |> redirect(to: Routes.pow_session_path(conn, :new))
+    end
+  end
+
   def new(conn, _params) do
     case get_user(conn) do
       {:ok, _} ->
