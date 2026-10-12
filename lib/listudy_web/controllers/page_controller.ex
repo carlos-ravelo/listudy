@@ -61,6 +61,18 @@ defmodule ListudyWeb.PageController do
     renderer(conn, @pages, page)
   end
 
+  def admin_index(conn, %{"username" => username, "account_action" => action})
+      when action in ["email", "password"] do
+    username = String.trim(username)
+
+    if Listudy.Users.get_user_by_name!(username) do
+      action = if action == "email", do: :email, else: :password
+      redirect(conn, to: Routes.user_administration_path(conn, action, username))
+    else
+      conn |> put_flash(:error, gettext("User not found")) |> render("admin_index.html")
+    end
+  end
+
   def admin_index(conn, _) do
     render(conn, "admin_index.html")
   end
