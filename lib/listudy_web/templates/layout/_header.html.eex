@@ -40,6 +40,9 @@
               <summary><%= gettext("Language") %></summary>
               <div><%= raw ListudyWeb.Seo.lang_alternatives(@conn) %></div>
             </details>
+            <%= if match?(%{role: "admin"}, Pow.Plug.current_user(@conn)) do %>
+              <%= link gettext("Admin"), to: Routes.page_path(@conn, :admin_index) %>
+            <% end %>
           </div>
         </details>
         <%= if user = Pow.Plug.current_user(@conn) do %>
