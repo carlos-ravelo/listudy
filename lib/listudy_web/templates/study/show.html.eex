@@ -78,7 +78,7 @@
     <a class="icon" data-icon=">" id="puzzle_run" title="<%= dgettext("study", "Automatically advance to the next line when a puzzle is completed.") %>">placeholder</a>
   </div>
 <div class="option_item">
-    <a class="icon" data-icon="/" id="analysis_board" href="https://lichess.org/analysis" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
+    <a class="icon" data-icon="/" id="analysis_board" href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
   </div>
 <div class="option_item">
     <a class="icon" data-icon="-" id="arrows_toggle">placeholder</a>
