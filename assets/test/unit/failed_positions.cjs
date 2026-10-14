@@ -28,3 +28,12 @@ assert.equal(pendingPositions(chapterFailures(restored, 1, 'original')).length, 
 assert.equal(pendingPositions(chapterFailures(restored, 1, 'edited')).length, 0);
 assert.equal(pendingPositions(chapterFailures({ chapters: { 0: { attempts: 5, errors: 2 } } }, 0, 'new')).length, 0);
 console.log('Failed position persistence and recovery passed');
+
+recordPositionResult(positions, 'hint', details, true, { recovered: false });
+assert.equal(positions.hint.recovered, false);
+recordPositionResult(positions, 'hint', details, true);
+assert.equal(positions.hint.recovered, false);
+recordPositionResult(positions, 'hint', details, true, { recovered: true });
+assert.equal(positions.hint.recovered, true);
+recordPositionResult(positions, 'hint', details, false, { recovered: false });
+assert.equal(positions.hint.recovered, false);

@@ -71,7 +71,7 @@ function readChapterStats(raw) {
     }
 }
 
-function recordChapterAttempt(stats, chapterIndex, wasCorrect, moveId, positionId = moveId) {
+function recordChapterAttempt(stats, chapterIndex, wasCorrect, moveId, positionId = moveId, assisted = false) {
     const key = chapterStorageKey(stats, chapterIndex);
     const current = stats.chapters[key] || EMPTY_STATS;
     const coveredMoves = Array.isArray(current.coveredMoves) ? current.coveredMoves : [];
@@ -95,9 +95,9 @@ function recordChapterAttempt(stats, chapterIndex, wasCorrect, moveId, positionI
         practice.errors += wasCorrect ? 0 : 1;
         if (practice.firstResults && positionId !== undefined && positionId !== null &&
             !Object.prototype.hasOwnProperty.call(practice.firstResults, positionId)) {
-            practice.firstResults[positionId] = wasCorrect;
+            practice.firstResults[positionId] = wasCorrect && !assisted;
             practice.testedMoves += 1;
-            practice.missedMoves += wasCorrect ? 0 : 1;
+            practice.missedMoves += wasCorrect && !assisted ? 0 : 1;
         }
     }
     return stats;

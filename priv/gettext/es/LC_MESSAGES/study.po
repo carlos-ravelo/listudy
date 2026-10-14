@@ -1020,3 +1020,18 @@ msgstr "Estudio clonado correctamente."
 
 msgid "This study could not be cloned."
 msgstr "No se pudo clonar este estudio."
+
+msgid "Puzzle run: smart"
+msgstr "Serie de ejercicios: inteligente"
+
+msgid "Smart: learning a new line (up to 10 new positions per session)"
+msgstr "Inteligente: aprendiendo una nueva línea (hasta 10 posiciones nuevas por sesión)"
+
+msgid "Smart: reviewing a due position"
+msgstr "Inteligente: repasando una posición pendiente"
+
+msgid "Smart session complete for now"
+msgstr "Sesión inteligente completada por ahora"
+
+msgid "Replay from the start"
+msgstr "Ver desde el inicio"

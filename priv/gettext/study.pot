@@ -1019,3 +1019,18 @@ msgstr ""
 
 msgid "This study could not be cloned."
 msgstr ""
+
+msgid "Puzzle run: smart"
+msgstr ""
+
+msgid "Smart: learning a new line (up to 10 new positions per session)"
+msgstr ""
+
+msgid "Smart: reviewing a due position"
+msgstr ""
+
+msgid "Smart session complete for now"
+msgstr ""
+
+msgid "Replay from the start"
+msgstr ""

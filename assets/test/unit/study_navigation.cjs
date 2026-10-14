@@ -12,8 +12,13 @@ const moveTreeContext = vm.createContext({ require });
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/study_move_tree.js'), 'utf8')
     .replace(/^export /gm, ''), moveTreeContext);
 
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/position_context.js'), 'utf8')
+    .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), moveTreeContext);
 const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
+const reviewContext = vm.createContext({ ...require('ts-fsrs'), ChessModule: chessModule });
+for (const file of ['position_review.js', 'failed_positions.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study', file), 'utf8').replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), reviewContext);
 const names = new Set([
+    'currentPositionId', 'currentFailures', 'presentPracticePosition', 'replayContextFromStart',
     'handle_move', 'play_move', 'setup_move', 'change_analysis_board',
     'change_play_stockfish', 'refresh_manual_navigation', 'go_back', 'go_forward',
     'update_read_mode_ui', 'set_read_mode', 'play_read_move', 'seek_read_move',
@@ -42,6 +47,13 @@ function fixture(moves, fen, orientation = 'white') {
         beginChapterPractice: statsContext.beginChapterPractice,
         finishChapterPractice: statsContext.finishChapterPractice,
         StorageAdapter: { setItem() {} },
+        contextReplayActive: false, updateContextReplayUi() {}, comments_div: 'comments',
+        replayPositionContext: moveTreeContext.replayPositionContext,
+        smartSession: null, smartTarget: null, failedPositionRun: null,
+        positionAttempts: new Set(), assistedPositions: new Set(), NEW_POSITION_LIMIT: 10,
+        positionReviews: reviewContext.positionReviews, recordPositionReview: reviewContext.recordPositionReview,
+        chapterFailures: reviewContext.chapterFailures, recordPositionResult: reviewContext.recordPositionResult,
+        updateFailedPositionsUi() {}, selectNextSmartPosition: () => context.advances++,
         spacedReviewRunActive: false, weakChapterRunActive: false, readMode: false,
         total_moves: 0, combo_count: 0, attempts: 0, reviews: 0, resets: 0, advances: 0,
         max_depth: 100, DEPTH_MAX: 100, board_review: 'slow',
@@ -65,13 +77,14 @@ function fixture(moves, fen, orientation = 'white') {
         },
         tree_possible_moves: access => access.slice(1).reduce((nodes, index) => nodes[index].children, root),
         tree_children: access => context.tree_possible_moves(access),
+        tree_get_node: access => access.slice(1).reduce((parent, index) => parent.children[index], { children: root }),
         tree_move_index: (access, san) => context.tree_possible_moves(access).findIndex(node => node.move === san),
         ai_move: access => context.tree_possible_moves(access)[0]?.move,
         ground_set_moves: () => { board.legalMoves = context.chess.moves(); },
         possible_promotion: () => '', update_value() {}, store_trees() {}, update_progress() {},
-        record_chapter_attempt: (correct, moveId, positionId) => {
+        record_chapter_attempt: (correct, moveId, positionId, assisted) => {
             context.attempts++;
-            statsContext.recordChapterAttempt(context.chapterStats, context.chapter, correct, moveId, positionId);
+            statsContext.recordChapterAttempt(context.chapterStats, context.chapter, correct, moveId, positionId, assisted);
         },
         record_line_review: () => { context.reviews++; context.lineReviewRecorded = true; },
         display_arrows() {}, display_comments() {}, show_suggestions() {}, clear_all_text() {},
@@ -286,5 +299,54 @@ function assertSynchronized({ context, board, links }) {
     advance.timers.shift()();
     assert.equal(advance.context.advances, 0);
     assertSynchronized(advance);
-    console.log('Study navigation regression checks passed.');
+    const smart = fixture(['e4']);
+    smart.context.smartSession = { newCount: 0 };
+    smart.context.smartTarget = { type: 'position' };
+    await smart.context.handle_move('d2', 'd4');
+    const smartCards = smart.context.chapterStats.chapters[0].positionReviews.cards;
+    assert.equal(smartCards[''].recovered, false);
+    assert.equal(smart.context.smartSession.newCount, 1);
+    const correction = smart.context.handle_move('e2', 'e4');
+    smart.waits.shift()();
+    await correction;
+    assert.equal(smartCards[''].recovered, false);
+    assert.equal(smart.context.advances, 1);
+    assert.equal(smart.context.chapterStats.chapters[0].cleanMoves.length, 0);
+    assert.equal(smart.context.smartTarget, null);
+    const attemptsBefore = smart.context.attempts;
+    await smart.context.handle_move('e2', 'e4');
+    assert.equal(smart.context.attempts, attemptsBefore);
+    const replay = fixture(['e4', 'e5', 'Nf3', 'Nc6', 'Bb5']);
+    replay.context.smartSession = { newCount: 0 };
+    replay.context.smartTarget = { type: 'position' };
+    replay.context.positionAttempts.add('previous');
+    replay.context.assistedPositions.add('hinted');
+    const replaying = replay.context.presentPracticePosition([0, 0, 0, 0], 4);
+    assert.equal(replay.context.contextReplayActive, true);
+    await replay.context.handle_move('e2', 'e4');
+    assert.equal(replay.context.attempts, 0);
+    for (let index = 0; index < 5; index++) {
+        assert.equal(replay.waits.length, 1);
+        replay.waits.shift()();
+        await new Promise(setImmediate);
+    }
+    await replaying;
+    assert.equal(replay.context.contextReplayActive, false);
+    assert.equal(replay.context.chess.history().join(' '), 'e4 e5 Nf3 Nc6');
+    assert.equal(replay.context.curr_move.join(','), '0,0,0,0,0');
+    assert.equal(replay.context.attempts, 0);
+    assert.equal(replay.context.reviews, 0);
+    assert.equal(replay.context.positionAttempts.has('previous'), true);
+    assert.equal(replay.context.assistedPositions.has('hinted'), true);
+    assertSynchronized(replay);
+    const canceled = fixture(['e4', 'e5', 'Nf3']);
+    const pendingContext = canceled.context.presentPracticePosition([0, 0], 4);
+    canceled.context.trainingSessionId++;
+    canceled.context.contextReplayActive = false;
+    canceled.context.chess = new Chess();
+    canceled.waits.shift()();
+    await pendingContext;
+    assert.equal(canceled.context.chess.history().length, 0);
+    assert.equal(canceled.context.contextReplayActive, false);
+    console.log('Study navigation, context playback, cancellation and Smart correction checks passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

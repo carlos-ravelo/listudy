@@ -1,0 +1,63 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const context = vm.createContext({ ...require('ts-fsrs'), ChessModule: require('chess.js') });
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/position_review.js'), 'utf8')
+    .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/, ''), context);
+const { positionReviews, positionCatalog, recordPositionReview, nextSmartPosition } = context;
+const now = new Date('2026-10-14T10:00:00Z');
+const later = seconds => new Date(now.getTime() + seconds * 1000);
+const stats = { chapters: {}, chapterIds: ['stable', 'second'] };
+const signatures = ['a', 'b'];
+const cards = positionReviews(stats, 0, 'a');
+const attempts = new Set();
+const failed = recordPositionReview(cards, '', false, false, attempts, now);
+assert.equal(failed.recovered, false);
+const retry = recordPositionReview(cards, '', true, false, attempts, later(1));
+assert.equal(retry, null);
+assert.equal(cards[''].recovered, false);
+assert.equal(cards[''].successes, 0);
+const before = JSON.stringify(cards['']);
+recordPositionReview(cards, '', true, false, new Set(), later(20));
+assert.equal(JSON.stringify(cards['']), before);
+recordPositionReview(cards, '', true, false, new Set(), new Date(cards[''].card.due));
+assert.equal(cards[''].recovered, true);
+const due = cards[''].card.due;
+recordPositionReview(cards, '', true, false, new Set(), later(61));
+assert.equal(cards[''].card.due, due);
+recordPositionReview(cards, 'hint', true, true, new Set(), now);
+assert.equal(cards.hint.recovered, false);
+const restored = JSON.parse(JSON.stringify(stats));
+recordPositionReview(positionReviews(restored, 0, 'a'), '', false, false, new Set(), later(86400));
+assert.equal(restored.chapters.stable.positionReviews.cards[''].recovered, false);
+const trees = [{ headers: {}, root: [
+    { move: 'e4', children: [{ move: 'e5', children: [{ move: 'Nf3', children: [] }] },
+        { move: 'c5', children: [{ move: 'Nf3', children: [] }] }] },
+    { move: 'd4', children: [{ move: 'd5', children: [{ move: 'c4', children: [] }] }] }
+] }, { headers: {}, root: [{ move: 'd4', children: [] }] }];
+const catalog = positionCatalog(trees, 'white');
+assert.deepEqual(Array.from(catalog, item => item.id), ['', 'e4|e5', 'e4|c5', 'd4|d5', '']);
+assert.equal(catalog.find(item => item.id === 'e4|c5').path.join(','), '0,1');
+const black = positionCatalog(trees, 'black');
+assert.deepEqual(Array.from(black, item => item.id), ['e4', 'd4']);
+const custom = positionCatalog([{ headers: { FEN: '7k/8/8/8/8/8/8/K7 b - - 0 1' }, root: [{ move: 'Kg8', children: [] }] }], 'white');
+assert.equal(custom.length, 1);
+const fresh = { chapters: {}, chapterIds: ['stable', 'second'] };
+const session = { newCount: 0, lastChapter: null };
+assert.equal(nextSmartPosition(fresh, signatures, catalog, session, now).target.type, 'line');
+const freshCards = positionReviews(fresh, 0, 'a');
+recordPositionReview(freshCards, '', false, false, new Set(), now);
+const overdue = nextSmartPosition(fresh, signatures, catalog, session, later(700)).target;
+assert.equal(overdue.type, 'position');
+assert.equal(overdue.chapter, 0);
+assert.equal(overdue.id, '');
+session.newCount = 10;
+const finished = nextSmartPosition(fresh, signatures, catalog, session, later(10));
+assert.equal(finished.target, null);
+assert(finished.nextDue > now.getTime());
+const legacy = { chapters: { 0: { failedPositions: { signature: 'a', positions: { 'e4|c5': { cleanStreak: 0 } } } } } };
+assert.equal(nextSmartPosition(legacy, signatures, catalog, { newCount: 10 }, now).target.id, 'e4|c5');
+assert.equal(positionReviews(stats, 0, 'edited')[''], undefined);
+assert.equal(stats.chapters.stable.positionReviews.signature, 'edited');
+console.log('Position FSRS scheduling, corrections, hints, due priority, limits, identities and variations passed');
