@@ -4,28 +4,45 @@ const vm = require('node:vm');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/study_page_controls.js'), 'utf8');
 const listeners = {};
 const storage = {};
-const button = {};
+const nodes = Object.fromEntries(['puzzle_run', 'practice_smart', 'practice_lines', 'line_order_control', 'stop_smart_run'].map(id => [id, { attributes: {}, setAttribute(key, value) { this.attributes[key] = value; } }]));
+let changes = 0;
 const context = vm.createContext({
-    document: { getElementById: () => button },
+    document: { getElementById: id => nodes[id] },
     localStorage: { getItem: key => storage[key], setItem: (key, value) => storage[key] = value },
-    window: { addEventListener: (type, callback) => listeners[type] = callback, dispatchEvent: () => {} },
+    window: { addEventListener: (type, callback) => listeners[type] = callback, dispatchEvent: () => changes++ },
     Event: class {}
 });
-vm.runInContext(source.slice(source.indexOf('export function setupPuzzleRun')).replace('export ', ''), context);
-const i18n = Object.fromEntries(['off', 'next', 'random', 'smart'].map(mode => [`puzzle_run_${mode}`, mode]));
-context.setupPuzzleRun(i18n);
-for (const mode of ['next', 'random', 'smart', 'off']) {
-    button.onclick({ preventDefault() {} });
-    assert.equal(button.textContent, mode);
-    assert.equal(storage.puzzleRunMode, mode);
-}
+vm.runInContext(source.slice(source.indexOf('export function setupPuzzleRun')).replace(/^export /gm, ''), context);
+context.setupPuzzleRun({});
+assert.equal(context.window.studyFullLines, true);
+nodes.practice_smart.onclick();
+assert.equal(storage.puzzleRunMode, 'smart');
+assert.equal(nodes.practice_smart.attributes['aria-pressed'], 'true');
+assert.equal(nodes.line_order_control.hidden, true);
+nodes.practice_smart.onclick();
+assert.equal(changes, 1);
+nodes.practice_lines.onclick();
+assert.equal(storage.puzzleRunMode, 'off');
+nodes.puzzle_run.value = 'random';
+nodes.puzzle_run.onchange();
+assert.equal(storage.puzzleRunMode, 'random');
+nodes.practice_smart.onclick();
+nodes.practice_lines.onclick();
+assert.equal(storage.puzzleRunMode, 'random');
+listeners['study-reading-updated']({ detail: { reading: true } });
+assert.equal(nodes.practice_smart.disabled, true);
+assert.equal(nodes.line_order_control.hidden, true);
+listeners['study-reading-updated']({ detail: { reading: false } });
+nodes.practice_smart.onclick();
+nodes.stop_smart_run.onclick();
+assert.equal(storage.puzzleRunMode, 'off');
 storage.puzzleRunMode = 'smart';
-context.setupPuzzleRun(i18n);
-assert.equal(button.textContent, 'smart');
+context.setupPuzzleRun({});
+assert.equal(nodes.practice_smart.attributes['aria-pressed'], 'true');
 listeners['study-puzzle-run-off']();
 assert.equal(storage.puzzleRunMode, 'off');
-assert.equal(button.textContent, 'off');
-console.log('Smart mode cycle, restoration and cancellation passed');
+assert.equal(context.window.studyFullLines, true);
+console.log('Session choices, order persistence, reading and stopping passed');
 const study = fs.readFileSync(require('node:path').join(__dirname, '../../js/study.js'), 'utf8');
 const state = { smartSession: { newCount: 2 }, smartTarget: null, chapterStats: {}, chapterReviewSignatures: [],
     smartCatalog: [], chapter: 0, trees: [{ root: [], headers: {} }], color: 'white',

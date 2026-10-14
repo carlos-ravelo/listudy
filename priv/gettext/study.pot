@@ -1034,3 +1034,54 @@ msgstr ""
 
 msgid "Replay from the start"
 msgstr ""
+
+msgid "Read study"
+msgstr ""
+
+msgid "Back to practice"
+msgstr ""
+
+msgid "Practice mode"
+msgstr ""
+
+msgid "Full lines"
+msgstr ""
+
+msgid "After a line"
+msgstr ""
+
+msgid "Stay in this chapter"
+msgstr ""
+
+msgid "Stop session"
+msgstr ""
+
+msgid "Another study"
+msgstr ""
+
+msgid "Hint"
+msgstr ""
+
+msgid "Previous chapter"
+msgstr ""
+
+msgid "Next chapter"
+msgstr ""
+
+msgid "Random chapter"
+msgstr ""
+
+msgid "Loading…"
+msgstr ""
+
+msgid "Add to Collection"
+msgstr ""
+
+msgid "Manage Collection"
+msgstr ""
+
+msgid "Hints and explanations"
+msgstr ""
+
+msgid "Practice pace"
+msgstr ""
