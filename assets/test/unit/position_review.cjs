@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const context = vm.createContext({ ...require('ts-fsrs'), ChessModule: require('chess.js') });
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/review_history.js'), 'utf8').replace(/export \{[^}]+\};/, ''), context);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/position_review.js'), 'utf8')
     .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/, ''), context);
 const { positionReviews, positionCatalog, recordPositionReview, nextSmartPosition } = context;

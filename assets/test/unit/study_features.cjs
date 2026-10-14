@@ -6,7 +6,9 @@ const load = async name => import('data:text/javascript;base64,' + fs.readFileSy
 
 (async () => {
     const { splitChapterPgn, chapterFromUrl } = await load('chapter_pgn.js');
+    const historySource = fs.readFileSync(path.join(__dirname, '../../js/modules/study/review_history.js'), 'utf8').replace(/export \{[^}]+\};/, '');
     const reviewSource = fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_review.js'), 'utf8')
+        .replace("import { reviewHistory } from './review_history.js';", historySource)
         .replace("from 'ts-fsrs'", `from '${pathToFileURL(path.join(__dirname, '../../node_modules/ts-fsrs/dist/index.mjs')).href}'`);
     const { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus, dueChapterOrder } =
         await import('data:text/javascript;base64,' + Buffer.from(reviewSource).toString('base64'));

@@ -1,4 +1,5 @@
 import { createEmptyCard, fsrs, Rating } from 'ts-fsrs';
+import { reviewHistory } from './review_history.js';
 import ChessModule from 'chess.js';
 const Chess = ChessModule.Chess || ChessModule;
 
@@ -58,6 +59,7 @@ function recordPositionReview(cards, id, correct, assisted, attempted, now = new
     }
     cards[id] = {
         ...previous,
+        history: reviewHistory(previous, now, rating),
         card: result.card,
         recovered: rating === Rating.Good,
         successes: (previous?.successes || 0) + (rating === Rating.Good ? 1 : 0)

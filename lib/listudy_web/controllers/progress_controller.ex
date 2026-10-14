@@ -17,12 +17,54 @@ defmodule ListudyWeb.ProgressController do
     |> json(%{error: "Use the collections endpoint to save collections."})
   end
 
-  def sync(conn, %{"key" => key, "value" => value}) do
-    # This depends on your auth implementation. Pow/phx.gen.auth puts it here.
+  def sync(conn, %{"key" => key, "value" => value} = params)
+      when is_binary(key) and is_binary(value) do
     user = Pow.Plug.current_user(conn) || conn.assigns[:current_user]
 
-    with {:ok, _} <- upsert_setting(user, key, value) do
-      json(conn, %{status: "ok"})
+    if managed?(key) do
+      case save_progress(user.id, key, value, params["revision"]) do
+        {:ok, result} ->
+          json(conn, result)
+
+        {:error, {:conflict, current}} ->
+          conn |> put_status(:conflict) |> json(current)
+
+        {:error, :invalid} ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: "Invalid progress data."})
+      end
+    else
+      with {:ok, _} <- upsert_setting(user, key, value), do: json(conn, %{status: "ok"})
+    end
+  end
+
+  def sync(conn, _),
+    do: conn |> put_status(:unprocessable_entity) |> json(%{error: "Invalid progress data."})
+
+  defp managed?(key), do: String.ends_with?(key, ["_chapter_stats", "_chapter_reviews"])
+  defp revision(nil), do: ""
+  defp revision(value), do: :crypto.hash(:sha256, value) |> Base.encode16(case: :lower)
+
+  defp save_progress(user_id, key, value, expected) do
+    with true <- byte_size(value) <= 5_000_000,
+         {:ok, %{"version" => 1, "chapters" => chapters}} when is_map(chapters) <-
+           Jason.decode(value) do
+      Repo.transaction(fn ->
+        Repo.query!("SELECT pg_advisory_xact_lock(hashtext($1))", ["progress:#{user_id}:#{key}"])
+        current = Repo.one(from s in UserSetting, where: s.user_id == ^user_id and s.key == ^key)
+        saved = if current, do: current.value, else: nil
+
+        if expected != revision(saved),
+          do: Repo.rollback({:conflict, %{value: saved, revision: revision(saved)}})
+
+        user = %{id: user_id}
+
+        case upsert_setting(user, key, value) do
+          {:ok, _} -> %{status: "ok", revision: revision(value)}
+          {:error, _} -> Repo.rollback(:invalid)
+        end
+      end)
+    else
+      _ -> {:error, :invalid}
     end
   end
 
@@ -39,7 +81,12 @@ defmodule ListudyWeb.ProgressController do
       )
       |> Enum.into(%{}, fn s -> {s.key, s.value} end)
 
-    json(conn, settings)
+    revisions =
+      settings
+      |> Enum.filter(fn {key, _} -> managed?(key) end)
+      |> Map.new(fn {key, value} -> {key, revision(value)} end)
+
+    json(conn, Map.put(settings, "_progress_revisions", revisions))
   end
 
   defp upsert_setting(user, key, value) do

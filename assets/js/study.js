@@ -1,3 +1,4 @@
+import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
 import { replayPositionContext } from './modules/study/position_context.js';
 import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, recordContinuationReview, scheduledReviews, nextSmartPosition } from './modules/study/position_review.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
@@ -352,6 +353,8 @@ async function handle_move(orig, dest) {
     const previousCard = cards[positionId]?.card;
     const wasNew = !cards[positionId] || !introducedMoves(chapterStats, chapter, chapterReviewSignatures[chapter], positionId).includes(intendedMove);
     const review = recordPositionReview(cards, positionId, wasCorrect, assisted, positionAttempts);
+    cards[positionId].positionFen = chess.fen().split(' ').slice(0, 4).join(' ');
+    cards[positionId].expected = possible_moves;
     const continuationReview = recordContinuationReview(cards, positionId, intendedMove, wasCorrect, assisted,
         firstAttempt, wasNew, previousCard);
     if (wasCorrect) recordIntroducedMove(cards, positionId, san);
@@ -1441,14 +1444,16 @@ async function setup_progress_reset() {
             if (weakChapterRunActive) stopWeakChapterRun();
             if (spacedReviewRunActive) stopSpacedReviewRun();
             window.dispatchEvent(new Event('study-puzzle-run-off'));
-            chapterReviews = emptyChapterReviews();
+            const resetId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
+            const resetAt = Date.now();
+            chapterReviews = { ...emptyChapterReviews(), resetId, resetAt };
             bindChapterIdentities(chapterReviews, trees);
             StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
             for (let c of trees) {
                 tree_value_add(c.root[0], -5);
             }
             failedPositionRun = null;
-            chapterStats = { version: 1, chapters: {} };
+            chapterStats = { version: 1, chapters: {}, resetId, resetAt };
             bindChapterIdentities(chapterStats, trees);
             practiceChapter = null;
             if (!readMode) {
@@ -1534,24 +1539,15 @@ function setup_configs() {
 window.overlay_manager = new TextOverlayManager();
 
 async function main() {
+    window.addEventListener('study-sync-status', event => {
+        const indicator = document.getElementById('study_sync_status');
+        indicator.hidden = event.detail.state === 'saved';
+        indicator.textContent = i18n.progress_sync_offline;
+    });
     // 1. If the user is authenticated, try to fetch cloud progress/settings
     if (typeof logged_in !== 'undefined' && logged_in) {
         try {
-            const response = await fetch('/api/progress', {
-                credentials: 'same-origin'
-            });
-            if (response.ok) {
-                const cloudSettings = await response.json();
-                // Hydrate localStorage with cloud data
-                Object.entries(cloudSettings).forEach(([key, value]) => {
-                    // Save directly to localStorage to prevent triggering a bounce POST request
-                    // Skip massive tree objects to avoid QuotaExceededError
-                    if (key.endsWith('_tree')) {
-                        return;
-                    }
-                    localStorage.setItem(key, value); 
-                });
-                
+            if (await StorageAdapter.hydrate()) {
                 // Reload global variables that were initialized before this async call
                 move_delay_time = get_option_from_localstorage(move_delay_time_key, i18n.instant, [i18n.instant, i18n.fast, i18n.medium, i18n.slow]);
                 show_arrows = get_option_from_localstorage(show_arrows_key, i18n.arrows_new2x, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
@@ -1580,6 +1576,24 @@ async function main() {
     if (bindChapterIdentities(chapterStats, trees)) StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     if (bindChapterIdentities(chapterReviews, trees)) StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
     smartCatalog = positionCatalog(trees, studyColor);
+    let previousTrees = [];
+    try { previousTrees = JSON.parse(StorageAdapter.getItem(study_id + '_tree') || '[]'); } catch (_) {}
+    if (!Array.isArray(previousTrees)) previousTrees = [];
+    StorageAdapter.backup(chapter_stats_key());
+    if (reconcileStudyProgress(chapterStats, trees, smartCatalog, chapterReviewSignatures, previousTrees, studyColor)) {
+        StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
+    }
+    window.addEventListener('study-progress-sync-merged', event => {
+        if (event.detail.key === chapter_stats_key()) {
+            chapterStats = JSON.parse(event.detail.value);
+            bindChapterIdentities(chapterStats, trees);
+            reconcileStudyProgress(chapterStats, trees, smartCatalog, chapterReviewSignatures, [], studyColor);
+        } else if (event.detail.key === chapter_reviews_key()) {
+            chapterReviews = readChapterReviews(event.detail.value);
+            bindChapterIdentities(chapterReviews, trees);
+        } else return;
+        update_progress();
+    });
     setup_chapter_select();
     const editChapter = document.getElementById('edit_chapter');
     if (editChapter) {

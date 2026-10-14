@@ -9,6 +9,7 @@ function chapterFailures(stats, chapter, signature) {
 
 function recordPositionResult(positions, id, details, correct, review = null) {
     const previous = positions[id];
+    if (previous) previous.lastResultAt = Date.now();
     if (correct && review && !review.recovered) {
         positions[id] = { ...details, ...previous, failures: previous?.failures || 0,
             cleanStreak: 0, lastFailedAt: previous?.lastFailedAt || Date.now(), recovered: false };
@@ -24,6 +25,7 @@ function recordPositionResult(positions, id, details, correct, review = null) {
         failures: (previous?.failures || 0) + 1,
         cleanStreak: 0,
         ...(review ? { recovered: false } : {}),
+        lastResultAt: Date.now(),
         lastFailedAt: Date.now()
     };
 }
