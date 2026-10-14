@@ -17,7 +17,7 @@
     </select>
   </label>
   <button type="button" id="stop_smart_run" hidden><%= dgettext("study", "Stop session") %></button>
-  <button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog"><%= dgettext("study", "Settings") %></button>
+  <div class="study-session-tools">
   <button type="button" id="progress" class="modal_open"><%= dgettext("study", "Progress") %></button>
   <div class="option_item">
     <button type="button" id="study_mode" class="study-mode-toggle"
@@ -28,6 +28,14 @@
       <span x-show="!reading"><%= dgettext("study", "Read study") %></span>
       <span x-show="reading" x-cloak><%= dgettext("study", "Back to practice") %></span>
     </button>
+  </div>
+  <button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog"
+          aria-label="<%= dgettext("study", "Settings") %>" title="<%= dgettext("study", "Settings") %>">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
+      <path d="M9 2h6l.5 2 1.7 1 2-.6 3 5.2-1.5 1.4v2l1.5 1.4-3 5.2-2-.6-1.7 1-.5 2H9l-.5-2-1.7-1-2 .6-3-5.2L3.3 13v-2L1.8 9.6l3-5.2 2 .6 1.7-1Z" />
+    </svg>
+  </button>
   </div>
 </div>
 
@@ -40,6 +48,20 @@
     <div class="study-board-frame">
       <%= render ListudyWeb.ComponentView, "chessground.html" %>
     </div>
+    <div id="study_board_actions" class="study-board-actions">
+<!-- Actions used while training -->
+<div class="study-primary-actions" x-data="{ reading: false }" @study-reading-updated.window="reading = $event.detail.reading">
+  <button type="button" id="hints" class="secondary" x-show="!reading"><%= dgettext("study", "Hint") %></button>
+    <button type="button" class="secondary" id="replay_position_context" hidden><%= dgettext("study", "Replay from the start") %></button>
+
+<div class="option_item">
+    <button type="button" class="secondary" id="reset_line"><%= dgettext("study", "Reset line") %></button>
+  </div>
+
+<div class="option_item">
+    <a data-icon="/" id="analysis_board" href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
+  </div>
+</div>
     <nav id="study_move_navigation" class="study-move-navigation" :class="{ 'study-move-navigation--reading': reading }" aria-label="<%= dgettext("study", "Move navigation") %>">
       <button type="button" id="study_previous_move" disabled aria-label="<%= dgettext("study", "Previous move") %>" title="<%= dgettext("study", "Previous move") %>">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6" /></svg>
@@ -48,6 +70,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6" /></svg>
       </button>
     </nav>
+    </div>
   </div>  
   <div class="sidebar">
     <div class="sidebar_innercontainer">
@@ -81,19 +104,6 @@
 
 
 
-<!-- Actions used while training -->
-<div class="study-primary-actions" x-data="{ reading: false }" @study-reading-updated.window="reading = $event.detail.reading">
-  <button type="button" id="hints" class="secondary" x-show="!reading"><%= dgettext("study", "Hint") %></button>
-    <button type="button" class="secondary" id="replay_position_context" hidden><%= dgettext("study", "Replay from the start") %></button>
-
-<div class="option_item">
-    <button type="button" class="secondary" id="reset_line"><%= dgettext("study", "Reset line") %></button>
-  </div>
-
-<div class="option_item">
-    <a data-icon="/" id="analysis_board" href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
-  </div>
-</div>
 <!-- Active session feedback -->
 <div class="study-session-progress">
   <p id="study_sync_status" role="status" aria-live="polite" hidden></p>

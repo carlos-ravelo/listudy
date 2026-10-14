@@ -1651,7 +1651,7 @@ async function main() {
     window.addEventListener('study-puzzle-run-changed', () => set_read_mode(false));
     window.addEventListener('study-reading-layout-updated', () => {
         const navigation = document.getElementById('study_move_navigation');
-        const container = document.getElementById(readMode ? 'study_moves_heading' : 'game_container');
+        const container = document.getElementById(readMode ? 'study_moves_heading' : 'study_board_actions');
         if (navigation.parentElement !== container) container.appendChild(navigation);
         resize_ground();
         overlay_manager.on_resize();

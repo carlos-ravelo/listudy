@@ -115,7 +115,7 @@
 .study-workspace .study-primary-actions button:hover:not(:disabled) { background: var(--bg-highlight-color); }
 .study-workspace #line_order_control { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 400; }
 .study-workspace #puzzle_run { width: auto; max-width: 100%; height: 44px; margin: 0; padding: 4px 8px; border-color: var(--study-divider); background: var(--bg-color); color: var(--font-color); font: inherit; font-size: 13px; }
-.study-workspace .study-session-controls #progress { margin-left: auto; text-decoration: underline; text-underline-offset: 3px; }
+.study-workspace .study-session-controls #progress { margin-left: 0; text-decoration: underline; text-underline-offset: 3px; }
 .study-workspace .study-session-controls .option_item { margin: 0; }
 .study-workspace .study-primary-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .study-workspace .study-session-controls [hidden],
@@ -172,3 +172,19 @@
 .study-workspace .study-dialog-header button { min-height: 44px; height: auto; margin: 0; padding: 8px 12px; border: 1px solid var(--study-divider); background: transparent; color: var(--font-color); font: inherit; font-size: 14px; letter-spacing: normal; text-transform: none; }
 .study-workspace .study-dialog-header button:hover { background: var(--bg-highlight-color); }
 @media (max-width: 600px) { .study-workspace .study-dialog { padding: 16px; } }
+
+/* Keep utilities together and actions directly attached to the board. */
+.study-workspace .study-session-tools { display: flex; align-items: center; flex: 1 1 auto; flex-wrap: wrap; gap: 4px; }
+.study-workspace .study-session-tools button { padding-inline: 8px; }
+.study-workspace .study-session-tools #open_study_settings { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; padding: 0; margin-inline-start: auto; }
+.study-workspace .study-board-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 4px 8px; margin-top: 4px; }
+.study-workspace .study-board-actions .study-primary-actions { gap: 4px; padding: 0; min-width: 0; }
+.study-workspace .study-board-actions .study-primary-actions .option_item { margin: 0; }
+.study-workspace .study-board-actions .study-primary-actions button,
+.study-workspace .study-board-actions #analysis_board { padding-inline: 8px; }
+.study-workspace .study-board-actions .study-move-navigation { padding-top: 0; }
+@media (max-width: 600px) {
+  .study-workspace .study-session-tools { order: 4; flex-basis: 100%; }
+  .study-workspace .study-session-controls .study-session-tools .option_item { order: initial; }
+  .study-workspace .sidebar { margin-bottom: 0; }
+}
