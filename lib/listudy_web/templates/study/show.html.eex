@@ -93,6 +93,8 @@
     <a style="display: block; padding-bottom: 5px; font-weight: bold;" href="#" data-icon="+" class="icon modal_open" id="progress"><%= dgettext("study","Progress") %></a>
     <div id="chapter_progress"></div>
     <p id="failed_positions_status" role="status" hidden></p>
+    <button type="button" class="secondary" id="replay_position_context" hidden><%= dgettext("study", "Replay from the start") %></button>
+    <p id="smart_run_status" class="study-weak-run-status" aria-live="polite" hidden></p>
     <p id="weak_run_status" class="study-weak-run-status" hidden></p>
   </div>
 </div>
@@ -221,6 +223,10 @@
   i18n.review_slow = "<%= dgettext "study", "Board reset delay: slow" %>";
   i18n.puzzle_run_off = "<%= dgettext "study", "Puzzle run: off" %>";
   i18n.puzzle_run_next = "<%= dgettext "study", "Puzzle run: next" %>";
+  i18n.puzzle_run_smart = "<%= dgettext "study", "Puzzle run: smart" %>";
+  i18n.smart_learning = "<%= dgettext "study", "Smart: learning a new line (up to 10 new positions per session)" %>";
+  i18n.smart_review = "<%= dgettext "study", "Smart: reviewing a due position" %>";
+  i18n.smart_complete = "<%= dgettext "study", "Smart session complete for now" %>";
   i18n.puzzle_run_random = "<%= dgettext "study", "Puzzle run: random" %>";
   i18n.review_fast = "<%= dgettext "study", "Board reset delay: fast" %>";
   i18n.key_move_enabled = "<%= dgettext "study", "Jump to key move: on" %>";

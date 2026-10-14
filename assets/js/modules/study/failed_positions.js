@@ -7,23 +7,30 @@ function chapterFailures(stats, chapter, signature) {
     return entry.failedPositions.positions;
 }
 
-function recordPositionResult(positions, id, details, correct) {
+function recordPositionResult(positions, id, details, correct, review = null) {
     const previous = positions[id];
+    if (correct && review && !review.recovered) {
+        positions[id] = { ...details, ...previous, failures: previous?.failures || 0,
+            cleanStreak: 0, lastFailedAt: previous?.lastFailedAt || Date.now(), recovered: false };
+        return;
+    }
     if (correct) {
-        if (previous) previous.cleanStreak += 1;
+        if (previous && review) previous.recovered = review.recovered;
+        else if (previous && previous.recovered === undefined) previous.cleanStreak += 1;
         return;
     }
     positions[id] = {
         ...details,
         failures: (previous?.failures || 0) + 1,
         cleanStreak: 0,
+        ...(review ? { recovered: false } : {}),
         lastFailedAt: Date.now()
     };
 }
 
 function pendingPositions(positions) {
     return Object.values(positions)
-        .filter(position => position.cleanStreak < 3)
+        .filter(position => position.recovered === undefined ? position.cleanStreak < 3 : !position.recovered)
         .sort((a, b) => b.failures - a.failures || b.lastFailedAt - a.lastFailedAt);
 }
 

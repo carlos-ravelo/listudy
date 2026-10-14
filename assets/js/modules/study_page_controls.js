@@ -134,7 +134,7 @@ export function setupStudyMoveNavigation({ goBack, goForward, getState }) {
 export function setupPuzzleRun(i18n) {
     const button = document.getElementById('puzzle_run');
     if (!button) return;
-    const modes = ['off', 'next', 'random'];
+    const modes = ['off', 'next', 'random', 'smart'];
     let mode = localStorage.getItem('puzzleRunMode') || 'off';
     if (!modes.includes(mode)) mode = 'off';
     const update = () => { button.textContent = i18n[`puzzle_run_${mode}`]; };

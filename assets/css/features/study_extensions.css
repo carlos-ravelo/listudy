@@ -100,3 +100,5 @@
 .collection-move { max-width: 90px; font-size: .8em; padding: 2px; margin: 0; }
 @keyframes collectionFlash { from { background: #d4edda; } to { background: transparent; } }
 .collection-highlight { animation: collectionFlash .8s ease-out; }
+
+#replay_position_context[hidden] { display: none !important; }

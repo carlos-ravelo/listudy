@@ -1,3 +1,5 @@
+import { replayPositionContext } from './modules/study/position_context.js';
+import { positionReviews, positionCatalog, recordPositionReview, nextSmartPosition, NEW_POSITION_LIMIT } from './modules/study/position_review.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
@@ -24,7 +26,7 @@ import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js'
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
 import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder, beginChapterPractice, finishChapterPractice, recentPracticePerformance, chapterProgressState, bindChapterIdentities } from './modules/study/chapter_stats.js';
-import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus, dueChapterOrder } from './modules/study/chapter_review.js';
+import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus } from './modules/study/chapter_review.js';
 import { setupStudyMoveTree, readChapterPosition } from './modules/study/study_move_tree.js';
 import Alpine from 'alpinejs';
 
@@ -51,6 +53,103 @@ const studyColor = color;
 let weakChapterRunActive = false;
 let weakChapterQueue = [];
 let failedPositionRun = null;
+let smartSession = null;
+let smartTarget = null;
+let smartCatalog = [];
+let positionAttempts = new Set();
+let assistedPositions = new Set();
+let contextReplayActive = false;
+
+function updateContextReplayUi() {
+    const button = document.getElementById('replay_position_context');
+    if (!button) return;
+    const practicingPosition = smartSession && smartTarget ||
+        failedPositionRun && !failedPositionRun.transitioning && failedPositionRun.index < failedPositionRun.positions.length;
+    button.hidden = readMode || !practicingPosition || !window.curr_move || curr_move.length <= 1;
+    button.disabled = contextReplayActive;
+}
+
+async function presentPracticePosition(path, count = 0) {
+    const replayChapter = chapter;
+    const sessionId = ++trainingSessionId;
+    contextReplayActive = true;
+    lineEligibleForReview = false;
+    const isCurrent = () => trainingSessionId === sessionId && chapter === replayChapter;
+    try {
+        await replayPositionContext({
+            root: trees[chapter].root, fen: trees[chapter].headers.FEN, path, count, isCurrent,
+            pause: sleep,
+            present(position, prefix) {
+                window.chess = position;
+                window.curr_move = [replayChapter, ...prefix];
+                clear_all_text();
+                ground_init_state(position.fen(), color);
+                setup_move();
+            },
+            advance(san) {
+                play_move(san);
+                setup_move();
+            }
+        });
+    } finally {
+        if (isCurrent()) {
+            contextReplayActive = false;
+            setup_move();
+        }
+    }
+}
+
+function replayContextFromStart() {
+    if (contextReplayActive || readMode || smartSession && !smartTarget ||
+        failedPositionRun?.transitioning || !smartSession && !failedPositionRun) return;
+    const path = curr_move.slice(1);
+    presentPracticePosition(path, path.length);
+}
+
+
+function currentPositionId() {
+    return curr_move.slice(1).map((_, depth) => tree_get_node(curr_move.slice(0, depth + 2)).move).join('|');
+}
+
+function selectNextSmartPosition() {
+    if (!smartSession || localStorage.getItem('puzzleRunMode') !== 'smart') return;
+    const { target, nextDue } = nextSmartPosition(chapterStats, chapterReviewSignatures, smartCatalog, smartSession);
+    smartTarget = target;
+    updateContextReplayUi();
+    const status = document.getElementById('smart_run_status');
+    status.hidden = false;
+    if (!target) {
+        trainingSessionId += 1;
+        finish_chapter_practice(false);
+        ground.set({ movable: { dests: new Map() } });
+        status.textContent = i18n.smart_complete + (nextDue ? ' · ' + i18n.spaced_review_next + ': ' + new Date(nextDue).toLocaleString() : '');
+        return;
+    }
+    smartSession.lastChapter = target.chapter;
+    status.textContent = target.type === 'line' ? i18n.smart_learning : i18n.smart_review;
+    const select = document.getElementById('chapter_select');
+    select.value = String(target.chapter);
+    select.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { smartRun: true } }));
+    if (target.path.length || target.type === 'position') {
+        const review = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter])[target.id];
+        const needsContext = target.type === 'line' || !review || !review.recovered;
+        presentPracticePosition(target.path, needsContext ? 4 : 0);
+    }
+}
+
+function updateSmartRun() {
+    failedPositionRun = null;
+    updateFailedPositionsUi();
+    smartSession = null;
+    smartTarget = null;
+    document.getElementById('smart_run_status').hidden = true;
+    if (localStorage.getItem('puzzleRunMode') === 'smart') {
+        smartSession = { newCount: 0, lastChapter: null };
+        set_read_mode(false);
+        selectNextSmartPosition();
+    } else if (!readMode) start_training();
+}
+
 
 function currentFailures() {
     return chapterFailures(chapterStats, chapter, chapterReviewSignatures[chapter]);
@@ -67,17 +166,17 @@ function updateFailedPositionsUi() {
 function showFailedPosition() {
     const run = failedPositionRun;
     if (!run) return;
+    positionAttempts = new Set();
+    assistedPositions = new Set();
     trainingSessionId += 1;
+    contextReplayActive = false;
     run.transitioning = false;
     clear_all_text();
     while (run.index < run.positions.length) {
         const item = run.positions[run.index];
         const position = readChapterPosition(trees[chapter].root, trees[chapter].headers.FEN, item.path);
         if (position && position.fen() === item.fen) {
-            window.chess = position;
-            window.curr_move = [chapter, ...item.path];
-            ground_init_state(item.fen, color);
-            setup_move();
+            presentPracticePosition(item.path, 4);
             updateFailedPositionsUi();
             return;
         }
@@ -196,6 +295,7 @@ function possible_promotion(moves, san) {
 }
 
 async function handle_move(orig, dest) {
+    if (contextReplayActive) return;
     if (readMode) {
         let san = uci_to_san(chess, orig, dest);
         const moves = tree_children(curr_move).map(node => node.move);
@@ -206,6 +306,7 @@ async function handle_move(orig, dest) {
         }
         return;
     }
+    if (smartSession && !smartTarget) return;
     if (failedPositionRun && (failedPositionRun.transitioning || failedPositionRun.index >= failedPositionRun.positions.length)) return;
     const sessionId = trainingSessionId;
 
@@ -227,14 +328,37 @@ async function handle_move(orig, dest) {
     }
 
     const wasCorrect = possible_moves.indexOf(san) != -1;
-    const positionId = curr_move.slice(1).map((_, depth) => tree_get_node(curr_move.slice(0, depth + 2)).move).join('|');
+    const positionId = currentPositionId();
     const moveId = wasCorrect
         ? (positionId ? positionId + '|' : '') + san
         : null;
+    const assisted = assistedPositions.has(positionId) || positionAttempts.has(positionId);
+    const cards = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter]);
+    const wasNew = !cards[positionId];
+    const review = recordPositionReview(cards, positionId, wasCorrect, assisted, positionAttempts);
+    if (review && wasNew && smartSession) smartSession.newCount += 1;
+    if (assisted && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
     recordPositionResult(currentFailures(), positionId, {
         path: curr_move.slice(1), fen: chess.fen(), played: san, expected: possible_moves
-    }, wasCorrect);
+    }, wasCorrect, review || cards[positionId]);
+    if (smartTarget?.type === 'position') {
+        record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
+        if (wasCorrect) {
+            play_move(san);
+            ground.set({ movable: { dests: new Map() } });
+            smartTarget = null;
+            await sleep(500);
+            if (sessionId === trainingSessionId) selectNextSmartPosition();
+        } else {
+            ground_undo_last_move();
+            set_text(error_div, i18n.error_wrong_move);
+            setup_move();
+        }
+        update_progress();
+        return;
+    }
     if (failedPositionRun) {
+        record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
         StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
         if (wasCorrect) {
             play_move(san);
@@ -253,7 +377,7 @@ async function handle_move(orig, dest) {
         update_progress();
         return;
     }
-    record_chapter_attempt(wasCorrect, moveId, positionId);
+    record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
     updateFailedPositionsUi();
     if (!wasCorrect && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
 
@@ -267,7 +391,7 @@ async function handle_move(orig, dest) {
         let reply = ai_move(curr_move);
         const naturalEnd = reply == undefined;
         let end_of_line = naturalEnd;
-        if (!end_of_line && !spacedReviewRunActive && max_depth !== DEPTH_MAX) {
+        if (!end_of_line && !spacedReviewRunActive && !smartSession && max_depth !== DEPTH_MAX) {
             let curr_node = tree_get_node(curr_move);
             let curr_depth = tree_get_node_depth(curr_node);
             if (key_moves_mode == i18n.key_move_disabled || window.first_variation === null) {
@@ -280,6 +404,7 @@ async function handle_move(orig, dest) {
         store_trees();
         await sleep(get_move_delay()); // instant play by the ai feels weird
         if (sessionId !== trainingSessionId) return;
+        if (smartSession && smartSession.newCount >= NEW_POSITION_LIMIT) end_of_line = true;
         if (end_of_line) {
             finish_chapter_practice(naturalEnd && lineEligibleForReview);
             if (naturalEnd && !lineReviewRecorded && lineEligibleForReview) record_line_review(true);
@@ -289,7 +414,10 @@ async function handle_move(orig, dest) {
             // Auto-advance to the specific chapter type if Puzzle Run is active
             const currentRunMode = localStorage.getItem("puzzleRunMode");
 
-            if (spacedReviewRunActive) {
+            if (smartSession) {
+                smartTarget = null;
+                setTimeout(() => { if (sessionId === trainingSessionId) selectNextSmartPosition(); }, 500);
+            } else if (spacedReviewRunActive) {
                 setTimeout(() => {
                     if (sessionId === trainingSessionId) selectNextDueChapter();
                 }, 500);
@@ -419,7 +547,8 @@ function toggleSpacedReviewRun() {
         stopSpacedReviewRun();
         return;
     }
-    spacedReviewQueue = dueChapterOrder(chapterReviews, chapterReviewSignatures);
+    spacedReviewQueue = trees.map((_, index) => ({ index, ...studyReviewStatus(index) }))
+        .filter(item => item.due).sort((a, b) => a.dueAt - b.dueAt).map(item => item.index);
     if (spacedReviewQueue.length === 0) return;
     set_read_mode(false);
     if (weakChapterRunActive) stopWeakChapterRun();
@@ -427,6 +556,14 @@ function toggleSpacedReviewRun() {
     window.dispatchEvent(new Event("study-puzzle-run-off"));
     document.getElementById("progress_modal").style.display = "none";
     selectNextDueChapter();
+}
+
+function studyReviewStatus(index, now = new Date()) {
+    const cards = Object.values(positionReviews(chapterStats, index, chapterReviewSignatures[index]));
+    if (!cards.length) return chapterReviewStatus(chapterReviews, index, chapterReviewSignatures[index], now);
+    const dates = cards.map(entry => new Date(entry.card.due)).filter(date => Number.isFinite(date.getTime()));
+    const dueAt = dates.length ? new Date(Math.min(...dates.map(date => date.getTime()))) : null;
+    return { due: dueAt !== null && dueAt <= now, dueAt };
 }
 
 function chapter_stats_key() {
@@ -443,8 +580,8 @@ function record_line_review(wasClean) {
     lineReviewRecorded = true;
 }
 
-function record_chapter_attempt(wasCorrect, moveId, positionId) {
-    recordChapterAttempt(chapterStats, chapter, wasCorrect, moveId, positionId);
+function record_chapter_attempt(wasCorrect, moveId, positionId, assisted = false) {
+    recordChapterAttempt(chapterStats, chapter, wasCorrect, moveId, positionId, assisted);
     StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
 }
 
@@ -492,6 +629,7 @@ function get_pgn_shapes(m, keyword) {
  * Returns true if arrows should be shown.
  */
 function give_hints(once) {
+    if (smartSession && !once) return false;
     if (once || show_arrows == i18n.arrows_always) {
         return true;
     }
@@ -516,6 +654,7 @@ function give_hints(once) {
  * @param  once  Pass true to override any value of variable show_arrows and display hints temporarily.
  */
 function display_arrows(once) {
+    if (contextReplayActive) { ground.setShapes([]); return; }
     let shapes = [];
     let all_moves = tree_possible_moves(curr_move);
     let current_move = tree_get_node(curr_move);
@@ -559,6 +698,7 @@ function display_arrows(once) {
 
         overlay_manager.setup_arrow_overlays(all_moves, clean_pgn_arrows, max, min);
     }
+    if (shapes.length) assistedPositions.add(currentPositionId());
     ground.setShapes(shapes);
 }
 
@@ -620,6 +760,7 @@ function create_comment_list(container_id, current_move, response_moves) {
  * if that option is turned on.
  */
 function display_comments(once) {
+    if (contextReplayActive || smartSession && !once) { document.getElementById(comments_div).innerHTML = ""; return; }
     let cm = tree_get_node(curr_move);
     let current_move = undefined;
     let response_moves = [];
@@ -642,6 +783,7 @@ function display_comments(once) {
         }
     }
 
+    if (!readMode && response_moves.length) assistedPositions.add(currentPositionId());
     create_comment_list("comments", current_move, response_moves);
 }
 
@@ -675,6 +817,20 @@ function change_analysis_board() {
 }
 
 function setup_move() {
+    updateContextReplayUi();
+    if (contextReplayActive) {
+        const last = chess.history({ verbose: true }).slice(-1)[0];
+        ground.set({ fen: chess.fen(), turnColor: turn_color(chess),
+            lastMove: last ? [last.from, last.to] : undefined,
+            check: chess.in_check(), movable: { dests: new Map() } });
+        ground.setShapes([]);
+        overlay_manager.clear_overlays();
+        document.getElementById(comments_div).innerHTML = '';
+        change_play_stockfish();
+        change_analysis_board();
+        studyMoveNavigation.update();
+        return;
+    }
     const lastMove = chess.history({ verbose: true }).slice(-1)[0];
     ground.set({
         fen: chess.fen(),
@@ -700,6 +856,12 @@ function setup_move() {
  * Returns the ai move that should be played for the access position
  */
 function ai_move(access) {
+    if (smartTarget?.type === 'line' && access[0] === smartTarget.chapter) {
+        const path = access.slice(1);
+        if (path.length < smartTarget.path.length && path.every((index, depth) => index === smartTarget.path[depth])) {
+            return tree_children(access)[smartTarget.path[path.length]].move;
+        }
+    }
     //console.log('Finding moves after ' + (tree_get_node(access).move_index > 0 ? tree_get_node_string(tree_get_node(access)) : 'starting position'));
 
     let candidates = tree_children_filter_sort(access, {filter: has_children});
@@ -727,10 +889,13 @@ function play_move(san) {
 }
 
 function start_training() {
+    contextReplayActive = false;
     failedPositionRun = null;
     updateFailedPositionsUi();
     finish_chapter_practice(false);
     trainingSessionId += 1;
+    positionAttempts = new Set();
+    assistedPositions = new Set();
     lineReviewRecorded = false;
     lineEligibleForReview = !readMode;
     window.curr_move = [chapter];
@@ -753,7 +918,7 @@ function start_training() {
     
     // Pass the active color to auto-rotate the board
     ground_init_state(fen, color);
-    if (!readMode && !spacedReviewRunActive && key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
+    if (!readMode && !spacedReviewRunActive && !smartSession && key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
         for (let ki = 0; ki < window.first_variation; ++ki) {
             // Moves that are not fully trained are not skipped
             if (tree_children(curr_move)[0].value != 5) { break; }
@@ -854,6 +1019,14 @@ function setup_chapter_select() {
     document.getElementById("progress_modal").addEventListener("study-progress-toggle-spaced-run", toggleSpacedReviewRun);
     window.addEventListener("study-puzzle-run-changed", stopWeakChapterRun);
     window.addEventListener("study-puzzle-run-changed", stopSpacedReviewRun);
+    window.addEventListener('study-puzzle-run-changed', updateSmartRun);
+    window.addEventListener('study-puzzle-run-off', () => {
+        if (contextReplayActive) { trainingSessionId += 1; contextReplayActive = false; }
+        smartSession = null;
+        smartTarget = null;
+        document.getElementById('smart_run_status').hidden = true;
+        updateContextReplayUi();
+    });
     let selected = parseInt(StorageAdapter.getItem(select_key) || 0);
 
     const linkedChapter = chapterFromUrl(window.location.search, trees.map((_, index) => tree_chapter_name(index)));
@@ -873,6 +1046,7 @@ function setup_chapter_select() {
     }
 
     select.onchange = function(event) {
+        if (smartSession && !event.detail?.smartRun) window.dispatchEvent(new Event('study-puzzle-run-off'));
         if (weakChapterRunActive && !(event.detail && event.detail.weakRun)) stopWeakChapterRun();
         if (spacedReviewRunActive && !(event.detail && event.detail.spacedRun)) stopSpacedReviewRun();
         let v = document.getElementById(select_id).value;
@@ -955,7 +1129,8 @@ function setup_intro() {
 }
 
 function turn_on_hints_for_current_move() {
-    if (readMode) return;
+    if (readMode || contextReplayActive) return;
+    assistedPositions.add(currentPositionId());
     display_arrows(true);
     display_comments(true);
 }
@@ -1165,6 +1340,7 @@ function max_depth_changed() {
 }
 
 function reset_line() {
+    if (smartSession) { selectNextSmartPosition(); return; }
     start_training();
 }
 
@@ -1178,7 +1354,7 @@ async function update_progress() {
     for (let tree_index in trees) {
         const weakness = chapterWeakness(chapterStats, tree_index);
         const state = chapterProgressState(chapterStats, tree_index, chapterMoveCatalogs[tree_index], chapterReviewSignatures[tree_index]);
-        const review = chapterReviewStatus(chapterReviews, tree_index, chapterReviewSignatures[tree_index], now);
+        const review = studyReviewStatus(tree_index, now);
         chapterSummaries.push({
             index: Number(tree_index),
             name: tree_chapter_name(tree_index),
@@ -1254,6 +1430,7 @@ async function setup_progress_reset() {
         if (window.confirm(i18n.confirm_reset_progress)) {
             if (weakChapterRunActive) stopWeakChapterRun();
             if (spacedReviewRunActive) stopSpacedReviewRun();
+            window.dispatchEvent(new Event('study-puzzle-run-off'));
             chapterReviews = emptyChapterReviews();
             bindChapterIdentities(chapterReviews, trees);
             StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
@@ -1331,6 +1508,7 @@ function setup_configs() {
     var click_elems = document.getElementsByClassName("clicking_turns_on_hints");
     Array.from(click_elems).forEach((el) => { el.onclick = turn_on_hints_for_current_move; });
 
+    document.getElementById('replay_position_context').onclick = replayContextFromStart;
     document.getElementById("hints").onclick = turn_on_hints_for_current_move;
     document.getElementById("arrows_toggle").onclick = toggle_arrows;
     document.getElementById("arrow_type").onclick = toggle_arrow_type;
@@ -1394,6 +1572,7 @@ async function main() {
     chapterReviews = readChapterReviews(StorageAdapter.getItem(chapter_reviews_key()));
     if (bindChapterIdentities(chapterStats, trees)) StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     if (bindChapterIdentities(chapterReviews, trees)) StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
+    smartCatalog = positionCatalog(trees, studyColor);
     setup_chapter_select();
     const editChapter = document.getElementById('edit_chapter');
     if (editChapter) {
@@ -1433,10 +1612,11 @@ async function main() {
         goBack: go_back,
         goForward: go_forward,
         getState: () => ({
-            canGoBack: !failedPositionRun && !spacedReviewRunActive && curr_move.length > 1,
-            canGoForward: !failedPositionRun && !spacedReviewRunActive && tree_children(curr_move).length > 0
+            canGoBack: !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && curr_move.length > 1,
+            canGoForward: !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && tree_children(curr_move).length > 0
         })
     });
+    if (localStorage.getItem('puzzleRunMode') === 'smart') updateSmartRun();
     setup_configs();
     studyMoveTree = setupStudyMoveTree({
         element: document.getElementById('study_read_moves'),
@@ -1511,14 +1691,14 @@ function refresh_manual_navigation() {
 }
 
 function go_back() {
-    if (failedPositionRun || spacedReviewRunActive || curr_move.length <= 1) return;
+    if (contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession || curr_move.length <= 1) return;
     chess.undo();
     curr_move.pop();
     refresh_manual_navigation();
 }
 
 function go_forward() {
-    if (failedPositionRun || spacedReviewRunActive) return;
+    if (contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession) return;
     const nextNode = tree_children(curr_move)[0];
     if (!nextNode) return;
     play_move(nextNode.move);
