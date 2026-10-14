@@ -133,6 +133,7 @@ export function setupStudyMoveNavigation({ goBack, goForward, getState }) {
 
 export function setupPuzzleRun(i18n) {
     setupStudyToolsMenu();
+    setupStudyDialogs();
     const order = document.getElementById('puzzle_run');
     const smart = document.getElementById('practice_smart');
     const lines = document.getElementById('practice_lines');
@@ -198,4 +199,27 @@ export function setupStudyToolsMenu() {
             summary.focus();
         }
     });
+}
+
+export function setupStudyDialogs() {
+    for (const opener of document.querySelectorAll?.('[data-study-dialog]') || []) {
+        const dialog = document.getElementById(opener.dataset.studyDialog);
+        if (!dialog || opener.dataset.dialogInitialized) continue;
+        opener.dataset.dialogInitialized = 'true';
+        opener.addEventListener('click', () => {
+            if (opener.dataset.studyComments) {
+                const discussion = dialog.querySelector('#study_discussion');
+                if (discussion) discussion.open = true;
+            }
+            if (!dialog.open) dialog.showModal();
+        });
+        if (dialog.dataset.initialized) continue;
+        dialog.dataset.initialized = 'true';
+        dialog.addEventListener('click', event => {
+            if (event.target !== dialog) return;
+            const bounds = dialog.getBoundingClientRect();
+            if (event.clientX < bounds.left || event.clientX > bounds.right ||
+                event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
+        });
+    }
 }

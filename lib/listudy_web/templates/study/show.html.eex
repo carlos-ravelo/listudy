@@ -17,6 +17,7 @@
     </select>
   </label>
   <button type="button" id="stop_smart_run" hidden><%= dgettext("study", "Stop session") %></button>
+  <button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog"><%= dgettext("study", "Settings") %></button>
   <button type="button" id="progress" class="modal_open"><%= dgettext("study", "Progress") %></button>
   <div class="option_item">
     <button type="button" id="study_mode" class="study-mode-toggle"
@@ -93,11 +94,10 @@
     <a data-icon="/" id="analysis_board" href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
   </div>
 </div>
-<!-- Progress Bar Area -->
+<!-- Active session feedback -->
 <div class="study-session-progress">
   <div class="option_item_progressbar" style="width: 100%;">
 
-    <div id="chapter_progress"></div>
     <p id="failed_positions_status" role="status" hidden></p>
 
     <p id="smart_run_status" class="study-weak-run-status" aria-live="polite" hidden></p>
@@ -105,8 +105,11 @@
   </div>
 </div>
 
-<details class="study-controls-panel">
-<summary><%= dgettext("study", "Settings") %></summary>
+<dialog id="study_settings_dialog" class="study-dialog" aria-labelledby="study_settings_title">
+  <header class="study-dialog-header">
+    <h2 id="study_settings_title"><%= dgettext("study", "Settings") %></h2>
+    <form method="dialog"><button type="submit"><%= dgettext("study", "Close") %></button></form>
+  </header>
 <div class="study-settings-grid">
 <fieldset class="study-setting-group"><legend><%= dgettext("study", "Hints and explanations") %></legend>
 <div class="option_item">
@@ -139,21 +142,24 @@
   </div>
 </fieldset>
 </div>
-</details>
+</dialog>
 
-<details class="study-controls-panel study-about">
-<summary><%= dgettext("study", "Study details") %></summary>
+<dialog id="study_info_dialog" class="study-dialog study-about" aria-labelledby="study_info_title">
+  <header class="study-dialog-header">
+    <h2 id="study_info_title"><%= dgettext("study", "Study details") %></h2>
+    <form method="dialog"><button type="submit"><%= dgettext("study", "Close") %></button></form>
+  </header>
 <p><%= @study.description %></p>
 <dl class="study-metadata"><div><dt><%= dgettext("study", "Creator") %></dt>
 <dd><%= link @study.user.username, to: Routes.user_profile_path(@conn, :show, @locale, @study.user.username) %></dd></div>
 <div><dt><%= dgettext("study", "Opening") %></dt>
 <dd><%= link @opening.name, to: Routes.opening_path(@conn, :show, @locale, @opening.slug) %></dd></div></dl>
-<details class="study-controls-panel study-discussion">
+<details id="study_discussion" class="study-controls-panel study-discussion">
 <summary><%= dgettext("comments", "Comments") %></summary>
 <%= render ListudyWeb.CommentView, "show_comments.html", type: "study", id: Integer.to_string(@study.id), action: Routes.comment_path(@conn, :new_comment), conn: @conn %>
 <%= render ListudyWeb.CommentView, "comment_form.html", type: "study", id: Integer.to_string(@study.id), action: Routes.comment_path(@conn, :new_comment), conn: @conn %>
 </details>
-</details>
+</dialog>
 <%= render "_collection_modal.html", conn: @conn %>
 
 

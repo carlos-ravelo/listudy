@@ -1086,3 +1086,6 @@ msgstr "Pistas y explicaciones"
 
 msgid "Practice pace"
 msgstr "Ritmo de práctica"
+
+msgid "Close"
+msgstr "Cerrar"
