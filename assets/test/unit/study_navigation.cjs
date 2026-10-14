@@ -52,6 +52,8 @@ function fixture(moves, fen, orientation = 'white') {
         smartSession: null, smartTarget: null, failedPositionRun: null,
         positionAttempts: new Set(), assistedPositions: new Set(), NEW_POSITION_LIMIT: 10,
         positionReviews: reviewContext.positionReviews, recordPositionReview: reviewContext.recordPositionReview,
+        introducedMoves: reviewContext.introducedMoves, recordIntroducedMove: reviewContext.recordIntroducedMove,
+        recordContinuationReview: reviewContext.recordContinuationReview,
         chapterFailures: reviewContext.chapterFailures, recordPositionResult: reviewContext.recordPositionResult,
         updateFailedPositionsUi() {}, selectNextSmartPosition: () => context.advances++,
         spacedReviewRunActive: false, weakChapterRunActive: false, readMode: false,
@@ -314,7 +316,8 @@ function assertSynchronized({ context, board, links }) {
     await smart.context.handle_move('d2', 'd4');
     const smartCards = smart.context.chapterStats.chapters[0].positionReviews.cards;
     assert.equal(smartCards[''].recovered, false);
-    assert.equal(smart.context.smartSession.newCount, 1);
+    assert.equal(smart.context.smartSession.newCount, 0);
+    assert.equal(smart.context.smartSession.reviewCount, 1);
     const correction = smart.context.handle_move('e2', 'e4');
     smart.waits.shift()();
     await correction;
@@ -357,5 +360,42 @@ function assertSynchronized({ context, board, links }) {
     await pendingContext;
     assert.equal(canceled.context.chess.history().length, 0);
     assert.equal(canceled.context.contextReplayActive, false);
+    const chainPractice = fixture(['e4', 'e5', 'Nf3']);
+    chainPractice.context.smartSession = { newCount: 0, reviewCount: 0, reviewStreak: 0 };
+    chainPractice.context.smartTarget = { type: 'line', chapter: 0, path: [], route: [0] };
+    const aiDeclaration = declarations.find(node => node.type === 'FunctionDeclaration' && node.id.name === 'ai_move');
+    vm.runInContext(source.slice(aiDeclaration.start, aiDeclaration.end), chainPractice.context);
+    const chainAttempt = chainPractice.context.handle_move('e2', 'e4');
+    chainPractice.waits.shift()();
+    await chainAttempt;
+    assert.equal(chainPractice.context.chess.history().join(' '), 'e4');
+    assert.equal(chainPractice.context.smartSession.newCount, 1);
+    assert.equal(chainPractice.timers.length, 1);
+    assert.equal(chainPractice.context.reviews, 0);
+    assert.equal(chainPractice.context.chapterStats.chapters[0].positionReviews.cards[''].moveReviews.e4.recovered, true);
+    assert.equal(chainPractice.context.smartTarget, null);
+    const alternative = fixture(['e4']);
+    alternative.context.trees[0].root.push({ move: 'd4', children: [] });
+    alternative.context.smartSession = { newCount: 0 };
+    alternative.context.smartTarget = { type: 'line', route: [1] };
+    await alternative.context.handle_move('e2', 'e4');
+    assert.equal(alternative.context.attempts, 0);
+    assert.equal(alternative.context.smartSession.newCount, 0);
+    assert.equal(alternative.context.chess.history().length, 0);
+    assert.equal(Object.keys(alternative.context.chapterStats.chapters).length, 0);
+    const mixedResponses = fixture(['e4']);
+    mixedResponses.context.trees[0].root.push({ move: 'd4', children: [] });
+    mixedResponses.context.smartSession = { newCount: 0 };
+    mixedResponses.context.smartTarget = { type: 'position', expectedMove: 'd4' };
+    const mixedCards = mixedResponses.context.positionReviews(mixedResponses.context.chapterStats, 0, 'chapter');
+    mixedResponses.context.recordPositionReview(mixedCards, '', false, false, new Set());
+    mixedResponses.context.recordContinuationReview(mixedCards, '', 'e4', false, false, true, true, null);
+    mixedResponses.context.currentFailures()[''] = { failures: 1, cleanStreak: 0, recovered: false };
+    const otherResponse = mixedResponses.context.handle_move('d2', 'd4');
+    mixedResponses.waits.shift()();
+    await otherResponse;
+    assert.equal(mixedCards[''].moveReviews.d4.recovered, true);
+    assert.equal(mixedCards[''].moveReviews.e4.recovered, false);
+    assert.equal(mixedResponses.context.currentFailures()[''].recovered, false);
     console.log('Study navigation, context playback, cancellation and Smart correction checks passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
