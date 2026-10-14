@@ -391,7 +391,7 @@ async function handle_move(orig, dest) {
         let reply = ai_move(curr_move);
         const naturalEnd = reply == undefined;
         let end_of_line = naturalEnd;
-        if (!end_of_line && !spacedReviewRunActive && !smartSession && max_depth !== DEPTH_MAX) {
+        if (!end_of_line && !spacedReviewRunActive && !smartSession && !window.studyFullLines && max_depth !== DEPTH_MAX) {
             let curr_node = tree_get_node(curr_move);
             let curr_depth = tree_get_node_depth(curr_node);
             if (key_moves_mode == i18n.key_move_disabled || window.first_variation === null) {
@@ -918,7 +918,7 @@ function start_training() {
     
     // Pass the active color to auto-rotate the board
     ground_init_state(fen, color);
-    if (!readMode && !spacedReviewRunActive && !smartSession && key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
+    if (!readMode && !spacedReviewRunActive && !smartSession && !window.studyFullLines && key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
         for (let ki = 0; ki < window.first_variation; ++ki) {
             // Moves that are not fully trained are not skipped
             if (tree_children(curr_move)[0].value != 5) { break; }
@@ -1505,8 +1505,6 @@ async function handle_click() {
 }
 
 function setup_configs() {
-    var click_elems = document.getElementsByClassName("clicking_turns_on_hints");
-    Array.from(click_elems).forEach((el) => { el.onclick = turn_on_hints_for_current_move; });
 
     document.getElementById('replay_position_context').onclick = replayContextFromStart;
     document.getElementById("hints").onclick = turn_on_hints_for_current_move;

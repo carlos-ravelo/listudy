@@ -132,23 +132,70 @@ export function setupStudyMoveNavigation({ goBack, goForward, getState }) {
 }
 
 export function setupPuzzleRun(i18n) {
-    const button = document.getElementById('puzzle_run');
-    if (!button) return;
+    setupStudyToolsMenu();
+    const order = document.getElementById('puzzle_run');
+    const smart = document.getElementById('practice_smart');
+    const lines = document.getElementById('practice_lines');
+    if (!order || !smart || !lines) return;
+    const orderControl = document.getElementById('line_order_control');
+    const stop = document.getElementById('stop_smart_run');
     const modes = ['off', 'next', 'random', 'smart'];
     let mode = localStorage.getItem('puzzleRunMode') || 'off';
     if (!modes.includes(mode)) mode = 'off';
-    const update = () => { button.textContent = i18n[`puzzle_run_${mode}`]; };
-    button.onclick = event => {
-        event.preventDefault();
-        mode = modes[(modes.indexOf(mode) + 1) % modes.length];
+    let reading = false;
+    const update = () => {
+        window.studyFullLines = mode !== 'smart';
+        smart.setAttribute('aria-pressed', String(mode === 'smart'));
+        lines.setAttribute('aria-pressed', String(mode !== 'smart'));
+        order.value = mode === 'smart' ? localStorage.getItem('fullLineRunMode') || 'off' : mode;
+        orderControl.hidden = reading || mode === 'smart';
+        stop.hidden = reading || mode !== 'smart';
+        smart.disabled = reading;
+        lines.disabled = reading;
+    };
+    const choose = next => {
+        if (!modes.includes(next)) return;
+        mode = next;
         localStorage.setItem('puzzleRunMode', mode);
+        if (mode !== 'smart') localStorage.setItem('fullLineRunMode', mode);
         update();
         window.dispatchEvent(new Event('study-puzzle-run-changed'));
     };
+    smart.onclick = () => { if (mode !== 'smart') choose('smart'); };
+    lines.onclick = () => choose(localStorage.getItem('fullLineRunMode') || 'off');
+    order.onchange = () => choose(order.value);
+    stop.onclick = () => choose('off');
     window.addEventListener('study-puzzle-run-off', () => {
         mode = 'off';
         localStorage.setItem('puzzleRunMode', mode);
         update();
     });
+    window.addEventListener('study-reading-updated', event => {
+        reading = event.detail.reading;
+        update();
+    });
     update();
+}
+
+export function setupStudyToolsMenu() {
+    const menu = document.getElementById('study_more_actions');
+    if (!menu || menu.dataset.initialized) return;
+    menu.dataset.initialized = 'true';
+    const summary = menu.querySelector('summary');
+    menu.addEventListener('click', event => {
+        if (event.target.closest('a, button')) {
+            menu.open = false;
+            summary.focus();
+        }
+    }, true);
+    document.addEventListener('click', event => {
+        if (!menu.contains(event.target)) menu.open = false;
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && menu.open) {
+            event.preventDefault();
+            menu.open = false;
+            summary.focus();
+        }
+    });
 }

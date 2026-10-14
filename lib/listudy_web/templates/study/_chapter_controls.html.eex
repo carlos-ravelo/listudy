@@ -1,15 +1,9 @@
-<div class="study-feature-actions">
-  <a href="/random_study" class="button secondary">Random Study</a>
-  <button id="btn_random_chapter" class="button secondary">Random Chapter</button>
-  <a href="#" id="add_to_collection" class="button">Add to Collection</a>
-  <a href="#" id="manage_collection" class="button secondary" hidden>Manage Collection</a>
-</div>
 <div class="study-chapter-navigation">
   <select id="chapter_select" hidden aria-label="Chapter"></select>
   <div class="study-chapter-buttons">
-    <button id="prev_chapter_btn" class="secondary">Back</button>
-    <button id="current_chapter_title" class="secondary" aria-expanded="false" aria-controls="custom_chapter_list" title="Select a chapter">Loading...</button>
-    <button id="next_chapter_btn" class="secondary">Next</button>
+    <button type="button" id="prev_chapter_btn" class="secondary" aria-label="<%= dgettext("study", "Previous chapter") %>" title="<%= dgettext("study", "Previous chapter") %>"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg></button>
+    <button id="current_chapter_title" class="secondary" aria-expanded="false" aria-controls="custom_chapter_list" title="Select a chapter"><%= dgettext("study", "Loading…") %></button>
+    <button type="button" id="next_chapter_btn" class="secondary" aria-label="<%= dgettext("study", "Next chapter") %>" title="<%= dgettext("study", "Next chapter") %>"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>
   </div>
   <div id="custom_chapter_list" class="study-chapter-list" hidden></div>
 </div>

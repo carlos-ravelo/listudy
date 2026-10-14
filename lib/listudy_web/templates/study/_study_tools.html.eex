@@ -1,0 +1,32 @@
+<details class="study-tools-menu" id="study_more_actions">
+  <summary><%= dgettext("study", "More") %></summary>
+  <div class="study-tools-content">
+<div class="study-feature-actions">
+  <a href="/random_study" class="button secondary"><%= dgettext("study", "Another study") %></a>
+  <button id="btn_random_chapter" class="button secondary"><%= dgettext("study", "Random chapter") %></button>
+  <button type="button" id="add_to_collection" class="secondary"><%= dgettext("study", "Add to Collection") %></button>
+  <button type="button" id="manage_collection" class="secondary" hidden><%= dgettext("study", "Manage Collection") %></button>
+</div>
+  <%= if @study.is_owner do %>
+    <%= link dgettext("study", "Edit chapter"), to: Routes.study_path(@conn, :editor, @locale, @study), class: "study-edit-link", id: "edit_chapter" %>
+    <%= link dgettext("study", "Edit study"), to: Routes.study_path(@conn, :edit, @locale, @study), class: "study-edit-link" %>
+  <% end %>
+
+<div class="study-more-grid">
+<div class="option_item">
+    <a class="icon" data-icon="!" id="play_stockfish" href="<%= Routes.page_path(@conn, :play_stockfish, @locale) %>#rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" title="<%= dgettext "study", "Play against Stockfish" %>"><%= dgettext "study", "Play against Stockfish" %></a>
+  </div>
+<div class="option_item">
+    <a class="icon" data-icon="E" id="copy_line_to_clipboard" href="#" title="<%= dgettext "study", "Copy chapter to clipboard" %>"><%= dgettext "study", "Copy chapter to clipboard" %></a>
+  </div>
+<div class="option_item">
+    <%= if !@study.favorites do %>
+      <%= link dgettext("study", "Favorite study"), to: Routes.study_path(@conn, :favorite_study, @study.slug), method: :post, class: "icon", "data-icon": "#" %>
+    <% else %>
+      <%= link dgettext("study" ,"Unfavorite study"), to: Routes.study_path(@conn, :unfavorite_study, @study.slug), method: :post, class: "icon", "data-icon": "\"" %>
+    <% end %>
+  </div>
+</div>
+
+  </div>
+</details>

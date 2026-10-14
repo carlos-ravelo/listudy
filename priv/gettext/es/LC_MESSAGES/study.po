@@ -1035,3 +1035,54 @@ msgstr "Sesión inteligente completada por ahora"
 
 msgid "Replay from the start"
 msgstr "Ver desde el inicio"
+
+msgid "Read study"
+msgstr "Leer estudio"
+
+msgid "Back to practice"
+msgstr "Volver a practicar"
+
+msgid "Practice mode"
+msgstr "Modo de práctica"
+
+msgid "Full lines"
+msgstr "Líneas completas"
+
+msgid "After a line"
+msgstr "Al terminar una línea"
+
+msgid "Stay in this chapter"
+msgstr "Quedarme en este capítulo"
+
+msgid "Stop session"
+msgstr "Detener sesión"
+
+msgid "Another study"
+msgstr "Otro estudio"
+
+msgid "Hint"
+msgstr "Pista"
+
+msgid "Previous chapter"
+msgstr "Capítulo anterior"
+
+msgid "Next chapter"
+msgstr "Siguiente capítulo"
+
+msgid "Random chapter"
+msgstr "Capítulo aleatorio"
+
+msgid "Loading…"
+msgstr "Cargando…"
+
+msgid "Add to Collection"
+msgstr "Añadir a una colección"
+
+msgid "Manage Collection"
+msgstr "Gestionar colecciones"
+
+msgid "Hints and explanations"
+msgstr "Pistas y explicaciones"
+
+msgid "Practice pace"
+msgstr "Ritmo de práctica"

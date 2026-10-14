@@ -251,6 +251,15 @@ function assertSynchronized({ context, board, links }) {
         assert.equal(context.chess.history().length, 0);
     }
 
+    const fullLine = fixture(['e4', 'e5', 'Nf3']);
+    fullLine.context.studyFullLines = true;
+    fullLine.context.max_depth = 1;
+    const fullMove = fullLine.context.handle_move('e2', 'e4');
+    fullLine.waits.shift()();
+    await fullMove;
+    assert.equal(fullLine.context.chess.history().join(' '), 'e4 e5');
+    assert.equal(fullLine.context.resets, 0);
+
     const reply = fixture(['e4', 'e5', 'Nf3']);
     const pendingReply = reply.context.handle_move('e2', 'e4');
     assert(reply.links.analysis_board.href.includes(encodeURIComponent('1. e4')));
