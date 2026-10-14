@@ -92,6 +92,7 @@
   <div class="option_item_progressbar" style="width: 100%;">
     <a style="display: block; padding-bottom: 5px; font-weight: bold;" href="#" data-icon="+" class="icon modal_open" id="progress"><%= dgettext("study","Progress") %></a>
     <div id="chapter_progress"></div>
+    <p id="failed_positions_status" role="status" hidden></p>
     <p id="weak_run_status" class="study-weak-run-status" hidden></p>
   </div>
 </div>
@@ -252,6 +253,9 @@
   i18n.progress_correct = "<%= dgettext "study", "correct" %>";
   i18n.progress_not_practiced = "<%= dgettext "study", "Not practiced" %>";
   i18n.progress_no_attempts = "<%= dgettext "study", "Not practiced yet" %>";
+  i18n.practice_failed_positions = "<%= dgettext "study", "Practice failed positions" %>";
+  i18n.failed_position = "<%= dgettext "study", "Position" %>";
+  i18n.failed_positions_complete = "<%= dgettext "study", "Failed position practice complete!" %>";
   i18n.weak_run_active = "<%= dgettext "study", "Practicing weak chapters" %>";
   i18n.weak_run_remaining = "<%= dgettext "study", "chapters left" %>";
   i18n.weak_run_complete = "<%= dgettext "study", "Weak chapter practice complete!" %>";
@@ -270,7 +274,7 @@
 
 <div id="progress_modal" class="modal">
   <div class="modal-content"
-    x-data="{ chapters: [], weakRunActive: false, spacedReviewActive: false }"
+    x-data="{ chapters: [], weakRunActive: false, spacedReviewActive: false, practiceMode: 'chapters' }"
     x-on:study-progress-updated.window="chapters = &#36;event.detail"
     x-on:study-weak-run-updated.window="weakRunActive = &#36;event.detail.active"
     x-on:study-spaced-run-updated.window="spacedReviewActive = &#36;event.detail.active">
@@ -302,11 +306,18 @@
         data-stop-label="<%= dgettext("study", "Stop reviews") %>"
         x-text="spacedReviewActive ? $el.dataset.stopLabel : $el.dataset.startLabel + ' (' + chapters.filter(chapter => chapter.reviewDue).length + ')'"></button>
       <button type="button" class="secondary" id="practice_weak_chapters"
-        x-show="weakRunActive || chapters.some(chapter => chapter.errors > 0 && !chapter.mastered)"
+        x-show="weakRunActive || chapters.some(chapter => practiceMode === 'positions' ? chapter.failedPositions > 0 : chapter.errors > 0 && !chapter.mastered)"
         x-on:click="$dispatch('study-progress-toggle-weak-run')"
         data-start-label="<%= dgettext("study", "Practice weak chapters") %>"
         data-stop-label="<%= dgettext("study", "Stop weak practice") %>"
         x-text="weakRunActive ? $el.dataset.stopLabel : $el.dataset.startLabel"></button>
+      <label class="study-practice-mode" for="weak_practice_mode">
+        <span><%= dgettext("study", "Practice") %></span>
+        <select id="weak_practice_mode" x-model="practiceMode" :disabled="weakRunActive">
+          <option value="chapters"><%= dgettext("study", "Full chapters") %></option>
+          <option value="positions"><%= dgettext("study", "Failed positions") %></option>
+        </select>
+      </label>
       <button id="study_progress_reset" class="primary"><%= dgettext("study", "Reset progress") %></button>
     </div>
   </div>
