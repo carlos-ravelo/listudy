@@ -1,5 +1,5 @@
 import { replayPositionContext } from './modules/study/position_context.js';
-import { positionReviews, positionCatalog, recordPositionReview, nextSmartPosition, NEW_POSITION_LIMIT } from './modules/study/position_review.js';
+import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, recordContinuationReview, scheduledReviews, nextSmartPosition } from './modules/study/position_review.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
@@ -131,7 +131,8 @@ function selectNextSmartPosition() {
     select.value = String(target.chapter);
     select.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { smartRun: true } }));
     if (target.path.length || target.type === 'position') {
-        const review = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter])[target.id];
+        const entry = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter])[target.id];
+        const review = target.expectedMove ? entry?.moveReviews?.[target.expectedMove] || entry : entry;
         const needsContext = target.type === 'line' || !review || !review.recovered;
         presentPracticePosition(target.path, needsContext ? 4 : 0);
     }
@@ -144,7 +145,7 @@ function updateSmartRun() {
     smartTarget = null;
     document.getElementById('smart_run_status').hidden = true;
     if (localStorage.getItem('puzzleRunMode') === 'smart') {
-        smartSession = { newCount: 0, lastChapter: null };
+        smartSession = { newCount: 0, reviewCount: 0, reviewStreak: 0, lastChapter: null };
         set_read_mode(false);
         selectNextSmartPosition();
     } else if (!readMode) start_training();
@@ -328,19 +329,47 @@ async function handle_move(orig, dest) {
     }
 
     const wasCorrect = possible_moves.indexOf(san) != -1;
+    if (wasCorrect && smartTarget && (smartTarget.route || smartTarget.expectedMove)) {
+        const nextIndex = smartTarget.route?.[curr_move.length - 1];
+        const intended = smartTarget.expectedMove || tree_children(curr_move)[nextIndex]?.move;
+        if (intended && san !== intended) {
+            ground_undo_last_move();
+            set_text(info_div, i18n.smart_other_continuation);
+            setup_move();
+            return;
+        }
+    }
     const positionId = currentPositionId();
     const moveId = wasCorrect
         ? (positionId ? positionId + '|' : '') + san
         : null;
     const assisted = assistedPositions.has(positionId) || positionAttempts.has(positionId);
     const cards = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter]);
-    const wasNew = !cards[positionId];
+    const firstAttempt = !positionAttempts.has(positionId);
+    const intendedMove = smartTarget?.type === 'line' && smartTarget.route
+        ? tree_children(curr_move)[smartTarget.route[curr_move.length - 1]]?.move
+        : smartTarget?.expectedMove || (wasCorrect ? san : possible_moves[0]);
+    const previousCard = cards[positionId]?.card;
+    const wasNew = !cards[positionId] || !introducedMoves(chapterStats, chapter, chapterReviewSignatures[chapter], positionId).includes(intendedMove);
     const review = recordPositionReview(cards, positionId, wasCorrect, assisted, positionAttempts);
-    if (review && wasNew && smartSession) smartSession.newCount += 1;
+    const continuationReview = recordContinuationReview(cards, positionId, intendedMove, wasCorrect, assisted,
+        firstAttempt, wasNew, previousCard);
+    if (wasCorrect) recordIntroducedMove(cards, positionId, san);
+    if (smartSession && firstAttempt) {
+        if (smartTarget?.type === 'line' && wasNew) {
+            smartSession.newCount += 1;
+            smartSession.reviewStreak = 0;
+        } else if (review || continuationReview) {
+            smartSession.reviewCount = (smartSession.reviewCount || 0) + 1;
+            smartSession.reviewStreak = (smartSession.reviewStreak || 0) + 1;
+        }
+    }
     if (assisted && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
+    const recovery = continuationReview || review || cards[positionId];
+    const unresolvedContinuation = Object.values(cards[positionId]?.moveReviews || {}).some(entry => !entry.recovered);
     recordPositionResult(currentFailures(), positionId, {
         path: curr_move.slice(1), fen: chess.fen(), played: san, expected: possible_moves
-    }, wasCorrect, review || cards[positionId]);
+    }, wasCorrect, recovery && { ...recovery, recovered: recovery.recovered && !unresolvedContinuation });
     if (smartTarget?.type === 'position') {
         record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
         if (wasCorrect) {
@@ -389,8 +418,8 @@ async function handle_move(orig, dest) {
         combo_count += 1;
         set_text(success_div, right_move_text());
         let reply = ai_move(curr_move);
-        const naturalEnd = reply == undefined;
-        let end_of_line = naturalEnd;
+        const naturalEnd = reply == undefined && (!smartTarget?.route || smartTarget.completeLine === true);
+        let end_of_line = reply == undefined;
         if (!end_of_line && !spacedReviewRunActive && !smartSession && !window.studyFullLines && max_depth !== DEPTH_MAX) {
             let curr_node = tree_get_node(curr_move);
             let curr_depth = tree_get_node_depth(curr_node);
@@ -404,12 +433,11 @@ async function handle_move(orig, dest) {
         store_trees();
         await sleep(get_move_delay()); // instant play by the ai feels weird
         if (sessionId !== trainingSessionId) return;
-        if (smartSession && smartSession.newCount >= NEW_POSITION_LIMIT) end_of_line = true;
         if (end_of_line) {
             finish_chapter_practice(naturalEnd && lineEligibleForReview);
             if (naturalEnd && !lineReviewRecorded && lineEligibleForReview) record_line_review(true);
             achievement_end_of_line();
-            set_text(success_div, right_move_text() + "\n" + i18n.success_end_of_line);
+            set_text(success_div, right_move_text() + "\n" + (smartTarget?.type === 'line' ? i18n.smart_chain_complete : i18n.success_end_of_line));
 
             // Auto-advance to the specific chapter type if Puzzle Run is active
             const currentRunMode = localStorage.getItem("puzzleRunMode");
@@ -559,7 +587,8 @@ function toggleSpacedReviewRun() {
 }
 
 function studyReviewStatus(index, now = new Date()) {
-    const cards = Object.values(positionReviews(chapterStats, index, chapterReviewSignatures[index]));
+    const cards = smartCatalog.filter(item => item.chapter === Number(index))
+        .flatMap(item => scheduledReviews(chapterStats, chapterReviewSignatures[index], item).map(scheduled => scheduled.review));
     if (!cards.length) return chapterReviewStatus(chapterReviews, index, chapterReviewSignatures[index], now);
     const dates = cards.map(entry => new Date(entry.card.due)).filter(date => Number.isFinite(date.getTime()));
     const dueAt = dates.length ? new Date(Math.min(...dates.map(date => date.getTime()))) : null;
@@ -858,6 +887,10 @@ function setup_move() {
 function ai_move(access) {
     if (smartTarget?.type === 'line' && access[0] === smartTarget.chapter) {
         const path = access.slice(1);
+        if (smartTarget.route && path.every((index, depth) => index === smartTarget.route[depth])) {
+            if (path.length >= smartTarget.route.length) return undefined;
+            return tree_children(access)[smartTarget.route[path.length]]?.move;
+        }
         if (path.length < smartTarget.path.length && path.every((index, depth) => index === smartTarget.path[depth])) {
             return tree_children(access)[smartTarget.path[path.length]].move;
         }

@@ -1089,3 +1089,9 @@ msgstr "Ritmo de práctica"
 
 msgid "Close"
 msgstr "Cerrar"
+
+msgid "That move is in your repertoire. Try another continuation for this chain."
+msgstr "Esa jugada está en tu repertorio. Prueba otra continuación para esta cadena."
+
+msgid "Practice chain complete!"
+msgstr "¡Cadena de práctica completada!"

@@ -1088,3 +1088,9 @@ msgstr ""
 
 msgid "Close"
 msgstr ""
+
+msgid "That move is in your repertoire. Try another continuation for this chain."
+msgstr ""
+
+msgid "Practice chain complete!"
+msgstr ""
