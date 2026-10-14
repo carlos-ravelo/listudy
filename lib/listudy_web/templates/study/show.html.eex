@@ -96,6 +96,7 @@
 </div>
 <!-- Active session feedback -->
 <div class="study-session-progress">
+  <p id="study_sync_status" role="status" aria-live="polite" hidden></p>
   <div class="option_item_progressbar" style="width: 100%;">
 
     <p id="failed_positions_status" role="status" hidden></p>
@@ -234,6 +235,7 @@
   i18n.smart_learning = "<%= dgettext "study", "Smart: learning a new line (up to 10 new positions per session)" %>";
   i18n.smart_other_continuation = "<%= dgettext "study", "That move is in your repertoire. Try another continuation for this chain." %>";
   i18n.smart_chain_complete = "<%= dgettext "study", "Practice chain complete!" %>";
+  i18n.progress_sync_offline = "<%= dgettext "study", "Progress is saved on this device. Cloud sync will retry when a connection is available." %>";
   i18n.smart_review = "<%= dgettext "study", "Smart: reviewing a due position" %>";
   i18n.smart_complete = "<%= dgettext "study", "Smart session complete for now" %>";
   i18n.puzzle_run_random = "<%= dgettext "study", "Puzzle run: random" %>";

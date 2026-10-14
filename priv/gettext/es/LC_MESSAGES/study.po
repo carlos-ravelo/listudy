@@ -1095,3 +1095,6 @@ msgstr "Esa jugada está en tu repertorio. Prueba otra continuación para esta c
 
 msgid "Practice chain complete!"
 msgstr "¡Cadena de práctica completada!"
+
+msgid "Progress is saved on this device. Cloud sync will retry when a connection is available."
+msgstr "El progreso está guardado en este dispositivo. Se reintentará la sincronización cuando haya conexión."

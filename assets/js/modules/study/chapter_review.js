@@ -1,3 +1,4 @@
+import { reviewHistory } from './review_history.js';
 import { createEmptyCard, fsrs, Rating } from 'ts-fsrs';
 
 // A mistake schedules a retry after ten minutes; a clean line schedules the next review.
@@ -48,7 +49,7 @@ function recordLineReview(reviews, chapterIndex, signature, wasClean, now = new 
     } catch (_error) {
         result = scheduler.next(createEmptyCard(now), now, rating);
     }
-    reviews.chapters[key] = { signature, card: result.card };
+    reviews.chapters[key] = { signature, card: result.card, history: reviewHistory(reviews.chapters[key], now, rating) };
     return result.card;
 }
 

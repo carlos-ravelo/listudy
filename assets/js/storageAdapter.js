@@ -1,137 +1,133 @@
-// Stores timers to apply debounce to network requests
-const syncTimers = {};
-const pendingSyncs = {}; // Stores the latest values pending synchronization
-
-/**
- * StorageAdapter handles hybrid synchronization between the local browser
- * and the Phoenix backend. It ensures the UI remains fast by resolving
- * synchronously from localStorage while keeping the cloud updated.
- */
-export const StorageAdapter = {
-    /**
-     * Reads a value from local storage. Synchronous.
-     * @param {string} key The key to read.
-     * @returns {string|null} The value from localStorage.
-     */
-    getItem(key) {
-        return localStorage.getItem(key);
-    },
-
-    /**
-     * Writes a value to local storage and triggers an async sync to the cloud.
-     * @param {string} key The key to write.
-     * @param {any} value The value to write.
-     */
-    setItem(key, value) {
-        // 1. Optimistic local update for a fast UI
-        localStorage.setItem(key, value);
-
-        // 2. Fire-and-forget sync to the cloud
-        this._syncToCloud(key, value);
-    },
-
-    async _syncToCloud(key, value, isUrgent = false) {
-        // Avoid network requests if the user is an anonymous visitor
-        if (typeof logged_in === 'undefined' || !logged_in) {
-            console.debug("Cloud sync ignored: User is not logged in.");
-            return;
-        }
-
-        const csrfToken = document.querySelector("meta[name='csrf-token']")?.getAttribute("content") || 
-                          document.querySelector("input[name='_csrf_token']")?.value;
-        if (!csrfToken) {
-            console.warn("Cloud sync ignored: CSRF token not found.");
-            return; 
-        }
-
-        const payloadStr = JSON.stringify({ key: key, value: String(value) });
-
-        if (isUrgent) {
-            // Immediate sync when closing the tab or switching apps.
-            try {
-                // The fetch keepalive flag allows the request to outlive the page,
-                // but it has a strict 64KB limit.
-                const useKeepAlive = payloadStr.length < 60000;
-                
-                console.debug(`Urgent cloud sync: ${key} | keepalive: ${useKeepAlive}`);
-                await fetch('/api/progress/sync', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-csrf-token': csrfToken
-                    },
-                    body: payloadStr,
-                    keepalive: useKeepAlive
-                });
-                delete pendingSyncs[key];
-            } catch (error) {
-                console.error("Cloud Sync Error (Urgent): Failed to save key '" + key + "'.", error);
-            }
-            return;
-        }
-
-        // Store the latest value in case the user closes the tab before the debounce fires
-        pendingSyncs[key] = value;
-
-        // Clear existing timer for this key (debounce)
-        if (syncTimers[key]) {
-            clearTimeout(syncTimers[key]);
-        }
-
-        syncTimers[key] = setTimeout(async () => {
-            const valToSync = pendingSyncs[key];
-            delete pendingSyncs[key];
-            delete syncTimers[key];
-            
-            if (valToSync === undefined) return;
-
-            try {
-                console.debug("Syncing with cloud:", key);
-                await fetch('/api/progress/sync', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-csrf-token': csrfToken
-                    },
-                    body: JSON.stringify({ key: key, value: String(valToSync) })
-                });
-            } catch (error) {
-                console.error("Cloud Sync Error: Failed to save key '" + key + "'.", error);
-            }
-        }, 5000);
-    },
-
-    /**
-     * Forces synchronization of any pending data in memory.
-     */
-    forceSyncAll() {
-        for (const key in pendingSyncs) {
-            if (syncTimers[key]) {
-                clearTimeout(syncTimers[key]);
-                delete syncTimers[key];
-            }
-            this._syncToCloud(key, pendingSyncs[key], true);
-        }
-    },
-
-    /**
-     * Removes an item from local storage.
-     * Note: This implementation does not sync the deletion to the cloud.
-     * @param {string} key The key to remove.
-     */
-    removeItem(key) {
-        localStorage.removeItem(key);
-        // Depending on your backend implementation, you might want to
-        // trigger a DELETE request here as well to keep the DB perfectly clean.
-    }
+import { mergeProgress } from './modules/study/progress_merge.js';
+const timers = {};
+const inflight = {};
+const writerSnapshots = {};
+const managed = key => /_chapter_(stats|reviews)$/.test(key);
+const owner = () => document.getElementById('collection_modal')?.dataset.userId || '';
+const signedIn = () => typeof logged_in !== 'undefined' && logged_in && owner();
+const storageKey = key => managed(key) && signedIn() ? `progress:user:${owner()}:${key}` : key;
+const metadataKey = key => storageKey(key) + ':sync';
+const status = state => window.dispatchEvent(new CustomEvent('study-sync-status', { detail: { state } }));
+const metadata = key => {
+    try { return JSON.parse(localStorage.getItem(metadataKey(key))) || { revision: '', value: null, pending: false }; }
+    catch (_) { return { revision: '', value: null, pending: false }; }
 };
+const merge = (base, local, remote, key) => JSON.stringify(mergeProgress(base, local, remote, key));
+const csrf = () => document.querySelector("meta[name='csrf-token']")?.getAttribute('content') || document.querySelector("input[name='_csrf_token']")?.value;
+const emitMerged = (key, value) => window.dispatchEvent(new CustomEvent('study-progress-sync-merged', { detail: { key, value } }));
 
-// Modern event to detect when the user closes the tab, reloads the page,
-// or switches to another app (common on mobile devices).
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-        StorageAdapter.forceSyncAll();
-    }
-});
+export const StorageAdapter = {
+    getItem(key) {
+        const value = localStorage.getItem(storageKey(key));
+        if (managed(key)) writerSnapshots[key] = value;
+        return value;
+    },
+    setItem(key, value) {
+        value = String(value);
+        if (managed(key)) {
+            const current = localStorage.getItem(storageKey(key));
+            if (current && current !== writerSnapshots[key]) value = merge(writerSnapshots[key], value, current, key);
+            writerSnapshots[key] = String(arguments[1]);
+            const meta = metadata(key);
+            localStorage.setItem(metadataKey(key), JSON.stringify({ ...meta, pending: true }));
+        }
+        localStorage.setItem(storageKey(key), value);
+        if (!key.endsWith('_tree')) this._syncToCloud(key, value);
+    },
+    backup(key) {
+        const value = localStorage.getItem(storageKey(key));
+        if (value) localStorage.setItem(storageKey(key) + ':backup', value);
+    },
+    async hydrate() {
+        if (!signedIn()) return false;
+        try {
+            const response = await fetch('/api/progress', { credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Progress load failed');
+            const cloud = await response.json();
+            const revisions = cloud._progress_revisions || {};
+            const keys = new Set(Object.keys(cloud).filter(key => !key.startsWith('_progress_')));
+            for (let index = 0; index < localStorage.length; index++) {
+                const stored = localStorage.key(index);
+                const prefix = `progress:user:${owner()}:`;
+                if (stored.startsWith(prefix) && managed(stored.slice(prefix.length))) keys.add(stored.slice(prefix.length));
+            }
+            for (const key of keys) {
+                if (key.endsWith('_tree')) continue;
+                if (!managed(key)) { if (cloud[key] !== undefined) localStorage.setItem(key, cloud[key]); continue; }
+                const local = localStorage.getItem(storageKey(key));
+                const meta = metadata(key);
+                const remote = cloud[key] || null;
+                // Unowned legacy storage is kept as a backup, never imported into another account.
+                const legacy = localStorage.getItem(key);
+                if (!local && legacy) localStorage.setItem(storageKey(key) + ':legacy-backup', legacy);
+                const combined = local ? merge(meta.value, local, remote, key) : remote;
+                if (combined) localStorage.setItem(storageKey(key), combined);
+                const pending = Boolean(combined && combined !== remote);
+                localStorage.setItem(metadataKey(key), JSON.stringify({ revision: revisions[key] || '', value: remote, pending }));
+                if (pending) this._syncToCloud(key, combined);
+            }
+            return true;
+        } catch (_) { status('offline'); return false; }
+    },
+    _syncToCloud(key, value, urgent = false) {
+        if (!signedIn() || !csrf()) return;
+        clearTimeout(timers[key]);
+        if (urgent) return this._flush(key, value, true);
+        timers[key] = setTimeout(() => this._flush(key, value), 5000);
+    },
+    async _flush(key, fallback, urgent = false) {
+        if (inflight[key]) return inflight[key];
+        const operation = async () => {
+            try {
+                for (let attempt = 0; attempt < 4; attempt++) {
+                    const value = managed(key) ? localStorage.getItem(storageKey(key)) : fallback;
+                    const meta = metadata(key);
+                    const payload = JSON.stringify({ key, value, ...(managed(key) ? { revision: meta.revision } : {}) });
+                    const response = await fetch('/api/progress/sync', {
+                        method: 'POST', credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf() },
+                        body: payload, keepalive: urgent && payload.length < 60000
+                    });
+                    if (managed(key) && response.status === 409) {
+                        const remote = await response.json();
+                        this.backup(key);
+                        const combined = merge(meta.value, localStorage.getItem(storageKey(key)), remote.value, key);
+                        localStorage.setItem(storageKey(key), combined);
+                        localStorage.setItem(metadataKey(key), JSON.stringify({ revision: remote.revision, value: remote.value, pending: true }));
+                        emitMerged(key, combined);
+                        continue;
+                    }
+                    if (!response.ok) throw new Error('Progress save failed');
+                    if (!managed(key)) return;
+                    const result = await response.json();
+                    const current = localStorage.getItem(storageKey(key));
+                    const pending = current !== value;
+                    localStorage.setItem(metadataKey(key), JSON.stringify({ revision: result.revision, value, pending }));
+                    if (pending) continue;
+                    status('saved');
+                    return;
+                }
+                throw new Error('Progress changed repeatedly');
+            } catch (_) {
+                status('offline');
+                timers[key] = setTimeout(() => this._flush(key, fallback), 15000);
+            }
+        };
+        inflight[key] = operation();
+        try { await inflight[key]; } finally { delete inflight[key]; }
+    },
+    forceSyncAll() {
+        if (!signedIn()) return;
+        const prefix = `progress:user:${owner()}:`;
+        for (let index = 0; index < localStorage.length; index++) {
+            const key = localStorage.key(index);
+            if (!key.startsWith(prefix) || !key.endsWith(':sync')) continue;
+            const original = key.slice(prefix.length, -5);
+            if (metadata(original).pending) this._syncToCloud(original, localStorage.getItem(storageKey(original)), true);
+        }
+    },
+    removeItem(key) { localStorage.removeItem(storageKey(key)); }
+};
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') StorageAdapter.forceSyncAll(); });
+window.addEventListener('online', () => StorageAdapter.forceSyncAll());
+window.addEventListener('pagehide', () => StorageAdapter.forceSyncAll());

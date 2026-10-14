@@ -5,6 +5,7 @@ const vm = require('node:vm');
 const context = vm.createContext({ ...require('ts-fsrs') });
 const load = file => vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study', file), 'utf8')
     .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), context);
+load('review_history.js');
 load('chapter_stats.js');
 load('chapter_review.js');
 const { bindChapterIdentities, chapterWeakness, recordChapterAttempt, readChapterStats,

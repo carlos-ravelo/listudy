@@ -16,7 +16,7 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/pos
     .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), moveTreeContext);
 const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
 const reviewContext = vm.createContext({ ...require('ts-fsrs'), ChessModule: chessModule });
-for (const file of ['position_review.js', 'failed_positions.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study', file), 'utf8').replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), reviewContext);
+for (const file of ['review_history.js', 'position_review.js', 'failed_positions.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study', file), 'utf8').replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), reviewContext);
 const names = new Set([
     'currentPositionId', 'currentFailures', 'presentPracticePosition', 'replayContextFromStart',
     'handle_move', 'play_move', 'setup_move', 'change_analysis_board',
