@@ -1384,29 +1384,6 @@ async function update_progress() {
         reviewRefreshTimer = setTimeout(update_progress, Math.min(nextDueAt - now.getTime() + 1000, 2147483647));
     }
 
-    let cp = document.getElementById("chapter_progress");
-    const current = chapterSummaries.find(summary => summary.current);
-    const coverage = current;
-    const mastery = current;
-    const bar = document.createElement("div");
-    bar.className = "progress-bar" + (mastery.mastered ? " progress-bar--solid" : "");
-    bar.setAttribute("role", "meter");
-    bar.setAttribute("aria-valuemin", "0");
-    bar.setAttribute("aria-valuemax", "100");
-    bar.setAttribute("aria-valuenow", String(coverage.percent));
-    bar.setAttribute("aria-label", i18n.progress_practiced_moves);
-    const fill = document.createElement("span");
-    fill.className = "progress-bar-fill";
-    fill.style.width = coverage.percent + "%";
-    bar.appendChild(fill);
-
-    const label = document.createElement("p");
-    label.className = "chapter-weakness chapter-weakness--" + current.level;
-    label.textContent = i18n.progress_practiced_moves + ": " + coverage.covered + "/" + coverage.total + " (" + coverage.percent + "%)";
-    const performance = document.createElement('p');
-    performance.className = 'chapter-performance';
-    performance.textContent = current.metrics;
-    cp.replaceChildren(bar, label, performance);
     updateWeakChapterRunUi();
 }
 
@@ -1563,7 +1540,6 @@ async function main() {
         set_text(info_div, i18n.no_playable_chapters);
         document.getElementById('current_chapter_title').textContent = i18n.no_playable_chapters;
         document.getElementById('current_chapter_title').disabled = true;
-        document.getElementById('chapter_progress').textContent = i18n.no_playable_chapters;
         return;
     }
     chapterStats = readChapterStats(StorageAdapter.getItem(chapter_stats_key()));
