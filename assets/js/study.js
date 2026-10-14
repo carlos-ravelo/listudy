@@ -1,3 +1,4 @@
+import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 const Chessground = require('chessground').Chessground;
@@ -49,6 +50,60 @@ let reviewRefreshTimer;
 const studyColor = color;
 let weakChapterRunActive = false;
 let weakChapterQueue = [];
+let failedPositionRun = null;
+
+function currentFailures() {
+    return chapterFailures(chapterStats, chapter, chapterReviewSignatures[chapter]);
+}
+
+function updateFailedPositionsUi() {
+    const status = document.getElementById('failed_positions_status');
+    status.hidden = !failedPositionRun;
+    if (failedPositionRun) status.textContent = failedPositionRun.index < failedPositionRun.positions.length
+        ? i18n.failed_position + ' ' + (failedPositionRun.index + 1) + '/' + failedPositionRun.positions.length
+        : i18n.failed_positions_complete;
+}
+
+function showFailedPosition() {
+    const run = failedPositionRun;
+    if (!run) return;
+    trainingSessionId += 1;
+    run.transitioning = false;
+    clear_all_text();
+    while (run.index < run.positions.length) {
+        const item = run.positions[run.index];
+        const position = readChapterPosition(trees[chapter].root, trees[chapter].headers.FEN, item.path);
+        if (position && position.fen() === item.fen) {
+            window.chess = position;
+            window.curr_move = [chapter, ...item.path];
+            ground_init_state(item.fen, color);
+            setup_move();
+            updateFailedPositionsUi();
+            return;
+        }
+        run.index += 1;
+    }
+    if (weakChapterRunActive && weakChapterQueue.length) {
+        selectNextWeakChapter();
+        return;
+    }
+    if (weakChapterRunActive) stopWeakChapterRun();
+    ground.set({ movable: { dests: new Map() } });
+    set_text(success_div, i18n.failed_positions_complete);
+    updateFailedPositionsUi();
+}
+
+function startFailedPositions() {
+    const positions = pendingPositions(currentFailures());
+    if (!positions.length) return;
+    if (spacedReviewRunActive) stopSpacedReviewRun();
+    window.dispatchEvent(new Event('study-puzzle-run-off'));
+    readMode = false;
+    finish_chapter_practice(false);
+    lineEligibleForReview = false;
+    failedPositionRun = { positions, index: 0 };
+    showFailedPosition();
+}
 
 const mode_free = "free_mode";
 
@@ -151,6 +206,7 @@ async function handle_move(orig, dest) {
         }
         return;
     }
+    if (failedPositionRun && (failedPositionRun.transitioning || failedPositionRun.index >= failedPositionRun.positions.length)) return;
     const sessionId = trainingSessionId;
 
     clear_all_text();
@@ -175,7 +231,30 @@ async function handle_move(orig, dest) {
     const moveId = wasCorrect
         ? (positionId ? positionId + '|' : '') + san
         : null;
+    recordPositionResult(currentFailures(), positionId, {
+        path: curr_move.slice(1), fen: chess.fen(), played: san, expected: possible_moves
+    }, wasCorrect);
+    if (failedPositionRun) {
+        StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
+        if (wasCorrect) {
+            play_move(san);
+            ground.set({ movable: { dests: new Map() } });
+            failedPositionRun.index += 1;
+            failedPositionRun.transitioning = true;
+            await sleep(500);
+            if (sessionId !== trainingSessionId) return;
+            showFailedPosition();
+        } else {
+            ground_undo_last_move();
+            set_text(error_div, i18n.error_wrong_move);
+            setup_move();
+        }
+        updateFailedPositionsUi();
+        update_progress();
+        return;
+    }
     record_chapter_attempt(wasCorrect, moveId, positionId);
+    updateFailedPositionsUi();
     if (!wasCorrect && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
 
     if(wasCorrect) {
@@ -286,15 +365,23 @@ function selectNextWeakChapter() {
         bubbles: true,
         detail: { weakRun: true }
     }));
+    if (document.getElementById('weak_practice_mode').value === 'positions') startFailedPositions();
     updateWeakChapterRunUi();
 }
 
 function toggleWeakChapterRun() {
     if (weakChapterRunActive) {
         stopWeakChapterRun();
+        if (failedPositionRun) start_training();
         return;
     }
     weakChapterQueue = weakChapterOrder(chapterStats, trees.length, chapterMoveCatalogs);
+    if (document.getElementById('weak_practice_mode').value === 'positions') {
+        weakChapterQueue = trees.map((_, index) => index)
+            .filter(index => pendingPositions(chapterFailures(chapterStats, index, chapterReviewSignatures[index])).length > 0)
+            .sort((a, b) => pendingPositions(chapterFailures(chapterStats, b, chapterReviewSignatures[b])).length -
+                pendingPositions(chapterFailures(chapterStats, a, chapterReviewSignatures[a])).length);
+    }
     if (weakChapterQueue.length === 0) return;
     set_read_mode(false);
     if (spacedReviewRunActive) stopSpacedReviewRun();
@@ -640,6 +727,8 @@ function play_move(san) {
 }
 
 function start_training() {
+    failedPositionRun = null;
+    updateFailedPositionsUi();
     finish_chapter_practice(false);
     trainingSessionId += 1;
     lineReviewRecorded = false;
@@ -1095,6 +1184,7 @@ async function update_progress() {
             name: tree_chapter_name(tree_index),
             ...weakness,
             ...state,
+            failedPositions: pendingPositions(chapterFailures(chapterStats, tree_index, chapterReviewSignatures[tree_index])).length,
             reviewDue: review.due,
             reviewDueAt: review.dueAt ? review.dueAt.getTime() : null,
             reviewLabel: review.due ? i18n.spaced_review_due
@@ -1170,6 +1260,7 @@ async function setup_progress_reset() {
             for (let c of trees) {
                 tree_value_add(c.root[0], -5);
             }
+            failedPositionRun = null;
             chapterStats = { version: 1, chapters: {} };
             bindChapterIdentities(chapterStats, trees);
             practiceChapter = null;
@@ -1180,6 +1271,8 @@ async function setup_progress_reset() {
             }
             StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
             store_trees();
+            if (!readMode) start_training();
+            updateFailedPositionsUi();
             update_progress();
             display_arrows(false);
             display_comments(false);
@@ -1340,8 +1433,8 @@ async function main() {
         goBack: go_back,
         goForward: go_forward,
         getState: () => ({
-            canGoBack: !spacedReviewRunActive && curr_move.length > 1,
-            canGoForward: !spacedReviewRunActive && tree_children(curr_move).length > 0
+            canGoBack: !failedPositionRun && !spacedReviewRunActive && curr_move.length > 1,
+            canGoForward: !failedPositionRun && !spacedReviewRunActive && tree_children(curr_move).length > 0
         })
     });
     setup_configs();
@@ -1418,14 +1511,14 @@ function refresh_manual_navigation() {
 }
 
 function go_back() {
-    if (spacedReviewRunActive || curr_move.length <= 1) return;
+    if (failedPositionRun || spacedReviewRunActive || curr_move.length <= 1) return;
     chess.undo();
     curr_move.pop();
     refresh_manual_navigation();
 }
 
 function go_forward() {
-    if (spacedReviewRunActive) return;
+    if (failedPositionRun || spacedReviewRunActive) return;
     const nextNode = tree_children(curr_move)[0];
     if (!nextNode) return;
     play_move(nextNode.move);
