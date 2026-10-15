@@ -4,6 +4,7 @@ defmodule Listudy.Games.ImportedGames do
   alias Listudy.Repo
   alias Listudy.Games.{StudyGame, UserGame}
   alias Listudy.Studies.Study
+  alias Listudy.Users.User
 
   @page_size 20
   @platforms ~w(lichess chess_com)
@@ -11,6 +12,7 @@ defmodule Listudy.Games.ImportedGames do
   @statuses ~w(match deviation ambiguous out_of_scope error)
 
   def list_recent(user_id, params) do
+    user = Repo.get!(User, user_id)
     platform = allowed(params["platform"], @platforms)
     period = allowed(params["period"], @periods) || "all"
     status = allowed(params["status"], @statuses)
@@ -68,6 +70,7 @@ defmodule Listudy.Games.ImportedGames do
       end
 
     total = Repo.aggregate(query, :count, :id)
+    has_games = total > 0 || Repo.exists?(from g in UserGame, where: g.user_id == ^user_id)
     cursor = decode_cursor(params["cursor"])
     newer_page = cursor && params["direction"] == "newer"
 
@@ -94,12 +97,19 @@ defmodule Listudy.Games.ImportedGames do
         platform: g.platform,
         played_at: g.played_at,
         white_player: g.white_player,
-        black_player: g.black_player
+        black_player: g.black_player,
+        result: g.result,
+        pgn_result:
+          fragment("substring(? from ?)", g.pgn, ^~S'\[Result\s+"(1-0|0-1|1/2-1/2|\*)"\]')
       })
       |> limit(^(@page_size + 1))
       |> Repo.all()
 
-    games = rows |> Enum.take(@page_size) |> then(&if(newer_page, do: Enum.reverse(&1), else: &1))
+    games =
+      rows
+      |> Enum.take(@page_size)
+      |> then(&if(newer_page, do: Enum.reverse(&1), else: &1))
+      |> Enum.map(&identify_player(&1, user))
 
     first = List.first(games)
     last = List.last(games)
@@ -126,6 +136,7 @@ defmodule Listudy.Games.ImportedGames do
     %{
       games: games,
       total: total,
+      has_games: has_games,
       first_number: first_number,
       last_number: last_number,
       previous_cursor: if(first && first_number > 1, do: encode_cursor(first)),
@@ -137,6 +148,24 @@ defmodule Listudy.Games.ImportedGames do
       status: status,
       study_id: study_id
     }
+  end
+
+  defp identify_player(game, user) do
+    username =
+      if game.platform == "lichess", do: user.lichess_username, else: user.chess_com_username
+
+    username = String.downcase(username || "")
+
+    color =
+      cond do
+        username == "" -> nil
+        String.downcase(game.white_player || "") == username -> "white"
+        String.downcase(game.black_player || "") == username -> "black"
+        true -> nil
+      end
+
+    result = game.pgn_result || if(game.result in ["1-0", "0-1", "1/2-1/2", "*"], do: game.result)
+    Map.merge(game, %{player_color: color, game_result: result})
   end
 
   def get_owned!(user_id, id), do: Repo.get_by!(UserGame, id: id, user_id: user_id)

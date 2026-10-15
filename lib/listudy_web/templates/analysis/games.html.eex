@@ -1,44 +1,70 @@
 <div class="analysis-games-page analysis-workspace">
   <%= link "← Analysis overview", to: Routes.analysis_path(@conn, :index) %>
   <h1>Imported games</h1>
-  <p>Choose a game to compare it with your current repertoire. Results in the list come from the last sync.</p>
+  <p class="analysis-games-intro">Your games, compared with your repertoire at the last sync.</p>
 
   <%= form_for @conn, Routes.analysis_path(@conn, :games), [method: :get, class: "analysis-games-filters"], fn _f -> %>
-    <label>Platform
-      <select name="platform">
-        <option value="">Both platforms</option>
-        <option value="lichess" <%= if @library.platform == "lichess", do: "selected" %>>Lichess</option>
-        <option value="chess_com" <%= if @library.platform == "chess_com", do: "selected" %>>Chess.com</option>
-      </select>
-    </label>
     <label>Period
-      <select name="period">
+      <select name="period" aria-label="Period">
         <option value="all" <%= if @library.period == "all", do: "selected" %>>All dates</option>
         <option value="last_week" <%= if @library.period == "last_week", do: "selected" %>>Last week</option>
         <option value="last_month" <%= if @library.period == "last_month", do: "selected" %>>Last month</option>
       </select>
     </label>
-    <label>Study
-      <select name="study_id">
-        <option value="">All studies</option>
-        <%= for study <- @library.studies do %>
-          <option value="<%= study.id %>" <%= if @library.study_id == study.id, do: "selected" %>><%= study.title %></option>
-        <% end %>
-      </select>
-    </label>
-    <label>Repertoire result
-      <select name="status">
+    <label>Repertoire comparison
+      <select name="status" aria-label="Repertoire comparison">
         <option value="">Any result</option>
         <%= for status <- ~w(deviation match ambiguous out_of_scope error) do %>
           <option value="<%= status %>" <%= if @library.status == status, do: "selected" %>><%= analysis_status_label(status) %></option>
         <% end %>
       </select>
     </label>
+    <details class="analysis-games-more" data-game-filters-more>
+      <summary>More filters<%= if @library.platform || @library.study_id, do: " (#{Enum.count([@library.platform, @library.study_id], & &1)})" %></summary>
+      <div class="analysis-games-more-panel">
+        <label>Platform
+          <select name="platform" aria-label="Platform">
+            <option value="">Both platforms</option>
+            <option value="lichess" <%= if @library.platform == "lichess", do: "selected" %>>Lichess</option>
+            <option value="chess_com" <%= if @library.platform == "chess_com", do: "selected" %>>Chess.com</option>
+          </select>
+        </label>
+        <label>Study
+          <select name="study_id" aria-label="Study">
+            <option value="">All studies</option>
+            <%= for study <- @library.studies do %>
+              <option value="<%= study.id %>" <%= if @library.study_id == study.id, do: "selected" %>><%= study.title %></option>
+            <% end %>
+          </select>
+        </label>
+      </div>
+    </details>
     <button type="submit">Filter games</button>
   <% end %>
+  <div class="analysis-games-active-filters">
+    <%= if @library.platform do %>
+      <%= link analysis_platform_label(@library.platform) <> " ×", to: Routes.analysis_path(@conn, :games, Map.take(@conn.query_params, ["period", "study_id", "status"])), aria: [label: "Remove platform filter" ] %>
+    <% end %>
+    <%= if @library.study_id do %>
+      <% selected_study = Enum.find(@library.studies, &(&1.id == @library.study_id)) %>
+      <%= link selected_study.title <> " ×", to: Routes.analysis_path(@conn, :games, Map.take(@conn.query_params, ["platform", "period", "status"])), aria: [label: "Remove study filter: " <> selected_study.title] %>
+    <% end %>
+    <%= if @library.platform || @library.study_id || @library.status || @library.period != "all" do %>
+      <%= link "Reset filters", to: Routes.analysis_path(@conn, :games), class: "analysis-games-reset" %>
+    <% end %>
+  </div>
 
   <%= if @library.total == 0 do %>
-    <p class="highlight">No imported games match these filters. Change the filters or sync a platform from the analysis overview.</p>
+    <div class="analysis-games-empty">
+      <%= if @library.has_games do %>
+        <h2>No games match these filters</h2>
+        <%= link "Reset filters", to: Routes.analysis_path(@conn, :games), class: "button" %>
+      <% else %>
+        <h2>No imported games yet</h2>
+        <p>Connect an account or sync games to start comparing them with your repertoire.</p>
+        <%= link "Connect or sync games", to: Routes.analysis_path(@conn, :index), class: "button" %>
+      <% end %>
+    </div>
   <% else %>
     <%= if @library.games == [] do %>
       <p class="highlight">This page is no longer available. <%= link "Return to newest games", to: Routes.analysis_path(@conn, :games, Map.take(@conn.query_params, ["platform", "period", "study_id", "status"])) %>.</p>
@@ -66,8 +92,8 @@
           <li>
             <a class="analysis-game-row" href="<%= Routes.analysis_path(@conn, :compare_game, game.id, compare_params) %>">
               <span class="analysis-game-primary">
-                <strong><%= game.white_player || "White" %> – <%= game.black_player || "Black" %></strong>
-                <span><%= analysis_platform_label(game.platform) %> · <%= Calendar.strftime(game.played_at, "%d %b %Y, %H:%M UTC") %></span>
+                <span class="analysis-game-heading"><strong><%= game_opponent(game) %></strong><span class="analysis-game-result" aria-label="Game result: <%= game_outcome(game) %>"><%= game_outcome(game) %></span></span>
+                <span><%= if game.player_color, do: "You as #{String.capitalize(game.player_color)} · " %><%= analysis_platform_label(game.platform) %> · <time data-local-time datetime="<%= DateTime.to_iso8601(game.played_at) %>"><%= Calendar.strftime(game.played_at, "%d %b %Y, %H:%M UTC") %></time></span>
               </span>
               <span class="analysis-game-summary">
                 <%= if result do %>
@@ -105,3 +131,4 @@
     <% end %>
   <% end %>
 </div>
+<script defer src="<%= Routes.static_path(@conn, "/js/analysis_games.js") %>"></script>

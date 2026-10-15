@@ -59,7 +59,7 @@
 .analysis-workspace.training-container { box-sizing: border-box; padding-left: 12px !important; padding-right: 12px !important; }
 .analysis-workspace .cg-wrap coords.files { left: 0; bottom: 0; }
 .analysis-workspace .cg-wrap coords.ranks { top: 0; }
-.analysis-workspace #training-controls { margin-top: 12px !important; }
+.analysis-workspace #training-controls { margin: 8px auto 0 !important; }
 .analysis-workspace #mistakes-pagination button { font-size: 12px; font-variant-numeric: tabular-nums; }
 @media (pointer: coarse) {
   .analysis-workspace #mistakes-pagination button { min-width: 44px; min-height: 44px; }
@@ -193,4 +193,97 @@
   .analysis-workspace input[type="text"],
   .analysis-workspace select,
   .analysis-workspace textarea { font-size: 16px; }
+}
+
+/* Game browsing keeps frequent filters visible and account/study filters nearby. */
+.analysis-games-page { box-sizing: border-box; padding: 0 12px; }
+.analysis-games-page h1 { margin: 4px 0 6px; }
+.analysis-games-intro { margin: 0 0 16px; color: var(--analysis-muted); font-size: 13px; }
+.analysis-games-page .analysis-games-filters { position: relative; gap: 8px; margin: 16px 0 8px; }
+.analysis-games-page .analysis-games-filters > label { flex: 1 1 130px; max-width: 230px; font-size: 12px; font-weight: 500; }
+.analysis-games-page .analysis-games-filters select { min-width: 0; min-height: 36px; padding: 6px 8px; font-size: 13px; }
+.analysis-games-page .analysis-games-filters > button { padding: 8px 12px; }
+.analysis-games-more > summary { display: flex; align-items: center; min-height: 36px; padding: 0 8px; cursor: pointer; list-style: none; font-size: 13px; }
+.analysis-games-more > summary::-webkit-details-marker { display: none; }
+.analysis-games-more > summary::after { content: '⌄'; padding-left: 6px; }
+.analysis-games-more[open] > summary { background: var(--bg-highlight-color); border-radius: 6px; }
+.analysis-games-more-panel { position: absolute; top: calc(100% + 4px); right: 0; z-index: 5; width: min(390px, 100%); box-sizing: border-box; display: grid; gap: 12px; padding: 16px; border: 1px solid var(--analysis-divider); border-radius: 6px; background: var(--bg-color); box-shadow: 0 6px 18px rgb(0 0 0 / .12); }
+.analysis-games-page .analysis-games-more-panel label { font-size: 13px; font-weight: 500; }
+.analysis-games-reset { padding: 8px 4px; font-size: 12px; }
+.analysis-games-active-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.analysis-games-active-filters:empty { display: none; }
+.analysis-games-active-filters a { padding: 3px 8px; border: 1px solid var(--analysis-divider); border-radius: 4px; font-size: 12px; color: var(--font-color); overflow-wrap: anywhere; }
+.analysis-games-active-filters .analysis-games-reset { border: 0; padding: 3px 4px; color: var(--analysis-muted); }
+.analysis-games-page .analysis-games-count { margin: 10px 0 4px; font-size: 12px; }
+.analysis-games-page .analysis-game-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 8px 16px; }
+.analysis-games-page .analysis-game-primary { min-width: 0; }
+.analysis-games-page .analysis-game-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 0; }
+.analysis-game-heading strong { overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
+.analysis-game-result { border-radius: 4px; padding: 1px 6px; background: var(--bg-highlight-color); color: var(--font-color); font-size: 11px; font-weight: 500; }
+.analysis-games-page .analysis-game-primary > span + span { color: var(--analysis-muted); font-size: 12px; line-height: 1.5; }
+.analysis-games-page .analysis-game-summary { min-width: 0; max-width: none; gap: 4px 8px; }
+.analysis-games-page .analysis-status { white-space: normal; }
+.analysis-games-page .analysis-game-study-name { font-size: 12px; }
+.analysis-games-page .analysis-game-open { font-size: 12px; }
+.analysis-games-empty { padding: 24px 0; border-top: 1px solid var(--analysis-divider); }
+.analysis-games-empty h2 { font-size: 20px; }
+
+/* The board and its actions share one compact column. */
+.analysis-workspace.training-container { max-width: 800px; margin: 0 auto; padding-top: 20px; padding-bottom: 24px; --training-success: #17652b; --training-error: #a12424; --training-assisted: #805000; }
+[data-theme="dark"] .analysis-workspace.training-container { --training-success: #82d59a; --training-error: #ffa6a6; --training-assisted: #ffcf75; }
+.training-heading, .training-toolbar, #training-progress-status, #training-sync-status, .training-position-counter, #training-controls, .training-end-panel { max-width: 500px; margin-left: auto; margin-right: auto; }
+.training-heading h1 { margin: 6px 0 10px; font-size: 24px; line-height: 1.25; font-weight: 600; overflow-wrap: anywhere; }
+.training-toolbar { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; position: relative; }
+.training-toolbar label { flex: 1 1 100px; min-width: 0; max-width: 145px; font-size: 12px; font-weight: 500; }
+.training-toolbar .training-scope-label { flex-basis: 150px; max-width: 195px; }
+.training-toolbar select { display: block; width: 100%; margin: 3px 0 0; min-height: 36px; padding: 4px 8px; }
+.training-about { margin-left: auto; flex: 0 0 28px; }
+.training-about summary { min-height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; color: var(--analysis-muted); list-style: none; }
+.training-about summary::-webkit-details-marker { display: none; }
+.training-about summary span { display: flex; align-items: center; justify-content: center; border: 1px solid var(--analysis-divider); border-radius: 50%; width: 22px; height: 22px; }
+.training-about p { position: absolute; right: 0; top: 100%; z-index: 5; width: min(350px, 100%); box-sizing: border-box; padding: 12px; margin: 4px 0; border: 1px solid var(--analysis-divider); border-radius: 6px; background: var(--bg-color); color: var(--font-color); font-size: 13px; }
+.training-container #training-progress-status { margin-top: 8px; margin-bottom: 4px; font-size: 12px; }
+#training-sync-status { margin-top: 4px; margin-bottom: 4px; font-size: 12px; color: var(--training-assisted); }
+.training-position-counter { margin-top: 4px; margin-bottom: 6px; font-size: 12px; color: var(--analysis-muted); }
+.training-container #chess-training-board { width: min(100%, 500px); height: auto; aspect-ratio: 1 / 1; margin: 0 auto; }
+.training-actions, .training-helpers, .training-navigation, .training-session-tools, .training-summary-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.training-actions, .training-session-tools { justify-content: space-between; }
+.training-helpers { gap: 4px; }
+.training-actions button, .training-session-tools button, .training-summary-actions button { margin: 0; padding: 7px 8px; }
+.analysis-workspace .training-text-button { background: transparent; border-color: transparent; color: var(--font-color); }
+.analysis-workspace .training-text-button:hover { background: var(--bg-highlight-color); }
+.training-container #training-status { margin: 10px 0 0; min-height: 24px; font-size: 16px; font-weight: 600; }
+#training-status[data-feedback="success"] { color: var(--training-success); }
+#training-status[data-feedback="error"] { color: var(--training-error); }
+#training-status[data-feedback="assisted"] { color: var(--training-assisted); }
+.training-container #mistake-info { margin: 3px 0 8px; font-size: 13px; line-height: 1.4; }
+.training-session-tools { margin-top: 6px; border-top: 1px solid var(--analysis-divider); padding-top: 4px; }
+.training-session-tools summary { cursor: pointer; font-size: 12px; padding: 8px 0; color: var(--analysis-muted); }
+.training-session-tools .training-text-button { font-size: 12px; }
+#mistakes-pagination { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; }
+.analysis-workspace #mistakes-pagination button { width: 32px; height: 32px; min-height: 32px; border-radius: 4px; padding: 0; margin: 0; color: var(--font-color); background: var(--bg-color); }
+.analysis-workspace #mistakes-pagination [data-result="clean"] { border-color: var(--training-success); background: color-mix(in srgb, var(--training-success) 12%, var(--bg-color)); }
+.analysis-workspace #mistakes-pagination [data-result="assisted"] { border-color: var(--training-assisted); background: color-mix(in srgb, var(--training-assisted) 12%, var(--bg-color)); }
+#mistakes-pagination [aria-current] { outline: 2px solid var(--font-color); outline-offset: 1px; }
+.training-end-panel { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--analysis-divider); }
+.training-end-panel h2 { margin: 0 0 8px; font-size: 22px; font-weight: 600; }
+.training-end-panel p { margin: 6px 0 12px; }
+#training-summary-time { color: var(--analysis-muted); font-size: 13px; }
+@media (max-width: 650px) {
+  .analysis-games-page { margin-top: 20px; }
+  .analysis-games-page .analysis-game-row { grid-template-columns: minmax(0, 1fr) auto; gap: 5px 10px; padding: 12px 0; }
+  .analysis-games-page .analysis-game-summary { grid-column: 1 / -1; grid-row: 2; }
+  .analysis-games-page .analysis-game-open { grid-column: 2; grid-row: 1; }
+}
+@media (max-width: 500px) {
+  .training-toolbar .training-scope-label { flex: 1.25 1 130px; }
+  .training-toolbar label { flex: 1 1 100px; }
+  .training-about { margin-left: 0; }
+  .training-about summary { min-height: 24px; }
+}
+@media (pointer: coarse) {
+  .analysis-games-page .analysis-games-filters select, .analysis-games-more > summary, .training-toolbar select { min-height: 44px; }
+  .training-about { flex-basis: 44px; }
+  .training-about summary { min-height: 44px; }
+  .analysis-workspace #mistakes-pagination button { min-width: 44px; min-height: 44px; }
 }
