@@ -9,6 +9,9 @@ const root = path.resolve(__dirname, '../../..');
 const overview = fs.readFileSync(process.env.LISTUDY_ANALYSIS_PREVIEW || '/tmp/listudy-analysis-new.html', 'utf8');
 const train = fs.readFileSync(process.env.LISTUDY_TRAIN_PREVIEW || '/tmp/listudy-train-new.html', 'utf8');
 const study = fs.readFileSync(process.env.LISTUDY_STUDY_GAME_PREVIEW || '/tmp/listudy-study-game-new.html', 'utf8');
+const twoChapterStudy = study.replace(/var pgn = clean_pgn\(`[\s\S]*?`\);/, () => 'var pgn = ' + JSON.stringify(
+    '[Event "Main repertoire"]\n\n1. e4 e5 2. Nf3 *\n\n[Event "Side line"]\n\n1. d4 d5 2. c4 *'
+) + ';');
 const decode = text => text.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 const key = train.match(/data-study-key="([^"]+)"/)[1] + '_chapter_stats';
 const source = JSON.parse(decode(train.match(/data-mistakes="([^"]+)"/)[1]));
@@ -28,7 +31,7 @@ function multiplePositionTrain() {
     return train.replace(/data-study-pgn="[^"]*"/, 'data-study-pgn="' + encode('[Event "Main repertoire"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 *') + '"')
         .replace(/data-mistakes="[^"]*"/, 'data-mistakes="' + encode(JSON.stringify(positions)) + '"');
 }
-let cloud = {}, revisions = {}, stale = false, availability = 'current', syncPollState = 'running', multiple = false;
+let cloud = {}, revisions = {}, stale = false, availability = 'current', syncPollState = 'running', multiple = false, directedStudy = false;
 const errors = [];
 (async () => {
  const server = http.createServer(async (req, res) => {
@@ -50,7 +53,7 @@ const errors = [];
     if (url.pathname === '/analysis' || url.pathname === '/analysis/games' || url.pathname === '/train' || url.pathname.startsWith('/en/studies/')) {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         const raw = url.pathname === '/analysis' ? overview : url.pathname === '/analysis/games' ? (url.search ? filteredGames : games)
-            : url.pathname === '/train' ? (multiple ? multiplePositionTrain() : train) : study;
+            : url.pathname === '/train' ? (multiple ? multiplePositionTrain() : train) : directedStudy ? twoChapterStudy : study;
         const body = raw.replace('</head>', '<style>' + fs.readFileSync(path.join(root, 'assets/css/features/analysis_presentation.css'), 'utf8') + '</style></head>');
         res.end(stale && url.pathname === '/train' ? body.replace(/&quot;expected&quot;:&quot;Nf3&quot;/g, '&quot;expected&quot;:&quot;d4&quot;') : body);
         return;
@@ -178,6 +181,49 @@ const errors = [];
     assert.equal(await page.evaluate(() => window.curr_move.length), 1, 'Practice line starts at the chapter lead-in rather than an unrelated Smart prompt');
     assert.equal(errors.length, 0, errors.join('\n'));
     await page.screenshot({ path: '/tmp/listudy-analysis-line.png', fullPage: true });
+
+    directedStudy = true;
+    const chapterUrl = new URL(lineUrl, base);
+    chapterUrl.search = new URLSearchParams({ chapter_index: '1', chapter: 'Side line', practice: 'chapter' }).toString();
+    await page.evaluate(() => {
+        localStorage.setItem('puzzleRunMode', 'smart');
+        localStorage.setItem('fullLineRunMode', 'random');
+    });
+    await page.goto(chapterUrl.href);
+    await page.waitForFunction(() => window.trees?.length === 2 && document.getElementById('practice_lines')?.getAttribute('aria-pressed') === 'true');
+    assert.equal(await page.locator('#chapter_select').inputValue(), '1', 'An Analysis chapter link keeps the requested chapter despite the saved Smart preference');
+    assert.equal(await page.evaluate(() => window.studyPuzzleRunMode), 'off');
+    assert.equal(await page.evaluate(() => localStorage.getItem('puzzleRunMode')), 'smart', 'Opening a chapter preserves the normal study preference');
+    assert.equal(await page.evaluate(() => localStorage.getItem('fullLineRunMode')), 'random');
+    assert.equal(await page.locator('#puzzle_run').inputValue(), 'off', 'A directed visit does not auto-advance to a different chapter');
+    await page.reload();
+    await page.waitForFunction(() => window.chapter === 1 && window.studyPuzzleRunMode === 'off');
+
+    const ChessModule = require('chess.js');
+    const position = new (ChessModule.Chess || ChessModule)(); position.move('d4'); position.move('d5');
+    const directedLine = new URL(chapterUrl);
+    directedLine.searchParams.delete('practice');
+    directedLine.searchParams.set('practice_fen', position.fen());
+    directedLine.searchParams.set('practice_expected', 'c4');
+    for (const preference of ['smart', 'off']) {
+        await page.evaluate(mode => localStorage.setItem('puzzleRunMode', mode), preference);
+        await page.goto(directedLine.href);
+        await page.waitForFunction(() => window.studyPuzzleRunMode === 'smart' && window.chapter === 1);
+        assert.equal(await page.evaluate(() => window.curr_move[0]), 1, 'Targeted line practice resolves the requested chapter before Smart can change it');
+        assert.equal(await page.evaluate(() => localStorage.getItem('puzzleRunMode')), preference, 'Targeted practice does not replace the saved mode');
+    }
+    directedLine.searchParams.set('practice_expected', 'Nf3');
+    await page.goto(directedLine.href);
+    await page.waitForFunction(() => document.getElementById('info')?.textContent.includes('outside the current practice scope'));
+    assert.equal(await page.evaluate(() => window.chapter), 1);
+    assert.equal(await page.evaluate(() => localStorage.getItem('puzzleRunMode')), 'off');
+    await page.evaluate(() => localStorage.setItem('puzzleRunMode', 'smart'));
+    const regularUrl = new URL(chapterUrl); regularUrl.search = '';
+    await page.goto(regularUrl.href);
+    await page.waitForFunction(() => window.studyPuzzleRunMode === 'smart' && document.getElementById('smart_run_status')?.hidden === false);
+    assert.equal(await page.locator('#practice_smart').getAttribute('aria-pressed'), 'true', 'A normal visit resumes Smart');
+    directedStudy = false;
+    assert.equal(errors.length, 0, errors.join('\n'));
     await context.close();
 
     ({ context, page } = await start());

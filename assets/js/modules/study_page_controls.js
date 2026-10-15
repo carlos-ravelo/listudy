@@ -131,7 +131,7 @@ export function setupStudyMoveNavigation({ goBack, goForward, getState }) {
     return { update };
 }
 
-export function setupPuzzleRun(i18n) {
+export function setupPuzzleRun(i18n, { initialMode } = {}) {
     setupStudyToolsMenu();
     setupStudyDialogs();
     const order = document.getElementById('puzzle_run');
@@ -141,10 +141,11 @@ export function setupPuzzleRun(i18n) {
     const orderControl = document.getElementById('line_order_control');
     const stop = document.getElementById('stop_smart_run');
     const modes = ['off', 'next', 'random', 'smart'];
-    let mode = localStorage.getItem('puzzleRunMode') || 'off';
+    let mode = initialMode ?? localStorage.getItem('puzzleRunMode') ?? 'off';
     if (!modes.includes(mode)) mode = 'off';
     let reading = false;
     const update = () => {
+        window.studyPuzzleRunMode = mode;
         window.studyFullLines = mode !== 'smart';
         smart.setAttribute('aria-pressed', String(mode === 'smart'));
         lines.setAttribute('aria-pressed', String(mode !== 'smart'));
@@ -154,13 +155,15 @@ export function setupPuzzleRun(i18n) {
         smart.disabled = reading;
         lines.disabled = reading;
     };
-    const choose = next => {
+    const choose = (next, { persist = true, notify = true } = {}) => {
         if (!modes.includes(next)) return;
         mode = next;
-        localStorage.setItem('puzzleRunMode', mode);
-        if (mode !== 'smart') localStorage.setItem('fullLineRunMode', mode);
+        if (persist) {
+            localStorage.setItem('puzzleRunMode', mode);
+            if (mode !== 'smart') localStorage.setItem('fullLineRunMode', mode);
+        }
         update();
-        window.dispatchEvent(new Event('study-puzzle-run-changed'));
+        if (notify) window.dispatchEvent(new Event('study-puzzle-run-changed'));
     };
     smart.onclick = () => { if (mode !== 'smart') choose('smart'); };
     lines.onclick = () => choose(localStorage.getItem('fullLineRunMode') || 'off');
@@ -176,6 +179,7 @@ export function setupPuzzleRun(i18n) {
         update();
     });
     update();
+    return { setMode: choose };
 }
 
 export function setupStudyToolsMenu() {

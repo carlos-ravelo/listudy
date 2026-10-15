@@ -68,6 +68,7 @@ defmodule Listudy.AnalysisTemplateTest do
     assert html =~ "chapter_index=1"
     assert html =~ "chapter_index=2"
     assert html =~ "chapter=Same+name"
+    assert html =~ "practice=chapter"
     assert html =~ "Test &lt;study&gt;"
     assert html =~ "data-match-group=\"0\""
     refute html =~ "data-select-group=\"0\""
