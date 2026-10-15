@@ -1,5 +1,5 @@
 import "./components/analysis_repertoires.js";
-import "./components/game_availability.js";
+import { setGameAvailability } from './components/game_availability.js';
 import { StorageAdapter } from './storageAdapter.js';
 import { readChapterStats } from './modules/study/chapter_stats.js';
 import { gamePositionPending } from './modules/analysis/game_progress.js';
@@ -71,7 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const section = document.querySelector('[data-sync-status-url]');
     if (!section) return;
     const cards = Array.from(section.querySelectorAll('[data-sync-platform]'));
-    if (!cards.some(card => card.dataset.syncState === 'running')) return;
+    let polling = false;
+    const startPolling = () => {
+        if (polling) return;
+        polling = true;
+        setTimeout(pollSyncs, 2500);
+    };
 
     async function pollSyncs() {
         try {
@@ -89,11 +94,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!sync) return;
                 if (card.dataset.syncState === 'running' && sync.status !== 'running') finished = true;
                 card.dataset.syncState = sync.status;
+                if (sync.status === 'running') setGameAvailability(card, 'syncing');
                 const badge = card.querySelector('[data-sync-badge]');
                 const details = card.querySelector('[data-sync-details]');
                 badge.className = `analysis-sync-badge analysis-sync-badge-${sync.status}`;
                 badge.textContent = sync.status === 'running' ? 'Syncing' :
-                    sync.status === 'completed' ? 'Sync complete' : 'Sync failed';
+                    sync.status === 'completed' ? 'Last sync complete' : 'Sync failed';
                 details.textContent = sync.details || '';
                 if (sync.status === 'running') stillRunning = true;
             });
@@ -102,13 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.reload();
             } else if (stillRunning) {
                 setTimeout(pollSyncs, 2500);
-            }
+            } else polling = false;
         } catch (error) {
             setTimeout(pollSyncs, 5000);
         }
     }
 
-    setTimeout(pollSyncs, 2500);
+    document.addEventListener('analysis-sync-started', startPolling);
+    if (cards.some(card => card.dataset.syncState === 'running')) startPolling();
 });
 
 // Native dialog provides focus containment and Escape dismissal.

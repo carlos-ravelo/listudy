@@ -12,7 +12,7 @@ const study = fs.readFileSync(process.env.LISTUDY_STUDY_GAME_PREVIEW || '/tmp/li
 const decode = text => text.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 const key = train.match(/data-study-key="([^"]+)"/)[1] + '_chapter_stats';
 const source = JSON.parse(decode(train.match(/data-mistakes="([^"]+)"/)[1]));
-let cloud = {}, revisions = {}, stale = false;
+let cloud = {}, revisions = {}, stale = false, availability = 'current', syncPollState = 'running';
 const errors = [];
 (async () => {
  const server = http.createServer(async (req, res) => {
@@ -26,7 +26,11 @@ const errors = [];
         return json({ revision: revisions[data.key] });
     }
     if (/\/analysis\/studies\/\d+\/positions/.test(url.pathname)) return json({ positions: source });
-    if (url.pathname.includes('/new-games/')) return json({ status: 'current' });
+    if (url.pathname === '/analysis/sync-status') return json({ lichess: { status: syncPollState, details: 'Sync status' }, chess_com: null });
+    if (url.pathname.includes('/new-games/')) {
+        if (availability === 'unavailable') res.statusCode = 503;
+        return json({ status: availability });
+    }
     if (url.pathname === '/analysis' || url.pathname === '/train' || url.pathname.startsWith('/en/studies/')) {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         const raw = url.pathname === '/analysis' ? overview : url.pathname === '/train' ? train : study;
@@ -84,6 +88,29 @@ const errors = [];
     await page.goto(base + '/analysis');
     await page.waitForFunction(() => document.querySelector('[data-game-review-status]')?.textContent === 'Reviews scheduled');
     assert((await page.locator('[data-repertoire-row]').textContent()).includes('2 / 2 games with deviations'));
+    const account = page.locator('[data-sync-platform="lichess"]');
+    const sync = account.locator('button[type="submit"]');
+    for (const state of ['available', 'current', 'unavailable', 'syncing', 'available']) {
+        availability = state;
+        await page.reload();
+        await page.waitForFunction(state => document.querySelector('[data-sync-platform="lichess"]').dataset.gameAvailability === state, state);
+        assert.equal(await sync.isDisabled(), state === 'syncing');
+        assert.equal(await sync.evaluate(button => button.classList.contains('button-primary')), state === 'available');
+        assert.equal(await account.getAttribute('aria-busy'), String(state === 'syncing'));
+        if (state === 'available') {
+            assert.equal(await sync.textContent(), 'Sync new games');
+            assert.equal(await account.locator('[data-new-games-status] strong').textContent(), 'New games available');
+            const notice = await account.locator('[data-new-games-status]').boundingBox();
+            const button = await sync.boundingBox();
+            assert(notice.y >= button.y + button.height, 'The notice has its own full-width row');
+        }
+        if (state === 'syncing') {
+            availability = 'current'; syncPollState = 'completed';
+            await page.waitForFunction(() => document.querySelector('[data-sync-platform="lichess"]')?.dataset.gameAvailability === 'current');
+            assert.equal(await sync.isDisabled(), false, 'A sync discovered after rendering is polled until it finishes');
+            syncPollState = 'running';
+        }
+    }
     for (const width of [320, 390, 768, 1280]) {
         await page.setViewportSize({ width, height: 900 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `Overview fits ${width}px`);
@@ -91,6 +118,20 @@ const errors = [];
     await page.screenshot({ path: '/tmp/listudy-analysis-new-desktop.png', fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: '/tmp/listudy-analysis-new-mobile.png', fullPage: true });
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+    await page.screenshot({ path: '/tmp/listudy-analysis-available-dark.png', fullPage: true });
+    await page.route('**/analysis/sync', async route => {
+        assert.equal(route.request().method(), 'POST');
+        assert(route.request().postData().includes('lichess'));
+        await route.fulfill({ status: 200, contentType: 'text/html', body: overview.replace('data-sync-state="idle"', 'data-sync-state="running"') });
+    });
+    const submission = page.waitForRequest('**/analysis/sync');
+    await sync.click();
+    await submission;
+    await page.waitForFunction(() => document.querySelector('[data-sync-platform="lichess"]')?.dataset.gameAvailability === 'syncing');
+    assert.equal(await sync.isDisabled(), true);
+    await page.unroute('**/analysis/sync');
+    availability = 'current';
     await page.goto(base + '/train'); await page.waitForSelector('cg-board');
     assert.equal(card(await stats(page)).gameEvidence.pending, false, 'Reload does not reopen the same game observation');
     await page.goto(base + lineUrl);

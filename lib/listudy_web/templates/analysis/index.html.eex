@@ -44,7 +44,7 @@
               <strong class=" analysis-sync-badge-<%= if sync, do: sync.status, else: "idle" %>" data-sync-badge>
                 <%= case sync && sync.status do
                   "running" -> "Syncing"
-                  "completed" -> "Sync complete"
+                  "completed" -> "Last sync complete"
                   "failed" -> "Sync failed"
                   _ -> "Not synced yet"
                 end %>
