@@ -54,6 +54,7 @@ const smartContext = vm.createContext({ ...state,
     document: { getElementById: id => id === 'chapter_select' ? select : status },
     CustomEvent: class { constructor(type, options) { this.detail = options.detail; } },
     nextSmartPosition: () => ({ target: { chapter: 0, path: [0], type: 'line' } }),
+    scopedPracticeCatalog: () => [],
     readChapterPosition: () => ({ fen: () => 'context position' }),
     positionReviews: () => ({}),
     presentPracticePosition(path, count) {

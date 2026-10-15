@@ -1,5 +1,6 @@
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
 import { chapterLearningProgress } from './modules/study/learning_progress.js';
+import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
 import { replayPositionContext } from './modules/study/position_context.js';
 import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, recordContinuationReview, scheduledReviews, nextSmartPosition } from './modules/study/position_review.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
@@ -113,9 +114,13 @@ function currentPositionId() {
     return curr_move.slice(1).map((_, depth) => tree_get_node(curr_move.slice(0, depth + 2)).move).join('|');
 }
 
+function scopedPracticeCatalog() {
+    return scopePositionCatalog(smartCatalog, trees.map((_, index) => practiceDepthLimit(StorageAdapter, study_id, index)));
+}
+
 function selectNextSmartPosition() {
     if (!smartSession || localStorage.getItem('puzzleRunMode') !== 'smart') return;
-    const { target, nextDue } = nextSmartPosition(chapterStats, chapterReviewSignatures, smartCatalog, smartSession);
+    const { target, nextDue } = nextSmartPosition(chapterStats, chapterReviewSignatures, scopedPracticeCatalog(), smartSession);
     smartTarget = target;
     updateContextReplayUi();
     const status = document.getElementById('smart_run_status');
@@ -245,6 +250,7 @@ const DEPTH_MAX = -1;  // This constant is used to avoid having to calculate the
 let max_depth_key_base = "max_depth_" + study_id + "_";
 let max_depth = DEPTH_MAX;
 let depth_limit_enabled = false;
+let depthSettingsChanged = false;
 
 function combo_text() {
     return "" + combo_count + "x ";
@@ -591,10 +597,11 @@ function toggleSpacedReviewRun() {
     selectNextDueChapter();
 }
 
-function studyReviewStatus(index, now = new Date()) {
-    const cards = smartCatalog.filter(item => item.chapter === Number(index))
+function studyReviewStatus(index, now = new Date(), catalog = scopedPracticeCatalog()) {
+    const cards = catalog.filter(item => item.chapter === Number(index))
         .flatMap(item => scheduledReviews(chapterStats, chapterReviewSignatures[index], item).map(scheduled => scheduled.review));
-    if (!cards.length) return chapterReviewStatus(chapterReviews, index, chapterReviewSignatures[index], now);
+    if (!cards.length) return Number.isFinite(practiceDepthLimit(StorageAdapter, study_id, index))
+        ? { due: false, dueAt: null } : chapterReviewStatus(chapterReviews, index, chapterReviewSignatures[index], now);
     const dates = cards.map(entry => new Date(entry.card.due)).filter(date => Number.isFinite(date.getTime()));
     const dueAt = dates.length ? new Date(Math.min(...dates.map(date => date.getTime()))) : null;
     return { due: dueAt !== null && dueAt <= now, dueAt };
@@ -1360,6 +1367,7 @@ function inc_or_dec_max_depth(delta) {
     update_max_depth_label(depth, tree_depth);
 
     StorageAdapter.setItem(max_depth_key_base + chapter, max_depth);
+    practiceDepthChanged();
 }
 
 /**
@@ -1373,6 +1381,12 @@ function max_depth_changed() {
     update_max_depth_label(depth, tree_depth);
 
     StorageAdapter.setItem(max_depth_key_base + chapter, max_depth);
+    practiceDepthChanged();
+}
+
+function practiceDepthChanged() {
+    depthSettingsChanged = true;
+    update_progress();
 }
 
 function reset_line() {
@@ -1386,13 +1400,19 @@ function reset_line() {
 async function update_progress() {
     const chapterSummaries = [];
     const now = new Date();
+    const scopedCatalog = scopedPracticeCatalog();
 
     for (let tree_index in trees) {
         const weakness = chapterWeakness(chapterStats, tree_index);
         const state = chapterProgressState(chapterStats, tree_index, chapterMoveCatalogs[tree_index], chapterReviewSignatures[tree_index]);
-        const review = studyReviewStatus(tree_index, now);
-        const learning = chapterLearningProgress(chapterStats, tree_index, chapterReviewSignatures[tree_index], smartCatalog, now);
-        const coverageLabel = i18n.progress_coverage + ': ' + state.covered + '/' + state.total + ' (' + state.percent + '%)';
+        const limit = practiceDepthLimit(StorageAdapter, study_id, tree_index);
+        const limited = Number.isFinite(limit);
+        const scope = chapterCoverage(chapterStats, tree_index, scopeMoveCatalog(chapterMoveCatalogs[tree_index], limit));
+        const review = studyReviewStatus(tree_index, now, scopedCatalog);
+        const learning = chapterLearningProgress(chapterStats, tree_index, chapterReviewSignatures[tree_index], scopedCatalog, now);
+        const fullCoverageLabel = i18n.progress_full_coverage + ': ' + state.covered + '/' + state.total + ' (' + state.percent + '%)';
+        const coverageLabel = (limited ? i18n.progress_within_depth + ' ' + limit : i18n.progress_coverage) +
+            ': ' + scope.covered + '/' + scope.total + ' (' + scope.percent + '%)';
         const recallLabel = i18n.progress_recall + ': ' + (learning.recallAccuracy === null
             ? i18n.progress_recall_unknown
             : learning.recallAccuracy + '% (' + learning.recallSamples + ' ' + i18n.progress_graded_reviews + ')');
@@ -1405,8 +1425,10 @@ async function update_progress() {
             ...state,
             ...learning,
             coverageComplete: state.total > 0 && state.covered === state.total,
+            scopeComplete: scope.total > 0 && scope.covered === scope.total,
+            limited, fullCoverageLabel,
             coverageLabel, recallLabel, pendingLabel,
-            progressTooltip: [coverageLabel, i18n.progress_coverage_help, recallLabel, i18n.progress_recall_help,
+            progressTooltip: [coverageLabel, ...(limited ? [fullCoverageLabel, i18n.progress_scope_help] : []), i18n.progress_coverage_help, recallLabel, i18n.progress_recall_help,
                 pendingLabel, chapter_performance_text(tree_index, state.recent)].join('\n'),
             failedPositions: pendingPositions(chapterFailures(chapterStats, tree_index, chapterReviewSignatures[tree_index])).length,
             reviewDue: review.due,
@@ -1415,7 +1437,7 @@ async function update_progress() {
                 : review.dueAt ? i18n.spaced_review_next + ": " + review.dueAt.toLocaleString() : null,
             pickerTone: review.due ? 'due'
                 : state.recent.accuracy !== null && state.recent.accuracy < 100 ? 'mistakes' : state.covered > 0 ? 'in-progress' : 'new',
-            pickerMetrics: state.percent + '% ' + i18n.progress_covered_short + ' · ' +
+            pickerMetrics: scope.percent + '% ' + (limited ? i18n.progress_within_depth + ' ' + limit : i18n.progress_covered_short) + ' · ' +
                 (learning.dueContinuations ? learning.dueContinuations + ' ' + i18n.progress_due_short
                     : i18n.progress_recall + ' ' + (learning.recallAccuracy === null ? '—' : learning.recallAccuracy + '%')),
             current: Number(tree_index) === Number(chapter),
@@ -1553,7 +1575,18 @@ function setup_configs() {
     document.getElementById("limit_practice_depth").onchange = event => {
         StorageAdapter.setItem(max_depth_key_base + chapter + "_enabled", String(event.target.checked));
         set_options_values_for_max_depth();
+        practiceDepthChanged();
     };
+    document.getElementById('study_settings_dialog').addEventListener('close', () => {
+        if (!depthSettingsChanged) return;
+        depthSettingsChanged = false;
+        if (readMode) return;
+        if (smartSession) {
+            trainingSessionId += 1;
+            contextReplayActive = false;
+            selectNextSmartPosition();
+        } else if (!failedPositionRun) start_training();
+    });
 }
 
 window.overlay_manager = new TextOverlayManager();
