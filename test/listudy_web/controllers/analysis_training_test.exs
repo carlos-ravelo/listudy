@@ -205,10 +205,23 @@ defmodule ListudyWeb.AnalysisTrainingTest do
              Analyzer.analyze_single_pgn(user.id, game.pgn)
 
     assert unavailable_id == invalid.id
+
+    library = conn_for(user) |> get("/analysis/games") |> html_response(200)
+    [row] = Floki.find(library, ".analysis-game-row")
+    assert Floki.find(row, ".analysis-status-ambiguous") |> Floki.text() == "Matching line found"
+    assert Floki.find(row, ".analysis-game-open") |> Floki.text() == "View comparison →"
+    refute library =~ "Comparison needs review"
+
     html = conn_for(user) |> get("/analysis/games/#{game.id}/compare") |> html_response(200)
     assert html =~ "Comparison incomplete"
     assert html =~ "Needs PGN repair"
     assert html =~ "Try comparison again"
+
+    [practice] =
+      Floki.find(html, "#analysis-outcome-0 a.button-primary") |> Floki.attribute("href")
+
+    assert practice =~ "practice_expected=Nf3"
+    assert practice =~ "/#{valid.slug}"
 
     if path = System.get_env("LISTUDY_COMPARISON_PREVIEW"),
       do: File.write!(path <> ".partial.html", html)
