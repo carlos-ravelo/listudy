@@ -139,7 +139,7 @@ function smartIntroductionMove() {
 }
 
 function selectNextSmartPosition() {
-    if (!smartSession || localStorage.getItem('puzzleRunMode') !== 'smart') return;
+    if (!smartSession || (window.studyPuzzleRunMode ?? localStorage.getItem('puzzleRunMode')) !== 'smart') return;
     if (studySessions.boundary()) {
         smartTarget = null;
         updateContextReplayUi();
@@ -187,7 +187,7 @@ function updateSmartRun(initialGameTarget = null) {
     smartTarget = null;
     gameLineQueue = initialGameTarget?.fromGame ? [initialGameTarget] : null;
     document.getElementById('smart_run_status').hidden = true;
-    if (localStorage.getItem('puzzleRunMode') === 'smart') {
+    if ((window.studyPuzzleRunMode ?? localStorage.getItem('puzzleRunMode')) === 'smart') {
         smartSession = { newCount: 0, reviewCount: 0, reviewStreak: 0, lastChapter: null };
         studySessions.begin('smart');
         set_read_mode(false);
@@ -513,7 +513,7 @@ async function handle_move(orig, dest) {
             set_text(success_div, right_move_text() + "\n" + (smartTarget?.type === 'line' ? i18n.smart_chain_complete : i18n.success_end_of_line));
 
             // Auto-advance to the specific chapter type if Puzzle Run is active
-            const currentRunMode = localStorage.getItem("puzzleRunMode");
+            const currentRunMode = window.studyPuzzleRunMode ?? localStorage.getItem("puzzleRunMode");
 
             if (smartSession) {
                 if (smartTarget?.reviewChain) smartSession.reviewChains = (smartSession.reviewChains || 0) + 1;
@@ -1768,7 +1768,12 @@ async function main() {
         setupStudyCollections({ getCurrentChapter }),
         setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward, progressLabels: { unpracticed: i18n.progress_not_practiced, practiced: i18n.progress_practiced_moves, needsPractice: i18n.progress_needs_practice, reviewDue: i18n.spaced_review_due } })
     ];
-    setupPuzzleRun(i18n);
+    const gamePractice = new URLSearchParams(window.location.search);
+    const hasGamePosition = gamePractice.has('practice_fen') && gamePractice.has('practice_expected');
+    const linkedChapter = chapterFromUrl(window.location.search, trees.map((_, index) => tree_chapter_name(index)));
+    const puzzleRun = setupPuzzleRun(i18n, {
+        initialMode: hasGamePosition || gamePractice.get('practice') === 'chapter' && linkedChapter !== null ? 'off' : undefined
+    });
     studySessions = setupStudySessions({ getStats: () => chapterStats,
         persist: () => StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats)),
         storage: StorageAdapter, labels: i18n.session_labels,
@@ -1794,18 +1799,15 @@ async function main() {
             canGoForward: !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && tree_children(curr_move).length > 0
         })
     });
-    if (localStorage.getItem('puzzleRunMode') === 'smart') updateSmartRun();
-    const gamePractice = new URLSearchParams(window.location.search);
-    if (gamePractice.has('practice_fen') && gamePractice.has('practice_expected')) {
+    if (hasGamePosition) {
         const target = gameLineTarget(scopedPracticeCatalog(), gamePractice.get('practice_fen'), gamePractice.get('practice_expected'), Number(chapter));
         if (target) {
-            document.getElementById('practice_smart').click();
+            puzzleRun.setMode('smart', { persist: false, notify: false });
             updateSmartRun(target);
         } else {
-            window.dispatchEvent(new Event('study-puzzle-run-off'));
             set_text(info_div, 'This position is outside the current practice scope. Check Max depth or sync your games after editing the study.');
         }
-    }
+    } else if ((window.studyPuzzleRunMode ?? localStorage.getItem('puzzleRunMode')) === 'smart') updateSmartRun();
     setup_configs();
     studyMoveTree = setupStudyMoveTree({
         element: document.getElementById('study_read_moves'),

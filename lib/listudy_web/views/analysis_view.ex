@@ -40,7 +40,7 @@ defmodule ListudyWeb.AnalysisView do
   def comparison_groups(choices), do: Listudy.Games.AnalysisComparison.groups(choices)
 
   def chapter_path(conn, study, result) do
-    params = [chapter_index: result["chapter_index"]]
+    params = [chapter_index: result["chapter_index"], practice: "chapter"]
 
     # The parser synthesizes this label for missing Event headers. The study
     # page translates its own fallback, so only named chapters get a title guard.
