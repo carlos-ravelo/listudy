@@ -27,7 +27,7 @@
     </div>
     <%= if state == :player do %>
       <% {study, chapter} = hd(@group.chapters) %>
-      <p><%= link "Practice this line", to: practice_path(@conn, study, chapter), class: "button" %></p>
+      <p><%= link "Practice this line", to: practice_path(@conn, study, chapter), class: "button button-primary" %></p>
     <% end %>
   <% else %>
     <p class="analysis-outcome-note"><%= if result["reason"] == "book_ended",
@@ -39,8 +39,8 @@
     <p class="analysis-transposition">↪ Reached this position by a different move order.</p>
   <% end %>
   <%= if (result["earlier_departures"] || []) != [] do %>
-    <details class="analysis-earlier-departures" open>
-      <summary>Earlier departures before the game rejoined</summary>
+    <details class="analysis-earlier-departures">
+      <summary>Earlier move orders (<%= length(result["earlier_departures"]) %>)</summary>
       <ul>
         <%= for departure <- result["earlier_departures"] do %>
           <li>
@@ -53,12 +53,4 @@
       </ul>
     </details>
   <% end %>
-  <details class="analysis-match-details">
-    <summary>How this match was found</summary>
-    <p><%= Enum.at(result["score"], 0) %> distinct played moves matched this chapter.
-      A match means the move was played from a position stored in the chapter, even if reached in a different order.
-      Both White's and Black's moves count, repeated position-and-move pairs count once, and the matches need not be consecutive.</p>
-    <p>Chapters are grouped when the matched moves, comparison position, suggested moves and earlier departures agree.
-      Their unplayed continuations may differ.</p>
-  </details>
 </section>

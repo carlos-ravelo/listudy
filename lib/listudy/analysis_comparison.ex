@@ -4,18 +4,25 @@ defmodule Listudy.Games.AnalysisComparison do
   Unplayed continuations can differ; matched moves and reported departures cannot.
   """
 
-  def groups(choices) do
+  def rank(choices, library) do
     choices
     |> Enum.sort_by(fn {study, result} ->
-      {study.title, study.id, result["chapter_index"]}
+      location = get_in(library, ["studies", to_string(study.id), "location"]) || "daily"
+      {if(location == "daily", do: 0, else: 1), study.id, result["chapter_index"]}
     end)
-    |> Enum.group_by(&comparison_key/1)
-    |> Enum.map(fn {_, chapters} ->
+    |> Enum.sort_by(fn {_, result} -> result["score"] end, :desc)
+  end
+
+  def groups(choices) do
+    by_comparison = Enum.group_by(choices, &comparison_key/1)
+
+    choices
+    |> Enum.map(&comparison_key/1)
+    |> Enum.uniq()
+    |> Enum.map(fn key ->
+      chapters = Map.fetch!(by_comparison, key)
       {study, result} = hd(chapters)
       %{result: result, color: study.color, chapters: chapters}
-    end)
-    |> Enum.sort_by(fn %{chapters: [{study, result} | _]} ->
-      {study.title, study.id, result["chapter_index"]}
     end)
   end
 

@@ -87,7 +87,7 @@
             has_other_error = Enum.any?(summaries, &(&1.status == "error")) and
               (is_nil(result) or result.status != "error")
             list_params = Map.take(@conn.query_params, ["platform", "period", "study_id", "status", "cursor", "direction"])
-            compare_params = if result, do: Map.put(list_params, "compare_study_id", to_string(result.study_id)), else: list_params
+            compare_params = if @library.study_id, do: Map.put(list_params, "compare_study_id", to_string(@library.study_id)), else: list_params
           %>
           <li>
             <a class="analysis-game-row" href="<%= Routes.analysis_path(@conn, :compare_game, game.id, compare_params) %>">
@@ -103,7 +103,7 @@
                   <span class="analysis-status">Not analyzed for a study</span>
                 <% end %>
                 <%= if has_other_error do %>
-                  <span class="analysis-game-warning">Some study comparisons unavailable</span>
+                  <span class="analysis-game-warning">Comparison incomplete</span>
                 <% end %>
               </span>
               <span class="analysis-game-open" aria-hidden="true">Compare →</span>

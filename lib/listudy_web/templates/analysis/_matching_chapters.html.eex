@@ -1,0 +1,33 @@
+<% {study, result} = hd(@group.chapters) %>
+<section class="analysis-match-group<%= if @index == 0, do: " is-selected" %>" data-match-group="<%= @index %>">
+  <%= if @selectable do %>
+    <button type="button" class="analysis-group-choice" data-select-group="<%= @index %>"
+      aria-pressed="<%= if @index == 0, do: "true", else: "false" %>"
+      aria-controls="analysis-outcome-<%= @index %>" disabled>
+      <span class="analysis-group-count"><%= if @index == 0, do: "Best match", else: "Alternative line" %></span>
+      <strong class="analysis-chapter-name"><%= result["chapter"] %></strong>
+      <span class="analysis-study-name"><%= String.replace(study.title, "_", " ") %></span>
+      <span class="analysis-group-move"><%= comparison_move_summary(result) %><%= if result["deviation"], do: " · Repertoire: #{Enum.join(result["expected"], " / ")}" %></span>
+    </button>
+  <% else %>
+    <div class="analysis-group-heading">
+      <span class="analysis-group-count">Best match</span>
+      <strong class="analysis-chapter-name"><%= result["chapter"] %></strong>
+      <span class="analysis-study-name"><%= String.replace(study.title, "_", " ") %></span>
+    </div>
+  <% end %>
+  <p class="analysis-chapter-link"><%= link "Open study chapter ↗", to: chapter_path(@conn, study, result), target: "_blank", rel: "noopener" %></p>
+  <%= if length(@group.chapters) > 1 do %>
+    <details class="analysis-chapter-list">
+      <summary>Also in <%= length(@group.chapters) - 1 %> <%= if length(@group.chapters) == 2, do: "chapter", else: "chapters" %></summary>
+      <ul>
+        <%= for {other_study, other_result} <- tl(@group.chapters) do %>
+          <li>
+            <span class="analysis-study-name"><%= String.replace(other_study.title, "_", " ") %></span>
+            <%= link other_result["chapter"], to: chapter_path(@conn, other_study, other_result), class: "analysis-chapter-name", target: "_blank", rel: "noopener" %>
+          </li>
+        <% end %>
+      </ul>
+    </details>
+  <% end %>
+</section>
