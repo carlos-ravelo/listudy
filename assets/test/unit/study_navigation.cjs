@@ -29,8 +29,42 @@ const functions = declarations
     .filter(node => node.type === 'FunctionDeclaration' && names.has(node.id.name))
     .map(node => source.slice(node.start, node.end)).join('\n');
 
+// Existing depth preferences stay inactive until explicitly enabled for a chapter.
+const depthStorage = { depth_0: '2' };
+const depthNodes = Object.fromEntries(['max_depth_container', 'max_depth_label', 'max_depth_range',
+    'max_depth_sub', 'max_depth_add', 'limit_practice_depth'].map(id => [id, {
+    classList: { toggle() {} }
+}]));
+const depthContext = vm.createContext({
+    chapter: 0, max_depth_key_base: 'depth_', DEPTH_MAX: -1, depth_limit_enabled: false,
+    document: { getElementById: id => depthNodes[id] },
+    get_repertoire_depth: () => 5,
+    get_option_from_localstorage: (key, fallback) => depthStorage[key] === undefined ? fallback : Number(depthStorage[key]),
+    StorageAdapter: { getItem: key => depthStorage[key], setItem: (key, value) => depthStorage[key] = String(value) }
+});
+vm.runInContext(declarations.filter(node => node.type === 'FunctionDeclaration' &&
+    ['update_max_depth_label', 'set_options_values_for_max_depth', 'inc_or_dec_max_depth'].includes(node.id.name))
+    .map(node => source.slice(node.start, node.end)).join('\n'), depthContext);
+depthContext.set_options_values_for_max_depth();
+assert.equal(depthContext.depth_limit_enabled, false);
+assert.equal(depthNodes.max_depth_range.disabled, true);
+depthStorage.depth_0_enabled = 'true';
+depthContext.set_options_values_for_max_depth();
+assert.equal(depthContext.max_depth, 2);
+assert.equal(depthNodes.max_depth_range.disabled, false);
+depthContext.inc_or_dec_max_depth(1);
+assert.equal(depthStorage.depth_0, '3');
+depthContext.chapter = 1;
+depthContext.set_options_values_for_max_depth();
+assert.equal(depthContext.depth_limit_enabled, false);
+assert.equal(depthContext.max_depth, -1);
+depthContext.chapter = 0;
+depthContext.set_options_values_for_max_depth();
+assert.equal(depthContext.depth_limit_enabled, true);
+assert.equal(depthContext.max_depth, 3);
+
 function fixture(moves, fen, orientation = 'white') {
-    const root = moves.reduceRight((children, move) => [{ move, children }], []);
+    const root = moves.reduceRight((children, move, move_index) => [{ move, move_index, children }], []);
     const links = {
         analysis_board: { href: 'https://lichess.org/analysis' },
         play_stockfish: { href: '/play-stockfish' }
@@ -58,7 +92,7 @@ function fixture(moves, fen, orientation = 'white') {
         updateFailedPositionsUi() {}, selectNextSmartPosition: () => context.advances++,
         spacedReviewRunActive: false, weakChapterRunActive: false, readMode: false,
         total_moves: 0, combo_count: 0, attempts: 0, reviews: 0, resets: 0, advances: 0,
-        max_depth: 100, DEPTH_MAX: 100, board_review: 'slow',
+        max_depth: 100, DEPTH_MAX: 100, depth_limit_enabled: false, board_review: 'slow',
         i18n: { review_slow: 'slow', key_move_enabled: 'enabled' }, success_div: {}, error_div: {}, info_div: {},
         ground: { state: board, set: state => Object.assign(board, state), setShapes() {}, redrawAll() {} },
         ground_move() {}, ground_undo_last_move() {},
@@ -80,6 +114,7 @@ function fixture(moves, fen, orientation = 'white') {
         tree_possible_moves: access => access.slice(1).reduce((nodes, index) => nodes[index].children, root),
         tree_children: access => context.tree_possible_moves(access),
         tree_get_node: access => access.slice(1).reduce((parent, index) => parent.children[index], { children: root }),
+        tree_get_node_depth: node => 1 + Math.floor(node.move_index / 2),
         tree_move_index: (access, san) => context.tree_possible_moves(access).findIndex(node => node.move === san),
         ai_move: access => context.tree_possible_moves(access)[0]?.move,
         ground_set_moves: () => { board.legalMoves = context.chess.moves(); },
@@ -262,6 +297,32 @@ function assertSynchronized({ context, board, links }) {
     assert.equal(fullLine.context.chess.history().join(' '), 'e4 e5');
     assert.equal(fullLine.context.resets, 0);
 
+    const limitedLine = fixture(['e4', 'e5', 'Nf3']);
+    limitedLine.context.studyFullLines = true;
+    limitedLine.context.depth_limit_enabled = true;
+    limitedLine.context.max_depth = 1;
+    limitedLine.context.board_review = 'fast';
+    limitedLine.context.practiceChapter = 0;
+    statsContext.beginChapterPractice(limitedLine.context.chapterStats, 0, 'chapter');
+    const limitedMove = limitedLine.context.handle_move('e2', 'e4');
+    limitedLine.waits.shift()();
+    await limitedMove;
+    assert.equal(limitedLine.context.chess.history().join(' '), 'e4');
+    assert.equal(limitedLine.context.resets, 1);
+    assert.equal(limitedLine.context.reviews, 0);
+    assert.equal(limitedLine.context.chapterStats.chapters[0].lastPractice.completed, false);
+
+    const dueLine = fixture(['e4', 'e5', 'Nf3']);
+    dueLine.context.studyFullLines = true;
+    dueLine.context.spacedReviewRunActive = true;
+    dueLine.context.depth_limit_enabled = true;
+    dueLine.context.max_depth = 1;
+    const dueMove = dueLine.context.handle_move('e2', 'e4');
+    dueLine.waits.shift()();
+    await dueMove;
+    assert.equal(dueLine.context.chess.history().join(' '), 'e4 e5');
+    assert.equal(dueLine.context.resets, 0);
+
     const reply = fixture(['e4', 'e5', 'Nf3']);
     const pendingReply = reply.context.handle_move('e2', 'e4');
     assert(reply.links.analysis_board.href.includes(encodeURIComponent('1. e4')));
@@ -361,6 +422,8 @@ function assertSynchronized({ context, board, links }) {
     assert.equal(canceled.context.chess.history().length, 0);
     assert.equal(canceled.context.contextReplayActive, false);
     const chainPractice = fixture(['e4', 'e5', 'Nf3']);
+    chainPractice.context.depth_limit_enabled = true;
+    chainPractice.context.max_depth = 1;
     chainPractice.context.smartSession = { newCount: 0, reviewCount: 0, reviewStreak: 0 };
     chainPractice.context.smartTarget = { type: 'line', chapter: 0, path: [], route: [0] };
     const aiDeclaration = declarations.find(node => node.type === 'FunctionDeclaration' && node.id.name === 'ai_move');

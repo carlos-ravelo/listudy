@@ -154,6 +154,16 @@
 .study-workspace .study-setting-group .option_item { margin: 0; }
 .study-workspace .study-setting-group button { display: block; width: 100%; min-height: 44px; height: auto; padding: 8px; margin: 0; border: none; background: transparent; color: var(--font-color); text-align: left; white-space: normal; font: inherit; font-size: 14px; letter-spacing: normal; text-transform: none; }
 .study-workspace .study-setting-group button:hover { background: var(--bg-highlight-color); }
+.study-workspace .study-depth-setting { padding: 8px; }
+.study-workspace .study-depth-toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0; font-size: 14px; font-weight: 400; }
+.study-workspace .study-depth-toggle input { margin: 0; }
+.study-workspace #max_depth_container > label { margin: 4px 0; font-size: 13px; font-weight: 400; }
+.study-workspace #max_depth_container.option-highlighted > label { color: var(--warn-color); }
+.study-workspace .study-depth-controls { display: flex; align-items: center; gap: 8px; }
+.study-workspace .study-depth-controls button { width: 44px; flex: 0 0 44px; text-align: center; }
+.study-workspace .study-depth-controls input { width: 100%; min-width: 0; margin: 0; }
+.study-workspace .study-depth-controls :disabled { opacity: .5; cursor: default; }
+.study-workspace #max_depth_help { margin: 4px 0 0; color: var(--study-muted); font-size: 12px; line-height: 1.5; }
 .study-workspace .study-metadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }
 .study-workspace .study-metadata dt { font-size: 13px; color: var(--study-muted); }
 .study-workspace .study-metadata dd { margin: 4px 0 0; overflow-wrap: anywhere; }
