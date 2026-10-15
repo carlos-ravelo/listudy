@@ -125,6 +125,25 @@
 .analysis-account-history summary { cursor: pointer; }
 .analysis-account-history summary strong { font-size: 12px; font-weight: 400; background: transparent; padding: 0; }
 .analysis-account-history[open] > p { padding-top: 6px; }
+.analysis-workspace .analysis-account-card[data-game-availability="available"] {
+  --analysis-notice: #805000;
+  border-color: var(--analysis-notice);
+}
+[data-theme="dark"] .analysis-workspace .analysis-account-card[data-game-availability="available"] { --analysis-notice: #ffcf75; }
+.analysis-workspace .analysis-account-card[data-game-availability="available"] .analysis-new-games {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin: 6px 0 2px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--analysis-notice);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--analysis-notice) 10%, var(--bg-color));
+  color: var(--analysis-notice);
+  font-size: 13px;
+}
+.analysis-new-games--available strong { display: block; margin-bottom: 3px; font-size: 14px; font-weight: 600; }
+.analysis-new-games--available span { display: block; }
+.analysis-account-card[data-game-availability="available"] .analysis-account-history { grid-row: 3; }
 .analysis-workspace .analysis-disconnect,
 .analysis-workspace .analysis-back-link { color: var(--analysis-muted); font-size: 13px; }
 .analysis-workspace .analysis-game-row { padding: 14px 8px; border-radius: 4px; }
