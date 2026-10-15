@@ -243,6 +243,7 @@ let show_comments = get_option_from_localstorage(show_comments_key, i18n.comment
 const DEPTH_MAX = -1;  // This constant is used to avoid having to calculate the tree depth when max_depth is at the max depth.
 let max_depth_key_base = "max_depth_" + study_id + "_";
 let max_depth = DEPTH_MAX;
+let depth_limit_enabled = false;
 
 function combo_text() {
     return "" + combo_count + "x ";
@@ -423,10 +424,10 @@ async function handle_move(orig, dest) {
         let reply = ai_move(curr_move);
         const naturalEnd = reply == undefined && (!smartTarget?.route || smartTarget.completeLine === true);
         let end_of_line = reply == undefined;
-        if (!end_of_line && !spacedReviewRunActive && !smartSession && !window.studyFullLines && max_depth !== DEPTH_MAX) {
+        if (!end_of_line && !spacedReviewRunActive && !smartSession && depth_limit_enabled && max_depth !== DEPTH_MAX) {
             let curr_node = tree_get_node(curr_move);
             let curr_depth = tree_get_node_depth(curr_node);
-            if (key_moves_mode == i18n.key_move_disabled || window.first_variation === null) {
+            if (window.studyFullLines || key_moves_mode == i18n.key_move_disabled || window.first_variation === null) {
                 end_of_line = curr_depth >= max_depth;
             } else {
                 end_of_line = curr_node.move_index >= window.first_variation && curr_depth >= max_depth;
@@ -1335,13 +1336,11 @@ function get_repertoire_depth() {
     let max_depth_label = document.getElementById("max_depth_label");
 
     max_depth_label.innerText = depth;
-    if (depth == tree_depth) {
-        max_depth = DEPTH_MAX;
-        max_depth_container.classList.remove("option-highlighted");
-    } else {
-        max_depth = depth;
-        max_depth_container.classList.add("option-highlighted");
-    }
+    max_depth = depth == tree_depth ? DEPTH_MAX : depth;
+    max_depth_container.classList.toggle("option-highlighted", depth_limit_enabled && max_depth !== DEPTH_MAX);
+    document.getElementById("max_depth_range").disabled = !depth_limit_enabled || tree_depth <= 1;
+    document.getElementById("max_depth_sub").disabled = !depth_limit_enabled || depth <= 1;
+    document.getElementById("max_depth_add").disabled = !depth_limit_enabled || depth >= tree_depth;
 }
 
 /**
@@ -1500,12 +1499,14 @@ function set_options_values() {
 
 function set_options_values_for_max_depth() {
     let max_depth_key = max_depth_key_base + chapter;
+    depth_limit_enabled = StorageAdapter.getItem(max_depth_key + "_enabled") === "true";
+    document.getElementById("limit_practice_depth").checked = depth_limit_enabled;
     max_depth = get_option_from_localstorage(max_depth_key, DEPTH_MAX, undefined, {validate: Number.isInteger, transform: parseInt});
 
     let tree_depth = get_repertoire_depth();
     let max_depth_range = document.getElementById("max_depth_range");
     let depth_as_num = max_depth == DEPTH_MAX ? tree_depth : max_depth;
-    let depth = Math.min(tree_depth, depth_as_num);
+    let depth = Math.max(1, Math.min(tree_depth, depth_as_num));
     max_depth_range.max = tree_depth;
     max_depth_range.value = depth;
     max_depth_range.disabled = (tree_depth == 1);
@@ -1534,6 +1535,10 @@ function setup_configs() {
     document.getElementById("max_depth_add").onclick = () => inc_or_dec_max_depth(+1);
     document.getElementById("max_depth_range").onchange = max_depth_changed;
     document.getElementById("max_depth_range").oninput = max_depth_changed;
+    document.getElementById("limit_practice_depth").onchange = event => {
+        StorageAdapter.setItem(max_depth_key_base + chapter + "_enabled", String(event.target.checked));
+        set_options_values_for_max_depth();
+    };
 }
 
 window.overlay_manager = new TextOverlayManager();

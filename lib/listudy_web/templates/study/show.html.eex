@@ -144,12 +144,17 @@
     <button type="button" data-icon="(" id="line_review" title="<%= dgettext("study", "At the end of lines the board is only reset after 3 seconds giving you time to review the final position.") %>">placeholder</button>
   </div>
 
-<div class="option_item" hidden>
-    <div id="max_depth_container" title="<%= dgettext("study", "Lets you choose how many moves deep in the repertoire to train. The highest value you can choose is the length of the longest line. Set to a lower value to train against a more shallow subset of the repertoire, and to the highest value to train against the full repertoire.") %>">
-      <a class="icon" data-icon="+"><%= dgettext("study", "Max depth: ") %></a>
-      <a id="max_depth_label" class="max_depth_label">placeholder</a>
-      <a id="max_depth_sub" class="max_depth_ctrl" role="button">-</a><input type="range" id="max_depth_range" class="max_depth_range" min="1" max="1"><a id="max_depth_add" class="max_depth_ctrl" role="button">+</a>
+<div class="option_item study-depth-setting">
+    <label class="study-depth-toggle"><input type="checkbox" id="limit_practice_depth" aria-describedby="max_depth_help"> <%= dgettext("study", "Limit practice depth") %></label>
+    <div id="max_depth_container">
+      <label for="max_depth_range"><%= dgettext("study", "Max depth: ") %><output id="max_depth_label" class="max_depth_label" for="max_depth_range">1</output></label>
+      <div class="study-depth-controls">
+        <button type="button" id="max_depth_sub" disabled aria-label="<%= dgettext("study", "Decrease max depth") %>">−</button>
+        <input type="range" id="max_depth_range" class="max_depth_range" min="1" max="1" value="1" disabled aria-describedby="max_depth_help">
+        <button type="button" id="max_depth_add" disabled aria-label="<%= dgettext("study", "Increase max depth") %>">+</button>
+      </div>
     </div>
+    <p id="max_depth_help"><%= dgettext("study", "For this chapter in Full lines only. Turn off to practice complete lines. Smart manages its own practice length.") %></p>
   </div>
 </fieldset>
 </div>
