@@ -107,6 +107,7 @@ defmodule ListudyWeb.Router do
 
     get "/sync-status", AnalysisController, :sync_status
     get "/new-games/:platform", AnalysisController, :new_games
+    get "/studies/:id/positions", AnalysisController, :positions
   end
 
   scope "/analysis", ListudyWeb do

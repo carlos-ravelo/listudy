@@ -1,8 +1,16 @@
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js');
 const { expectedMoves } = require('./modules/analysis/training_moves');
+import { StorageAdapter } from './storageAdapter.js';
+import { generate_move_trees, annotate_pgn } from './modules/tree_from_pgn.js';
+import { readChapterStats, bindChapterIdentities, beginChapterPractice, finishChapterPractice } from './modules/study/chapter_stats.js';
+import { chapterReviewSignature } from './modules/study/chapter_review.js';
+import { positionCatalog } from './modules/study/position_review.js';
+import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
+import { createPracticeTracker } from './modules/study/practice_sessions.js';
+import { applyGameEvidence, gamePositionPending, recordGamePractice } from './modules/analysis/game_progress.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const boardContainer = document.getElementById('chess-training-board');
     if (!boardContainer) return;
 
@@ -13,28 +21,80 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Error parsing mistakes data:', error);
     }
 
-    if (mistakes.length === 0) {
-        boardContainer.innerHTML = '<p>No mistakes to train in this study.</p>';
+    const progressStatus = document.getElementById('training-progress-status');
+    const key = boardContainer.dataset.studyKey + '_chapter_stats';
+    const controls = document.getElementById('training-controls');
+    controls.hidden = true;
+    let online = await StorageAdapter.hydrate();
+    let stats = readChapterStats(StorageAdapter.getItem(key));
+    const originalTotal = mistakes.length;
+    let signatures, references;
+    try {
+        const parsed = require('pgn-parser').parse(boardContainer.dataset.studyPgn.replace(/\ufeff/g, '').replace(/½/g, '1/2').replace(/0-0/g, 'O-O'));
+        annotate_pgn(parsed);
+        const trees = generate_move_trees(parsed);
+        signatures = trees.map(tree => chapterReviewSignature(tree.root, tree.headers.FEN));
+        const catalog = positionCatalog(trees, boardContainer.dataset.studyColor)
+            .map(item => ({ ...item, sourceIndex: trees[item.chapter].sourceIndex }));
+        bindChapterIdentities(stats, trees);
+        reconcileStudyProgress(stats, trees, catalog, signatures, [], boardContainer.dataset.studyColor);
+        ({ references } = applyGameEvidence(stats, signatures, catalog, mistakes));
+        mistakes = mistakes.filter(mistake => references.has(mistake));
+        mistakes.sort((a, b) => Number(gamePositionPending(stats, b)) - Number(gamePositionPending(stats, a)) ||
+            b.times_repeated - a.times_repeated || new Date(b.last_played_at) - new Date(a.last_played_at));
+    } catch (_) {
+        progressStatus.textContent = 'This study could not be loaded. Open the study or sync games and try again.';
+        boardContainer.hidden = true;
         return;
     }
-
-    function shuffle(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    }
-
-    const critical = [];
-    const medium = [];
-    const low = [];
-    mistakes.forEach(mistake => {
-        if (mistake.times_repeated >= 5) critical.push(mistake);
-        else if (mistake.times_repeated >= 2) medium.push(mistake);
-        else low.push(mistake);
+    const persist = () => StorageAdapter.setItem(key, JSON.stringify(stats));
+    persist();
+    window.addEventListener('study-progress-sync-merged', event => {
+        if (event.detail.key === key) { stats = JSON.parse(event.detail.value); renderProgress(); }
     });
-    mistakes = [...shuffle(critical), ...shuffle(medium), ...shuffle(low)];
+    window.addEventListener('study-sync-status', event => {
+        online = event.detail.state === 'saved';
+        renderProgress();
+    });
+    const renderProgress = () => {
+        if (!mistakes.length) {
+            progressStatus.textContent = 'No current positions to practice. Sync games after editing a study to refresh its comparisons.';
+            return;
+        }
+        const pending = mistakes.filter(mistake => gamePositionPending(stats, mistake)).length;
+        progressStatus.textContent = `${mistakes.length} ${mistakes.length === 1 ? 'position' : 'positions'} from games · ${pending} to review now. ` +
+            (online ? 'Progress syncs with your account.' : 'Saved on this device; account sync will retry.') +
+            (originalTotal > mistakes.length ? ` ${originalTotal - mistakes.length} changed positions skipped; sync games to refresh them.` : '');
+    };
+    renderProgress();
+    if (!mistakes.length) {
+        boardContainer.hidden = true;
+        progressStatus.textContent = 'No current positions to practice. Sync games after editing a study to refresh its comparisons.';
+        return;
+    }
+    controls.hidden = false;
+    let attempted = new Set();
+    let assisted = false;
+    const tracker = createPracticeTracker({ save(record) {
+        stats.studySessions = { ...stats.studySessions, [record.id]: record };
+        persist();
+    }});
+    const eligible = () => !document.hidden && document.hasFocus() && currentIndex < mistakes.length;
+    const activity = () => tracker.activity(Date.now(), eligible());
+    document.addEventListener('pointerdown', activity, true);
+    document.addEventListener('keydown', activity, true);
+    document.addEventListener('visibilitychange', () => { tracker.tick(Date.now(), eligible()); tracker.persist(); });
+    window.addEventListener('blur', () => { tracker.tick(Date.now(), false); tracker.persist(); });
+    window.addEventListener('focus', activity);
+    window.addEventListener('pagehide', () => { tracker.end('left'); StorageAdapter.forceSyncAll(); });
+    setInterval(() => { tracker.tick(Date.now(), eligible()); tracker.persist(); }, 15000);
+    const grade = (san, correct) => {
+        const item = references.get(mistakes[currentIndex]);
+        const first = recordGamePractice(stats, signatures, item, san, correct, assisted || attempted.has(item.id), attempted);
+        if (first) tracker.decision(`${item.chapter}|${item.id}`, false, correct, assisted);
+        persist();
+        renderProgress();
+    };
 
     const chess = new Chess();
     const statusEl = document.getElementById('training-status');
@@ -54,14 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dot) return;
 
         const mistake = mistakes[index];
-        const scale = mistake.times_repeated >= 5 ? 1.4 :
-            mistake.times_repeated >= 2 ? 1.15 : 0.85;
         const active = index === currentIndex;
+        dot.hidden = Math.abs(index - currentIndex) > 2 && index !== 0 && index !== mistakes.length - 1;
 
         dot.style.backgroundColor = active ? '#3182ce' :
             mistake.completed ? '#38a169' :
+            mistake.reviewed ? '#d69e2e' :
             mistake.times_repeated >= 5 ? '#cbd5e0' : '#e2e8f0';
-        dot.style.transform = `scale(${scale * (active ? 1.3 : 1)})`;
+        dot.style.color = '#202530';
         dot.style.boxShadow = active ? '0 0 6px rgba(49, 130, 206, 0.4)' : '';
         if (active) dot.setAttribute('aria-current', 'step');
         else dot.removeAttribute('aria-current');
@@ -76,10 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
         mistakes.forEach((mistake, index) => {
             const dot = document.createElement('button');
             dot.type = 'button';
+            dot.textContent = String(index + 1);
             dot.setAttribute('aria-label',
                 `Position ${index + 1}, missed in ${mistake.times_repeated} game(s)`);
-            dot.style.width = '12px';
-            dot.style.height = '12px';
+            dot.style.width = '32px';
+            dot.style.height = '32px';
             dot.style.padding = '0';
             dot.style.border = '0';
             dot.style.borderRadius = '50%';
@@ -107,14 +168,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showPrompt(mistake) {
-        infoEl.innerText = `You played ${mistake.played} here in ${mistake.times_repeated} game(s). Find a move from your study.`;
+        infoEl.innerText = `Outside your repertoire in ${mistake.times_repeated} game(s), for example ${mistake.played}. Find a move from your study.`;
     }
 
     function showChapters(mistake) {
         if (!chaptersEl) return;
         chaptersEl.replaceChildren();
         const hasLookup = Array.isArray(mistake.chapters);
-        const chapters = hasLookup ? mistake.chapters : [];
+        const chapters = hasLookup ? [...mistake.chapters].sort((a, b) =>
+            Number(b.number === references.get(mistake).sourceIndex + 1) - Number(a.number === references.get(mistake).sourceIndex + 1)) : [];
         chaptersEl.hidden = !hasLookup;
         if (!hasLookup) return;
         if (chapters.length === 0) {
@@ -131,10 +193,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return link;
         }
 
+        const practice = document.createElement('a');
+        const chapter = chapters[0];
+        if (chapter) {
+            const url = new URL(chapter.url, window.location.origin);
+            url.searchParams.set('practice_fen', mistake.fen);
+            url.searchParams.set('practice_expected', mistake.expected);
+            practice.href = url.pathname + url.search;
+            practice.textContent = 'Practice this line';
+            chaptersEl.appendChild(practice);
+        }
+
         if (chapters.length === 1) {
-            const label = document.createElement('strong');
-            label.textContent = 'Study this position';
-            chaptersEl.append(label, makeLink(chapters[0]));
+            chaptersEl.appendChild(makeLink(chapters[0]));
         } else {
             const details = document.createElement('details');
             const summary = document.createElement('summary');
@@ -151,6 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadMistake(index) {
+        if (currentIndex >= 0 && currentIndex < mistakes.length) {
+            finishChapterPractice(stats, references.get(mistakes[currentIndex]).chapter, false);
+            persist();
+        }
         if (resetTimer) {
             clearTimeout(resetTimer);
             resetTimer = undefined;
@@ -162,14 +237,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const previousIndex = currentIndex;
         currentIndex = index;
-        updateDot(previousIndex);
-        updateDot(currentIndex);
+        dots.forEach((_, index) => updateDot(index));
 
         if (index >= mistakes.length) {
-            statusEl.innerText = 'Training Complete!';
-            infoEl.innerText = 'You have reviewed all your mistakes.';
+            tracker.end('completed');
+            statusEl.innerText = 'Session complete';
+            infoEl.innerText = 'Practice saved. Your next reviews follow the same schedule as Smart; past game deviations remain in your history.';
+            statusEl.focus();
             boardContainer.style.pointerEvents = 'none';
             nextBtn.style.display = 'none';
+            hintBtn.hidden = true;
+            solveBtn.hidden = true;
             if (paginationEl) paginationEl.style.display = 'none';
             if (chaptersEl) {
                 chaptersEl.replaceChildren();
@@ -179,6 +257,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const mistake = mistakes[index];
+        attempted = new Set();
+        assisted = false;
+        beginChapterPractice(stats, references.get(mistake).chapter, signatures[references.get(mistake).chapter]);
+        tracker.begin('positions');
+        boardContainer.style.pointerEvents = '';
         chess.load(mistake.fen);
         const turnColor = getTurnColor();
 
@@ -214,10 +297,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const move = chess.move({ from: orig, to: dest, promotion: 'q' });
         if (!move) return;
 
+        const cleanRecall = !assisted && !attempted.has(references.get(mistake).id);
+        grade(move.san, expectedMoves(mistake).includes(move.san));
         if (expectedMoves(mistake).includes(move.san)) {
-            mistake.completed = true;
+            mistake.completed = cleanRecall;
+            mistake.reviewed = true;
             ground.set({ movable: { color: undefined } });
-            statusEl.innerText = 'Correct!';
+            statusEl.innerText = cleanRecall ? 'Correct!' : 'Correct — another review is scheduled';
             statusEl.style.color = '#15781B';
             infoEl.innerText = `Yes, ${move.san} is in your study.`;
             nextBtn.style.display = 'block';
@@ -259,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (hintBtn) {
         hintBtn.addEventListener('click', () => {
+            assisted = true;
             const move = chess.move(expectedMoves(mistakes[currentIndex])[0]);
             if (!move) return;
             chess.undo();
@@ -268,6 +355,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (solveBtn) {
         solveBtn.addEventListener('click', () => {
+            assisted = true;
+            grade(expectedMoves(mistakes[currentIndex])[0], false);
+            mistakes[currentIndex].reviewed = true;
+            updateDot(currentIndex);
             const move = chess.move(expectedMoves(mistakes[currentIndex])[0]);
             if (!move) return;
             ground.move(move.from, move.to);

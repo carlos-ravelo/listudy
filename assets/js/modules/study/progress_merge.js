@@ -13,6 +13,8 @@ function mergeReview(base, local, remote, kind) {
         .sort((a, b) => new Date(a.at) - new Date(b.at) || a.id.localeCompare(b.id));
     const latest = time(local) >= time(remote) ? local : remote;
     const result = { ...clone(latest), history: [...histories.values()].sort((a, b) => new Date(a.at) - new Date(b.at) || a.id.localeCompare(b.id)).slice(-128) };
+    const evidence = [local.gameEvidence, remote.gameEvidence].filter(Boolean)
+        .sort((a, b) => b.at - a.at || b.gameId - a.gameId)[0];
     // Replay both devices' new evidence through FSRS rather than inventing merged intervals.
     if (events.length && local.history && remote.history) {
         const scheduler = kind === 'chapter' ? chapterScheduler : positionScheduler;
@@ -20,6 +22,9 @@ function mergeReview(base, local, remote, kind) {
         let recovered = base?.recovered;
         for (const event of events) {
             const at = new Date(event.at);
+            if (evidence && evidence.at > new Date(card.last_review || 0).getTime() && evidence.appliedAt <= at.getTime()) {
+                card = { ...card, due: new Date(Math.min(new Date(card.due).getTime(), evidence.appliedAt)) };
+            }
             if (event.rating === Rating.Good && card.last_review &&
                 (at - new Date(card.last_review) < 60000 || new Date(card.due) > at)) continue;
             card = scheduler.next(card, at, event.rating).card;
@@ -35,6 +40,14 @@ function mergeReview(base, local, remote, kind) {
     result.successes = (base?.successes || 0) + Math.max(0, (local.successes || 0) - (base?.successes || 0)) + Math.max(0, (remote.successes || 0) - (base?.successes || 0));
     result.introducedMoves = [...new Set([...(local.introducedMoves || []), ...(remote.introducedMoves || [])])];
     if (local.moveReviews || remote.moveReviews) result.moveReviews = mergeNode(base?.moveReviews, local.moveReviews || {}, remote.moveReviews || {}, 'moveReviews', kind);
+    if (evidence) {
+        const newerGame = evidence.at > time(result);
+        result.gameEvidence = { ...evidence, pending: newerGame || !result.recovered };
+        if (newerGame) {
+            result.card.due = new Date(Math.min(new Date(result.card.due).getTime(), evidence.appliedAt)).toISOString();
+            result.recovered = false;
+        }
+    }
     return result;
 }
 

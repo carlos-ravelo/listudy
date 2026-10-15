@@ -1,4 +1,4 @@
-<div class="study-workspace">
+<div class="study-workspace" data-game-positions-url="<%= if @study.is_owner, do: Routes.analysis_path(@conn, :positions, @study.id), else: "" %>">
 <div class="study-heading">
   <h1 class="study-feature-title"><%= String.replace(@study.title, "_", " ") %></h1>
   <%= render "_study_tools.html", study: @study, conn: @conn, locale: @locale %>

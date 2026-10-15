@@ -75,6 +75,7 @@ function recordPositionReview(cards, id, correct, assisted, attempted, now = new
         recovered: rating === Rating.Good,
         successes: (previous?.successes || 0) + (rating === Rating.Good ? 1 : 0)
     };
+    if (cards[id].gameEvidence && rating === Rating.Good) cards[id].gameEvidence = { ...cards[id].gameEvidence, pending: false };
     return cards[id];
 }
 
@@ -154,6 +155,7 @@ function recordContinuationReview(cards, id, move, correct, assisted, firstAttem
 function scheduledReviews(stats, signature, item) {
     const review = positionReviews(stats, item.chapter, signature)[item.id];
     if (!review) return [];
+    if (review.gameEvidence?.pending) return [{ review, expectedMove: null }];
     const moves = review.moveReviews || {};
     const result = Object.entries(moves).map(([expectedMove, entry]) => ({ review: entry, expectedMove }));
     const introduced = introducedMoves(stats, item.chapter, signature, item.id);

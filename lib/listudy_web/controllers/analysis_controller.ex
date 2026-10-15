@@ -74,6 +74,14 @@ defmodule ListudyWeb.AnalysisController do
       |> select([s, sg], %{
         study: s,
         total_games: count(sg.id),
+        relevant_games:
+          type(
+            fragment(
+              "COALESCE(SUM(CASE WHEN ? IN ('match', 'deviation', 'ambiguous') THEN 1 ELSE 0 END), 0)",
+              sg.status
+            ),
+            :integer
+          ),
         matches:
           type(
             fragment("COALESCE(SUM(CASE WHEN ? = 'match' THEN 1 ELSE 0 END), 0)", sg.status),
@@ -99,6 +107,12 @@ defmodule ListudyWeb.AnalysisController do
       |> Enum.sort_by(fn stat ->
         {-stat.deviations, String.downcase(stat.study.title), stat.study.id}
       end)
+
+    positions =
+      Games.training_positions(user.id, Enum.map(base_stats, & &1.study.id), filter)
+      |> Enum.group_by(& &1.study_id)
+
+    base_stats = Enum.map(base_stats, &Map.put(&1, :positions, positions[&1.study.id] || []))
 
     render(conn, "index.html",
       studies_stats: base_stats,
@@ -299,20 +313,37 @@ defmodule ListudyWeb.AnalysisController do
   end
 
   def train(conn, %{"id" => study_id} = params) do
-    filter = Map.get(params, "filter", "all")
+    filter =
+      if params["filter"] in ~w(all last_week last_month), do: params["filter"], else: "all"
 
     study =
       Repo.get_by!(Listudy.Studies.Study, id: study_id, user_id: conn.assigns.current_user.id)
 
     mistakes = Games.get_unique_mistakes_to_train(study_id, conn.assigns.current_user.id, filter)
     {mistakes, chapter_error} = add_training_chapters(conn, study, mistakes)
+    [file_id | _] = String.split(study.slug, "-")
+
+    pgn =
+      case File.read(Application.app_dir(:listudy, "priv/static/study_pgn/#{file_id}.pgn")) do
+        {:ok, text} -> text
+        _ -> ""
+      end
 
     render(conn, "train.html",
       study: study,
       mistakes_json: Jason.encode!(mistakes),
+      study_pgn: pgn,
       chapter_error: chapter_error,
       filter: filter
     )
+  end
+
+  def positions(conn, %{"id" => id}) do
+    study = Repo.get_by!(Listudy.Studies.Study, id: id, user_id: conn.assigns.current_user.id)
+
+    json(conn, %{
+      positions: Games.get_unique_mistakes_to_train(study.id, conn.assigns.current_user.id)
+    })
   end
 
   defp add_training_chapters(_conn, _study, []), do: {[], nil}
@@ -371,7 +402,11 @@ defmodule ListudyWeb.AnalysisController do
       Map.take(params, ["platform", "period", "study_id", "status", "cursor", "direction"])
 
     back_path = Routes.analysis_path(conn, :games, list_params)
-    selection = %{"study_id" => params["compare_study_id"]}
+
+    selection = %{
+      "study_id" => params["compare_study_id"],
+      "color" => Games.Analyzer.player_color(user_id, game)
+    }
 
     case Games.Analyzer.analyze_single_pgn(user_id, game.pgn, selection) do
       {:ok, study, result} ->

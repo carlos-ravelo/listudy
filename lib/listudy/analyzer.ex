@@ -17,6 +17,7 @@ defmodule Listudy.Games.Analyzer do
       candidates =
         Enum.filter(candidates, fn {study, result} ->
           (is_nil(selection["study_id"]) or to_string(study.id) == selection["study_id"]) and
+            (is_nil(selection["color"]) or study.color == selection["color"]) and
             (is_nil(selection["chapter_index"]) or
                to_string(result["chapter_index"]) == selection["chapter_index"])
         end)
@@ -67,6 +68,21 @@ defmodule Listudy.Games.Analyzer do
 
   defp analyze_imported_games(studies, user_id, platform) do
     user = Repo.get!(Listudy.Users.User, user_id)
+    library = Listudy.StudyLibrary.fetch(user_id)
+    # Choosing a best match depends on the entire repertoire, not one PGN.
+    version =
+      ChessEngine.fingerprint(
+        Jason.encode!(
+          Enum.map(studies, fn item ->
+            {item.study.id, item.study.color, item.version,
+             get_in(library, ["studies", to_string(item.study.id), "location"])}
+            |> Tuple.to_list()
+          end)
+          |> Enum.sort()
+        )
+      )
+
+    studies = Enum.map(studies, &Map.put(&1, :version, version))
     # Existing results are reusable only for this PGN content and matcher version.
     saved =
       Repo.all(
@@ -94,11 +110,11 @@ defmodule Listudy.Games.Analyzer do
     |> Enum.map(fn game ->
       pending =
         Enum.filter(studies, fn item ->
-          user_color(game, user) == item.study.color and
-            Map.get(versions, {game.id, item.study.id}) != item.version
+          user_color(game, user) == item.study.color
         end)
 
-      {game, pending}
+      stale = Enum.any?(pending, &(Map.get(versions, {game.id, &1.study.id}) != &1.version))
+      {game, if(stale, do: pending, else: [])}
     end)
     |> Enum.reject(fn {_, pending} -> pending == [] end)
     |> Enum.chunk_every(50)
@@ -122,7 +138,8 @@ defmodule Listudy.Games.Analyzer do
         {:ok, %{"games" => results}} when length(results) == length(batch) ->
           Enum.zip(batch, results)
           |> Enum.each(fn {{game, pending}, result} ->
-            Enum.each(pending, &persist_result(game, &1, result))
+            selection = automatic_selection(pending, result, library)
+            Enum.each(pending, &persist_result(game, &1, result, selection))
           end)
 
           {:cont, {:ok, processed + length(batch)}}
@@ -137,7 +154,34 @@ defmodule Listudy.Games.Analyzer do
     end)
   end
 
-  defp persist_result(game, item, batch_result) do
+  defp automatic_selection(studies, game, library) do
+    by_id = Map.new(studies, &{to_string(&1.study.id), &1.study})
+
+    best =
+      (game["matches"] || [])
+      |> Enum.flat_map(fn match ->
+        Enum.map(match["candidates"], &{Map.fetch!(by_id, match["study_id"]), &1})
+      end)
+      |> best_candidates()
+
+    outcomes =
+      Enum.map(best, fn {study, result} -> TrainingDeviations.outcome(result, study.color) end)
+      |> Enum.uniq()
+
+    if length(outcomes) == 1 && map_size(game["study_errors"] || %{}) == 0 do
+      {study, _} =
+        Enum.min_by(best, fn {study, result} ->
+          location = get_in(library, ["studies", to_string(study.id), "location"]) || "daily"
+          {if(location == "daily", do: 0, else: 1), study.id, result["chapter_index"]}
+        end)
+
+      %{study.id => :selected}
+    else
+      Map.new(best, fn {study, _} -> {study.id, :ambiguous} end)
+    end
+  end
+
+  defp persist_result(game, item, batch_result, selection) do
     match =
       Enum.find(batch_result["matches"] || [], &(&1["study_id"] == to_string(item.study.id)))
 
@@ -165,6 +209,8 @@ defmodule Listudy.Games.Analyzer do
       cond do
         error -> "error"
         result == nil -> "out_of_scope"
+        selection[item.study.id] == nil -> "other_match"
+        selection[item.study.id] == :ambiguous -> "ambiguous"
         length(outcomes) > 1 -> "ambiguous"
         training_events != [] -> "deviation"
         true -> "match"
@@ -220,6 +266,8 @@ defmodule Listudy.Games.Analyzer do
       true -> nil
     end
   end
+
+  def player_color(user_id, game), do: user_color(game, Repo.get!(Listudy.Users.User, user_id))
 
   defp payload(studies), do: Enum.map(studies, &%{id: &1.study.id, pgn: &1.pgn})
 

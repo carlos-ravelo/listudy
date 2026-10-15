@@ -25,6 +25,10 @@
       <span><i class="analysis-legend-mark analysis-legend-played" aria-hidden="true"></i> Red: played move</span>
       <span><i class="analysis-legend-mark analysis-legend-expected" aria-hidden="true"></i> Green: repertoire</span>
     </div>
+    <%= if state == :player do %>
+      <% {study, chapter} = hd(@group.chapters) %>
+      <p><%= link "Practice this line", to: practice_path(@conn, study, chapter), class: "button" %></p>
+    <% end %>
   <% else %>
     <p class="analysis-outcome-note"><%= if result["reason"] == "book_ended",
       do: "The game continued beyond this chapter’s saved line.",
@@ -32,7 +36,7 @@
   <% end %>
 
   <%= if result["transposed"] do %>
-    <p class="analysis-transposition">↪ Reached this position by another move order.</p>
+    <p class="analysis-transposition">↪ Reached this position by a different move order.</p>
   <% end %>
   <%= if (result["earlier_departures"] || []) != [] do %>
     <details class="analysis-earlier-departures" open>

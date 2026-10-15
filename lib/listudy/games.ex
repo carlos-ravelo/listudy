@@ -136,10 +136,14 @@ defmodule Listudy.Games do
   y ordenados por frecuencia de repetición.
   """
   def get_unique_mistakes_to_train(study_id, user_id, filter \\ "all") do
+    training_positions(user_id, [study_id], filter)
+  end
+
+  def training_positions(user_id, study_ids, filter \\ "all") do
     query =
       Deviation
       |> join(:inner, [d], g in Listudy.Games.UserGame, on: d.user_game_id == g.id)
-      |> where([d, g], d.study_id == ^study_id and g.user_id == ^user_id)
+      |> where([d, g], d.study_id in ^study_ids and g.user_id == ^user_id)
 
     query =
       case filter do
@@ -159,15 +163,18 @@ defmodule Listudy.Games do
     # Keep a full FEN from one occurrence so the training board can replay it.
     query
     |> group_by([d, g], [
+      d.study_id,
       fragment("regexp_replace(?, ' [0-9]+ [0-9]+$', '')", d.position_fen),
-      d.expected_move,
-      d.played_move
+      d.expected_move
     ])
     |> select([d, g], %{
       fen: min(d.position_fen),
+      study_id: d.study_id,
       expected: d.expected_move,
-      played: d.played_move,
-      times_repeated: count(d.id)
+      played: min(d.played_move),
+      last_played_at: max(g.played_at),
+      latest_game_id: max(g.id),
+      times_repeated: count(g.id, :distinct)
     })
     |> order_by([d, g], desc: count(d.id))
     |> Repo.all()

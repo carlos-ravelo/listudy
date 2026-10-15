@@ -1,15 +1,17 @@
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
 
 
-<div class="training-container analysis-workspace" style="max-width: 800px; margin: 0 auto; padding: 2rem 0;">
+<div class="training-container analysis-workspace" data-progress-user="<%= @current_user.id %>" style="max-width: 800px; margin: 0 auto; padding: 2rem 0;">
 
   <div style="margin-bottom: 2.5rem;">
     <div style="margin-bottom: 0.5rem;">
       <%= link "← Back to Overview", to: Routes.analysis_path(@conn, :index), class: "analysis-back-link" %>
     </div>
     <h2 style="margin: 0; line-height: 1.2;">
-      Training Mistakes: <span><%= @study.title %></span>
+      Repertoire deviations: <span><%= String.replace(@study.title, "_", " ") %></span>
     </h2>
+    <p class="analysis-section-description">Practice positions from your games. Attempts update the same reviews and study progress used by Smart.</p>
+    <p id="training-progress-status" role="status" aria-live="polite"></p>
   </div>
 
   <div style="width: min(100%, 500px); margin: 0 auto 0.5rem auto; display: flex; justify-content: flex-end;">
@@ -24,11 +26,12 @@
     id="chess-training-board"
     class="cg-wrap"
     style="width: min(100%, 500px); aspect-ratio: 1 / 1; height: auto; margin: 0 auto;"
+    data-study-key="<%= hd(String.split(@study.slug, "-")) %>" data-study-color="<%= @study.color %>" data-study-pgn="<%= @study_pgn %>"
     data-mistakes="<%= @mistakes_json %>">
   </div>
 
   <div id="training-controls" style="text-align: center; margin-top: 2rem;">
-    <h3 id="training-status" style="margin-bottom: 1rem;">Preparing positions...</h3>
+    <h3 id="training-status" style="margin-bottom: 1rem;" tabindex="-1" aria-live="polite">Preparing positions…</h3>
     <p id="mistake-info"></p>
     <div id="mistakes-pagination" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 1rem; margin-bottom: 1rem;"></div>
     <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">

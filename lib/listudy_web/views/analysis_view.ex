@@ -10,10 +10,11 @@ defmodule ListudyWeb.AnalysisView do
   def analysis_status_label("ambiguous"), do: "Several possible chapters"
   def analysis_status_label("out_of_scope"), do: "No matching chapter"
   def analysis_status_label("error"), do: "Comparison unavailable"
+  def analysis_status_label("other_match"), do: "Another study is the closer or equivalent match"
   def analysis_status_label(status), do: status
 
   def primary_game_result(summaries) do
-    Enum.find_value(~w(deviation ambiguous match out_of_scope error), fn status ->
+    Enum.find_value(~w(deviation ambiguous match error out_of_scope other_match), fn status ->
       Enum.find(summaries, &(&1.status == status))
     end)
   end
@@ -31,6 +32,15 @@ defmodule ListudyWeb.AnalysisView do
         else: Keyword.put(params, :chapter, result["chapter"])
 
     Routes.study_path(conn, :show, conn.assigns[:locale] || "en", study.slug, params)
+  end
+
+  def practice_path(conn, study, result) do
+    Routes.study_path(conn, :show, conn.assigns[:locale] || "en", study.slug,
+      chapter_index: result["chapter_index"],
+      chapter: result["chapter"],
+      practice_fen: result["fen"],
+      practice_expected: Enum.join(result["expected"], " / ")
+    )
   end
 
   def move_label(fen) do
