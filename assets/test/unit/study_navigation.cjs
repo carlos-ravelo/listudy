@@ -39,6 +39,7 @@ const depthContext = vm.createContext({
     chapter: 0, max_depth_key_base: 'depth_', DEPTH_MAX: -1, depth_limit_enabled: false,
     document: { getElementById: id => depthNodes[id] },
     get_repertoire_depth: () => 5,
+    practiceDepthChanged() {},
     get_option_from_localstorage: (key, fallback) => depthStorage[key] === undefined ? fallback : Number(depthStorage[key]),
     StorageAdapter: { getItem: key => depthStorage[key], setItem: (key, value) => depthStorage[key] = String(value) }
 });

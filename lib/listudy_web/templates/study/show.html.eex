@@ -154,7 +154,7 @@
         <button type="button" id="max_depth_add" disabled aria-label="<%= dgettext("study", "Increase max depth") %>">+</button>
       </div>
     </div>
-    <p id="max_depth_help"><%= dgettext("study", "For this chapter in Full lines only. Turn off to practice complete lines. Smart manages its own practice length.") %></p>
+    <p id="max_depth_help"><%= dgettext("study", "Limits Full lines and Smart to this depth in this chapter. Deeper positions and their review schedules are preserved. Changes apply when you close Settings.") %></p>
   </div>
 </fieldset>
 </div>
@@ -281,6 +281,9 @@
   i18n.progress_incomplete = "<%= dgettext "study", "incomplete" %>";
   i18n.progress_practiced_moves = "<%= dgettext "study", "Moves practiced" %>";
   i18n.progress_coverage = "<%= dgettext "study", "Continuation coverage" %>";
+  i18n.progress_full_coverage = "<%= dgettext "study", "Full repertoire coverage" %>";
+  i18n.progress_within_depth = "<%= dgettext "study", "Within depth" %>";
+  i18n.progress_scope_help = "<%= dgettext "study", "Recall, new continuations and due reviews refer to the selected depth. Deeper reviews keep their original schedules." %>";
   i18n.progress_covered_short = "<%= dgettext "study", "covered" %>";
   i18n.progress_recall = "<%= dgettext "study", "Recall" %>";
   i18n.progress_recall_unknown = "<%= dgettext "study", "Not enough review data yet" %>";
@@ -329,12 +332,15 @@
           :aria-current="chapter.current ? 'true' : null"
           x-on:click="$dispatch('study-progress-open-chapter', { index: chapter.index })">
           <strong x-text="chapter.name"></strong>
-          <span class="chapter-progress-cues" x-show="chapter.current || chapter.coverageComplete || chapter.reviewDue">
+          <span class="chapter-progress-cues" x-show="chapter.current || chapter.scopeComplete || chapter.reviewDue">
             <span class="chapter-progress-current" x-show="chapter.current"><%= dgettext("study", "Current chapter") %></span>
-            <span class="chapter-progress-solid" x-show="chapter.coverageComplete"><%= dgettext("study", "All continuations practiced") %></span>
+            <span class="chapter-progress-solid" x-show="chapter.scopeComplete" x-text="chapter.limited ? $el.dataset.scopedLabel : $el.dataset.fullLabel"
+                  data-scoped-label="<%= dgettext("study", "All continuations within limit practiced") %>"
+                  data-full-label="<%= dgettext("study", "All continuations practiced") %>"></span>
             <span class="chapter-progress-due" x-show="chapter.reviewDue"><%= dgettext("study", "Review due") %></span>
           </span>
           <span x-text="chapter.coverageLabel" title="<%= dgettext("study", "Continuations answered correctly without help at least once. This does not measure lasting recall.") %>"></span>
+          <span x-show="chapter.limited" x-text="chapter.fullCoverageLabel"></span>
           <span x-text="chapter.recallLabel" title="<%= dgettext("study", "First-try accuracy in the last 20 graded continuation reviews, excluding each initial encounter. Hints count as misses.") %>"></span>
           <span x-text="chapter.pendingLabel"></span>
           <span x-text="chapter.metrics"></span>

@@ -90,7 +90,12 @@ function learningChain(stats, signatures, catalog, item, remaining) {
     let nodes = item.choices;
     let newMoves = 0;
     let lastDecisionDepth = route.length;
+    let depthTruncated = false;
     while (nodes?.length) {
+        if (Math.floor(route.length / 2) + 1 > (item.depthLimit ?? Infinity)) {
+            depthTruncated = true;
+            break;
+        }
         const decision = decisions.get(route.join(','));
         let index = 0;
         let fresh = false;
@@ -108,7 +113,8 @@ function learningChain(stats, signatures, catalog, item, remaining) {
         if (fresh && ++newMoves >= remaining) break;
     }
     route.length = lastDecisionDepth;
-    return { ...item, type: 'line', route, newMoves, completeLine: !nodes?.length || nodes.every(node => !node.children?.length) };
+    return { ...item, type: 'line', route, newMoves,
+        completeLine: !depthTruncated && (!nodes?.length || nodes.every(node => !node.children?.length)) };
 }
 
 function recordContinuationReview(cards, id, move, correct, assisted, firstAttempt, isNew, previousCard, now = new Date()) {
