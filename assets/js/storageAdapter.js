@@ -38,18 +38,21 @@ export const StorageAdapter = {
         const value = localStorage.getItem(storageKey(key));
         if (value) localStorage.setItem(storageKey(key) + ':backup', value);
     },
-    async hydrate() {
+    async hydrate(studyId) {
         if (!signedIn()) return false;
+        const inScope = key => !studyId || !managed(key) ||
+            key === `${studyId}_chapter_stats` || key === `${studyId}_chapter_reviews`;
         try {
-            const response = await fetch('/api/progress', { credentials: 'same-origin' });
+            const url = '/api/progress' + (studyId ? `?study_id=${encodeURIComponent(studyId)}` : '');
+            const response = await fetch(url, { credentials: 'same-origin' });
             if (!response.ok) throw new Error('Progress load failed');
             const cloud = await response.json();
             const revisions = cloud._progress_revisions || {};
-            const keys = new Set(Object.keys(cloud).filter(key => !key.startsWith('_progress_')));
+            const keys = new Set(Object.keys(cloud).filter(key => !key.startsWith('_progress_') && inScope(key)));
             for (let index = 0; index < localStorage.length; index++) {
                 const stored = localStorage.key(index);
                 const prefix = `progress:user:${owner()}:`;
-                if (stored.startsWith(prefix) && managed(stored.slice(prefix.length))) keys.add(stored.slice(prefix.length));
+                if (stored.startsWith(prefix) && managed(stored.slice(prefix.length)) && inScope(stored.slice(prefix.length))) keys.add(stored.slice(prefix.length));
             }
             for (const key of keys) {
                 if (key.endsWith('_tree')) continue;

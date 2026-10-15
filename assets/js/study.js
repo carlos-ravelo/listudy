@@ -4,7 +4,8 @@ import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './mo
 import { setupStudySessions } from './modules/study_sessions.js';
 import { replayPositionContext } from './modules/study/position_context.js';
 import { applyGameEvidence, gameLineTarget } from './modules/analysis/game_progress.js';
-import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, reviewExposureKey, continuationKey, nextSmartPosition } from './modules/study/position_review.js';
+import { positionReviews, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, reviewExposureKey, continuationKey, nextSmartPosition } from './modules/study/position_review.js';
+import { cachedPositionCatalog } from './modules/study/position_catalog_cache.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
@@ -1669,7 +1670,25 @@ function setup_configs() {
 
 window.overlay_manager = new TextOverlayManager();
 
+async function loadGamePositions() {
+    const url = document.querySelector('[data-game-positions-url]')?.dataset.gamePositionsUrl;
+    if (!url) return null;
+    try {
+        const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        return response.ok ? (await response.json()).positions : null;
+    } catch (_) { return null; }
+}
+
+async function refreshGameEvidence(positionsRequest) {
+    const positions = await positionsRequest;
+    if (!positions || !applyGameEvidence(chapterStats, chapterReviewSignatures, smartCatalog, positions, new Date(), true).changed) return;
+    StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
+    studySessions.refresh();
+    update_progress();
+}
+
 async function main() {
+    const gamePositionsRequest = loadGamePositions();
     window.addEventListener('study-sync-status', event => {
         const indicator = document.getElementById('study_sync_status');
         indicator.hidden = event.detail.state === 'saved';
@@ -1678,7 +1697,7 @@ async function main() {
     // 1. If the user is authenticated, try to fetch cloud progress/settings
     if (typeof logged_in !== 'undefined' && logged_in) {
         try {
-            if (await StorageAdapter.hydrate()) {
+            if (await StorageAdapter.hydrate(study_id)) {
                 // Reload global variables that were initialized before this async call
                 move_delay_time = get_option_from_localstorage(move_delay_time_key, i18n.instant, [i18n.instant, i18n.fast, i18n.medium, i18n.slow]);
                 show_arrows = get_option_from_localstorage(show_arrows_key, i18n.arrows_new2x, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
@@ -1706,24 +1725,13 @@ async function main() {
     chapterReviews = readChapterReviews(StorageAdapter.getItem(chapter_reviews_key()));
     if (bindChapterIdentities(chapterStats, trees)) StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     if (bindChapterIdentities(chapterReviews, trees)) StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
-    smartCatalog = positionCatalog(trees, studyColor);
+    smartCatalog = cachedPositionCatalog(trees, studyColor, pgn);
     let previousTrees = [];
     try { previousTrees = JSON.parse(StorageAdapter.getItem(study_id + '_tree') || '[]'); } catch (_) {}
     if (!Array.isArray(previousTrees)) previousTrees = [];
     StorageAdapter.backup(chapter_stats_key());
     if (reconcileStudyProgress(chapterStats, trees, smartCatalog, chapterReviewSignatures, previousTrees, studyColor)) {
         StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
-    }
-    const gamePositionsUrl = document.querySelector('[data-game-positions-url]')?.dataset.gamePositionsUrl;
-    if (gamePositionsUrl) {
-        try {
-            const response = await fetch(gamePositionsUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
-            if (response.ok) {
-                const { positions } = await response.json();
-                if (applyGameEvidence(chapterStats, chapterReviewSignatures, smartCatalog, positions, new Date(), true).changed)
-                    StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
-            }
-        } catch (_) { /* Existing practice remains available when offline. */ }
     }
     window.addEventListener('study-progress-sync-merged', event => {
         if (event.detail.key === chapter_stats_key()) {
@@ -1819,6 +1827,7 @@ async function main() {
     update_progress();
     setup_progress_modal();
     setup_progress_reset();
+    void refreshGameEvidence(gamePositionsRequest);
 }
 
 window.onresize = onresize;

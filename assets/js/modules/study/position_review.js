@@ -11,6 +11,7 @@ const MAX_REVIEW_STREAK = 3;
 const REVIEW_CHAIN_LIMIT = 5;
 const LONG_REVIEW_LIMIT = 12;
 const LONG_REVIEW_EVERY = 4;
+const POSITION_TRANSITION_LIMIT = 4096;
 
 function reviewExposureKey(fen, move) {
     return fen.split(' ').slice(0, 4).join(' ') + '|' + move;
@@ -31,25 +32,34 @@ function positionReviews(stats, chapter, signature) {
 
 function positionCatalog(trees, studyColor) {
     const catalog = [];
+    const transitions = new Map();
+    const chess = new Chess();
+    const standardFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     trees.forEach((tree, chapter) => {
-        const chess = new Chess(tree.headers.FEN);
-        if (tree.headers.FEN && !chess.load(tree.headers.FEN)) return;
-        const custom = chess.fen().split(' ').slice(0, 4).join(' ') !==
+        if (!chess.load(tree.headers.FEN || standardFen)) return;
+        const initialFen = chess.fen();
+        const custom = initialFen.split(' ').slice(0, 4).join(' ') !==
             'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
         const player = custom ? chess.turn() : studyColor === 'white' ? 'w' : 'b';
-        function visit(nodes, path, moves) {
+        function visit(nodes, path, moves, fen) {
             if (!nodes?.length) return;
-            if (chess.turn() === player) catalog.push({
-                chapter, path: [...path], id: moves.join('|'), fen: chess.fen(),
+            if (fen.split(' ')[1] === player) catalog.push({
+                chapter, path: [...path], id: moves.join('|'), fen,
                 expected: nodes.map(node => node.move), choices: nodes
             });
             nodes.forEach((node, index) => {
-                if (!chess.move(node.move)) return;
-                visit(node.children, [...path, index], [...moves, node.move]);
-                chess.undo();
+                if (!node.children?.length) return;
+                const key = `${fen}|${node.move}`;
+                let nextFen = transitions.get(key);
+                if (nextFen === undefined) {
+                    chess.load(fen);
+                    nextFen = chess.move(node.move) ? chess.fen() : null;
+                    if (transitions.size < POSITION_TRANSITION_LIMIT) transitions.set(key, nextFen);
+                }
+                if (nextFen) visit(node.children, [...path, index], [...moves, node.move], nextFen);
             });
         }
-        visit(tree.root, [], []);
+        visit(tree.root, [], [], initialFen);
     });
     return catalog;
 }

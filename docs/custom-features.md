@@ -9,6 +9,7 @@
     - [Chapter progress and recovery](#chapter-progress-and-recovery)
     - [Practice modes and spaced repetition](#practice-modes-and-spaced-repetition)
     - [Storage, reset and study layout](#storage-reset-and-study-layout)
+    - [Settings across devices](#settings-across-devices)
   - [Game analysis](#game-analysis)
     - [Quick comparison page](#quick-comparison-page)
   - [Imported games and sync](#imported-games-and-sync)
@@ -173,6 +174,45 @@ Move delay, Board reset delay, hint-arrow type and Max depth. More actions
 holds Play against Stockfish, Copy chapter and Favorite study. Study details
 and Comments have their own disclosures. This keeps the main training area
 compact while preserving the controls.
+
+### Settings across devices
+
+With an account, some settings synchronize through the progress service while
+others remain specific to the current browser. Without signing in, settings
+remain local.
+
+| Setting | Saved across devices when signed in |
+| --- | --- |
+| Max depth value and its enable/disable switch, per study and chapter | Yes |
+| Hint-arrow visibility and arrow type | Yes |
+| Comment display | Yes |
+| Move delay and board reset delay | Yes |
+| Jump to key move | Yes |
+| Smart session decision goal | Yes |
+| Last selected chapter in each study | Yes |
+| Smart / Full lines practice choice | No; browser only |
+| Full-line order: manual, next or random | No; browser only |
+| Sound enabled and volume | No; browser only |
+| Board colors and piece set | No; browser only |
+| Light / dark theme | No; browser only |
+| Number of hidden moves in Blind tactics | No; browser only |
+| Dismissed board help overlays | No; browser only |
+| Practice / Read mode | Not saved between visits |
+
+Synchronized settings are sent after a five-second delay and loaded when opening
+a study; another device's already-open page does not receive live preference
+updates. Leaving before the delayed request completes can lose a setting change:
+the current flush-on-exit mechanism covers practice progress, not ordinary
+preferences. Pending ordinary preferences also lack the progress records'
+persistent retry metadata after closing the page.
+
+Max depth is currently keyed by study ID and chapter number, rather than the
+chapter's stable identity. After reordering chapters, check the limit because
+it can apply to the chapter now occupying that number. This differs from practice
+progress, which follows maintained chapter identities.
+
+Local-only choices are browser preferences, so another browser, device or browser
+profile can use different values. Clearing site data removes those choices.
 
 ## Game analysis
 

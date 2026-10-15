@@ -75,19 +75,38 @@ defmodule ListudyWeb.ProgressController do
   end
 
   @doc """
-  Fetches all synchronized settings for the current user as a key-value map.
+  Fetches synchronized settings, optionally scoped to one study's progress.
   This can be used on page load to hydrate `localStorage`.
   """
-  def index(conn, _params) do
+  def index(conn, params) do
     user = Pow.Plug.current_user(conn) || conn.assigns[:current_user]
 
+    query =
+      from s in UserSetting,
+        where:
+          s.user_id == ^user.id and s.key not in ["study_collections_v1", "study_library_v1"] and
+            not like(s.key, "%\\_tree"),
+        select: {s.key, s.value}
+
+    query =
+      case params["study_id"] do
+        study_id when is_binary(study_id) and byte_size(study_id) > 0 ->
+          keys = [study_id <> "_chapter_stats", study_id <> "_chapter_reviews"]
+
+          from s in query,
+            where:
+              s.key in ^keys or
+                (not like(s.key, "%\\_chapter\\_stats") and
+                   not like(s.key, "%\\_chapter\\_reviews"))
+
+        _ ->
+          query
+      end
+
     settings =
-      Repo.all(
-        from s in UserSetting,
-          where:
-            s.user_id == ^user.id and s.key not in ["study_collections_v1", "study_library_v1"]
-      )
-      |> Enum.into(%{}, fn s -> {s.key, s.value} end)
+      query
+      |> Repo.all()
+      |> Map.new()
 
     revisions =
       settings

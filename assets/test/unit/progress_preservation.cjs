@@ -37,4 +37,26 @@ reconcileStudyProgress(stats, custom, positionCatalog(custom, 'white'), ['custom
 assert.equal(Object.keys(stats.chapters.a.positionReviews.cards).length, 0);
 assert.equal(stats.chapters.a.coveredMoves.length, 0);
 assert.equal(reconcileStudyProgress(stats, custom, positionCatalog(custom, 'white'), ['custom']), false);
+
+const buildCatalog = context.positionCatalog;
+const rebuilt = [];
+context.positionCatalog = (trees, color) => {
+    rebuilt.push(trees);
+    return buildCatalog(trees, color);
+};
+const unchanged = { chapterIds: ['a'], chapters: { a: { positionReviews: { signature: 'same', cards: {
+    'e4|e5': { card: { due: '2026-10-20' } }
+} } } } };
+reconcileStudyProgress(unchanged, old, catalog, ['same'], old);
+assert.equal(rebuilt.length, 0, 'Unchanged reviews do not replay the old study');
+assert.equal(unchanged.chapters.a.positionReviews.cards['e4|e5'].positionFen, catalog.find(item => item.id === 'e4|e5').fen.split(' ').slice(0, 4).join(' '));
+const legacy = { chapterIds: ['a'], chapters: { a: { positionReviews: { signature: 'old', cards: {
+    'e4|e5': { card: { due: '2026-10-20' } }
+} } } } };
+const unrelated = { headers: { ListudyChapterId: 'unrelated' }, root: [] };
+reconcileStudyProgress(legacy, edited, buildCatalog(edited, 'white'), ['new'], [unrelated, ...old]);
+assert.equal(rebuilt.length, 1, 'Legacy review migration builds only its old chapter');
+assert.equal(rebuilt[0].length, 1);
+assert.equal(rebuilt[0][0], old[0]);
+assert.equal(legacy.chapters.a.positionReviews.cards['e4|e5'].card.due, '2026-10-20');
 console.log('Chapter editing preserves valid FSRS cards, remaps branches and retires changed positions');

@@ -16,11 +16,12 @@ function gamePositionKey(fen) {
 
 const answers = mistake => (mistake.expected || '').split(/\s+\/\s+/).filter(Boolean).sort();
 
-function gamePositionReference(stats, signatures, catalog, mistake) {
+function gamePositionReference(stats, signatures, catalog, mistake, index = null) {
     const key = gamePositionKey(mistake.fen);
     const expected = answers(mistake);
-    const candidates = catalog.filter(item => gamePositionKey(item.fen) === key &&
-        JSON.stringify([...item.expected].sort()) === JSON.stringify(expected));
+    const candidates = index ? index.get(`${key}|${JSON.stringify(expected)}`) || [] :
+        catalog.filter(item => gamePositionKey(item.fen) === key &&
+            JSON.stringify([...item.expected].sort()) === JSON.stringify(expected));
     const tracked = item => {
         const entry = stats.chapters[stats.chapterIds?.[item.chapter] || String(item.chapter)]?.positionReviews;
         return entry?.signature === signatures[item.chapter] && entry?.cards?.[item.id];
@@ -31,8 +32,14 @@ function gamePositionReference(stats, signatures, catalog, mistake) {
 function applyGameEvidence(stats, signatures, catalog, mistakes, now = new Date(), authoritative = false) {
     let changed = false;
     const references = new Map();
+    const index = new Map();
+    if (mistakes.length) for (const item of catalog) {
+        const key = `${gamePositionKey(item.fen)}|${JSON.stringify([...item.expected].sort())}`;
+        if (!index.has(key)) index.set(key, []);
+        index.get(key).push(item);
+    }
     for (const mistake of mistakes) {
-        const item = gamePositionReference(stats, signatures, catalog, mistake);
+        const item = gamePositionReference(stats, signatures, catalog, mistake, index);
         if (!item) continue;
         references.set(mistake, item);
         const at = new Date(mistake.last_played_at).getTime();
