@@ -98,7 +98,9 @@
               <span class="analysis-game-summary">
                 <%= if result do %>
                   <span class="analysis-status analysis-status-<%= result.status %>"><%= analysis_status_label(result.status) %></span>
-                  <span class="analysis-game-study-name"><%= result.study_title %><%= if length(visible) > 1, do: " · +#{length(visible) - 1} other studies" %></span>
+                  <%= if result.status in ["deviation", "match", "ambiguous"] do %>
+                    <span class="analysis-game-study-name"><%= result.study_title %></span>
+                  <% end %>
                 <% else %>
                   <span class="analysis-status">Not analyzed for a study</span>
                 <% end %>

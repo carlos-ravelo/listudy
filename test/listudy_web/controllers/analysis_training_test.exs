@@ -174,6 +174,16 @@ defmodule ListudyWeb.AnalysisTrainingTest do
 
     [href] = Floki.find(scoped, ".analysis-game-row") |> Floki.attribute("href")
     assert href =~ "compare_study_id=#{alternative.id}"
+
+    game(user, "1. d4 d5 *")
+    assert {:ok, 1} = Analyzer.analyze_all_user_studies(user.id, "lichess")
+    unmatched = conn_for(user) |> get("/analysis/games?status=out_of_scope") |> html_response(200)
+    [row] = Floki.find(unmatched, ".analysis-game-row")
+
+    assert Floki.find(row, ".analysis-status-out_of_scope") |> Floki.text() ==
+             "No matching chapter"
+
+    assert Floki.find(row, ".analysis-game-study-name") == []
   end
 
   test "a study with conflicting chapters still chooses and trains one exact chapter", %{
@@ -194,22 +204,43 @@ defmodule ListudyWeb.AnalysisTrainingTest do
   test "incomplete repertoire comparison shows valid matches and names the unavailable study", %{
     user: user
   } do
-    valid = study(user, "Main repertoire", "1. e4 e5 2. Nf3 *")
+    reference = study(user, "A reference", "1. e4 e5 2. Nf3 *")
+    valid = study(user, "Z daily repertoire", "1. e4 e5 2. Nf3 *")
+
+    assert {:ok, _} =
+             Listudy.StudyLibrary.update(user.id, %{
+               "action" => "move",
+               "study_ids" => [reference.id],
+               "location" => "library"
+             })
+
     invalid = study(user, "Needs PGN repair", "1. e4 e5 2. Ke3 *")
     game = game(user, "1. e4 e5 2. d4 *")
     assert {:ok, 1} = Analyzer.analyze_all_user_studies(user.id, "lichess")
-    assert statuses(game) == %{valid.id => "ambiguous", invalid.id => "error"}
+
+    assert statuses(game) == %{
+             valid.id => "ambiguous",
+             reference.id => "ambiguous",
+             invalid.id => "error"
+           }
+
     assert Repo.aggregate(Deviation, :count) == 0
 
-    assert {:ok, [{_, _}], [%{id: unavailable_id}]} =
+    assert {:ok, [{selected, _}, {_, _}], [%{id: unavailable_id}]} =
              Analyzer.analyze_single_pgn(user.id, game.pgn)
 
+    assert selected.id == valid.id
     assert unavailable_id == invalid.id
 
     library = conn_for(user) |> get("/analysis/games") |> html_response(200)
     [row] = Floki.find(library, ".analysis-game-row")
     assert Floki.find(row, ".analysis-status-ambiguous") |> Floki.text() == "Matching line found"
     assert Floki.find(row, ".analysis-game-open") |> Floki.text() == "View comparison →"
+
+    assert Floki.find(row, ".analysis-game-study-name") |> Enum.map(&Floki.text/1) == [
+             valid.title
+           ]
+
     refute library =~ "Comparison needs review"
 
     html = conn_for(user) |> get("/analysis/games/#{game.id}/compare") |> html_response(200)
