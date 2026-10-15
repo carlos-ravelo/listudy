@@ -106,7 +106,7 @@ defmodule Listudy.Studies do
       from s in Study,
         join: f in StudyFavorite,
         on: f.study_id == s.id,
-        where: f.user_id == ^user,
+        where: f.user_id == ^user and (not s.private or s.user_id == ^user),
         select: s
 
     Repo.all(query)
