@@ -280,6 +280,16 @@
   i18n.progress_practices = "<%= dgettext "study", "practices" %>";
   i18n.progress_incomplete = "<%= dgettext "study", "incomplete" %>";
   i18n.progress_practiced_moves = "<%= dgettext "study", "Moves practiced" %>";
+  i18n.progress_coverage = "<%= dgettext "study", "Continuation coverage" %>";
+  i18n.progress_covered_short = "<%= dgettext "study", "covered" %>";
+  i18n.progress_recall = "<%= dgettext "study", "Recall" %>";
+  i18n.progress_recall_unknown = "<%= dgettext "study", "Not enough review data yet" %>";
+  i18n.progress_graded_reviews = "<%= dgettext "study", "recent graded reviews" %>";
+  i18n.progress_new = "<%= dgettext "study", "New continuations" %>";
+  i18n.progress_due_continuations = "<%= dgettext "study", "Continuations due for review" %>";
+  i18n.progress_due_short = "<%= dgettext "study", "due" %>";
+  i18n.progress_coverage_help = "<%= dgettext "study", "Coverage counts continuations answered correctly without help. Full coverage does not mean lasting recall." %>";
+  i18n.progress_recall_help = "<%= dgettext "study", "Recall is first-try accuracy in the last 20 graded continuation reviews, excluding each initial encounter. Hints count as misses." %>";
   i18n.progress_clean_moves = "<%= dgettext "study", "Clean moves since last mistake" %>";
   i18n.progress_needs_practice = "<%= dgettext "study", "Needs practice" %>";
   i18n.progress_correct = "<%= dgettext "study", "correct" %>";
@@ -315,17 +325,19 @@
     <div class="study_progress" id="study_progress">
       <template x-for="chapter in chapters" :key="chapter.index">
         <button type="button" class="chapter-progress-summary"
-          :class="'chapter-progress-summary--' + (chapter.reviewDue ? 'due' : chapter.level) + (chapter.current ? ' chapter-progress-summary--current' : '')"
+          :class="'chapter-progress-summary--' + (chapter.reviewDue ? 'due' : chapter.pickerTone === 'mistakes' ? 'watch' : 'unrated') + (chapter.current ? ' chapter-progress-summary--current' : '')"
           :aria-current="chapter.current ? 'true' : null"
           x-on:click="$dispatch('study-progress-open-chapter', { index: chapter.index })">
           <strong x-text="chapter.name"></strong>
-          <span class="chapter-progress-cues" x-show="chapter.current || chapter.mastered && !chapter.reviewDue || chapter.reviewDue">
+          <span class="chapter-progress-cues" x-show="chapter.current || chapter.coverageComplete || chapter.reviewDue">
             <span class="chapter-progress-current" x-show="chapter.current"><%= dgettext("study", "Current chapter") %></span>
-            <span class="chapter-progress-solid" x-show="chapter.mastered && !chapter.reviewDue">✓ <%= dgettext("study", "Chapter complete") %></span>
+            <span class="chapter-progress-solid" x-show="chapter.coverageComplete"><%= dgettext("study", "All continuations practiced") %></span>
             <span class="chapter-progress-due" x-show="chapter.reviewDue"><%= dgettext("study", "Review due") %></span>
           </span>
+          <span x-text="chapter.coverageLabel" title="<%= dgettext("study", "Continuations answered correctly without help at least once. This does not measure lasting recall.") %>"></span>
+          <span x-text="chapter.recallLabel" title="<%= dgettext("study", "First-try accuracy in the last 20 graded continuation reviews, excluding each initial encounter. Hints count as misses.") %>"></span>
+          <span x-text="chapter.pendingLabel"></span>
           <span x-text="chapter.metrics"></span>
-          <span x-show="chapter.recovery" x-text="chapter.recovery"></span>
           <span x-show="chapter.reviewLabel && !chapter.reviewDue" x-text="chapter.reviewLabel"></span>
         </button>
       </template>

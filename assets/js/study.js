@@ -1,4 +1,5 @@
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
+import { chapterLearningProgress } from './modules/study/learning_progress.js';
 import { replayPositionContext } from './modules/study/position_context.js';
 import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, recordContinuationReview, scheduledReviews, nextSmartPosition } from './modules/study/position_review.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
@@ -1390,21 +1391,35 @@ async function update_progress() {
         const weakness = chapterWeakness(chapterStats, tree_index);
         const state = chapterProgressState(chapterStats, tree_index, chapterMoveCatalogs[tree_index], chapterReviewSignatures[tree_index]);
         const review = studyReviewStatus(tree_index, now);
+        const learning = chapterLearningProgress(chapterStats, tree_index, chapterReviewSignatures[tree_index], smartCatalog, now);
+        const coverageLabel = i18n.progress_coverage + ': ' + state.covered + '/' + state.total + ' (' + state.percent + '%)';
+        const recallLabel = i18n.progress_recall + ': ' + (learning.recallAccuracy === null
+            ? i18n.progress_recall_unknown
+            : learning.recallAccuracy + '% (' + learning.recallSamples + ' ' + i18n.progress_graded_reviews + ')');
+        const pendingLabel = i18n.progress_new + ': ' + learning.newContinuations + ' · ' +
+            i18n.progress_due_continuations + ': ' + learning.dueContinuations;
         chapterSummaries.push({
             index: Number(tree_index),
             name: tree_chapter_name(tree_index),
             ...weakness,
             ...state,
+            ...learning,
+            coverageComplete: state.total > 0 && state.covered === state.total,
+            coverageLabel, recallLabel, pendingLabel,
+            progressTooltip: [coverageLabel, i18n.progress_coverage_help, recallLabel, i18n.progress_recall_help,
+                pendingLabel, chapter_performance_text(tree_index, state.recent)].join('\n'),
             failedPositions: pendingPositions(chapterFailures(chapterStats, tree_index, chapterReviewSignatures[tree_index])).length,
             reviewDue: review.due,
             reviewDueAt: review.dueAt ? review.dueAt.getTime() : null,
             reviewLabel: review.due ? i18n.spaced_review_due
                 : review.dueAt ? i18n.spaced_review_next + ": " + review.dueAt.toLocaleString() : null,
-            pickerTone: review.due ? 'due' : state.mastered ? 'solid'
-                : state.level === 'weak' || state.level === 'watch' ? 'mistakes' : state.covered > 0 ? 'in-progress' : 'new',
-            pickerMetrics: chapter_practice_text(state.recent, true),
+            pickerTone: review.due ? 'due'
+                : state.recent.accuracy !== null && state.recent.accuracy < 100 ? 'mistakes' : state.covered > 0 ? 'in-progress' : 'new',
+            pickerMetrics: state.percent + '% ' + i18n.progress_covered_short + ' · ' +
+                (learning.dueContinuations ? learning.dueContinuations + ' ' + i18n.progress_due_short
+                    : i18n.progress_recall + ' ' + (learning.recallAccuracy === null ? '—' : learning.recallAccuracy + '%')),
             current: Number(tree_index) === Number(chapter),
-            recovery: i18n.progress_practiced_moves + ': ' + state.covered + '/' + state.total + ' (' + state.percent + '%)',
+            recovery: coverageLabel,
             metrics: chapter_performance_text(tree_index, state.recent)
         });
     }
