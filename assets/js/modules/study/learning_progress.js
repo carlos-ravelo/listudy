@@ -18,7 +18,7 @@ function chapterLearningProgress(stats, chapter, signature, catalog, now = new D
             const due = new Date(review.card?.due).getTime();
             if (Number.isFinite(due) && due <= now.getTime()) dueContinuations++;
             // The initial encounter measures learning, rather than later recall.
-            for (const event of (review.history || []).slice(1)) {
+            for (const event of (review.history || []).slice(review.introducedAt ? 0 : 1)) {
                 const at = new Date(event.at).getTime();
                 if (!Number.isFinite(at) || at > now.getTime() || ![1, 3].includes(event.rating)) continue;
                 events.set(event.id || `${item.id}|${event.at}|${event.rating}`, { ...event, at });

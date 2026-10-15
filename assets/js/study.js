@@ -2,7 +2,7 @@ import { reconcileStudyProgress } from './modules/study/progress_preservation.js
 import { chapterLearningProgress } from './modules/study/learning_progress.js';
 import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
 import { replayPositionContext } from './modules/study/position_context.js';
-import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, recordContinuationReview, scheduledReviews, nextSmartPosition } from './modules/study/position_review.js';
+import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, nextSmartPosition } from './modules/study/position_review.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
@@ -116,6 +116,21 @@ function currentPositionId() {
 
 function scopedPracticeCatalog() {
     return scopePositionCatalog(smartCatalog, trees.map((_, index) => practiceDepthLimit(StorageAdapter, study_id, index)));
+}
+
+function smartIntroductionMove() {
+    if (!smartSession || smartTarget?.type !== 'line' || !smartTarget.route ||
+        readMode || contextReplayActive || turn_color(chess) !== color) return null;
+    const path = curr_move.slice(1);
+    if (path.length >= smartTarget.route.length || !path.every((index, depth) => index === smartTarget.route[depth])) return null;
+    const move = tree_children(curr_move)[smartTarget.route[path.length]];
+    if (!move) return null;
+    const id = currentPositionId();
+    const entry = chapterStats.chapters[chapterStats.chapterIds?.[chapter] || String(chapter)];
+    const introduced = entry?.positionReviews?.signature === chapterReviewSignatures[chapter]
+        ? entry.positionReviews.cards[id]?.introducedMoves || [] : [];
+    if (introduced.includes(move.move) || entry?.coveredMoves?.includes((id ? id + '|' : '') + move.move)) return null;
+    return move;
 }
 
 function selectNextSmartPosition() {
@@ -324,7 +339,8 @@ async function handle_move(orig, dest) {
 
     overlay_manager.mark_current_overlays_seen();
 
-    total_moves += 1;
+    const introduction = smartIntroductionMove();
+    if (!introduction) total_moves += 1;
 
     let san = uci_to_san(chess, orig, dest);
 
@@ -352,74 +368,93 @@ async function handle_move(orig, dest) {
     const moveId = wasCorrect
         ? (positionId ? positionId + '|' : '') + san
         : null;
-    const assisted = assistedPositions.has(positionId) || positionAttempts.has(positionId);
-    const cards = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter]);
-    const firstAttempt = !positionAttempts.has(positionId);
-    const intendedMove = smartTarget?.type === 'line' && smartTarget.route
-        ? tree_children(curr_move)[smartTarget.route[curr_move.length - 1]]?.move
-        : smartTarget?.expectedMove || (wasCorrect ? san : possible_moves[0]);
-    const previousCard = cards[positionId]?.card;
-    const wasNew = !cards[positionId] || !introducedMoves(chapterStats, chapter, chapterReviewSignatures[chapter], positionId).includes(intendedMove);
-    const review = recordPositionReview(cards, positionId, wasCorrect, assisted, positionAttempts);
-    cards[positionId].positionFen = chess.fen().split(' ').slice(0, 4).join(' ');
-    cards[positionId].expected = possible_moves;
-    const continuationReview = recordContinuationReview(cards, positionId, intendedMove, wasCorrect, assisted,
-        firstAttempt, wasNew, previousCard);
-    if (wasCorrect) recordIntroducedMove(cards, positionId, san);
-    if (smartSession && firstAttempt) {
-        if (smartTarget?.type === 'line' && wasNew) {
-            smartSession.newCount += 1;
-            smartSession.reviewStreak = 0;
-        } else if (review || continuationReview) {
-            smartSession.reviewCount = (smartSession.reviewCount || 0) + 1;
-            smartSession.reviewStreak = (smartSession.reviewStreak || 0) + 1;
-        }
-    }
-    if (assisted && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
-    const recovery = continuationReview || review || cards[positionId];
-    const unresolvedContinuation = Object.values(cards[positionId]?.moveReviews || {}).some(entry => !entry.recovered);
-    recordPositionResult(currentFailures(), positionId, {
-        path: curr_move.slice(1), fen: chess.fen(), played: san, expected: possible_moves
-    }, wasCorrect, recovery && { ...recovery, recovered: recovery.recovered && !unresolvedContinuation });
-    if (smartTarget?.type === 'position') {
-        record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
-        if (wasCorrect) {
-            play_move(san);
-            ground.set({ movable: { dests: new Map() } });
-            smartTarget = null;
-            await sleep(500);
-            if (sessionId === trainingSessionId) selectNextSmartPosition();
-        } else {
+    if (introduction) {
+        lineEligibleForReview = false;
+        if (!wasCorrect) {
             ground_undo_last_move();
-            set_text(error_div, i18n.error_wrong_move);
             setup_move();
+            set_text(info_div, i18n.smart_introduction_retry);
+            return;
         }
-        update_progress();
-        return;
-    }
-    if (failedPositionRun) {
-        record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
+        const cards = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter]);
+        introduceContinuation(cards, positionId, introduction.move);
+        cards[positionId].positionFen = chess.fen().split(' ').slice(0, 4).join(' ');
+        cards[positionId].expected = possible_moves;
+        smartSession.newCount += 1;
+        smartSession.reviewStreak = 0;
         StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
-        if (wasCorrect) {
-            play_move(san);
-            ground.set({ movable: { dests: new Map() } });
-            failedPositionRun.index += 1;
-            failedPositionRun.transitioning = true;
-            await sleep(500);
-            if (sessionId !== trainingSessionId) return;
-            showFailedPosition();
-        } else {
-            ground_undo_last_move();
-            set_text(error_div, i18n.error_wrong_move);
-            setup_move();
+    } else {
+        const assisted = assistedPositions.has(positionId) || positionAttempts.has(positionId);
+        const cards = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter]);
+        const firstAttempt = !positionAttempts.has(positionId);
+        const intendedMove = smartTarget?.type === 'line' && smartTarget.route
+            ? tree_children(curr_move)[smartTarget.route[curr_move.length - 1]]?.move
+            : smartTarget?.expectedMove || (wasCorrect ? san : possible_moves[0]);
+        const previousCard = cards[positionId]?.card;
+        const wasNew = !cards[positionId] || !introducedMoves(chapterStats, chapter, chapterReviewSignatures[chapter], positionId).includes(intendedMove);
+        const review = recordPositionReview(cards, positionId, wasCorrect, assisted, positionAttempts);
+        cards[positionId].positionFen = chess.fen().split(' ').slice(0, 4).join(' ');
+        cards[positionId].expected = possible_moves;
+        const continuationReview = recordContinuationReview(cards, positionId, intendedMove, wasCorrect, assisted,
+            firstAttempt, wasNew, previousCard);
+        if (wasCorrect) recordIntroducedMove(cards, positionId, san);
+        if (smartSession && firstAttempt) {
+            if (smartTarget?.type === 'line' && wasNew) {
+                smartSession.newCount += 1;
+                smartSession.reviewStreak = 0;
+            } else if (review || continuationReview) {
+                smartSession.reviewCount = (smartSession.reviewCount || 0) + 1;
+                smartSession.reviewStreak = (smartSession.reviewStreak || 0) + 1;
+            }
         }
+        if (assisted && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
+        const recovery = continuationReview || review || cards[positionId];
+        const unresolvedContinuation = Object.values(cards[positionId]?.moveReviews || {})
+            .some(entry => !entry.recovered && (!entry.introducedAt || entry.card.reps > 0));
+        const gradedRecovery = recovery && (!recovery.introducedAt || recovery.card.reps > 0) ? recovery : null;
+        recordPositionResult(currentFailures(), positionId, {
+            path: curr_move.slice(1), fen: chess.fen(), played: san, expected: possible_moves
+        }, wasCorrect, gradedRecovery && { ...gradedRecovery, recovered: gradedRecovery.recovered && !unresolvedContinuation });
+        if (smartTarget?.type === 'position') {
+            record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
+            if (wasCorrect) {
+                play_move(san);
+                ground.set({ movable: { dests: new Map() } });
+                smartTarget = null;
+                await sleep(500);
+                if (sessionId === trainingSessionId) selectNextSmartPosition();
+            } else {
+                ground_undo_last_move();
+                set_text(error_div, i18n.error_wrong_move);
+                setup_move();
+            }
+            update_progress();
+            return;
+        }
+        if (failedPositionRun) {
+            record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
+            StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
+            if (wasCorrect) {
+                play_move(san);
+                ground.set({ movable: { dests: new Map() } });
+                failedPositionRun.index += 1;
+                failedPositionRun.transitioning = true;
+                await sleep(500);
+                if (sessionId !== trainingSessionId) return;
+                showFailedPosition();
+            } else {
+                ground_undo_last_move();
+                set_text(error_div, i18n.error_wrong_move);
+                setup_move();
+            }
+            updateFailedPositionsUi();
+            update_progress();
+            return;
+        }
+        record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
         updateFailedPositionsUi();
-        update_progress();
-        return;
+        if (!wasCorrect && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
     }
-    record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
-    updateFailedPositionsUi();
-    if (!wasCorrect && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
 
     if(wasCorrect) {
         // console.log('curr_move', orig, dest, JSON.stringify(curr_move));
@@ -670,7 +705,7 @@ function get_pgn_shapes(m, keyword) {
  * Returns true if arrows should be shown.
  */
 function give_hints(once) {
-    if (smartSession && !once) return false;
+    if (smartSession && !once) return !!smartIntroductionMove();
     if (once || show_arrows == i18n.arrows_always) {
         return true;
     }
@@ -703,6 +738,12 @@ function display_arrows(once) {
     let max = Math.max(...all_moves.map(m => m.value));
 
     overlay_manager.clear_overlays();
+    const introduction = smartIntroductionMove();
+    if (introduction) {
+        lineEligibleForReview = false;
+        ground.setShapes([create_arrow_from_move(introduction.move, 'normal')]);
+        return;
+    }
     if (!give_hints(once)) {
         ground.setShapes([]);
         return;
@@ -801,12 +842,13 @@ function create_comment_list(container_id, current_move, response_moves) {
  * if that option is turned on.
  */
 function display_comments(once) {
-    if (contextReplayActive || smartSession && !once) { document.getElementById(comments_div).innerHTML = ""; return; }
+    const introduction = smartIntroductionMove();
+    if (contextReplayActive || smartSession && !once && !introduction) { document.getElementById(comments_div).innerHTML = ""; return; }
     let cm = tree_get_node(curr_move);
     let current_move = undefined;
     let response_moves = [];
 
-    if (readMode || once || show_comments == i18n.comments_always_on ||
+    if (introduction || readMode || once || show_comments == i18n.comments_always_on ||
         show_comments == i18n.comments_when_arrows && give_hints(once)) {
 
         // Get current move if it has a comment
@@ -817,14 +859,14 @@ function display_comments(once) {
         let children = tree_children(curr_move);
         if (children.length > 0) {
             for (let m of children) {
-                if (m.comments != undefined && m.comments[0] != undefined && m.comments[0].text != undefined) {
+                if ((!introduction || m === introduction) && m.comments != undefined && m.comments[0] != undefined && m.comments[0].text != undefined) {
                     response_moves.push(m);
                 }
             }
         }
     }
 
-    if (!readMode && response_moves.length) assistedPositions.add(currentPositionId());
+    if (!introduction && !readMode && response_moves.length) assistedPositions.add(currentPositionId());
     create_comment_list("comments", current_move, response_moves);
 }
 
@@ -889,6 +931,10 @@ function setup_move() {
         show_suggestions();  // must come after display_arrows(), beacuse it needs the arrows
     }
     display_comments(false);
+    if (smartTarget?.type === 'line') {
+        document.getElementById('smart_run_status').textContent = smartIntroductionMove()
+            ? i18n.smart_introduction : i18n.smart_learning;
+    }
     studyMoveNavigation.update();
     update_read_mode_ui();
 }

@@ -83,6 +83,19 @@ function recordIntroducedMove(cards, id, move) {
     if (!introduced.includes(move)) cards[id].introducedMoves = [...introduced, move];
 }
 
+function introduceContinuation(cards, id, move, now = new Date()) {
+    const initial = () => ({
+        card: createEmptyCard(new Date(now.getTime() + MIN_REVIEW_GAP)),
+        introducedAt: now.toISOString(), history: [], recovered: false, successes: 0
+    });
+    if (!cards[id]) cards[id] = initial();
+    const position = cards[id];
+    position.moveReviews = { ...position.moveReviews };
+    if (!position.moveReviews[move]) position.moveReviews[move] = initial();
+    recordIntroducedMove(cards, id, move);
+    return position.moveReviews[move];
+}
+
 function learningChain(stats, signatures, catalog, item, remaining) {
     const route = [...item.path];
     const decisions = new Map(catalog.filter(candidate => candidate.chapter === item.chapter)
@@ -163,10 +176,11 @@ function nextSmartPosition(stats, signatures, catalog, session, now = new Date()
                 continue;
             }
             const overdue = (now.getTime() - dueAt) / 86400000;
+            const missed = !scheduled.review.recovered && (!scheduled.review.introducedAt || card.reps > 0);
             due.push({ ...item, type: 'position', expectedMove: scheduled.expectedMove,
-                urgent: !scheduled.review.recovered || overdue >= Math.max(1, card.stability || 1),
+                urgent: missed || overdue >= Math.max(1, card.stability || 1),
                 priority: overdue / Math.max(1, card.stability || 1) +
-                (scheduled.review.recovered ? 0 : 2) + (card.lapses || 0) * .1 });
+                (missed ? 2 : 0) + (card.lapses || 0) * .1 });
         }
     }
     due.sort((a, b) => Number(b.urgent) - Number(a.urgent) || b.priority - a.priority || a.chapter - b.chapter || a.path.length - b.path.length);
@@ -187,4 +201,4 @@ function nextSmartPosition(stats, signatures, catalog, session, now = new Date()
     return { target: null, nextDue };
 }
 
-export { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, recordContinuationReview, scheduledReviews, learningChain, nextSmartPosition, NEW_POSITION_LIMIT };
+export { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, learningChain, nextSmartPosition, NEW_POSITION_LIMIT };
