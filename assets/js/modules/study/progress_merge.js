@@ -39,6 +39,17 @@ function mergeReview(base, local, remote, kind) {
 }
 
 function mergeNode(base, local, remote, field, kind) {
+    if (field === 'studySessions') {
+        const sessions = {};
+        for (const id of new Set([...Object.keys(local || {}), ...Object.keys(remote || {})])) {
+            const candidates = [local?.[id], remote?.[id]].filter(Boolean);
+            candidates.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0) ||
+                Number(b.status !== 'active') - Number(a.status !== 'active') ||
+                (b.newCount + b.reviewCount) - (a.newCount + a.reviewCount));
+            sessions[id] = clone(candidates[0]);
+        }
+        return sessions;
+    }
     if (counters.has(field) && typeof local === 'number' && typeof remote === 'number') {
         return (base || 0) + Math.max(0, local - (base || 0)) + Math.max(0, remote - (base || 0));
     }
@@ -81,7 +92,11 @@ function mergeProgress(base, local, remote, key = '') {
     remote = remote ? decode(remote) : null;
     if (local?.resetId !== base?.resetId || remote?.resetId !== base?.resetId) {
         const resets = [local, remote].filter(value => value && value.resetId !== base?.resetId);
-        if (resets.length) return clone(resets.sort((a, b) => (b.resetAt || 0) - (a.resetAt || 0) || String(b.resetId).localeCompare(String(a.resetId)))[0]);
+        if (resets.length) {
+            const result = clone(resets.sort((a, b) => (b.resetAt || 0) - (a.resetAt || 0) || String(b.resetId).localeCompare(String(a.resetId)))[0]);
+            if (local?.studySessions || remote?.studySessions) result.studySessions = mergeNode(null, local?.studySessions, remote?.studySessions, 'studySessions', 'position');
+            return result;
+        }
     }
     return mergeNode(base, local, remote, '', key.endsWith('_chapter_reviews') ? 'chapter' : 'position');
 }
