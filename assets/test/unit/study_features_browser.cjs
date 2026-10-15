@@ -41,6 +41,17 @@ window.ready = true;
         page.on('pageerror', error => errors.push(error.message));
         await page.goto(`http://127.0.0.1:${server.address().port}`);
         await page.waitForFunction(() => window.ready);
+        await page.evaluate(() => window.dispatchEvent(new CustomEvent('study-progress-updated', { detail: [
+            { index: 0, mastered: true, pickerTone: 'in-progress', pickerMetrics: '100% covered · Recall —',
+                progressTooltip: 'Continuation coverage: 2/2 (100%)\nRecall: Not enough review data yet',
+                dueContinuations: 0, reviewDue: false },
+            { index: 1, pickerTone: 'due', pickerMetrics: '50% covered · 2 due',
+                progressTooltip: 'Continuation coverage: 1/2 (50%)\nRecall: 50% (2 recent graded reviews)',
+                dueContinuations: 2, reviewDue: true }
+        ] })));
+        assert.strictEqual(await page.locator('.chapter-current-status').textContent(), '100% covered · Recall —');
+        assert((await page.locator('.chapter-current-status').getAttribute('title')).includes('Not enough review data yet'));
+        assert.strictEqual(await page.locator('.chapter-choice .chapter-choice-status').nth(1).textContent(), '50% covered · 2 due');
         await page.locator('.study-tools-menu summary').click();
         await page.click('#add_to_collection');
         await page.click('#next_chapter_btn');

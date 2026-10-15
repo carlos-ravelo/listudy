@@ -16,9 +16,9 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
         badge.className = `chapter-choice-status chapter-choice-status--${tone}` +
             (badge === currentBadge ? ' chapter-current-status' : '');
         badge.textContent = chapter
-            ? (chapter.reviewDue ? progressLabels.reviewDue + ' · ' : chapter.mastered ? '✓ ' : '') + chapter.pickerMetrics
+            ? (chapter.reviewDue && !chapter.dueContinuations ? progressLabels.reviewDue + ' · ' : '') + chapter.pickerMetrics
             : progressLabels.unpracticed;
-        badge.title = chapter ? chapter.metrics + ' · ' + chapter.recovery : '';
+        badge.title = chapter ? chapter.progressTooltip || chapter.metrics + ' · ' + chapter.recovery : '';
         badge.hidden = false;
     }
     const search = document.createElement('input');
