@@ -13,7 +13,7 @@
   <%= if (assigns[:unavailable_studies] || []) != [] do %>
     <details class="analysis-comparison-warning">
       <summary>Comparison incomplete · <%= length(@unavailable_studies) %> <%= if length(@unavailable_studies) == 1, do: "study could", else: "studies could" %> not be compared</summary>
-      <p>The best match below uses the studies that could be read. Check these studies’ PGN, then compare again:</p>
+      <p>The matching line below is available. To include these studies in the comparison, check their PGN and compare again:</p>
       <ul>
         <%= for study <- @unavailable_studies do %>
           <li><%= link study.title, to: Routes.study_path(@conn, :show, @conn.assigns[:locale] || "en", study.slug), target: "_blank", rel: "noopener" %></li>

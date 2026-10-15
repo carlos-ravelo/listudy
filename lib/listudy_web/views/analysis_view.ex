@@ -7,7 +7,7 @@ defmodule ListudyWeb.AnalysisView do
 
   def analysis_status_label("match"), do: "No own deviations detected"
   def analysis_status_label("deviation"), do: "You deviated"
-  def analysis_status_label("ambiguous"), do: "Comparison needs review"
+  def analysis_status_label("ambiguous"), do: "Matching line found"
   def analysis_status_label("out_of_scope"), do: "No matching chapter"
   def analysis_status_label("error"), do: "Comparison unavailable"
   def analysis_status_label("other_match"), do: "Another study selected"

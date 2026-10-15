@@ -103,10 +103,10 @@
                   <span class="analysis-status">Not analyzed for a study</span>
                 <% end %>
                 <%= if has_other_error do %>
-                  <span class="analysis-game-warning">Comparison incomplete</span>
+                  <span class="analysis-game-warning">Some studies unavailable</span>
                 <% end %>
               </span>
-              <span class="analysis-game-open" aria-hidden="true">Compare →</span>
+              <span class="analysis-game-open">View comparison →</span>
             </a>
           </li>
         <% end %>
