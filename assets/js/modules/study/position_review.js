@@ -8,6 +8,17 @@ const NEW_POSITION_LIMIT = 10;
 const MIN_REVIEW_GAP = 60000;
 const NEW_CHAIN_LIMIT = 5;
 const MAX_REVIEW_STREAK = 3;
+const REVIEW_CHAIN_LIMIT = 5;
+const LONG_REVIEW_LIMIT = 12;
+const LONG_REVIEW_EVERY = 4;
+
+function reviewExposureKey(fen, move) {
+    return fen.split(' ').slice(0, 4).join(' ') + '|' + move;
+}
+
+function continuationKey(chapter, id, move) {
+    return `${chapter}|${id}|${move}`;
+}
 
 function positionReviews(stats, chapter, signature) {
     const key = stats.chapterIds?.[chapter] || String(chapter);
@@ -151,6 +162,81 @@ function scheduledReviews(stats, signature, item) {
     return result;
 }
 
+function reviewChain(stats, signatures, catalog, item, due, session) {
+    if (item.persistent) return item;
+    const longReview = ((session.reviewChains || 0) + 1) % LONG_REVIEW_EVERY === 0;
+    const limit = longReview ? LONG_REVIEW_LIMIT : REVIEW_CHAIN_LIMIT;
+    const positions = catalog.filter(candidate => candidate.chapter === item.chapter);
+    const decisions = new Map(positions.map(candidate => [candidate.path.join(','), candidate]));
+    const known = decision => introducedMoves(stats, item.chapter, signatures[item.chapter], decision.id);
+    let start = item;
+    if (longReview) {
+        const prefix = positions.filter(candidate => candidate.path.length <= item.path.length &&
+            candidate.path.every((index, depth) => item.path[depth] === index))
+            .sort((a, b) => a.path.length - b.path.length);
+        const earlier = prefix.find(candidate => (item.path.length - candidate.path.length) / 2 < limit);
+        if (earlier && prefix.filter(candidate => candidate.path.length >= earlier.path.length && candidate.path.length < item.path.length)
+            .every(candidate => known(candidate).includes(candidate.choices[item.path[candidate.path.length]]?.move))) start = earlier;
+    }
+    const route = [...start.path];
+    let nodes = start.choices;
+    let tested = 0;
+    let lastDecisionDepth = route.length;
+    let truncated = false;
+    const startsWith = (path, prefix) => prefix.every((index, depth) => path[depth] === index);
+    function score(path, move, decisionPath) {
+        return due.filter(candidate => candidate.chapter === item.chapter &&
+            (decisionPath && candidate.path.length === decisionPath.length && startsWith(candidate.path, decisionPath)
+                ? !candidate.expectedMove || candidate.expectedMove === move : startsWith(candidate.path, path)))
+            .reduce((sum, candidate) => sum + 1 + Number(candidate.urgent) + Math.min(10, candidate.priority || 0), 0);
+    }
+    while (nodes?.length) {
+        if (Math.floor(route.length / 2) + 1 > (item.depthLimit ?? Infinity)) { truncated = true; break; }
+        const decision = decisions.get(route.join(','));
+        let index;
+        if (route.length < item.path.length) {
+            index = item.path[route.length];
+        } else if (decision) {
+            const introduced = known(decision);
+            const options = nodes.map((node, index) => ({ node, index }))
+                .filter(({ node }) => introduced.includes(node.move));
+            if (route.length === item.path.length) {
+                index = item.expectedMove ? nodes.findIndex(node => node.move === item.expectedMove)
+                    : options[0]?.index ?? 0;
+            } else {
+                const cards = positionReviews(stats, item.chapter, signatures[item.chapter]);
+                options.sort((a, b) => {
+                    const pending = score([...route, b.index], b.node.move, route) - score([...route, a.index], a.node.move, route);
+                    if (pending) return pending;
+                    const seen = move => Number(session.testedContinuations?.has(continuationKey(item.chapter, decision.id, move)) || false);
+                    const repeated = seen(a.node.move) - seen(b.node.move);
+                    if (repeated) return repeated;
+                    const last = move => new Date(cards[decision.id]?.moveReviews?.[move]?.card.last_review || 0).getTime();
+                    return last(a.node.move) - last(b.node.move) || a.index - b.index;
+                });
+                index = options[0]?.index;
+            }
+            if (index === undefined || index < 0) { truncated = true; break; }
+        } else {
+            index = nodes.map((node, index) => ({ index, weight: score([...route, index]) }))
+                .sort((a, b) => b.weight - a.weight || a.index - b.index)[0].index;
+        }
+        const node = nodes[index];
+        if (!node) { truncated = true; break; }
+        route.push(index);
+        nodes = node.children;
+        if (decision) {
+            lastDecisionDepth = route.length;
+            if (++tested >= limit) { truncated = !!nodes?.some(node => node.children?.length); break; }
+        }
+    }
+    route.length = lastDecisionDepth;
+    if (tested < 2) return item;
+    return { ...start, type: 'line', expectedMove: null, reviewChain: true, longReview,
+        reviewAnchor: item.id, route, newMoves: 0,
+        completeLine: !truncated && (!nodes?.length || nodes.every(node => !node.children?.length)) };
+}
+
 function nextSmartPosition(stats, signatures, catalog, session, now = new Date()) {
     const due = [];
     const unseen = [];
@@ -164,7 +250,8 @@ function nextSmartPosition(stats, signatures, catalog, session, now = new Date()
         const introduced = introducedMoves(stats, item.chapter, signatures[item.chapter], item.id);
         if (!review || item.expected.some(move => !introduced.includes(move))) unseen.push(item);
         if (!review) {
-            if (failure && failure.cleanStreak < 3) due.push({ ...item, type: 'position', priority: Infinity, urgent: true });
+            if (failure && failure.cleanStreak < 3) due.push({ ...item, type: 'position', priority: Infinity, urgent: true,
+                persistent: failure.failures >= 2 });
             continue;
         }
         for (const scheduled of scheduledReviews(stats, signatures[item.chapter], item)) {
@@ -177,7 +264,10 @@ function nextSmartPosition(stats, signatures, catalog, session, now = new Date()
             }
             const overdue = (now.getTime() - dueAt) / 86400000;
             const missed = !scheduled.review.recovered && (!scheduled.review.introducedAt || card.reps > 0);
+            if (!missed && card.scheduled_days > 0 && item.path.length <= 6 && scheduled.expectedMove &&
+                session.recalledOpenings?.has(reviewExposureKey(item.fen, scheduled.expectedMove))) continue;
             due.push({ ...item, type: 'position', expectedMove: scheduled.expectedMove,
+                persistent: missed && ((card.lapses || 0) >= 2 || (failure?.failures || 0) >= 2),
                 urgent: missed || overdue >= Math.max(1, card.stability || 1),
                 priority: overdue / Math.max(1, card.stability || 1) +
                 (missed ? 2 : 0) + (card.lapses || 0) * .1 });
@@ -197,8 +287,8 @@ function nextSmartPosition(stats, signatures, catalog, session, now = new Date()
     }
     // Interleave chapters only when both urgency and scheduling priority are comparable.
     const alternate = first && due.find(item => item.chapter !== session.lastChapter && item.urgent === first.urgent && item.priority >= first.priority - .25);
-    if (first) return { target: alternate || first, nextDue };
+    if (first) return { target: reviewChain(stats, signatures, catalog, alternate || first, due, session), nextDue };
     return { target: null, nextDue };
 }
 
-export { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, learningChain, nextSmartPosition, NEW_POSITION_LIMIT };
+export { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, learningChain, reviewChain, reviewExposureKey, continuationKey, nextSmartPosition, NEW_POSITION_LIMIT };
