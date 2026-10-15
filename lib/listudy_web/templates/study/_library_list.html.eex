@@ -1,9 +1,11 @@
 <ul class="study-library-list">
   <%= for study <- @studies do %>
-    <li class="study-library-row" data-library-row data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>">
+    <li class="study-library-row" data-library-row data-study-id="<%= study.id %>" data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>">
+      <label class="study-library-select" data-library-select hidden><input type="checkbox" data-library-check aria-label="<%= dgettext("study", "Select study") %>: <%= study.title %>"></label>
       <a class="study-library-content" href="<%= Routes.study_path(@conn, :show, @locale, study.slug) %>">
         <span class="study-library-title"><%= study.title %></span>
         <span class="study-library-description"><%= study.description %></span>
+        <span class="study-library-group-label" data-library-row-group hidden></span>
       </a>
       <%= if study.color in ["white", "black"] do %>
         <span class="study-library-color" title="<%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %>">
@@ -11,6 +13,11 @@
           <span class="study-library-color-label"><%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %></span>
         </span>
       <% end %>
+      <details class="study-library-menu">
+        <summary aria-label="<%= dgettext("study", "Study actions") %>: <%= study.title %>"><span aria-hidden="true">⋯</span></summary>
+        <div class="study-library-menu-content">
+          <button type="button" data-library-move-location hidden><%= dgettext("study", "Move to Library") %></button>
+          <button type="button" data-library-move-to-group hidden><%= dgettext("study", "Move to group…") %></button>
       <%= if !study.private || @editable do %>
         <%= link dgettext("study", "Clone study"), to: Routes.study_path(@conn, :clone, @locale, study), method: :post,
           class: "study-library-edit", aria: [label: dgettext("study", "Clone study") <> ": " <> study.title] %>
@@ -24,8 +31,11 @@
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" />
           </svg>
+          <span><%= dgettext("study", "Delete Study") %></span>
         <% end %>
       <% end %>
+        </div>
+      </details>
     </li>
   <% end %>
 </ul>

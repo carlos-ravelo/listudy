@@ -96,6 +96,8 @@ defmodule ListudyWeb.Router do
     get "/progress", ProgressController, :index
     post "/progress/sync", ProgressController, :sync
     get "/collections", CollectionController, :index
+    get "/study-library", StudyLibraryController, :index
+    patch "/study-library", StudyLibraryController, :update
     put "/collections", CollectionController, :update
     post "/collections/study", CollectionController, :create_study
   end

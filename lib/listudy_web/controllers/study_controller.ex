@@ -15,7 +15,14 @@ defmodule ListudyWeb.StudyController do
 
     studies = Studies.get_study_by_user!(user)
     favorites = Studies.get_studies_by_favorite!(user)
-    render(conn, "index.html", studies: studies, favorites: favorites)
+    owned = MapSet.new(studies, & &1.id)
+    favorites = Enum.reject(favorites, &MapSet.member?(owned, &1.id))
+
+    render(conn, "index.html",
+      studies: studies,
+      favorites: favorites,
+      library_data: Listudy.StudyLibrary.fetch(user)
+    )
   end
 
   def clone(conn, %{"id" => id}) do

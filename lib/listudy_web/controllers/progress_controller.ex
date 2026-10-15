@@ -17,6 +17,12 @@ defmodule ListudyWeb.ProgressController do
     |> json(%{error: "Use the collections endpoint to save collections."})
   end
 
+  def sync(conn, %{"key" => "study_library_v1"}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> json(%{error: "Use the study library endpoint to organize studies."})
+  end
+
   def sync(conn, %{"key" => key, "value" => value} = params)
       when is_binary(key) and is_binary(value) do
     user = Pow.Plug.current_user(conn) || conn.assigns[:current_user]
@@ -77,7 +83,9 @@ defmodule ListudyWeb.ProgressController do
 
     settings =
       Repo.all(
-        from s in UserSetting, where: s.user_id == ^user.id and s.key != "study_collections_v1"
+        from s in UserSetting,
+          where:
+            s.user_id == ^user.id and s.key not in ["study_collections_v1", "study_library_v1"]
       )
       |> Enum.into(%{}, fn s -> {s.key, s.value} end)
 
