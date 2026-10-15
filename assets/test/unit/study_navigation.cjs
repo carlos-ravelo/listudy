@@ -22,7 +22,7 @@ const names = new Set([
     'handle_move', 'play_move', 'setup_move', 'change_analysis_board',
     'change_play_stockfish', 'refresh_manual_navigation', 'go_back', 'go_forward',
     'update_read_mode_ui', 'set_read_mode', 'play_read_move', 'seek_read_move',
-    'finish_chapter_practice', 'chapter_stats_key'
+    'finish_chapter_practice', 'chapter_stats_key', 'smartIntroductionMove'
 ]);
 const declarations = parser.parse(source, { sourceType: 'module' }).program.body;
 const functions = declarations
@@ -88,6 +88,7 @@ function fixture(moves, fen, orientation = 'white') {
         positionAttempts: new Set(), assistedPositions: new Set(), NEW_POSITION_LIMIT: 10,
         positionReviews: reviewContext.positionReviews, recordPositionReview: reviewContext.recordPositionReview,
         introducedMoves: reviewContext.introducedMoves, recordIntroducedMove: reviewContext.recordIntroducedMove,
+        introduceContinuation: reviewContext.introduceContinuation,
         recordContinuationReview: reviewContext.recordContinuationReview,
         chapterFailures: reviewContext.chapterFailures, recordPositionResult: reviewContext.recordPositionResult,
         updateFailedPositionsUi() {}, selectNextSmartPosition: () => context.advances++,
@@ -436,7 +437,13 @@ function assertSynchronized({ context, board, links }) {
     assert.equal(chainPractice.context.smartSession.newCount, 1);
     assert.equal(chainPractice.timers.length, 1);
     assert.equal(chainPractice.context.reviews, 0);
-    assert.equal(chainPractice.context.chapterStats.chapters[0].positionReviews.cards[''].moveReviews.e4.recovered, true);
+    const introducedCard = chainPractice.context.chapterStats.chapters[0].positionReviews.cards[''].moveReviews.e4;
+    assert.equal(introducedCard.card.reps, 0);
+    assert.equal(introducedCard.history.length, 0);
+    assert.equal(chainPractice.context.attempts, 0);
+    assert.equal(chainPractice.context.chapterStats.chapters[0].errors, 0);
+    assert.equal(chainPractice.context.chapterStats.chapters[0].coveredMoves, undefined);
+    assert.equal(chainPractice.context.currentFailures()[''], undefined);
     assert.equal(chainPractice.context.smartTarget, null);
     const alternative = fixture(['e4']);
     alternative.context.trees[0].root.push({ move: 'd4', children: [] });
@@ -447,6 +454,54 @@ function assertSynchronized({ context, board, links }) {
     assert.equal(alternative.context.smartSession.newCount, 0);
     assert.equal(alternative.context.chess.history().length, 0);
     assert.equal(Object.keys(alternative.context.chapterStats.chapters).length, 0);
+
+    const guided = fixture(['e4', 'e5', 'Nf3']);
+    guided.context.smartSession = { newCount: 0, reviewCount: 0 };
+    guided.context.smartTarget = { type: 'line', chapter: 0, path: [], route: [0, 0, 0] };
+    guided.context.trees[0].root.push({ move: 'd4', children: [] });
+    guided.context.trees[0].root[0].comments = [{ text: 'Control the center.' }];
+    guided.context.trees[0].root[1].comments = [{ text: 'Another opening.' }];
+    const displayNames = ['display_arrows', 'display_comments', 'give_hints'];
+    vm.runInContext(declarations.filter(node => node.type === 'FunctionDeclaration' && displayNames.includes(node.id.name))
+        .map(node => source.slice(node.start, node.end)).join('\n'), guided.context);
+    guided.context.create_arrow_from_move = (san, brush) => ({ san, brush });
+    guided.context.ground.setShapes = shapes => { guided.board.shapes = shapes; };
+    guided.context.create_comment_list = (_, current, responses) => { guided.board.comments = responses.map(move => move.move); };
+    guided.context.show_arrows = 'hidden';
+    guided.context.show_comments = 'hidden';
+    assert.equal(guided.context.smartIntroductionMove().move, 'e4');
+    guided.context.display_arrows(false);
+    guided.context.display_comments(false);
+    assert.equal(guided.board.shapes.length, 1);
+    assert.equal(guided.board.shapes[0].san, 'e4');
+    assert.equal(guided.board.comments.join(','), 'e4');
+    assert.equal(guided.context.assistedPositions.size, 0);
+    assert.equal(guided.context.lineEligibleForReview, false);
+    await guided.context.handle_move('c2', 'c4');
+    assert.equal(guided.context.attempts, 0);
+    assert.equal(guided.context.total_moves, 0);
+    assert.equal(guided.context.smartSession.newCount, 0);
+    assert.equal(Object.keys(guided.context.chapterStats.chapters).length, 0);
+    vm.runInContext(source.slice(aiDeclaration.start, aiDeclaration.end), guided.context);
+    const guidedMove = guided.context.handle_move('e2', 'e4');
+    guided.waits.shift()();
+    await guidedMove;
+    assert.equal(guided.context.chess.history().join(' '), 'e4 e5');
+    assert.equal(guided.context.smartIntroductionMove().move, 'Nf3');
+    assert.equal(guided.context.smartSession.newCount, 1);
+    assert.equal(guided.context.smartSession.reviewCount, 0);
+    assert.equal(guided.context.currentFailures()[''], undefined);
+
+    const early = fixture(['e4']);
+    const earlyCards = early.context.positionReviews(early.context.chapterStats, 0, 'chapter');
+    early.context.introduceContinuation(earlyCards, '', 'e4');
+    early.context.smartSession = { newCount: 0 };
+    early.context.smartTarget = { type: 'position', expectedMove: 'e4' };
+    const earlyMove = early.context.handle_move('e2', 'e4');
+    early.waits.shift()();
+    await earlyMove;
+    assert.equal(early.context.currentFailures()[''], undefined);
+    assert.equal(earlyCards[''].moveReviews.e4.card.reps, 0);
     const mixedResponses = fixture(['e4']);
     mixedResponses.context.trees[0].root.push({ move: 'd4', children: [] });
     mixedResponses.context.smartSession = { newCount: 0 };

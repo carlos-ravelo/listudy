@@ -248,6 +248,8 @@
   i18n.puzzle_run_next = "<%= dgettext "study", "Puzzle run: next" %>";
   i18n.puzzle_run_smart = "<%= dgettext "study", "Puzzle run: smart" %>";
   i18n.smart_learning = "<%= dgettext "study", "Smart: learning a new line (up to 10 new positions per session)" %>";
+  i18n.smart_introduction = "<%= dgettext "study", "New continuation: play the highlighted move. This is learning, not a graded review." %>";
+  i18n.smart_introduction_retry = "<%= dgettext "study", "Follow the highlighted move to learn this continuation. No mistake recorded." %>";
   i18n.smart_other_continuation = "<%= dgettext "study", "That move is in your repertoire. Try another continuation for this chain." %>";
   i18n.smart_chain_complete = "<%= dgettext "study", "Practice chain complete!" %>";
   i18n.progress_sync_offline = "<%= dgettext "study", "Progress is saved on this device. Cloud sync will retry when a connection is available." %>";
