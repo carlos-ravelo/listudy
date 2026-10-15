@@ -1,6 +1,27 @@
 import "./components/analysis_repertoires.js";
 import "./components/game_availability.js";
+import { StorageAdapter } from './storageAdapter.js';
+import { readChapterStats } from './modules/study/chapter_stats.js';
+import { gamePositionPending } from './modules/analysis/game_progress.js';
 const Chess = require('chess.js');
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const rows = [...document.querySelectorAll('[data-game-positions]')];
+    if (!rows.length) return;
+    const online = await StorageAdapter.hydrate();
+    const render = () => rows.forEach(row => {
+        const status = row.querySelector('[data-game-review-status]');
+        if (!status) return;
+        const raw = StorageAdapter.getItem(row.dataset.progressKey);
+        if (!online && !raw) { status.textContent = 'Review status unavailable offline'; return; }
+        const stats = readChapterStats(raw);
+        const positions = JSON.parse(row.dataset.gamePositions);
+        const pending = positions.filter(position => gamePositionPending(stats, position)).length;
+        status.textContent = pending ? `${pending} to review now` : 'Reviews scheduled';
+    });
+    render();
+    window.addEventListener('study-progress-sync-merged', render);
+});
 
 document.addEventListener("DOMContentLoaded", () => {
     const timeFilter = document.getElementById("time-filter");

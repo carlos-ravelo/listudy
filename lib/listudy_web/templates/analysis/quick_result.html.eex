@@ -35,7 +35,7 @@
       </details>
       <div id="analysis-outcomes" aria-live="polite">
         <%= for {group, index} <- Enum.with_index(groups) do %>
-          <%= render "_comparison_outcome.html", group: group, index: index %>
+          <%= render "_comparison_outcome.html", group: group, index: index, conn: @conn %>
         <% end %>
       </div>
       <noscript><p>Enable JavaScript to replay your game and switch comparisons. Chapter links are available below.</p></noscript>

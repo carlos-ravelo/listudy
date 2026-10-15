@@ -3,6 +3,7 @@ import { chapterLearningProgress } from './modules/study/learning_progress.js';
 import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
 import { setupStudySessions } from './modules/study_sessions.js';
 import { replayPositionContext } from './modules/study/position_context.js';
+import { applyGameEvidence, gameLineTarget } from './modules/analysis/game_progress.js';
 import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, reviewExposureKey, continuationKey, nextSmartPosition } from './modules/study/position_review.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
@@ -63,6 +64,7 @@ let smartCatalog = [];
 let positionAttempts = new Set();
 let assistedPositions = new Set();
 let contextReplayActive = false;
+let gameLineQueue = null;
 let studySessions = { begin() {}, decision() {}, end() {}, refresh() {}, clear() {}, boundary() { return false; } };
 
 function updateContextReplayUi() {
@@ -146,7 +148,9 @@ function selectNextSmartPosition() {
         document.getElementById('smart_run_status').textContent = i18n.smart_complete;
         return;
     }
-    const { target, nextDue } = nextSmartPosition(chapterStats, chapterReviewSignatures, scopedPracticeCatalog(), smartSession);
+    const { target, nextDue } = gameLineQueue
+        ? { target: gameLineQueue.shift() || null, nextDue: null }
+        : nextSmartPosition(chapterStats, chapterReviewSignatures, scopedPracticeCatalog(), smartSession);
     smartTarget = target;
     updateContextReplayUi();
     const status = document.getElementById('smart_run_status');
@@ -174,12 +178,13 @@ function selectNextSmartPosition() {
     }
 }
 
-function updateSmartRun() {
+function updateSmartRun(initialGameTarget = null) {
     studySessions.end();
     failedPositionRun = null;
     updateFailedPositionsUi();
     smartSession = null;
     smartTarget = null;
+    gameLineQueue = initialGameTarget?.fromGame ? [initialGameTarget] : null;
     document.getElementById('smart_run_status').hidden = true;
     if (localStorage.getItem('puzzleRunMode') === 'smart') {
         smartSession = { newCount: 0, reviewCount: 0, reviewStreak: 0, lastChapter: null };
@@ -1709,6 +1714,17 @@ async function main() {
     if (reconcileStudyProgress(chapterStats, trees, smartCatalog, chapterReviewSignatures, previousTrees, studyColor)) {
         StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     }
+    const gamePositionsUrl = document.querySelector('[data-game-positions-url]')?.dataset.gamePositionsUrl;
+    if (gamePositionsUrl) {
+        try {
+            const response = await fetch(gamePositionsUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+            if (response.ok) {
+                const { positions } = await response.json();
+                if (applyGameEvidence(chapterStats, chapterReviewSignatures, smartCatalog, positions, new Date(), true).changed)
+                    StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
+            }
+        } catch (_) { /* Existing practice remains available when offline. */ }
+    }
     window.addEventListener('study-progress-sync-merged', event => {
         if (event.detail.key === chapter_stats_key()) {
             chapterStats = JSON.parse(event.detail.value);
@@ -1771,6 +1787,17 @@ async function main() {
         })
     });
     if (localStorage.getItem('puzzleRunMode') === 'smart') updateSmartRun();
+    const gamePractice = new URLSearchParams(window.location.search);
+    if (gamePractice.has('practice_fen') && gamePractice.has('practice_expected')) {
+        const target = gameLineTarget(scopedPracticeCatalog(), gamePractice.get('practice_fen'), gamePractice.get('practice_expected'), Number(chapter));
+        if (target) {
+            document.getElementById('practice_smart').click();
+            updateSmartRun(target);
+        } else {
+            window.dispatchEvent(new Event('study-puzzle-run-off'));
+            set_text(info_div, 'This position is outside the current practice scope. Check Max depth or sync your games after editing the study.');
+        }
+    }
     setup_configs();
     studyMoveTree = setupStudyMoveTree({
         element: document.getElementById('study_read_moves'),

@@ -52,6 +52,11 @@
               (is_nil(@library.study_id) or summary.study_id == @library.study_id) and
                 (is_nil(@library.status) or summary.status == @library.status)
             end)
+            visible = if is_nil(@library.study_id) and is_nil(@library.status) and Enum.any?(visible, &(&1.status in ["deviation", "match", "ambiguous"])) do
+              Enum.filter(visible, &(&1.status in ["deviation", "match", "ambiguous"]))
+            else
+              visible
+            end
             result = primary_game_result(visible)
             has_other_error = Enum.any?(summaries, &(&1.status == "error")) and
               (is_nil(result) or result.status != "error")

@@ -1,4 +1,4 @@
-<div class="whole analysis-workspace analysis-overview-page">
+<div class="whole analysis-workspace analysis-overview-page" data-progress-user="<%= @current_user.id %>">
   <div class="analysis-page-heading">
     <h1>Analyze Games</h1>
     <button type="button" class="analysis-pgn-launch" data-open-pgn>Analyze a PGN</button>
@@ -55,7 +55,7 @@
               <p class="analysis-account-meta"><%= if sync.status == "failed", do: "Last attempt", else: "Last checked" %> <time datetime="<%= NaiveDateTime.to_iso8601(sync.updated_at) %>Z"><%= Calendar.strftime(sync.updated_at, "%d %b %Y, %H:%M UTC") %></time></p>
             <% end %>
               <%= unless sync && sync.status == "running" do %>
-                <%= link "Disconnect", to: Routes.analysis_path(@conn, :disconnect, platform: account.key), method: :post, class: "analysis-disconnect" %>
+                <%= link "Disconnect and delete imported games", to: Routes.analysis_path(@conn, :disconnect, platform: account.key), method: :post, data: [confirm: "Disconnect this account and delete its imported games and comparison history? Your studies and practice progress will be kept."], class: "analysis-disconnect" %>
               <% end %>
             </details>
           <% end %>
@@ -88,7 +88,7 @@
     <div class="analysis-section-heading">
       <div>
         <h2>Training targets</h2>
-        <p class="analysis-section-description">Your repertoires, ordered by deviations in the selected period.</p>
+        <p class="analysis-section-description">The closest matching studies are selected automatically. Equivalent matches share one training target.</p>
       </div>
       <div class="analysis-repertoire-filter">
         <label for="time-filter">Period</label>
@@ -107,11 +107,26 @@
       </div>
       <ul class="analysis-repertoire-list">
         <%= for stat <- @studies_stats do %>
-          <li class="analysis-repertoire-row" data-repertoire-row data-title="<%= String.replace(stat.study.title, "_", " ") %>" data-deviations="<%= stat.deviations %>">
+          <li class="analysis-repertoire-row" data-repertoire-row data-title="<%= String.replace(stat.study.title, "_", " ") %>" data-deviations="<%= stat.deviations %>" data-progress-key="<%= hd(String.split(stat.study.slug, "-")) %>_chapter_stats" data-game-positions="<%= Jason.encode!(stat.positions) %>">
             <%= link String.replace(stat.study.title, "_", " "), to: Routes.study_path(@conn, :show, @locale, stat.study.slug), class: "analysis-repertoire-title" %>
-            <span class="analysis-repertoire-stat"><strong><%= stat.deviations %></strong> deviations</span>
+            <span class="analysis-repertoire-stat">
+              <%= if stat.relevant_games == 0 do %>
+                No matching games
+              <% else %>
+                <strong><%= stat.deviations %></strong> / <%= stat.relevant_games %> games with deviations
+              <% end %>
+              <%= if stat.positions != [] do %>
+                <span class="analysis-position-count"><%= length(stat.positions) %> <%= if length(stat.positions) == 1, do: "position", else: "positions" %> · <span data-game-review-status role="status">Checking review status…</span></span>
+              <% end %>
+              <%= if stat.ambiguous > 0 do %>
+                <span class="analysis-position-count"><%= link "#{stat.ambiguous} uncertain matches", to: Routes.analysis_path(@conn, :games, study_id: stat.study.id, status: "ambiguous", period: @filter) %></span>
+              <% end %>
+              <%= if stat.errors > 0 do %>
+                <span class="analysis-position-count">Comparison unavailable for <%= stat.errors %> games</span>
+              <% end %>
+            </span>
             <span class="analysis-repertoire-action">
-              <%= if stat.deviations > 0 do %>
+              <%= if stat.positions != [] do %>
                 <%= link "Train", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), aria: [label: "Train: " <> stat.study.title] %>
               <% end %>
             </span>
@@ -130,13 +145,14 @@
         </nav>
       </div>
     </div>
+    <p class="analysis-history-note">Game counts are history, not a memory score. Practicing updates your reviews without erasing past games. After changing a study, sync games to refresh these comparisons.</p>
   </section>
   <dialog class="analysis-pgn-dialog" aria-labelledby="analysis-pgn-title">
     <div class="analysis-pgn-heading"><h2 id="analysis-pgn-title">Analyze a PGN</h2><button type="button" data-close-pgn aria-label="Close">×</button></div>
     <div class="mt-4">
       <%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), fn f -> %>
         <div class="field">
-          <label class="label">Paste a PGN</label>
+          <label class="label" for="pgn">Paste a PGN</label>
           <div class="control">
             <%= textarea f, :pgn, class: "textarea", rows: 6, placeholder: "1. e4 c5 2. Nf3..." %>
           </div>
