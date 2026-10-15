@@ -12,7 +12,23 @@ const study = fs.readFileSync(process.env.LISTUDY_STUDY_GAME_PREVIEW || '/tmp/li
 const decode = text => text.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 const key = train.match(/data-study-key="([^"]+)"/)[1] + '_chapter_stats';
 const source = JSON.parse(decode(train.match(/data-mistakes="([^"]+)"/)[1]));
-let cloud = {}, revisions = {}, stale = false, availability = 'current', syncPollState = 'running';
+const games = fs.readFileSync(process.env.LISTUDY_GAMES_PREVIEW || '/tmp/listudy-games-new.html', 'utf8');
+const filteredGames = fs.readFileSync((process.env.LISTUDY_GAMES_PREVIEW || '/tmp/listudy-games-new.html') + '.filtered.html', 'utf8');
+const encode = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+function multiplePositionTrain() {
+    const ChessModule = require('chess.js');
+    const Chess = ChessModule.Chess || ChessModule;
+    const chess = new Chess();
+    chess.move('e4'); chess.move('e5');
+    const positions = [{ ...source[0], fen: chess.fen() }];
+    chess.move('Nf3'); chess.move('Nc6');
+    positions.push({ ...source[0], fen: chess.fen(), expected: 'Bc4', times_repeated: 1 });
+    chess.move('Bc4'); chess.move('Bc5');
+    positions.push({ ...source[0], fen: chess.fen(), expected: 'd3', times_repeated: 1 });
+    return train.replace(/data-study-pgn="[^"]*"/, 'data-study-pgn="' + encode('[Event "Main repertoire"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 *') + '"')
+        .replace(/data-mistakes="[^"]*"/, 'data-mistakes="' + encode(JSON.stringify(positions)) + '"');
+}
+let cloud = {}, revisions = {}, stale = false, availability = 'current', syncPollState = 'running', multiple = false;
 const errors = [];
 (async () => {
  const server = http.createServer(async (req, res) => {
@@ -31,9 +47,10 @@ const errors = [];
         if (availability === 'unavailable') res.statusCode = 503;
         return json({ status: availability });
     }
-    if (url.pathname === '/analysis' || url.pathname === '/train' || url.pathname.startsWith('/en/studies/')) {
+    if (url.pathname === '/analysis' || url.pathname === '/analysis/games' || url.pathname === '/train' || url.pathname.startsWith('/en/studies/')) {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        const raw = url.pathname === '/analysis' ? overview : url.pathname === '/train' ? train : study;
+        const raw = url.pathname === '/analysis' ? overview : url.pathname === '/analysis/games' ? (url.search ? filteredGames : games)
+            : url.pathname === '/train' ? (multiple ? multiplePositionTrain() : train) : study;
         const body = raw.replace('</head>', '<style>' + fs.readFileSync(path.join(root, 'assets/css/features/analysis_presentation.css'), 'utf8') + '</style></head>');
         res.end(stale && url.pathname === '/train' ? body.replace(/&quot;expected&quot;:&quot;Nf3&quot;/g, '&quot;expected&quot;:&quot;d4&quot;') : body);
         return;
@@ -77,11 +94,24 @@ const errors = [];
     await page.waitForFunction(() => document.getElementById('training-status').textContent === 'Correct!');
     let saved = await stats(page);
     assert.equal(card(saved).gameEvidence.pending, false);
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+    const successContrast = await page.locator('#training-status').evaluate(element => {
+        const luminance = color => {
+            const channels = color.match(/[\d.]+/g).slice(0, 3).map(Number).map(n => n / 255).map(n => n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4);
+            return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+        };
+        const a = luminance(getComputedStyle(element).color), b = luminance(getComputedStyle(document.body).backgroundColor);
+        return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+    });
+    assert(successContrast >= 4.5, 'Success feedback has readable contrast in dark mode');
+    await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
     assert((await page.locator('#training-progress-status').textContent()).includes('0 to review now'));
     assert.equal(entry(saved).coveredMoves.length, 1);
     assert.equal(Object.values(saved.studySessions)[0].reviewCount, 1);
-    await page.getByRole('button', { name: 'Next Position' }).click();
-    assert.equal(await page.locator('#training-status').textContent(), 'Session complete');
+    await page.locator('#next-mistake-btn').click();
+    assert.equal(await page.locator('#training-summary-title').textContent(), 'Session complete');
+    assert((await page.locator('#training-summary-result').textContent()).includes('1 recalled without help'));
+    assert((await page.locator('#training-summary-result').textContent()).includes('0 not attempted'));
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     for (let tries = 0; tries < 100 && !cloud[key]; tries++) await page.waitForTimeout(20);
     assert(cloud[key], 'Practice is synchronized to the account');
@@ -132,8 +162,16 @@ const errors = [];
     assert.equal(await sync.isDisabled(), true);
     await page.unroute('**/analysis/sync');
     availability = 'current';
-    await page.goto(base + '/train'); await page.waitForSelector('cg-board');
+    await page.goto(base + '/train'); await page.waitForSelector('#training-empty:visible');
+    assert.equal(await page.locator('#chess-training-board').isVisible(), false, 'Due now does not drill future reviews');
     assert.equal(card(await stats(page)).gameEvidence.pending, false, 'Reload does not reopen the same game observation');
+    await page.locator('#training-scope').selectOption('all');
+    await page.waitForSelector('cg-board');
+    assert(page.url().includes('scope=all'));
+    const earned = card(await stats(page)).card.due;
+    await play(page, 'g1', 'f3');
+    await page.waitForFunction(() => document.getElementById('training-status').textContent === 'Correct!');
+    assert.equal(card(await stats(page)).card.due, earned, 'Optional early practice preserves the earned interval');
     await page.goto(base + lineUrl);
     await page.waitForFunction(() => document.getElementById('practice_smart')?.getAttribute('aria-pressed') === 'true');
     assert.equal(await page.locator('#smart_run_status').isVisible(), true);
@@ -153,8 +191,9 @@ const errors = [];
 
     ({ context, page } = await start());
     await play(page, 'd2', 'd4');
-    await page.waitForFunction(() => document.getElementById('training-status').textContent === 'Incorrect!');
-    await page.waitForFunction(() => document.getElementById('training-status').textContent === 'Position 1 of 1');
+    await page.waitForFunction(() => document.getElementById('training-status').textContent === 'Try again');
+    await page.waitForFunction(() => !document.getElementById('hint-btn').disabled);
+    assert.equal(await page.locator('#training-status').textContent(), 'Try again', 'Feedback stays after the board resets');
     await play(page, 'g1', 'f3');
     await page.waitForFunction(() => document.getElementById('training-status').textContent.includes('another review'));
     saved = await stats(page);
@@ -163,7 +202,7 @@ const errors = [];
     await context.close();
 
     ({ context, page } = await start());
-    await page.getByRole('button', { name: 'Show Answer' }).click();
+    await page.getByRole('button', { name: 'Show answer' }).click();
     saved = await stats(page);
     assert.equal(card(saved).recovered, false);
     assert.equal(entry(saved).coveredMoves?.length || 0, 0);
@@ -175,7 +214,68 @@ const errors = [];
     stale = true;
     await page.reload(); await page.waitForSelector('#chess-training-board[hidden]', { state: 'attached' });
     assert.equal(await page.locator('#training-controls').isVisible(), false);
-    assert((await page.locator('#training-progress-status').textContent()).includes('No current positions'));
+    assert((await page.locator('#training-empty-title').textContent()).includes('No current positions'));
+    assert.deepEqual(errors, []);
+    await context.close();
+
+    multiple = true;
+    ({ context, page } = await start());
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: '/tmp/listudy-train-queue-mobile.png', fullPage: true });
+    assert((await page.locator('#hint-btn').boundingBox()).y < 844, 'Hints are visible beside the board without scrolling on mobile');
+    assert.equal(await page.locator('#training-position-counter').textContent(), 'Position 1 of 3');
+    await page.getByRole('button', { name: 'Skip', exact: true }).click();
+    assert.equal(entry(await stats(page)).attempts, 0, 'Skipping does not grade or credit a position');
+    await page.getByRole('button', { name: 'Finish session', exact: true }).click();
+    assert.equal(await page.locator('#training-summary-title').textContent(), 'Session saved');
+    assert((await page.locator('#training-summary-result').textContent()).includes('0 practiced'));
+    assert((await page.locator('#training-summary-result').textContent()).includes('3 not attempted'));
+    await page.getByRole('button', { name: 'Practice remaining' }).click();
+    await page.locator('.training-positions > summary').click();
+    await page.getByRole('button', { name: 'Position 3: Not attempted', exact: true }).click();
+    await page.getByRole('button', { name: 'Show answer', exact: true }).click();
+    await page.locator('#next-mistake-btn').click();
+    assert.equal(await page.locator('#training-summary-title').textContent(), 'Session saved', 'Jumping to the last position does not claim the queue was completed');
+    assert((await page.locator('#training-summary-result').textContent()).includes('1 practiced'));
+    assert((await page.locator('#training-summary-result').textContent()).includes('2 not attempted'));
+    await page.getByRole('button', { name: 'Practice remaining' }).click();
+    assert.equal(await page.locator('#training-position-counter').textContent(), 'Position 1 of 2');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'training-position-counter', 'Continuing restores keyboard focus to the new exercise');
+    await context.close();
+    multiple = false;
+
+    context = await browser.newContext({ viewport: { width: 1280, height: 900 }, timezoneId: 'Europe/Amsterdam' });
+    page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
+    await page.goto(base + '/analysis/games');
+    assert.equal(await page.locator('.analysis-game-row').count(), 2);
+    assert((await page.locator('.analysis-game-primary').first().textContent()).includes('vs Opponent'));
+    assert((await page.locator('.analysis-game-primary').first().textContent()).includes('You as White'));
+    assert((await page.locator('.analysis-game-result').first().textContent()).includes('Lost'));
+    assert.equal(await page.getByLabel('Platform', { exact: true }).isVisible(), false);
+    await page.locator('[data-game-filters-more] > summary').click();
+    await page.getByLabel('Platform', { exact: true }).selectOption('lichess');
+    await page.getByLabel('Study', { exact: true }).selectOption(String(source[0].study_id));
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('[data-game-filters-more]').getAttribute('open'), null);
+    await page.getByLabel('Period', { exact: true }).selectOption('last_week');
+    await page.getByLabel('Repertoire comparison', { exact: true }).selectOption('deviation');
+    await page.getByRole('button', { name: 'Filter games', exact: true }).click();
+    assert(page.url().includes('platform=lichess'));
+    assert(page.url().includes('study_id=' + source[0].study_id));
+    const comparison = await page.locator('.analysis-game-row').first().getAttribute('href');
+    assert(comparison.includes('period=last_week') && comparison.includes('status=deviation'), 'Opening a comparison preserves its list filters');
+    assert.equal(await page.getByRole('link', { name: 'Remove platform filter', exact: true }).count(), 1);
+    for (const width of [1280, 390, 320]) {
+        await page.setViewportSize({ width, height: 844 });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+        await page.locator('[data-game-filters-more] > summary').click();
+        const panel = await page.locator('.analysis-games-more-panel').boundingBox();
+        assert(panel.x >= 0 && panel.x + panel.width <= width, 'Advanced filters stay within the screen');
+        await page.keyboard.press('Escape');
+        await page.screenshot({ path: '/tmp/listudy-games-new-' + width + '.png', fullPage: true });
+    }
+    await page.getByRole('link', { name: 'Reset filters', exact: true }).click();
+    assert.equal(new URL(page.url()).search, '');
     assert.deepEqual(errors, []);
     await context.close();
     console.log('Train recall, hints, corrections, answers, account sync, historical counts, Smart links and responsive layouts passed');

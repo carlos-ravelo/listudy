@@ -5,13 +5,31 @@ defmodule ListudyWeb.AnalysisView do
   def analysis_platform_label("lichess"), do: "Lichess"
   def analysis_platform_label(platform), do: platform
 
-  def analysis_status_label("match"), do: "No trainable deviation"
-  def analysis_status_label("deviation"), do: "Deviation from study"
-  def analysis_status_label("ambiguous"), do: "Several possible chapters"
+  def analysis_status_label("match"), do: "No own deviations detected"
+  def analysis_status_label("deviation"), do: "You deviated"
+  def analysis_status_label("ambiguous"), do: "Uncertain match"
   def analysis_status_label("out_of_scope"), do: "No matching chapter"
   def analysis_status_label("error"), do: "Comparison unavailable"
-  def analysis_status_label("other_match"), do: "Another study is the closer or equivalent match"
+  def analysis_status_label("other_match"), do: "Another study selected"
   def analysis_status_label(status), do: status
+
+  def game_opponent(%{player_color: "white"} = game), do: "vs " <> (game.black_player || "Black")
+  def game_opponent(%{player_color: "black"} = game), do: "vs " <> (game.white_player || "White")
+
+  def game_opponent(game),
+    do: (game.white_player || "White") <> " – " <> (game.black_player || "Black")
+
+  def game_outcome(%{game_result: "1/2-1/2"}), do: "Draw"
+  def game_outcome(%{game_result: "*"}), do: "Unfinished"
+
+  def game_outcome(%{game_result: result, player_color: color})
+      when result in ["1-0", "0-1"] and color in ["white", "black"] do
+    if result == "1-0" == (color == "white"), do: "Won", else: "Lost"
+  end
+
+  def game_outcome(%{game_result: "1-0"}), do: "White won"
+  def game_outcome(%{game_result: "0-1"}), do: "Black won"
+  def game_outcome(_), do: "Result unavailable"
 
   def primary_game_result(summaries) do
     Enum.find_value(~w(deviation ambiguous match error out_of_scope other_match), fn status ->
