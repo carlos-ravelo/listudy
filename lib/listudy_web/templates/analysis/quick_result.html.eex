@@ -2,21 +2,25 @@
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
 <div id="analysis-comparison" class="analysis-result-container analysis-workspace"
   data-comparisons="<%= Jason.encode!(Enum.map(groups, &Map.take(&1, [:result, :color]))) %>">
-  <%= link (if assigns[:imported_game], do: "← Imported games", else: "← Back to Analysis"), to: assigns[:back_path] || Routes.analysis_path(@conn, :index), class: "button" %>
+  <%= link (if assigns[:imported_game], do: "← Imported games", else: "← Back to Analysis"), to: assigns[:back_path] || Routes.analysis_path(@conn, :index), class: "analysis-back-link" %>
   <h1>Your game and repertoire</h1>
   <%= if assigns[:imported_game] do %>
-    <p><strong><%= @imported_game.white_player || "White" %> – <%= @imported_game.black_player || "Black" %></strong> · <%= analysis_platform_label(@imported_game.platform) %> · <%= Calendar.strftime(@imported_game.played_at, "%d %b %Y, %H:%M UTC") %></p>
+    <p class="analysis-game-meta"><strong><%= @imported_game.white_player || "White" %> – <%= @imported_game.black_player || "Black" %></strong> · <%= analysis_platform_label(@imported_game.platform) %> · <time data-local-time datetime="<%= DateTime.to_iso8601(@imported_game.played_at) %>"><%= Calendar.strftime(@imported_game.played_at, "%d %b %Y, %H:%M UTC") %></time></p>
     <%= if Map.get(@conn.query_params, "compare_study_id") do %>
       <p><%= link "Compare across all studies", to: @compare_all_path %></p>
     <% end %>
   <% end %>
-  <div class="analysis-comparison-summary" aria-label="Matching summary">
-    <span><strong><%= length(groups) %></strong> <%= if length(groups) == 1, do: "comparison", else: "comparisons" %></span>
-    <span aria-hidden="true">·</span>
-    <span><strong><%= length(@choices) %></strong> <%= if length(@choices) == 1, do: "chapter", else: "chapters" %></span>
-  </div>
-  <%= if length(groups) > 1 do %>
-    <p class="analysis-selection-hint">Choose a result to show on the board.</p>
+  <%= if (assigns[:unavailable_studies] || []) != [] do %>
+    <details class="analysis-comparison-warning">
+      <summary>Comparison incomplete · <%= length(@unavailable_studies) %> <%= if length(@unavailable_studies) == 1, do: "study could", else: "studies could" %> not be compared</summary>
+      <p>The best match below uses the studies that could be read. Check these studies’ PGN, then compare again:</p>
+      <ul>
+        <%= for study <- @unavailable_studies do %>
+          <li><%= link study.title, to: Routes.study_path(@conn, :show, @conn.assigns[:locale] || "en", study.slug), target: "_blank", rel: "noopener" %></li>
+        <% end %>
+      </ul>
+      <%= if assigns[:compare_all_path] do %><p><%= link "Try comparison again", to: @compare_all_path %></p><% end %>
+    </details>
   <% end %>
 
   <div class="analysis-comparison-layout">
@@ -29,49 +33,36 @@
         <button type="button" id="btn-next" disabled>Next →</button>
       </div>
       <p id="analysis-board-status" class="analysis-board-status" aria-live="polite"></p>
-      <details class="analysis-game-moves">
-        <summary>Game moves</summary>
-        <div id="analysis-moves" aria-label="Move list"></div>
-      </details>
       <div id="analysis-outcomes" aria-live="polite">
         <%= for {group, index} <- Enum.with_index(groups) do %>
           <%= render "_comparison_outcome.html", group: group, index: index, conn: @conn %>
         <% end %>
       </div>
+      <details class="analysis-game-moves">
+        <summary>Game moves</summary>
+        <div id="analysis-moves" aria-label="Move list"></div>
+      </details>
       <noscript><p>Enable JavaScript to replay your game and switch comparisons. Chapter links are available below.</p></noscript>
     </section>
 
     <aside class="analysis-matches" aria-labelledby="analysis-matches-heading">
       <h2 id="analysis-matches-heading">Matching chapters</h2>
-      <%= for {group, index} <- Enum.with_index(groups) do %>
-        <% {state, feedback} = comparison_feedback(group.result, group.color) %>
-        <section class="analysis-match-group<%= if index == 0, do: " is-selected" %>" data-match-group="<%= index %>">
-          <button type="button" class="analysis-group-choice" data-select-group="<%= index %>"
-            aria-pressed="<%= if index == 0, do: "true", else: "false" %>"
-            aria-controls="analysis-outcome-<%= index %>" disabled>
-            <span class="analysis-group-state analysis-group-state-<%= state %>"><%= feedback %></span>
-            <strong class="analysis-group-move"><%= comparison_move_summary(group.result) %></strong>
-            <span class="analysis-group-count"><%= length(group.chapters) %> <%= if length(group.chapters) == 1, do: "chapter", else: "chapters" %></span>
-          </button>
-          <details class="analysis-chapter-list">
-            <summary>View <%= length(group.chapters) %> <%= if length(group.chapters) == 1, do: "chapter", else: "chapters" %></summary>
-            <ul>
-              <%= for {study, result} <- group.chapters do %>
-                <li>
-                  <span class="analysis-study-name"><%= String.replace(study.title, "_", " ") %></span>
-                  <strong class="analysis-chapter-name">Chapter <%= result["chapter_index"] + 1 %>: <%= result["chapter"] %></strong>
-                  <%= link "Open study chapter ↗", to: chapter_path(@conn, study, result), target: "_blank", rel: "noopener" %>
-                </li>
-              <% end %>
-            </ul>
-          </details>
-        </section>
+      <p class="analysis-match-help"><%= if Map.get(@conn.query_params, "compare_study_id"), do: "Showing the study you selected.", else: "Best match selected automatically from your repertoire." %></p>
+      <%= render "_matching_chapters.html", group: hd(groups), index: 0, selectable: length(groups) > 1, conn: @conn %>
+      <%= if length(groups) > 1 do %>
+        <details class="analysis-other-matches">
+          <summary>Other matching lines (<%= length(groups) - 1 %>)</summary>
+          <p class="analysis-match-help">These chapters match equally well but suggest a different comparison. You can explore them without changing your saved practice.</p>
+          <%= for {group, index} <- groups |> Enum.with_index() |> Enum.drop(1) do %>
+            <%= render "_matching_chapters.html", group: group, index: index, selectable: true, conn: @conn %>
+          <% end %>
+        </details>
       <% end %>
-      <p class="analysis-match-help">Opening a study chapter uses a new tab, so you can keep this comparison open.</p>
     </aside>
   </div>
   <%= if assigns[:imported_game] do %>
-    <%= render "_imported_game_details.html", game: @imported_game, summaries: @summaries %>
+    <%= render "_imported_game_details.html", game: @imported_game %>
   <% end %>
 </div>
 <script defer src="<%= Routes.static_path(@conn, "/js/quick_result.js") %>"></script>
+<script defer src="<%= Routes.static_path(@conn, "/js/analysis_games.js") %>"></script>

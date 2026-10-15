@@ -171,6 +171,30 @@
 .analysis-workspace .analysis-chapter-list li { border-color: var(--analysis-divider); padding: 12px 0; }
 .analysis-workspace .analysis-chapter-list summary { font-size: 13px; font-weight: 500; }
 .analysis-workspace .analysis-chapter-name { font-size: 14px; font-weight: 600; }
+.analysis-workspace .analysis-back-link { display: inline-block; margin-bottom: 8px; font-size: 13px; }
+.analysis-workspace .analysis-game-meta { margin: 0 0 16px; color: var(--analysis-muted); font-size: 13px; }
+.analysis-workspace .analysis-game-meta strong { color: var(--font-color); font-weight: 500; }
+.analysis-workspace #analysis-outcomes,
+.analysis-workspace .analysis-game-moves { max-width: 500px; margin-left: auto; margin-right: auto; }
+.analysis-workspace .analysis-game-moves { margin-top: 12px; }
+.analysis-workspace .analysis-group-heading { padding: 12px 12px 0; }
+.analysis-workspace .analysis-group-heading > span,
+.analysis-workspace .analysis-group-heading > strong { display: block; }
+.analysis-workspace .analysis-group-count { margin: 0 0 4px; }
+.analysis-workspace .analysis-group-move { font-size: 13px; font-weight: 400; }
+.analysis-workspace .analysis-chapter-link { margin: 0; padding: 0 12px 12px; font-size: 13px; }
+.analysis-workspace .analysis-group-heading + .analysis-chapter-link { padding-top: 8px; }
+.analysis-workspace .analysis-matches h2 { margin-bottom: 4px; font-size: 18px; }
+.analysis-workspace .analysis-matches > .analysis-match-help { margin: 0 0 12px; }
+.analysis-workspace .analysis-other-matches > summary { font-size: 13px; font-weight: 500; }
+.analysis-workspace .analysis-other-matches > p { margin: 4px 0 12px; }
+.analysis-workspace .analysis-comparison-warning { margin: 0 0 16px; padding: 4px 12px; border-left: 3px solid #9a6700; font-size: 13px; }
+.analysis-workspace .analysis-comparison-warning p { margin: 8px 0; max-width: 70ch; }
+.analysis-workspace .analysis-comparison-warning ul { margin-bottom: 8px; }
+.analysis-workspace .analysis-imported-details { padding: 8px 0; border: 0; border-top: 1px solid var(--analysis-divider); border-radius: 0; }
+.analysis-workspace .analysis-imported-details > summary { font-size: 13px; font-weight: 500; }
+.analysis-workspace .analysis-outcome-opponent { --outcome-accent: #315a86; --outcome-soft: #edf5fc; }
+.analysis-workspace .analysis-move-comparison { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .analysis-workspace #time-filter { margin: 0; height: 36px; padding: 4px 8px; cursor: pointer; }
 .analysis-workspace #training-status { font-size: 16px; }
 .analysis-workspace .training-chapters { font-size: 13px; }

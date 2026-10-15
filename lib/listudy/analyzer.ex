@@ -6,10 +6,23 @@ defmodule Listudy.Games.Analyzer do
   import Ecto.Query
   require Logger
   alias Listudy.Repo
-  alias Listudy.Games.{ChessEngine, Deviation, StudyGame, TrainingDeviations, UserGame}
+
+  alias Listudy.Games.{
+    AnalysisComparison,
+    ChessEngine,
+    Deviation,
+    StudyGame,
+    TrainingDeviations,
+    UserGame
+  }
 
   def analyze_single_pgn(user_id, pgn, selection \\ %{}) do
     with {:ok, studies} <- load_studies(user_id, selection["study_id"]),
+         studies <-
+           Enum.filter(
+             studies,
+             &(is_nil(selection["color"]) or &1.study.color == selection["color"])
+           ),
          :ok <- if(studies == [], do: {:error, :no_match}, else: :ok),
          {:ok, %{"games" => [game]}} <-
            ChessEngine.analyze_batch(payload(studies), [%{id: 0, pgn: pgn}]),
@@ -22,10 +35,15 @@ defmodule Listudy.Games.Analyzer do
                to_string(result["chapter_index"]) == selection["chapter_index"])
         end)
 
-      case best_candidates(candidates) do
-        [] -> {:error, :no_match}
-        [{study, result}] -> {:ok, study, result}
-        choices -> {:ambiguous, choices}
+      unavailable =
+        Enum.filter(studies, &Map.has_key?(game["study_errors"] || %{}, to_string(&1.study.id)))
+
+      case candidates
+           |> best_candidates()
+           |> AnalysisComparison.rank(Listudy.StudyLibrary.fetch(user_id)) do
+        [] when unavailable == [] -> {:error, :no_match}
+        [] -> {:error, "Some studies could not be compared. Check their PGN and try again."}
+        choices -> {:ok, choices, Enum.map(unavailable, & &1.study)}
       end
     end
   end
@@ -35,17 +53,12 @@ defmodule Listudy.Games.Analyzer do
   defp candidates(game, studies) do
     by_id = Map.new(studies, fn item -> {to_string(item.study.id), item.study} end)
 
-    if map_size(game["study_errors"] || %{}) > 0 do
-      # Do not silently choose a study when part of the repertoire failed to load.
-      {:error, "One or more studies contain invalid PGN. Correct those studies and try again."}
-    else
-      matches =
-        Enum.flat_map(game["matches"], fn match ->
-          Enum.map(match["candidates"], &{Map.fetch!(by_id, match["study_id"]), &1})
-        end)
+    matches =
+      Enum.flat_map(game["matches"], fn match ->
+        Enum.map(match["candidates"], &{Map.fetch!(by_id, match["study_id"]), &1})
+      end)
 
-      {:ok, matches}
-    end
+    {:ok, matches}
   end
 
   defp best_candidates([]), do: []
@@ -72,14 +85,15 @@ defmodule Listudy.Games.Analyzer do
     # Choosing a best match depends on the entire repertoire, not one PGN.
     version =
       ChessEngine.fingerprint(
-        Jason.encode!(
-          Enum.map(studies, fn item ->
-            {item.study.id, item.study.color, item.version,
-             get_in(library, ["studies", to_string(item.study.id), "location"])}
-            |> Tuple.to_list()
-          end)
-          |> Enum.sort()
-        )
+        "best-match-v1\0" <>
+          Jason.encode!(
+            Enum.map(studies, fn item ->
+              {item.study.id, item.study.color, item.version,
+               get_in(library, ["studies", to_string(item.study.id), "location"])}
+              |> Tuple.to_list()
+            end)
+            |> Enum.sort()
+          )
       )
 
     studies = Enum.map(studies, &Map.put(&1, :version, version))
@@ -163,19 +177,11 @@ defmodule Listudy.Games.Analyzer do
         Enum.map(match["candidates"], &{Map.fetch!(by_id, match["study_id"]), &1})
       end)
       |> best_candidates()
+      |> AnalysisComparison.rank(library)
 
-    outcomes =
-      Enum.map(best, fn {study, result} -> TrainingDeviations.outcome(result, study.color) end)
-      |> Enum.uniq()
-
-    if length(outcomes) == 1 && map_size(game["study_errors"] || %{}) == 0 do
-      {study, _} =
-        Enum.min_by(best, fn {study, result} ->
-          location = get_in(library, ["studies", to_string(study.id), "location"]) || "daily"
-          {if(location == "daily", do: 0, else: 1), study.id, result["chapter_index"]}
-        end)
-
-      %{study.id => :selected}
+    if best != [] && map_size(game["study_errors"] || %{}) == 0 do
+      {study, result} = hd(best)
+      %{study.id => result}
     else
       Map.new(best, fn {study, _} -> {study.id, :ambiguous} end)
     end
@@ -191,16 +197,16 @@ defmodule Listudy.Games.Analyzer do
     candidates = if match, do: Enum.map(match["candidates"], &{item.study, &1}), else: []
     best = best_candidates(candidates)
 
-    outcomes =
-      Enum.map(best, fn {_, result} ->
-        TrainingDeviations.outcome(result, item.study.color)
-      end)
-      |> Enum.uniq()
-
     result =
-      case best do
-        [{_, first} | _] -> first
-        _ -> nil
+      case selection[item.study.id] do
+        selected when is_map(selected) ->
+          selected
+
+        _ ->
+          case best do
+            [{_, first} | _] -> first
+            _ -> nil
+          end
       end
 
     training_events = TrainingDeviations.events(result, item.study.color)
@@ -211,7 +217,6 @@ defmodule Listudy.Games.Analyzer do
         result == nil -> "out_of_scope"
         selection[item.study.id] == nil -> "other_match"
         selection[item.study.id] == :ambiguous -> "ambiguous"
-        length(outcomes) > 1 -> "ambiguous"
         training_events != [] -> "deviation"
         true -> "match"
       end

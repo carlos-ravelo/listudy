@@ -7,7 +7,7 @@ defmodule ListudyWeb.AnalysisView do
 
   def analysis_status_label("match"), do: "No own deviations detected"
   def analysis_status_label("deviation"), do: "You deviated"
-  def analysis_status_label("ambiguous"), do: "Uncertain match"
+  def analysis_status_label("ambiguous"), do: "Comparison needs review"
   def analysis_status_label("out_of_scope"), do: "No matching chapter"
   def analysis_status_label("error"), do: "Comparison unavailable"
   def analysis_status_label("other_match"), do: "Another study selected"
@@ -69,16 +69,16 @@ defmodule ListudyWeb.AnalysisView do
   def comparison_feedback(result, color) do
     cond do
       result["deviation"] and player_to_move?(result["fen"], color) ->
-        {:player, "⚠️ You deviated"}
+        {:player, "You left this line"}
 
       result["deviation"] ->
-        {:opponent, "🚨 Your opponent deviated"}
+        {:opponent, "Opponent left this line"}
 
       result["reason"] == "book_ended" ->
-        {:book_end, "📘 Repertoire line ended"}
+        {:book_end, "Repertoire line ended"}
 
       true ->
-        {:game_end, "✓ Game ended in a repertoire position"}
+        {:game_end, "Game ended in your repertoire"}
     end
   end
 

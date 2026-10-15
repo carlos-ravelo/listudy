@@ -119,7 +119,7 @@
                 <span class="analysis-position-count"><%= length(stat.positions) %> <%= if length(stat.positions) == 1, do: "position", else: "positions" %> · <span data-game-review-status role="status">Checking review status…</span></span>
               <% end %>
               <%= if stat.ambiguous > 0 do %>
-                <span class="analysis-position-count"><%= link "#{stat.ambiguous} uncertain matches", to: Routes.analysis_path(@conn, :games, study_id: stat.study.id, status: "ambiguous", period: @filter) %></span>
+                <span class="analysis-position-count"><%= link "#{stat.ambiguous} comparisons to review", to: Routes.analysis_path(@conn, :games, study_id: stat.study.id, status: "ambiguous", period: @filter) %></span>
               <% end %>
               <%= if stat.errors > 0 do %>
                 <span class="analysis-position-count">Comparison unavailable for <%= stat.errors %> games</span>

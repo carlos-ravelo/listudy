@@ -396,7 +396,6 @@ defmodule ListudyWeb.AnalysisController do
   def compare_game(conn, %{"id" => id} = params) do
     user_id = conn.assigns.current_user.id
     game = ImportedGames.get_owned!(user_id, id)
-    summaries = ImportedGames.summaries(user_id, [game.id]) |> Map.get(game.id, [])
 
     list_params =
       Map.take(params, ["platform", "period", "study_id", "status", "cursor", "direction"])
@@ -409,30 +408,19 @@ defmodule ListudyWeb.AnalysisController do
     }
 
     case Games.Analyzer.analyze_single_pgn(user_id, game.pgn, selection) do
-      {:ok, study, result} ->
-        render(conn, "quick_result.html",
-          choices: [{study, result}],
-          pgn_text: game.pgn,
-          back_path: back_path,
-          imported_game: game,
-          summaries: summaries,
-          compare_all_path: Routes.analysis_path(conn, :compare_game, game.id, list_params)
-        )
-
-      {:ambiguous, choices} ->
+      {:ok, choices, unavailable_studies} ->
         render(conn, "quick_result.html",
           choices: choices,
+          unavailable_studies: unavailable_studies,
           pgn_text: game.pgn,
           back_path: back_path,
           imported_game: game,
-          summaries: summaries,
           compare_all_path: Routes.analysis_path(conn, :compare_game, game.id, list_params)
         )
 
       {:error, reason} ->
         render(conn, "game_comparison_unavailable.html",
           game: game,
-          summaries: summaries,
           reason: reason,
           back_path: back_path,
           compare_all_path: Routes.analysis_path(conn, :compare_game, game.id, list_params),
@@ -445,11 +433,12 @@ defmodule ListudyWeb.AnalysisController do
     user = conn.assigns.current_user
 
     case Listudy.Games.Analyzer.analyze_single_pgn(user.id, pgn_text, params) do
-      {:ok, study, result} ->
-        render(conn, "quick_result.html", choices: [{study, result}], pgn_text: pgn_text)
-
-      {:ambiguous, choices} ->
-        render(conn, "quick_result.html", choices: choices, pgn_text: pgn_text)
+      {:ok, choices, unavailable_studies} ->
+        render(conn, "quick_result.html",
+          choices: choices,
+          unavailable_studies: unavailable_studies,
+          pgn_text: pgn_text
+        )
 
       {:error, :no_match} ->
         conn

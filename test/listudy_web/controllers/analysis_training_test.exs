@@ -98,15 +98,144 @@ defmodule ListudyWeb.AnalysisTrainingTest do
     assert Repo.aggregate(Deviation, :count) == 0
   end
 
-  test "contradictory equally strong chapters remain ambiguous instead of becoming exercises", %{
+  test "equally strong continuations choose one stable best match and one exercise", %{
     user: user
   } do
     first = study(user, "Knight", "1. e4 e5 2. Nf3 *")
     second = study(user, "Bishop", "1. e4 e5 2. Bc4 *")
     game = game(user, "1. e4 e5 2. d4 *")
     assert {:ok, 1} = Analyzer.analyze_all_user_studies(user.id, "lichess")
-    assert statuses(game) == %{first.id => "ambiguous", second.id => "ambiguous"}
+    assert statuses(game) == %{first.id => "deviation", second.id => "other_match"}
+    assert [%{study_id: id, expected_move: "Nf3"}] = Repo.all(Deviation)
+    assert id == first.id
+
+    assert {:ok, [{chosen, _}, {alternative, _}], []} =
+             Analyzer.analyze_single_pgn(user.id, game.pgn)
+
+    assert chosen.id == first.id
+    assert alternative.id == second.id
+  end
+
+  test "automatic comparison groups sources, prefers daily studies and preserves explicit scope",
+       %{user: user} do
+    reference = study(user, "A reference", "1. e4 e5 2. Nf3 *")
+    copy = study(user, "B reference", "1. e4 e5 2. Nf3 *")
+    alternative = study(user, "C bishop line", "1. e4 e5 2. Bc4 *")
+    daily = study(user, "Z daily repertoire", "1. e4 e5 2. Nf3 *")
+
+    assert {:ok, _} =
+             Listudy.StudyLibrary.update(user.id, %{
+               "action" => "move",
+               "study_ids" => [reference.id, copy.id, alternative.id],
+               "location" => "library"
+             })
+
+    game = game(user, "1. e4 e5 2. d4 *")
+    assert {:ok, 1} = Analyzer.analyze_all_user_studies(user.id, "lichess")
+
+    assert statuses(game) == %{
+             daily.id => "deviation",
+             reference.id => "other_match",
+             copy.id => "other_match",
+             alternative.id => "other_match"
+           }
+
+    assert [%{study_id: id}] = Repo.all(Deviation)
+    assert id == daily.id
+
+    html =
+      conn_for(user)
+      |> get("/analysis/games/#{game.id}/compare?period=last_week")
+      |> html_response(200)
+
+    [root] = Floki.find(html, "#analysis-comparison")
+    [json] = Floki.attribute(root, "data-comparisons")
+
+    assert [%{"result" => %{"expected" => ["Nf3"]}}, %{"result" => %{"expected" => ["Bc4"]}}] =
+             Jason.decode!(json)
+
+    assert Floki.find(html, "[data-match-group='0'] .analysis-chapter-name")
+           |> hd()
+           |> Floki.text() == "Z daily repertoire"
+
+    assert html =~ "Also in 2 chapters"
+    assert html =~ "Other matching lines (1)"
+    refute html =~ "Choose a result"
+    refute html =~ "Saved study results"
+    if path = System.get_env("LISTUDY_COMPARISON_PREVIEW"), do: File.write!(path, html)
+
+    library = conn_for(user) |> get("/analysis/games?period=last_week") |> html_response(200)
+    [href] = Floki.find(library, ".analysis-game-row") |> Floki.attribute("href")
+    refute href =~ "compare_study_id"
+    assert href =~ "period=last_week"
+
+    scoped =
+      conn_for(user) |> get("/analysis/games?study_id=#{alternative.id}") |> html_response(200)
+
+    [href] = Floki.find(scoped, ".analysis-game-row") |> Floki.attribute("href")
+    assert href =~ "compare_study_id=#{alternative.id}"
+  end
+
+  test "a study with conflicting chapters still chooses and trains one exact chapter", %{
+    user: user
+  } do
+    study =
+      study(user, "Two choices", "1. e4 e5 2. Nf3 *\n\n[Event \"Bishop\"]\n\n1. e4 e5 2. Bc4 *")
+
+    game = game(user, "1. e4 e5 2. d4 *")
+    assert {:ok, 1} = Analyzer.analyze_all_user_studies(user.id, "lichess")
+    assert statuses(game) == %{study.id => "deviation"}
+    assert [%{expected_move: "Nf3"}] = Repo.all(Deviation)
+    assert {:ok, [{_, result}, {_, _}], []} = Analyzer.analyze_single_pgn(user.id, game.pgn)
+    assert result["chapter_index"] == 0
+    assert result["expected"] == ["Nf3"]
+  end
+
+  test "incomplete repertoire comparison shows valid matches and names the unavailable study", %{
+    user: user
+  } do
+    valid = study(user, "Main repertoire", "1. e4 e5 2. Nf3 *")
+    invalid = study(user, "Needs PGN repair", "1. e4 e5 2. Ke3 *")
+    game = game(user, "1. e4 e5 2. d4 *")
+    assert {:ok, 1} = Analyzer.analyze_all_user_studies(user.id, "lichess")
+    assert statuses(game) == %{valid.id => "ambiguous", invalid.id => "error"}
     assert Repo.aggregate(Deviation, :count) == 0
+
+    assert {:ok, [{_, _}], [%{id: unavailable_id}]} =
+             Analyzer.analyze_single_pgn(user.id, game.pgn)
+
+    assert unavailable_id == invalid.id
+    html = conn_for(user) |> get("/analysis/games/#{game.id}/compare") |> html_response(200)
+    assert html =~ "Comparison incomplete"
+    assert html =~ "Needs PGN repair"
+    assert html =~ "Try comparison again"
+
+    if path = System.get_env("LISTUDY_COMPARISON_PREVIEW"),
+      do: File.write!(path <> ".partial.html", html)
+  end
+
+  test "live comparison does not present saved outcomes as current results", %{user: user} do
+    study = study(user, "Current repertoire", "1. e4 e5 2. Nf3 *")
+    game = game(user, "1. e4 e5 2. d4 *")
+    assert {:ok, 1} = Analyzer.analyze_all_user_studies(user.id, "lichess")
+    assert statuses(game) == %{study.id => "deviation"}
+
+    path =
+      Application.app_dir(
+        :listudy,
+        "priv/static/study_pgn/#{hd(String.split(study.slug, "-"))}.pgn"
+      )
+
+    File.write!(path, "[Event \"Current repertoire\"]\n\n1. e4 e5 2. d4 *")
+    html = conn_for(user) |> get("/analysis/games/#{game.id}/compare") |> html_response(200)
+    assert html =~ "Game ended in your repertoire"
+    refute html =~ "Saved study results"
+    refute html =~ "Practice this line"
+    refute html =~ "data-select-group"
+    assert html =~ "Game PGN"
+
+    if path = System.get_env("LISTUDY_COMPARISON_PREVIEW"),
+      do: File.write!(path <> ".single.html", html)
   end
 
   test "different departures from one position share one exercise and retain game history", %{

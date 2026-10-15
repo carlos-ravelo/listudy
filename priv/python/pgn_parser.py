@@ -20,7 +20,7 @@ def analyze_batch(payload):
         try:
             sequence = game_positions(game['pgn'])
             matches = []
-            allowed = {str(value) for value in game.get('study_ids', studies)}
+            allowed = {str(value) for value in game.get('study_ids', set(studies) | set(study_errors))}
             for study_id, index in studies.items():
                 if study_id in allowed:
                     matches.append({'study_id': study_id, 'candidates': match_chapters(sequence, index)})

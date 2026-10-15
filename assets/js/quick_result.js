@@ -10,7 +10,6 @@ function setupComparison() {
     const status = root.querySelector('#analysis-board-status');
     const choices = Array.from(root.querySelectorAll('[data-select-group]'));
     const matchGroups = Array.from(root.querySelectorAll('[data-match-group]'));
-    const chapterLists = matchGroups.map(group => group.querySelector('.analysis-chapter-list'));
     const outcomes = Array.from(root.querySelectorAll('[data-outcome]'));
     const moveList = root.querySelector('#analysis-moves');
     const comparisons = JSON.parse(root.dataset.comparisons);
@@ -44,13 +43,12 @@ function setupComparison() {
         updateNavigation();
     }
 
-    function selectGroup(index, keepChapterListOpen = false) {
+    function selectGroup(index) {
         const comparison = comparisons[index];
         if (!comparison) return;
         choices.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.selectGroup) === index)));
         matchGroups.forEach((group, groupIndex) => {
             group.classList.toggle('is-selected', groupIndex === index);
-            if (!keepChapterListOpen || groupIndex !== index) chapterLists[groupIndex].open = false;
         });
         outcomes.forEach(panel => { panel.hidden = Number(panel.dataset.outcome) !== index; });
         if (replay) {
@@ -62,11 +60,6 @@ function setupComparison() {
     choices.forEach(button => {
         button.disabled = false;
         button.addEventListener('click', () => selectGroup(Number(button.dataset.selectGroup)));
-    });
-    chapterLists.forEach((details, index) => {
-        details.addEventListener('toggle', () => {
-            if (details.open) selectGroup(index, true);
-        });
     });
 
     if (replay) {

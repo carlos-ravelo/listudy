@@ -117,6 +117,16 @@ class MatchingTests(unittest.TestCase):
         self.assertEqual(len(results['games'][0]['matches']), 2)
         self.assertEqual(results['games'][0]['matches'][0]['candidates'][0]['chapter'], 'A')
 
+    def test_batch_reports_unavailable_studies_when_comparing_the_whole_repertoire(self):
+        payload = {'studies': [{'id': 1, 'pgn': chapter('Valid', '1. e4 e5 2. Nf3 *')},
+                               {'id': 2, 'pgn': chapter('Invalid', '1. e4 e5 2. Ke3 *')}],
+                   'games': [{'id': 9, 'pgn': '1. e4 e5 2. d4 *'},
+                             {'id': 10, 'pgn': '1. e4 e5 2. d4 *', 'study_ids': [1]}]}
+        automatic, restricted = analyze_batch(payload)['games']
+        self.assertIn('2', automatic['study_errors'])
+        self.assertEqual(automatic['matches'][0]['study_id'], '1')
+        self.assertEqual(restricted['study_errors'], {})
+
 
 if __name__ == '__main__':
     unittest.main()
