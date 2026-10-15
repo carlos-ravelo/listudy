@@ -2,7 +2,7 @@ import { reconcileStudyProgress } from './modules/study/progress_preservation.js
 import { chapterLearningProgress } from './modules/study/learning_progress.js';
 import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
 import { replayPositionContext } from './modules/study/position_context.js';
-import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, nextSmartPosition } from './modules/study/position_review.js';
+import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, reviewExposureKey, continuationKey, nextSmartPosition } from './modules/study/position_review.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
@@ -119,7 +119,7 @@ function scopedPracticeCatalog() {
 }
 
 function smartIntroductionMove() {
-    if (!smartSession || smartTarget?.type !== 'line' || !smartTarget.route ||
+    if (!smartSession || smartTarget?.type !== 'line' || smartTarget.reviewChain || !smartTarget.route ||
         readMode || contextReplayActive || turn_color(chess) !== color) return null;
     const path = curr_move.slice(1);
     if (path.length >= smartTarget.route.length || !path.every((index, depth) => index === smartTarget.route[depth])) return null;
@@ -148,7 +148,8 @@ function selectNextSmartPosition() {
         return;
     }
     smartSession.lastChapter = target.chapter;
-    status.textContent = target.type === 'line' ? i18n.smart_learning : i18n.smart_review;
+    status.textContent = target.reviewChain ? (target.longReview ? i18n.smart_long_review : i18n.smart_review_chain)
+        : target.type === 'line' ? i18n.smart_learning : i18n.smart_review;
     const select = document.getElementById('chapter_select');
     select.value = String(target.chapter);
     select.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { smartRun: true } }));
@@ -399,7 +400,9 @@ async function handle_move(orig, dest) {
             firstAttempt, wasNew, previousCard);
         if (wasCorrect) recordIntroducedMove(cards, positionId, san);
         if (smartSession && firstAttempt) {
-            if (smartTarget?.type === 'line' && wasNew) {
+            (smartSession.testedContinuations ||= new Set()).add(continuationKey(chapter, positionId, intendedMove));
+            if (wasCorrect && !assisted) (smartSession.recalledOpenings ||= new Set()).add(reviewExposureKey(chess.fen(), san));
+            if (smartTarget?.type === 'line' && !smartTarget.reviewChain && wasNew) {
                 smartSession.newCount += 1;
                 smartSession.reviewStreak = 0;
             } else if (review || continuationReview) {
@@ -489,6 +492,7 @@ async function handle_move(orig, dest) {
             const currentRunMode = localStorage.getItem("puzzleRunMode");
 
             if (smartSession) {
+                if (smartTarget?.reviewChain) smartSession.reviewChains = (smartSession.reviewChains || 0) + 1;
                 smartTarget = null;
                 setTimeout(() => { if (sessionId === trainingSessionId) selectNextSmartPosition(); }, 500);
             } else if (spacedReviewRunActive) {
@@ -932,8 +936,9 @@ function setup_move() {
     }
     display_comments(false);
     if (smartTarget?.type === 'line') {
-        document.getElementById('smart_run_status').textContent = smartIntroductionMove()
-            ? i18n.smart_introduction : i18n.smart_learning;
+        document.getElementById('smart_run_status').textContent = smartTarget.reviewChain
+            ? (smartTarget.longReview ? i18n.smart_long_review : i18n.smart_review_chain)
+            : smartIntroductionMove() ? i18n.smart_introduction : i18n.smart_learning;
     }
     studyMoveNavigation.update();
     update_read_mode_ui();

@@ -89,6 +89,7 @@ function fixture(moves, fen, orientation = 'white') {
         positionReviews: reviewContext.positionReviews, recordPositionReview: reviewContext.recordPositionReview,
         introducedMoves: reviewContext.introducedMoves, recordIntroducedMove: reviewContext.recordIntroducedMove,
         introduceContinuation: reviewContext.introduceContinuation,
+        continuationKey: reviewContext.continuationKey, reviewExposureKey: reviewContext.reviewExposureKey,
         recordContinuationReview: reviewContext.recordContinuationReview,
         chapterFailures: reviewContext.chapterFailures, recordPositionResult: reviewContext.recordPositionResult,
         updateFailedPositionsUi() {}, selectNextSmartPosition: () => context.advances++,
@@ -502,6 +503,50 @@ function assertSynchronized({ context, board, links }) {
     await earlyMove;
     assert.equal(early.context.currentFailures()[''], undefined);
     assert.equal(earlyCards[''].moveReviews.e4.card.reps, 0);
+
+    const reviewLine = fixture(['e4', 'e5', 'Nf3', 'Nc6', 'Bb5']);
+    reviewLine.context.smartSession = { newCount: 0, reviewCount: 0 };
+    reviewLine.context.smartTarget = { type: 'line', chapter: 0, path: [], route: [0, 0, 0, 0, 0],
+        reviewChain: true, completeLine: true };
+    vm.runInContext(source.slice(aiDeclaration.start, aiDeclaration.end), reviewLine.context);
+    const reviewCards = reviewLine.context.positionReviews(reviewLine.context.chapterStats, 0, 'chapter');
+    const future = new Date(Date.now() + 86400000);
+    for (const [id, move] of [['', 'e4'], ['e4|e5', 'Nf3'], ['e4|e5|Nf3|Nc6', 'Bb5']]) {
+        reviewLine.context.introduceContinuation(reviewCards, id, move);
+        reviewCards[id].card.due = future;
+        reviewCards[id].moveReviews[move].card.due = future;
+    }
+    reviewCards[''].card.due = new Date(Date.now() - 1000);
+    reviewCards[''].moveReviews.e4.card.due = new Date(Date.now() - 1000);
+    const futureSnapshot = JSON.stringify([reviewCards['e4|e5'].card, reviewCards['e4|e5'].moveReviews.Nf3]);
+    for (const [from, to] of [['e2', 'e4'], ['g1', 'f3'], ['f1', 'b5']]) {
+        assert.equal(reviewLine.context.smartIntroductionMove(), null);
+        const move = reviewLine.context.handle_move(from, to);
+        reviewLine.waits.shift()();
+        await move;
+    }
+    assert.equal(reviewLine.context.chess.history().join(' '), 'e4 e5 Nf3 Nc6 Bb5');
+    assert.equal(reviewLine.context.smartSession.reviewChains, 1);
+    assert.equal(reviewLine.context.smartSession.newCount, 0);
+    assert.equal(reviewLine.context.smartSession.reviewCount, 1);
+    assert.equal(JSON.stringify([reviewCards['e4|e5'].card, reviewCards['e4|e5'].moveReviews.Nf3]), futureSnapshot,
+        'Context moves must not inflate future intervals');
+    assert.equal(reviewCards[''].moveReviews.e4.card.reps, 1);
+    assert.equal(reviewLine.context.smartSession.recalledOpenings.size, 3);
+
+    const diagnostic = fixture(['e4', 'e5', 'Nf3']);
+    diagnostic.context.smartSession = { newCount: 0 };
+    diagnostic.context.smartTarget = { type: 'line', chapter: 0, path: [], route: [0, 0, 0], reviewChain: true };
+    const diagnosticCards = diagnostic.context.positionReviews(diagnostic.context.chapterStats, 0, 'chapter');
+    diagnostic.context.introduceContinuation(diagnosticCards, '', 'e4');
+    diagnosticCards[''].card.due = future;
+    diagnosticCards[''].moveReviews.e4.card.due = future;
+    await diagnostic.context.handle_move('d2', 'd4');
+    assert.equal(diagnosticCards[''].moveReviews.e4.recovered, false);
+    assert.equal(diagnosticCards[''].moveReviews.e4.card.reps, 1);
+    assert(new Date(diagnosticCards[''].moveReviews.e4.card.due) < future);
+    assert.equal(diagnostic.context.currentFailures()[''].failures, 1);
+    assert.equal(diagnostic.context.smartSession.newCount, 0);
     const mixedResponses = fixture(['e4']);
     mixedResponses.context.trees[0].root.push({ move: 'd4', children: [] });
     mixedResponses.context.smartSession = { newCount: 0 };
