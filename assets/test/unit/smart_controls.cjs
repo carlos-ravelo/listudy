@@ -55,6 +55,7 @@ const smartContext = vm.createContext({ ...state,
     CustomEvent: class { constructor(type, options) { this.detail = options.detail; } },
     nextSmartPosition: () => ({ target: { chapter: 0, path: [0], type: 'line' } }),
     scopedPracticeCatalog: () => [],
+    studySessions: { boundary() { return false; } },
     readChapterPosition: () => ({ fen: () => 'context position' }),
     positionReviews: () => ({}),
     presentPracticePosition(path, count) {
@@ -83,3 +84,10 @@ assert.equal(smartContext.trainingSessionId, 2);
 assert.equal(state.completed, 1);
 assert(status.textContent.includes('done'));
 assert(status.textContent.includes('next'));
+smartContext.studySessions.boundary = () => true;
+smartContext.nextSmartPosition = () => { throw new Error('A completed session must not select another target'); };
+smartContext.smartTarget = { type: 'line' };
+smartContext.selectNextSmartPosition();
+assert.equal(smartContext.smartTarget, null);
+assert.equal(smartContext.trainingSessionId, 3);
+assert.equal(status.textContent, 'done');

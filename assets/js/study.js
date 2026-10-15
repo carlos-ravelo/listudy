@@ -1,6 +1,7 @@
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
 import { chapterLearningProgress } from './modules/study/learning_progress.js';
 import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
+import { setupStudySessions } from './modules/study_sessions.js';
 import { replayPositionContext } from './modules/study/position_context.js';
 import { positionReviews, positionCatalog, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, reviewExposureKey, continuationKey, nextSmartPosition } from './modules/study/position_review.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
@@ -62,6 +63,7 @@ let smartCatalog = [];
 let positionAttempts = new Set();
 let assistedPositions = new Set();
 let contextReplayActive = false;
+let studySessions = { begin() {}, decision() {}, end() {}, refresh() {}, clear() {}, boundary() { return false; } };
 
 function updateContextReplayUi() {
     const button = document.getElementById('replay_position_context');
@@ -135,6 +137,15 @@ function smartIntroductionMove() {
 
 function selectNextSmartPosition() {
     if (!smartSession || localStorage.getItem('puzzleRunMode') !== 'smart') return;
+    if (studySessions.boundary()) {
+        smartTarget = null;
+        updateContextReplayUi();
+        trainingSessionId += 1;
+        finish_chapter_practice(false);
+        ground.set({ movable: { dests: new Map() } });
+        document.getElementById('smart_run_status').textContent = i18n.smart_complete;
+        return;
+    }
     const { target, nextDue } = nextSmartPosition(chapterStats, chapterReviewSignatures, scopedPracticeCatalog(), smartSession);
     smartTarget = target;
     updateContextReplayUi();
@@ -145,9 +156,11 @@ function selectNextSmartPosition() {
         finish_chapter_practice(false);
         ground.set({ movable: { dests: new Map() } });
         status.textContent = i18n.smart_complete + (nextDue ? ' · ' + i18n.spaced_review_next + ': ' + new Date(nextDue).toLocaleString() : '');
+        studySessions.boundary('no-work');
         return;
     }
     smartSession.lastChapter = target.chapter;
+    smartSession.presentation = (smartSession.presentation || 0) + 1;
     status.textContent = target.reviewChain ? (target.longReview ? i18n.smart_long_review : i18n.smart_review_chain)
         : target.type === 'line' ? i18n.smart_learning : i18n.smart_review;
     const select = document.getElementById('chapter_select');
@@ -162,6 +175,7 @@ function selectNextSmartPosition() {
 }
 
 function updateSmartRun() {
+    studySessions.end();
     failedPositionRun = null;
     updateFailedPositionsUi();
     smartSession = null;
@@ -169,6 +183,7 @@ function updateSmartRun() {
     document.getElementById('smart_run_status').hidden = true;
     if (localStorage.getItem('puzzleRunMode') === 'smart') {
         smartSession = { newCount: 0, reviewCount: 0, reviewStreak: 0, lastChapter: null };
+        studySessions.begin('smart');
         set_read_mode(false);
         selectNextSmartPosition();
     } else if (!readMode) start_training();
@@ -383,11 +398,14 @@ async function handle_move(orig, dest) {
         cards[positionId].expected = possible_moves;
         smartSession.newCount += 1;
         smartSession.reviewStreak = 0;
+        studySessions.decision('smart', `${smartSession.presentation}|${chapter}|${positionId}`, true, true, true);
         StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     } else {
         const assisted = assistedPositions.has(positionId) || positionAttempts.has(positionId);
         const cards = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter]);
         const firstAttempt = !positionAttempts.has(positionId);
+        if (firstAttempt) studySessions.decision(smartSession ? 'smart' : failedPositionRun ? 'positions' : 'lines',
+            `${smartSession ? smartSession.presentation : trainingSessionId}|${chapter}|${positionId}`, false, wasCorrect, assisted);
         const intendedMove = smartTarget?.type === 'line' && smartTarget.route
             ? tree_children(curr_move)[smartTarget.route[curr_move.length - 1]]?.move
             : smartTarget?.expectedMove || (wasCorrect ? san : possible_moves[0]);
@@ -985,6 +1003,7 @@ function play_move(san) {
 }
 
 function start_training() {
+    if (!readMode) studySessions.begin(smartSession ? 'smart' : 'lines');
     contextReplayActive = false;
     failedPositionRun = null;
     updateFailedPositionsUi();
@@ -1117,6 +1136,7 @@ function setup_chapter_select() {
     window.addEventListener("study-puzzle-run-changed", stopSpacedReviewRun);
     window.addEventListener('study-puzzle-run-changed', updateSmartRun);
     window.addEventListener('study-puzzle-run-off', () => {
+        studySessions.end();
         if (contextReplayActive) { trainingSessionId += 1; contextReplayActive = false; }
         smartSession = null;
         smartTarget = null;
@@ -1540,7 +1560,9 @@ async function setup_progress_reset() {
                 tree_value_add(c.root[0], -5);
             }
             failedPositionRun = null;
-            chapterStats = { version: 1, chapters: {}, resetId, resetAt };
+            const studyHistory = chapterStats.studySessions;
+            chapterStats = { version: 1, chapters: {}, resetId, resetAt, ...(studyHistory ? { studySessions: studyHistory } : {}) };
+            studySessions.clear();
             bindChapterIdentities(chapterStats, trees);
             practiceChapter = null;
             if (!readMode) {
@@ -1696,6 +1718,7 @@ async function main() {
             chapterReviews = readChapterReviews(event.detail.value);
             bindChapterIdentities(chapterReviews, trees);
         } else return;
+        studySessions.refresh();
         update_progress();
     });
     setup_chapter_select();
@@ -1722,6 +1745,12 @@ async function main() {
         setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward, progressLabels: { unpracticed: i18n.progress_not_practiced, practiced: i18n.progress_practiced_moves, needsPractice: i18n.progress_needs_practice, reviewDue: i18n.spaced_review_due } })
     ];
     setupPuzzleRun(i18n);
+    studySessions = setupStudySessions({ getStats: () => chapterStats,
+        persist: () => StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats)),
+        storage: StorageAdapter, labels: i18n.session_labels,
+        onContinue: updateSmartRun,
+        onFinish: () => document.getElementById('stop_smart_run').click()
+    });
     set_options_values();
     setup_move_handler(handle_move);
     setup_click_handler(handle_click);

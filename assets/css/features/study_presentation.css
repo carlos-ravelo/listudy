@@ -148,6 +148,25 @@
 .study-workspace .study-primary-actions #analysis_board:hover { background: var(--bg-highlight-color); }
 .study-workspace .study-primary-actions #analysis_board:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 .study-workspace .study-session-progress { margin: 4px 0 12px; }
+.study-workspace .study-session-counter { margin: 4px 0; font-size: 13px; color: var(--study-muted); font-variant-numeric: tabular-nums; }
+.study-workspace .study-session-end { margin-top: 12px; padding: 12px 0; border-top: 1px solid var(--study-divider); }
+.study-workspace .study-session-end h3 { margin: 0; font-size: 16px; }
+.study-workspace .study-session-end p { margin: 8px 0; font-variant-numeric: tabular-nums; }
+.study-workspace .study-session-end-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.study-workspace .study-session-end-actions button { min-height: 44px; margin: 0; }
+.study-workspace .study-session-settings { grid-column: 1 / -1; }
+.study-workspace .study-session-settings > label { font-size: 14px; font-weight: 400; }
+.study-workspace .study-session-goal-input { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.study-workspace #study_session_goal { width: 90px; min-height: 44px; margin: 0; }
+.study-workspace #study_session_goal_help { margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: var(--study-muted); }
+.study-time-summary { margin: 12px 0 20px; padding-bottom: 16px; border-bottom: 1px solid color-mix(in srgb, var(--font-color) 14%, transparent); }
+.study-time-summary h4 { margin: 0 0 8px; }
+.study-time-summary p { margin: 4px 0; font-variant-numeric: tabular-nums; }
+.study-session-history { margin-top: 12px; }
+.study-session-history summary { cursor: pointer; }
+.study-session-history ol { padding-inline-start: 20px; font-size: 13px; }
+.study-session-history li { margin: 8px 0; overflow-wrap: anywhere; }
+.study-time-summary .study-time-help { margin-top: 12px; font-size: 12px; opacity: .75; }
 .study-workspace .study-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .study-workspace .study-setting-group { min-width: 0; padding: 0; margin: 0; border: none; }
 .study-workspace .study-setting-group legend { margin-bottom: 8px; color: var(--study-muted); font-size: 13px; }

@@ -83,6 +83,7 @@ function fixture(moves, fen, orientation = 'white') {
         finishChapterPractice: statsContext.finishChapterPractice,
         StorageAdapter: { setItem() {} },
         contextReplayActive: false, updateContextReplayUi() {}, comments_div: 'comments',
+        studySessions: { begin() {}, decision() {}, end() {}, boundary() { return false; } },
         replayPositionContext: moveTreeContext.replayPositionContext,
         smartSession: null, smartTarget: null, failedPositionRun: null,
         positionAttempts: new Set(), assistedPositions: new Set(), NEW_POSITION_LIMIT: 10,

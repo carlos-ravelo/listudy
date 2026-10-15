@@ -112,6 +112,15 @@
     <p id="failed_positions_status" role="status" hidden></p>
 
     <p id="smart_run_status" class="study-weak-run-status" aria-live="polite" hidden></p>
+    <p id="study_session_counter" class="study-session-counter" hidden></p>
+    <section id="study_session_end" class="study-session-end" hidden aria-labelledby="study_session_end_title">
+      <h3 id="study_session_end_title" tabindex="-1"><%= dgettext("study", "Session finished") %></h3>
+      <p id="study_session_result"></p>
+      <div class="study-session-end-actions">
+        <button type="button" id="study_session_continue"><%= dgettext("study", "Continue practicing") %></button>
+        <button type="button" id="study_session_finish" class="secondary"><%= dgettext("study", "Finish") %></button>
+      </div>
+    </section>
     <p id="weak_run_status" class="study-weak-run-status" hidden></p>
   </div>
 </div>
@@ -156,6 +165,14 @@
     </div>
     <p id="max_depth_help"><%= dgettext("study", "Limits Full lines and Smart to this depth in this chapter. Deeper positions and their review schedules are preserved. Changes apply when you close Settings.") %></p>
   </div>
+</fieldset>
+<fieldset class="study-setting-group study-session-settings"><legend><%= dgettext("study", "Study sessions") %></legend>
+  <label for="study_session_goal"><%= dgettext("study", "Smart session goal") %></label>
+  <div class="study-session-goal-input">
+    <input type="number" id="study_session_goal" min="5" max="200" step="1" value="20" inputmode="numeric" aria-describedby="study_session_goal_help">
+    <span><%= dgettext("study", "decisions") %></span>
+  </div>
+  <p id="study_session_goal_help"><%= dgettext("study", "Applies to your next Smart session. Finish the current chain when the goal is reached. Corrections and automatic moves do not add decisions.") %></p>
 </fieldset>
 </div>
 </dialog>
@@ -257,6 +274,22 @@
   i18n.smart_review_chain = "<%= dgettext "study", "Smart: reviewing a line" %>";
   i18n.smart_long_review = "<%= dgettext "study", "Smart: checking a longer line" %>";
   i18n.smart_complete = "<%= dgettext "study", "Smart session complete for now" %>";
+  i18n.session_labels = {
+    session: "<%= dgettext "study", "Session" %>",
+    newMoves: "<%= dgettext "study", "new" %>",
+    practiced: "<%= dgettext "study", "practiced" %>",
+    decisions: "<%= dgettext "study", "decisions" %>",
+    sessions: "<%= dgettext "study", "sessions" %>",
+    total: "<%= dgettext "study", "Total in this study" %>",
+    today: "<%= dgettext "study", "Today" %>",
+    lines: "<%= dgettext "study", "Full lines" %>",
+    positions: "<%= dgettext "study", "Positions" %>",
+    inProgress: "<%= dgettext "study", "In progress" %>",
+    goalReached: "<%= dgettext "study", "Session goal reached" %>",
+    noWork: "<%= dgettext "study", "Session complete for now" %>",
+    saved: "<%= dgettext "study", "Saved" %>",
+    finishChain: "<%= dgettext "study", "Finish this chain to complete the session" %>"
+  };
   i18n.puzzle_run_random = "<%= dgettext "study", "Puzzle run: random" %>";
   i18n.review_fast = "<%= dgettext "study", "Board reset delay: fast" %>";
   i18n.key_move_enabled = "<%= dgettext "study", "Jump to key move: on" %>";
@@ -329,6 +362,16 @@
     x-on:study-spaced-run-updated.window="spacedReviewActive = &#36;event.detail.active">
     <span class="modal_close">&times;</span>
     <h3><%= dgettext("study","Study Progress")%></h3>
+    <section class="study-time-summary" aria-labelledby="study_time_title">
+      <h4 id="study_time_title"><%= dgettext("study", "Practice time") %></h4>
+      <p id="study_time_today"></p>
+      <p id="study_time_total"></p>
+      <details class="study-session-history">
+        <summary><%= dgettext("study", "Recent sessions") %></summary>
+        <ol id="study_session_history"></ol>
+      </details>
+      <p class="study-time-help"><%= dgettext("study", "Tracks practice from now on. Time pauses in hidden tabs and after two minutes without activity. Reading time is excluded.") %></p>
+    </section>
     <div class="study_progress" id="study_progress">
       <template x-for="chapter in chapters" :key="chapter.index">
         <button type="button" class="chapter-progress-summary"
