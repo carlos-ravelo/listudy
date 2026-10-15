@@ -173,6 +173,8 @@ defmodule Listudy.Games.ImportedGames do
   def summaries(_user_id, []), do: %{}
 
   def summaries(user_id, game_ids) do
+    library = Listudy.StudyLibrary.fetch(user_id)
+
     Repo.all(
       from sg in StudyGame,
         join: s in Study,
@@ -188,6 +190,17 @@ defmodule Listudy.Games.ImportedGames do
         }
     )
     |> Enum.group_by(& &1.game_id)
+    |> Map.new(fn {game_id, results} ->
+      ranked =
+        Enum.sort_by(results, fn result ->
+          location =
+            get_in(library, ["studies", to_string(result.study_id), "location"]) || "daily"
+
+          {if(location == "daily", do: 0, else: 1), result.study_id}
+        end)
+
+      {game_id, ranked}
+    end)
   end
 
   defp allowed(value, options), do: if(value in options, do: value)
