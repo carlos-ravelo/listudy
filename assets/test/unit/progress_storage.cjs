@@ -7,9 +7,19 @@ const revisions = {};
 let offline = false;
 let hold;
 let waiting;
+let lastHydrationUrl;
 const fetchMock = async (url, options = {}) => {
     if (offline) throw new Error('offline');
-    if (url === '/api/progress') return { ok: true, json: async () => ({ ...remote, _progress_revisions: { ...revisions } }) };
+    if (url === '/api/progress' || url.startsWith('/api/progress?')) {
+        lastHydrationUrl = url;
+        const studyId = new URL(url, 'http://localhost').searchParams.get('study_id');
+        const included = key => !studyId || !/_chapter_(stats|reviews)$/.test(key) ||
+            key === `${studyId}_chapter_stats` || key === `${studyId}_chapter_reviews`;
+        return { ok: true, json: async () => ({
+            ...Object.fromEntries(Object.entries(remote).filter(([key]) => included(key))),
+            _progress_revisions: Object.fromEntries(Object.entries(revisions).filter(([key]) => included(key)))
+        }) };
+    }
     const request = JSON.parse(options.body);
     if (hold) { waiting = hold; hold = null; await waiting; }
     if (request.revision !== (revisions[request.key] || '')) return { ok: false, status: 409,
@@ -80,5 +90,21 @@ const state = (a, b) => JSON.stringify({ version: 1, chapters: { a: { attempts: 
     assert.equal(JSON.parse(b.storage.getItem('progress:user:1:' + key + ':sync')).pending, false);
     const otherAccount = client(b.storage, '2');
     assert.equal(otherAccount.adapter.getItem(key), null);
+    const unrelatedKey = 'unrelated_chapter_stats';
+    const scoped = client();
+    scoped.adapter.setItem(unrelatedKey, state(7));
+    const pendingMetadata = scoped.storage.getItem('progress:user:1:' + unrelatedKey + ':sync');
+    remote.move_delay = 'fast';
+    await scoped.adapter.hydrate('study');
+    assert.equal(lastHydrationUrl, '/api/progress?study_id=study');
+    assert.equal(JSON.parse(scoped.adapter.getItem(key)).chapters.a.attempts, 3);
+    assert.equal(scoped.adapter.getItem('move_delay'), 'fast');
+    assert.equal(scoped.storage.getItem('progress:user:1:' + unrelatedKey + ':sync'), pendingMetadata,
+        'Scoped hydration must not replace another study\'s pending revision');
+    assert.equal(JSON.parse(scoped.adapter.getItem(unrelatedKey)).chapters.a.attempts, 7);
+    await scoped.adapter._flush(unrelatedKey);
+    assert.equal(JSON.parse(remote[unrelatedKey]).chapters.a.attempts, 7);
+    await scoped.adapter.hydrate('study & other');
+    assert.equal(lastHydrationUrl, '/api/progress?study_id=study%20%26%20other');
     console.log('Two-device conflicts, offline reload, pending hydration, writes during requests and account isolation passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

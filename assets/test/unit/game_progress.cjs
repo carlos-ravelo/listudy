@@ -100,4 +100,22 @@ const actualPractice = JSON.parse(JSON.stringify(recalled));
 const earned = actualPractice.chapters[0].positionReviews.cards[item.id].card.due;
 applyGameEvidence(actualPractice, ['a'], catalog, [], after, true);
 assert.equal(actualPractice.chapters[0].positionReviews.cards[item.id].card.due, earned, 'Retiring an observation keeps actual subsequent FSRS practice');
+
+let chessConstructions = 0;
+const NativeChess = require('chess.js').Chess;
+const counting = vm.createContext({ ...context, ChessModule: { Chess: function(...args) {
+    chessConstructions++;
+    return new NativeChess(...args);
+} } });
+vm.runInContext('{\n' + fs.readFileSync(path.join(__dirname, '../../js/modules/analysis/game_progress.js'), 'utf8')
+    .replace(/^import .*\n/gm, '').replace(/export \{([^}]+)\};/g, 'Object.assign(globalThis, {$1});') + '\n}', counting);
+const batch = Array.from({ length: 20 }, (_, index) => ({ ...mistake, latest_game_id: index + 1 }));
+counting.applyGameEvidence({ chapters: {} }, ['a'], catalog, batch, now);
+assert(chessConstructions <= catalog.length + batch.length,
+    'Batch matching normalizes the catalog once instead of replaying it for every observation');
+const trackedDuplicate = { chapters: { 1: { positionReviews: { signature: 'a', cards: {
+    [item.id]: { gameEvidence: { at: now.getTime() + 1, gameId: 999 } }
+} } } } };
+const chosen = applyGameEvidence(trackedDuplicate, ['a', 'a'], duplicate, [mistake], now);
+assert.equal(chosen.references.get(mistake).chapter, 1, 'Indexed matching preserves the existing evidence route across transpositions');
 console.log('Game evidence, shared FSRS, coverage, recovery, deduplication and line targets passed');

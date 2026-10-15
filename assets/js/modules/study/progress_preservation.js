@@ -3,17 +3,25 @@ const normalizeFen = fen => (fen || '').split(' ').slice(0, 4).join(' ');
 
 function reconcileStudyProgress(stats, trees, catalog, signatures, previousTrees = [], studyColor = 'white') {
     const before = JSON.stringify(stats);
-    const oldCatalog = previousTrees.length ? positionCatalog(previousTrees, studyColor) : [];
+    const positionsByChapter = new Map();
+    for (const item of catalog) {
+        if (!positionsByChapter.has(item.chapter)) positionsByChapter.set(item.chapter, []);
+        positionsByChapter.get(item.chapter).push(item);
+    }
+    const oldIndexes = new Map(previousTrees.map((tree, index) => [tree.headers.ListudyChapterId || String(index), index]));
     trees.forEach((tree, index) => {
         const key = stats.chapterIds?.[index] || String(index);
         const entry = stats.chapters[key];
         if (!entry) return;
         const signature = signatures[index];
-        const positions = catalog.filter(item => item.chapter === index);
-        const oldIndex = previousTrees.findIndex((old, oldIndex) =>
-            (old.headers.ListudyChapterId || String(oldIndex)) === key);
-        const oldPositions = oldCatalog.filter(item => item.chapter === oldIndex);
-        const findOld = id => oldPositions.find(item => item.id === id);
+        const positions = positionsByChapter.get(index) || [];
+        const oldIndex = oldIndexes.get(key) ?? -1;
+        let oldPositions;
+        const findOld = id => {
+            if (!oldPositions) oldPositions = new Map((oldIndex < 0 ? [] :
+                positionCatalog([previousTrees[oldIndex]], studyColor)).map(item => [item.id, item]));
+            return oldPositions.get(id);
+        };
         const initialFen = normalizeFen(tree.headers.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
         const oldInitialFen = entry.progressFen || (oldIndex >= 0 ? normalizeFen(previousTrees[oldIndex].headers.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') : null);
         if (oldInitialFen && oldInitialFen !== initialFen) { entry.coveredMoves = []; entry.cleanMoves = []; }
@@ -24,7 +32,7 @@ function reconcileStudyProgress(stats, trees, catalog, signatures, previousTrees
             for (const item of positions) {
                 const review = reviewSet.cards[item.id];
                 if (!review) continue;
-                const oldFen = review.positionFen || findOld(item.id)?.fen;
+                const oldFen = review.positionFen || (reviewSet.signature === signature ? item.fen : findOld(item.id)?.fen);
                 if (oldFen ? normalizeFen(oldFen) !== normalizeFen(item.fen) : reviewSet.signature !== signature) continue;
                 review.positionFen = normalizeFen(item.fen);
                 review.expected = item.expected;
