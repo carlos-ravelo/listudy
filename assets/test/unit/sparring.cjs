@@ -7,7 +7,7 @@ for (const file of ['evaluation', 'session', 'chess_adapter', 'uci_engine']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, `../../js/modules/sparring/${file}.js`), 'utf8')
         .replace(/^import .*\n/gm, '').replace(/^export /gm, ''), context);
 }
-const { createSparringSession, createChapterSparring, createSparringEngine } = context;
+const { createSparringSession, createChapterSparring, createStudySparring, sparringStartPositions, createSparringEngine } = context;
 const chapter = { headers: {}, root: [{ move: 'e4', children: [
     { move: 'e5', children: [{ move: 'Nf3', children: [] }] },
     { move: 'c5', children: [] }
@@ -182,5 +182,82 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert.equal(cancelled, true);
     assert.equal(resignThinking.snapshot().reason, 'resigned');
     assert.equal(resignThinking.snapshot().reviews.length, 0);
+    const tree = moves => moves.length ? [{ move: moves[0], children: tree(moves.slice(1)) }] : [];
+    const repertoireStudy = [
+        { headers: { ListudyChapterId: 'italian' }, root: tree(['e4', 'e5', 'Nf3', 'Nc6', 'Bc4']) },
+        { headers: { ListudyChapterId: 'scotch' }, root: tree(['e4', 'e5', 'Nf3', 'Nc6', 'd4']) },
+        { headers: { ListudyChapterId: 'queen' }, root: tree(['d4', 'd5', 'c4']) },
+        { headers: {}, root: tree(['e4']) }
+    ];
+    const sourceSnapshot = JSON.stringify(repertoireStudy);
+    const studyPorts = createStudySparring(repertoireStudy);
+    let engineCalls = 0;
+    const wholeStudy = createSparringSession({ ...studyPorts, player: 'w', random: () => 0,
+        engine: { async bestMove() { engineCalls++; return 'e5d4'; }, dispose() {} } });
+    await wholeStudy.start();
+    assert.deepEqual(plain(wholeStudy.hint().map(move => move.uci)), ['e2e4', 'd2d4']);
+    await wholeStudy.move('e2e4');
+    assert.equal(wholeStudy.snapshot().phase, 'theory'); // A shorter chapter cannot end the union.
+    assert.equal(engineCalls, 0);
+    await wholeStudy.move('g1f3');
+    assert.deepEqual(plain(wholeStudy.hint().map(move => move.uci)), ['f1c4', 'd2d4']);
+    assert.equal(engineCalls, 0);
+    await wholeStudy.move('d2d4'); // A valid continuation from another chapter.
+    assert.equal(wholeStudy.snapshot().phase, 'free');
+    assert.equal(engineCalls, 1);
+    assert.deepEqual(plain(studyPorts.repertoire.sources()), [{ chapter: 1, path: [0, 0, 0, 0, 0], id: 'scotch' }]);
+    assert.equal(JSON.stringify(repertoireStudy), sourceSnapshot);
+
+    const queenPorts = createStudySparring(repertoireStudy);
+    const queen = createSparringSession({ ...queenPorts, player: 'b', random: () => 0.99,
+        engine: { async bestMove() { throw new Error('Theory remains'); }, dispose() {} } });
+    await queen.start();
+    assert.deepEqual(plain(queen.snapshot().moves), ['d2d4']);
+    await queen.move('d7d5');
+    assert.deepEqual(plain(queen.snapshot().moves), ['d2d4', 'd7d5', 'c2c4']);
+    assert.equal(queen.snapshot().phase, 'free');
+
+    const duplicates = [
+        ...Array.from({ length: 20 }, () => ({ headers: {}, root: tree(['e4', 'e5']) })),
+        { headers: {}, root: tree(['e4', 'c5']) }
+    ];
+    const duplicatesPorts = createStudySparring(duplicates);
+    const uniqueReplies = createSparringSession({ ...duplicatesPorts, player: 'w', random: () => 0.75,
+        engine: { dispose() {} } });
+    await uniqueReplies.start(); await uniqueReplies.move('e2e4');
+    assert.deepEqual(plain(uniqueReplies.snapshot().moves), ['e2e4', 'c7c5']);
+
+    const customFen = 'k7/7P/8/8/8/8/8/K7 w - - 0 1';
+    const mixed = [
+        { headers: { FEN: customFen }, root: tree(['h8=N']) },
+        ...repertoireStudy,
+        { headers: { FEN: customFen }, root: tree(['h8=Q+']) }
+    ];
+    const groups = sparringStartPositions(mixed);
+    assert.equal(groups.length, 2);
+    assert.equal(groups[0].standard, true);
+    assert.deepEqual(plain(groups[1].chapters), [0, 5]);
+    assert.equal(createStudySparring(mixed).position.snapshot().fen, initial);
+    const customPorts = createStudySparring(mixed, { startFen: customFen });
+    assert.deepEqual(plain(customPorts.repertoire.choices().map(move => move.uci)), ['h7h8n', 'h7h8q']);
+    assert.equal(customPorts.position.snapshot().fen, customFen);
+    assert.throws(() => createStudySparring(mixed, { startFen: 'missing' }), /starting position/);
+    const blackFen = 'k7/8/8/8/8/8/p7/7K b - - 0 1';
+    const blackPosition = createStudySparring([{ headers: { FEN: blackFen }, root: tree(['a1=Q+']) }]);
+    assert.equal(blackPosition.position.snapshot().turn, 'b');
+    assert.equal(blackPosition.repertoire.choices()[0].uci, 'a2a1q');
+
+    let visited = 0;
+    const lazy = createStudySparring([{ headers: {}, root: [
+        { move: 'e4', get children() { visited++; return [{ move: 'e5', get children() { throw new Error('Too deep'); } }]; } },
+        { move: 'd4', get children() { throw new Error('Unchosen branch visited'); } }
+    ] }]);
+    assert.equal(visited, 0);
+    assert.equal(lazy.repertoire.choices().length, 2);
+    assert.equal(visited, 0);
+    lazy.repertoire.advance('e2e4'); lazy.position.play('e2e4');
+    assert.equal(visited, 1);
+    assert.equal(lazy.repertoire.choices()[0].uci, 'e7e5');
     console.log('Sparring session, evaluation, checkpoints, retries, cancellation and UCI tests passed');
+    console.log('Study-wide union, unique choices, chapter provenance, FEN groups and lazy traversal passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

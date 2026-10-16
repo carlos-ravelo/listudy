@@ -920,7 +920,7 @@ function change_analysis_board() {
     let link = document.getElementById("analysis_board");
     const orientation = ground.state.orientation;
     // The PGN standard requires a SetUp header when there is another start position
-    let starts_midgame = trees[chapter].headers.SetUp != undefined;
+    let starts_midgame = chess.header().SetUp != undefined;
     if (starts_midgame) {
         let fen = chess.fen();
         link.href = `https://lichess.org/analysis/${fen}?color=${orientation}`;
@@ -1754,7 +1754,7 @@ async function main() {
         update_progress();
     });
     setup_chapter_select();
-    sparring = setupStudySparring({ getChapter: () => trees[chapter], getPlayer: () => studyColor,
+    sparring = setupStudySparring({ getChapters: () => trees, getTitle: () => document.querySelector('h1').textContent.trim(), getPlayer: () => studyColor,
         getBoard: () => ground,
         onBegin() {
             trainingSessionId += 1;
@@ -1767,18 +1767,31 @@ async function main() {
             overlay_manager.clear_overlays();
             studySessions.begin('sparring');
         },
-        onPosition(position, path, phase) {
+        onPosition(position, routes, phase) {
             window.chess = position;
-            window.curr_move = [chapter, ...path];
+            const route = routes[0];
+            window.curr_move = route ? [route.chapter, ...route.path] : [chapter];
             if (phase !== 'theory') document.getElementById('comments').replaceChildren();
             if (phase === 'finished') studySessions.end();
             change_play_stockfish(); change_analysis_board(); studyMoveNavigation.update();
         },
-        showHints() { display_arrows(true); display_comments(true); },
+        showHints(routes) {
+            const original = curr_move;
+            const shapes = new Map();
+            try {
+                for (const route of routes) {
+                    window.curr_move = [route.chapter, ...route.path];
+                    display_arrows(true);
+                    for (const shape of ground.state.drawable.shapes) shapes.set(JSON.stringify(shape), shape);
+                }
+            } finally { window.curr_move = original; }
+            if (routes.length > 1) overlay_manager.clear_overlays();
+            ground.setShapes([...shapes.values()]);
+            display_comments(true);
+        },
         onDecision(result) { studySessions.decision('sparring', result.key, false, result.correct, result.assisted); },
         saveResult(result) {
-            chapterStats.sparringSessions = { ...chapterStats.sparringSessions, [result.id]: {
-                ...result, chapter: chapterStats.chapterIds?.[chapter] || String(chapter) } };
+            chapterStats.sparringSessions = { ...chapterStats.sparringSessions, [result.id]: result };
             StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
             studySessions.refresh();
         },

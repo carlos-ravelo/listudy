@@ -1,12 +1,12 @@
 import { createSparringSession } from './session.js';
-import { createChapterSparring } from './chess_adapter.js';
+import { createStudySparring, sparringStartPositions } from './chess_adapter.js';
 import { createSparringEngine } from './uci_engine.js';
 import { createPromotionPicker } from '../promotion_picker.js';
 import { setupStudyMoveTree } from '../study/study_move_tree.js';
 import { sounds, playMoveSound } from '../sounds.js';
 import { set_text, clear_all_text, info_div, error_div, success_div } from '../info_boxes.js';
 
-export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = () => {},
+export function setupStudySparring({ getChapters, getTitle = () => 'Listudy sparring', getPlayer, getBoard, onBegin = () => {},
     onPosition = () => {}, showHints = () => {}, onDecision = () => {}, saveResult = () => {},
     getHistory = () => [], createEngine = createSparringEngine }) {
     const opener = document.getElementById('practice_sparring');
@@ -20,6 +20,8 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
     let generation = 0, soundCount = 0, heardReviews = 0, readIndex = null, lineRoot = [], lineLength = -1, previousPhase;
     let savedSignature = '';
     let reportSignature = '';
+    let selectedStartFen = null;
+    let sessionTitle;
     const paused = state => ['review', 'finished'].includes(state.phase);
     const gradeLabel = grade => labels[grade === 'blunder' ? 'gradeBlunder' : grade];
     const numbers = new Intl.NumberFormat(document.documentElement.lang || undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -37,10 +39,11 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
     function result(state) {
         const game = ports.position.at(state.moves.length);
         const outcome = state.reason === 'resigned' ? (state.player === 'w' ? '0-1' : '1-0') : state.result;
-        game.header('Event', getChapter().headers.Event || 'Listudy sparring', 'Result', outcome,
+        game.header('Event', sessionTitle, 'Result', outcome,
             'White', state.player === 'w' ? 'You' : 'Stockfish / repertoire',
             'Black', state.player === 'b' ? 'You' : 'Stockfish / repertoire');
         return { id: sessionId, startedAt, updatedAt: Date.now(), status: state.phase, reason: state.reason,
+            scope: 'study', startFen: state.initialFen, sources: ports.repertoire.sources(),
             attempts: state.attempts, correct: state.correct, firstDeviation: state.firstDeviation,
             freeCount: state.freeCount, result: outcome, pgn: game.pgn(),
             reviews: state.reviews.map(row => ({ ...row, line: continuation(row.ply, row.pv) })) };
@@ -103,7 +106,7 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
         const review = paused(state);
         workspace?.classList.toggle('study-sparring-paused', review);
         const game = readIndex === null ? ports.position.game() : ports.position.at(readIndex);
-        onPosition(game, ports.repertoire.path(), state.phase);
+        onPosition(game, ports.repertoire.routes(), state.phase);
         const dests = new Map();
         if (state.canPlay && !pendingPromotion) for (const move of state.legal) {
             const from = move.slice(0, 2);
@@ -226,7 +229,20 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
         for (const id of ['study_mode', 'practice_smart', 'practice_lines']) document.getElementById(id)?.setAttribute('aria-pressed', 'false');
         window.dispatchEvent(new CustomEvent('study-sparring-updated', { detail: { active: true } }));
         try {
-            ports = createChapterSparring(getChapter());
+            const chapters = getChapters();
+            const starts = sparringStartPositions(chapters);
+            if (!starts.some(group => group.fen === selectedStartFen)) selectedStartFen = starts[0]?.fen;
+            ports = createStudySparring(chapters, { startFen: selectedStartFen, starts });
+            sessionTitle = getTitle();
+            find('start-control').hidden = starts.length <= 1;
+            find('start').replaceChildren();
+            for (const group of starts) {
+                const title = group.standard
+                    ? find('start').dataset.standard
+                    : `${group.chapters[0] + 1}. ` + (chapters[group.chapters[0]].headers.Event || find('start').dataset.custom) + ' · ' + group.fen.split(' ')[5] + ' · ' +
+                        (group.fen.split(' ')[1] === 'w' ? find('start').dataset.white : find('start').dataset.black);
+                find('start').add(new Option(title, group.fen, false, group.fen === selectedStartFen));
+            }
             picker = createPromotionPicker({ element: document.querySelector('.study-board-frame [data-promotion-picker]'),
                 onChoose(role) {
                     const pending = pendingPromotion; pendingPromotion = null;
@@ -239,6 +255,7 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
         } catch (_) { if (current === generation) set_text(error_div, labels.error); }
     }
     opener.addEventListener('click', () => { if (!session) start(); });
+    find('start').addEventListener('change', () => { selectedStartFen = find('start').value; start(); });
     find('continue').addEventListener('click', () => {
         pendingPromotion = null; picker?.close(); readIndex = null;
         const current = generation;
@@ -256,7 +273,7 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
     find('download').addEventListener('click', () => { if (session) download(result(session.snapshot())); });
     window.addEventListener('pagehide', stop);
     return { get active() { return !panel.hidden; }, start, stop, move, render: () => session && render(session.snapshot()),
-        hint() { if (session?.hint().length) showHints(); },
+        hint() { if (session?.hint().length) showHints(ports.repertoire.routes()); },
         navigation() { return { canGoBack: !!session && paused(currentState) && (readIndex ?? currentState.moves.length) > 0,
             canGoForward: !!session && paused(currentState) && readIndex !== null && readIndex < currentState.moves.length }; },
         back() { if (session) seek((readIndex ?? currentState.moves.length) - 1); },

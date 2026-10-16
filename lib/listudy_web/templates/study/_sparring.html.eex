@@ -1,4 +1,12 @@
 <section id="study_sparring" class="study-sparring" aria-label="<%= dgettext("study", "Sparring controls and results") %>" hidden>
+  <label data-sparring="start-control" hidden><%= dgettext("study", "Starting position") %>
+    <select data-sparring="start" name="sparring_start_position"
+            data-standard="<%= dgettext("study", "Initial position") %>"
+            data-custom="<%= dgettext("study", "Custom position") %>"
+            data-white="<%= dgettext("study", "White to move") %>"
+            data-black="<%= dgettext("study", "Black to move") %>"></select>
+  </label>
+  <p class="sparring-note"><%= dgettext("study", "All chapters in this study with the same starting position are included.") %></p>
 
   <div class="sparring-actions" role="group" aria-label="<%= dgettext("study", "Play and review") %>">
     <button type="button" data-sparring="analyze"><%= dgettext("study", "Pause and review") %></button>

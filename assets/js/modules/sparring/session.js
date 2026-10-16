@@ -70,7 +70,7 @@ export function createSparringSession({ position, repertoire, engine, player, ra
                     onDecision({ key: `theory:${ply}`, correct: valid, assisted: false });
                 }
                 if (!valid) {
-                    firstDeviation ||= { fen: before.fen, uci, ply };
+                    firstDeviation ||= { fen: before.fen, uci, ply, sources: repertoire.sources?.() };
                     assisted = true; feedback = 'outside'; emit(); return false;
                 }
                 repertoire.advance(uci);
