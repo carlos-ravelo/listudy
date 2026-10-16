@@ -7,10 +7,10 @@ export function createSparringSession({ position, repertoire, engine, player, ra
     let feedback = null, error = null, firstDeviation = null, reason = null;
     let attempts = 0, correct = 0, assisted = false, revision = 0, freeCount = 0;
     let nextCheckpoint = checkpointEvery, retryPly = null;
-    const moves = [], reviews = [];
+    const moves = [], reviews = [], theoryPlies = [];
     const freeDecisions = new Set();
     const snapshot = () => ({ ...position.snapshot(), phase, thinking, feedback, error, reason,
-        player, firstDeviation, attempts, correct, freeCount, moves: [...moves], reviews: reviews.map(row => ({ ...row })),
+        theoryPlies: [...theoryPlies], player, firstDeviation, attempts, correct, freeCount, moves: [...moves], reviews: reviews.map(row => ({ ...row })),
         canPlay: started && !disposed && !thinking && !error && ['theory', 'free'].includes(phase) && position.snapshot().turn === player });
     const emit = () => { if (!disposed) onChange(snapshot()); };
     function play(uci) {
@@ -76,9 +76,11 @@ export function createSparringSession({ position, repertoire, engine, player, ra
                 repertoire.advance(uci);
                 feedback = 'correct';
             }
+            if (wasTheory) theoryPlies.push(ply);
             play(uci); assisted = false;
             let reply = null;
             if (!wasTheory) {
+                const repeated = freeDecisions.has(ply);
                 if (!freeDecisions.has(ply)) { freeDecisions.add(ply); freeCount++; }
                 const request = revision;
                 thinking = true; emit();
@@ -97,12 +99,14 @@ export function createSparringSession({ position, repertoire, engine, player, ra
                             last = await engine.analyze(after, { movetime: 800 });
                             if (disposed || request !== revision) return false;
                             assessment = assessMove({ ...confirmed, turn: before.turn }, { ...last, turn: after.turn }, player, uci);
-                            first.uci = confirmed.uci; first.pv = confirmed.pv;
+                            first.uci = confirmed.uci; first.pv = confirmed.pv; first.score = confirmed.score;
                         }
                         if (!assessment) throw new Error('No evaluation');
-                        const retried = retryPly === ply;
-                        reviews.push({ ...assessment, ply, uci, san: position.snapshot().lastMove?.san || uci,
-                            best: first.uci, pv: first.pv || [], assisted: retried });
+                        const retried = repeated || retryPly === ply;
+                        reviews.push({ ...assessment, ply, uci, positionKey: before.moves.join(' '), san: position.snapshot().lastMove?.san || uci,
+                            best: first.uci, pv: first.pv || [], assisted: retried,
+                            evaluationBefore: { ...first.score, turn: before.turn },
+                            evaluationAfter: { ...last.score, turn: after.turn } });
                         onDecision({ key: `free:${ply}`, correct: ['best', 'acceptable'].includes(assessment.grade), assisted: retried });
                         reply = engine.canReuseAnalysisMove?.() === false ? null : last.uci;
                         if (assessment.grade === 'blunder' && !position.snapshot().over) { pause('blunder'); return true; }
@@ -130,9 +134,11 @@ export function createSparringSession({ position, repertoire, engine, player, ra
         },
         analyzeHere() { if (!disposed && started && !thinking && phase !== 'finished') pause('manual'); },
         resign() { if (!disposed && started && phase !== 'finished') pause('resigned', true); },
-        retry() {
-            const row = reviews[reviews.length - 1];
-            if (disposed || phase !== 'review' || !row || !position.restore) return;
+        retry(ply) {
+            const row = ply === undefined ? reviews[reviews.length - 1]
+                : [...reviews].reverse().find(row => row.ply === ply && moves[ply] === row.uci && row.positionKey === moves.slice(0, ply).join(' '));
+            if (disposed || thinking || phase === 'finished' || !row || !position.restore || row.ply >= moves.length) return;
+            if (position.at(row.ply).turn() !== player) return;
             revision++; engine.cancel?.();
             position.restore(row.ply); moves.splice(row.ply);
             retryPly = row.ply;

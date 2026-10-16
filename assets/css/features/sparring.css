@@ -25,12 +25,6 @@
 .sparring-note { color: var(--study-muted); font-size: 12px; }
 .sparring-metrics { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
 .sparring-metrics dd { margin: 0; font-variant-numeric: tabular-nums; }
-.sparring-report-scroll { overflow-x: auto; }
-.study-sparring table { width: 100%; font-size: 13px; }
-.study-sparring caption { text-align: left; padding-block: 8px; }
-.study-sparring td { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
-.study-sparring tr { content-visibility: auto; contain-intrinsic-size: auto 52px; }
-.study-sparring th, .study-sparring td { text-align: left; vertical-align: top; padding: 6px; }
 .study-sparring [data-sparring="moves"] { max-height: 220px; overflow: auto; margin-top: 12px; }
 .study-sparring-active #line_order_control,
 .study-sparring-active .study-chapter-navigation,
@@ -38,3 +32,17 @@
 .study-sparring-active #replay_position_context { display: none; }
 .study-sparring-active #practice_sparring { background: var(--bg-highlight-color); }
 .chapter-editor-promotion-overlay[hidden] { display: none; }
+
+.sparring-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sparring-grade-counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.sparring-grade-counts > span { padding: 8px; border: 1px solid var(--study-divider); border-radius: 6px; font-size: 13px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.sparring-move-detail { margin-top: 12px; padding: 12px; border: 1px solid var(--study-divider); border-radius: 6px; overflow-wrap: anywhere; }
+.sparring-move-detail p { margin: 6px 0; font-size: 13px; font-variant-numeric: tabular-nums; }
+.sparring-move-detail button { margin-top: 8px; }
+.sparring-move-sticker { display: inline-block; margin-inline-start: 6px; font-weight: 700; }
+.study-sparring [data-grade="best"] .sparring-move-sticker,
+.study-sparring [data-grade="acceptable"] .sparring-move-sticker { color: var(--font-color); }
+.study-sparring [data-grade="inaccuracy"] .sparring-move-sticker,
+.study-sparring [data-grade="mistake"] .sparring-move-sticker,
+.study-sparring [data-grade="blunder"] .sparring-move-sticker { border: 1px solid currentColor; border-radius: 4px; padding-inline: 4px; }
+.study-sparring select:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }

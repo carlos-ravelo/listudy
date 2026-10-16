@@ -19,7 +19,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     let session, ports, picker, pendingPromotion, currentState, sessionId, startedAt;
     let generation = 0, soundCount = 0, heardReviews = 0, readIndex = null, lineRoot = [], lineLength = -1, previousPhase;
     let savedSignature = '';
-    let reportSignature = '';
+    let inspectedRow = null;
     let selectedStartFen = null;
     let sessionTitle;
     let engine;
@@ -100,9 +100,11 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         window.dispatchEvent(new CustomEvent('study-sparring-updated', { detail: { active: false } }));
         document.getElementById('hints').disabled = false;
     }
-    function seek(ply) {
-        if (!session || !paused(currentState)) return;
-        readIndex = Math.max(0, Math.min(currentState.moves.length, ply));
+    function seek(ply, row = null) {
+        if (!session || pendingPromotion) return;
+        inspectedRow = row;
+        const target = Math.max(0, Math.min(currentState.moves.length, ply));
+        readIndex = target === currentState.moves.length ? null : target;
         render(currentState);
     }
     const moveTree = setupStudyMoveTree({ element: find('moves'), startLabel: labels.start,
@@ -111,11 +113,13 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         currentState = state;
         const board = getBoard();
         const review = paused(state);
+        const browsing = readIndex !== null;
+        const playable = state.canPlay && !pendingPromotion && !browsing;
         workspace?.classList.toggle('study-sparring-paused', review);
         const game = readIndex === null ? ports.position.game() : ports.position.at(readIndex);
         onPosition(game, ports.repertoire.routes(), state.phase);
         const dests = new Map();
-        if (state.canPlay && !pendingPromotion) for (const move of state.legal) {
+        if (playable) for (const move of state.legal) {
             const from = move.slice(0, 2);
             if (!dests.has(from)) dests.set(from, []);
             if (!dests.get(from).includes(move.slice(2, 4))) dests.get(from).push(move.slice(2, 4));
@@ -123,7 +127,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         const last = game.history({ verbose: true }).slice(-1)[0];
         board.set({ fen: game.fen(), turnColor: game.turn() === 'w' ? 'white' : 'black', check: game.in_check(),
             lastMove: last ? [last.from, last.to] : undefined,
-            movable: { color: state.canPlay && !pendingPromotion ? getPlayer() : undefined, free: false, dests } });
+            movable: { color: playable ? getPlayer() : undefined, free: false, dests } });
         board.setShapes([]);
         if (state.moves.length > soundCount && state.lastMove) playMoveSound(state.lastMove);
         soundCount = state.moves.length;
@@ -131,7 +135,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         const phaseName = state.error ? 'error' : state.phase;
         phase.textContent = phase.dataset[phaseName];
         phase.dataset.phase = phaseName;
-        find('status').textContent = state.error ? labels.error : review
+        find('status').textContent = browsing ? labels.browsing : state.error ? labels.error : review
             ? (state.reason === 'blunder' ? labels.blunder : state.phase === 'finished' ? labels.finished : labels.review)
             : state.thinking ? labels.thinking : labels.turn;
         clear_all_text();
@@ -140,11 +144,11 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         const latest = state.reviews[state.reviews.length - 1];
         if (state.reviews.length > heardReviews && isError(latest.grade) && (find('live').checked || review)) sounds.play('error');
         heardReviews = state.reviews.length;
-        if (latest && state.feedback !== 'outside' && (find('live').checked || review)) {
+        if (!browsing && latest && state.feedback !== 'outside' && (find('live').checked || review)) {
             set_text(isError(latest.grade) ? error_div : latest.grade === 'best' ? success_div : info_div,
                 gradeLabel(latest.grade), { symbol: gradeSymbol(latest.grade) });
         }
-        document.getElementById('hints').disabled = !state.canPlay || state.phase !== 'theory';
+        document.getElementById('hints').disabled = !playable || state.phase !== 'theory';
         find('strength').disabled = state.thinking || !!pendingPromotion || state.phase === 'finished';
         find('analyze').disabled = state.thinking || review;
         find('analyze').hidden = review;
@@ -164,38 +168,20 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             find('theory-score').textContent = `${state.correct}/${state.attempts}`;
             find('engine-score').textContent = `${first.length}/${state.freeCount}`;
             find('average').textContent = first.length ? format(first.reduce((sum, row) => sum + row.loss, 0) / first.length) : '—';
-            find('outcome').textContent = state.reason === 'resigned' ? `${labels.resigned} · ${result(state).result}` : state.result === '*' ? '' : state.result;
+            find('outcome').textContent = state.reason === 'resigned' ? `${labels.resigned} · ${result(state).result}` : state.result === '*' ? '' : `${state.result === '1/2-1/2' ? labels.draw
+                : (state.result === '1-0') === (state.player === 'w') ? labels.won : labels.lost} · ${state.result}`;
             find('coverage').textContent = first.length < state.freeCount ? labels.unanalysed : '';
             find('deviation').textContent = state.firstDeviation
                 ? `${labels.deviation}: ${continuation(state.firstDeviation.ply, [state.firstDeviation.uci])}` : '';
             find('empty-analysis').hidden = state.reviews.length > 0;
-            panel.querySelector('.sparring-report-scroll').hidden = !state.reviews.length;
-            const nextReportSignature = JSON.stringify(state.reviews);
-            if (reportSignature !== nextReportSignature) {
-                reportSignature = nextReportSignature;
-                find('results').replaceChildren();
-                for (const row of state.reviews) {
-                    const tr = document.createElement('tr');
-                    const td = document.createElement('td');
-                    const button = document.createElement('button'); button.type = 'button';
-                    button.dataset.ply = row.ply;
-                    button.textContent = `${Math.floor((Number(state.initialFen.split(' ')[5]) - 1) + (row.ply + (state.initialFen.split(' ')[1] === 'b' ? 1 : 0)) / 2) + 1}. ${row.san}`;
-                    button.setAttribute('aria-label', `${labels.reviewMove} ${button.textContent}`);
-                    button.onclick = () => {
-                        seek(row.ply);
-                        if (row.best && row.best.length >= 4) board.setShapes([{ orig: row.best.slice(0, 2), dest: row.best.slice(2, 4), brush: 'normal' }]);
-                        set_text(info_div, continuation(row.ply, row.pv));
-                    };
-                    td.appendChild(button); tr.appendChild(td);
-                    for (const value of [gradeLabel(row.grade) + (row.assisted ? ` · ${labels.assisted}` : ''), format(row.loss), continuation(row.ply, row.pv)]) {
-                        const cell = document.createElement('td'); cell.textContent = value; tr.appendChild(cell);
-                    }
-                    find('results').appendChild(tr);
-                }
-            }
-            for (const button of find('results').querySelectorAll('button')) {
-                if (Number(button.dataset.ply) === readIndex) button.setAttribute('aria-current', 'step');
-                else button.removeAttribute('aria-current');
+            find('grade-counts').replaceChildren();
+            for (const grade of ['best', 'acceptable', 'inaccuracy', 'mistake', 'blunder']) {
+                const count = first.filter(row => (row.grade === 'good' ? 'acceptable' : row.grade) === grade).length;
+                const item = document.createElement('span');
+                item.setAttribute('role', 'listitem');
+                item.dataset.grade = grade;
+                item.textContent = `${gradeSymbol(grade)} ${gradeLabel(grade)} · ${count}`;
+                find('grade-counts').appendChild(item);
             }
             save(state);
             if (previousPhase !== state.phase) document.getElementById('sparring_results_title').focus({ preventScroll: true });
@@ -210,9 +196,48 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         }
         moveTree.update({ reading: true, chapter: sessionId, root: lineRoot, fen: state.initialFen,
             path: Array(readIndex === null ? state.moves.length : readIndex).fill(0) });
-        for (const button of find('moves').querySelectorAll('button')) button.disabled = !review;
+        const showGrades = review || find('live').checked;
+        const visibleRows = new Map();
+        for (const row of state.reviews) if (state.moves[row.ply] === row.uci && row.positionKey === state.moves.slice(0, row.ply).join(' ')) visibleRows.set(row.ply, row);
+        const theory = new Set(state.theoryPlies);
+        const moveHistory = ports.position.game().history();
+        for (const [ply, button] of [...find('moves').querySelectorAll('[data-move-prefix]')].entries()) {
+            const row = visibleRows.get(ply);
+            const grade = showGrades && row ? row.grade : theory.has(ply) ? 'theory' : null;
+            const base = `${button.dataset.movePrefix} ${moveHistory[ply]}`;
+            const text = grade ? `${base} · ${grade === 'theory' ? labels.correct : gradeLabel(grade)}` : base;
+            button.title = text;
+            button.setAttribute('aria-label', text);
+            button.dataset.grade = grade || '';
+            let sticker = button.querySelector('.sparring-move-sticker');
+            if (!sticker) { sticker = document.createElement('span'); sticker.className = 'sparring-move-sticker'; sticker.setAttribute('aria-hidden', 'true'); button.appendChild(sticker); }
+            sticker.textContent = grade === 'theory' ? '▤' : grade ? gradeSymbol(grade) : '';
+        }
+        const selectedPly = readIndex === null ? state.moves.length : readIndex;
+        const row = inspectedRow || (browsing ? visibleRows.get(selectedPly - 1) : [...visibleRows.values()].pop());
+        find('move-detail').hidden = (!browsing && !row || !selectedPly && !inspectedRow) || !showGrades;
+        find('show-best').hidden = !row?.best;
+        find('show-best').disabled = state.thinking;
+        find('retry-selected').hidden = !row || state.phase === 'finished';
+        find('retry-selected').disabled = state.thinking;
+        find('move-grade').textContent = row
+            ? `${row.san} ${gradeSymbol(row.grade)} · ${gradeLabel(row.grade)}${row.assisted ? ' · ' + labels.assisted : ''}`
+            : theory.has(selectedPly - 1) ? labels.correct : labels.notAnalysed;
+        find('move-evaluation').textContent = row?.evaluationBefore && row?.evaluationAfter
+            ? `${labels.evaluation}: ${evaluation(row.evaluationBefore)} → ${evaluation(row.evaluationAfter)}` : '';
+        find('move-recommendation').textContent = row?.pv.length
+            ? `${labels.recommendation}: ${continuation(row.ply, row.pv)}` : '';
+        find('show-best').onclick = () => {
+            seek(row.ply, row);
+            if (row.best?.length >= 4) board.setShapes([{ orig: row.best.slice(0, 2), dest: row.best.slice(2, 4), brush: 'normal' }]);
+        };
+        find('retry-selected').onclick = () => { readIndex = null; inspectedRow = null; session.retry(row.ply); document.getElementById('chessground').focus(); };
+        find('back').disabled = !selectedPly || !!pendingPromotion;
+        find('forward').disabled = selectedPly >= state.moves.length || !!pendingPromotion;
+        find('latest').hidden = !browsing;
     }
     async function move(from, to, promotion) {
+        if (readIndex !== null) return;
         if (!session || pendingPromotion || !session.snapshot().canPlay) return;
         const choices = session.snapshot().legal.filter(uci => uci.startsWith(from + to) && uci.length === 5);
         if (choices.length && !promotion) {
@@ -230,7 +255,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         stop(); onBegin();
         const current = generation;
         sessionId = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-        startedAt = Date.now(); soundCount = 0; heardReviews = 0; readIndex = null; lineLength = -1; previousPhase = null; savedSignature = ''; reportSignature = '';
+        startedAt = Date.now(); soundCount = 0; heardReviews = 0; readIndex = null; lineLength = -1; previousPhase = null; savedSignature = ''; inspectedRow = null;
         strengthChanges = [{ ply: 0, level: strength }];
         panel.hidden = false; workspace?.classList.add('study-sparring-active');
         if (boardStatus) boardStatus.hidden = false;
@@ -260,10 +285,22 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
                 onCancel() { pendingPromotion = null; render(session.snapshot()); document.getElementById('chessground').focus(); } });
             engine = createEngine({ strength });
             session = createSparringSession({ ...ports, engine, player: getPlayer() === 'white' ? 'w' : 'b',
-                onDecision, onChange: state => { if (current === generation) { readIndex = null; render(state); } } });
+                onDecision, onChange: state => { if (current === generation) {
+                    if (readIndex !== null && readIndex >= state.moves.length) readIndex = null;
+                    inspectedRow = null; render(state);
+                } } });
             history(); await session.start();
         } catch (_) { if (current === generation) set_text(error_div, labels.error); }
     }
+    function evaluation(score) {
+        const value = score.value * (score.turn === 'w' ? 1 : -1);
+        if (score.type === 'mate') return value === 0
+            ? (score.turn === 'w' ? '−#0' : '+#0') : `${value > 0 ? '+' : '−'}#${Math.abs(value)}`;
+        return `${value > 0 ? '+' : ''}${format(value / 100)}`;
+    }
+    find('back').addEventListener('click', () => seek((readIndex ?? currentState.moves.length) - 1));
+    find('forward').addEventListener('click', () => seek((readIndex ?? currentState.moves.length) + 1));
+    find('latest').addEventListener('click', () => seek(currentState.moves.length));
     opener.addEventListener('click', () => { if (!session) start(); });
     find('start').addEventListener('change', () => { selectedStartFen = find('start').value; start(); });
     find('strength').addEventListener('change', () => {
@@ -284,14 +321,14 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         if (!window.confirm(find('resign').dataset.confirm)) return;
         pendingPromotion = null; picker?.close(); session?.resign();
     });
-    find('retry').addEventListener('click', () => { session?.retry(); document.getElementById('chessground').focus(); });
+    find('retry').addEventListener('click', () => { readIndex = null; inspectedRow = null; session?.retry(); document.getElementById('chessground').focus(); });
     find('live').addEventListener('change', () => { if (session) render(session.snapshot()); });
     find('download').addEventListener('click', () => { if (session) download(result(session.snapshot())); });
     window.addEventListener('pagehide', stop);
     return { get active() { return !panel.hidden; }, start, stop, move, render: () => session && render(session.snapshot()),
-        hint() { if (session?.hint().length) showHints(ports.repertoire.routes()); },
-        navigation() { return { canGoBack: !!session && paused(currentState) && (readIndex ?? currentState.moves.length) > 0,
-            canGoForward: !!session && paused(currentState) && readIndex !== null && readIndex < currentState.moves.length }; },
+        hint() { if (readIndex === null && session?.hint().length) showHints(ports.repertoire.routes()); },
+        navigation() { return { canGoBack: !!session && !pendingPromotion && (readIndex ?? currentState.moves.length) > 0,
+            canGoForward: !!session && !pendingPromotion && readIndex !== null && readIndex < currentState.moves.length }; },
         back() { if (session) seek((readIndex ?? currentState.moves.length) - 1); },
         forward() { if (session) seek((readIndex ?? currentState.moves.length) + 1); } };
 }
