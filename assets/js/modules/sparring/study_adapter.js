@@ -6,14 +6,15 @@ import { setupStudyMoveTree } from '../study/study_move_tree.js';
 import { sounds, playMoveSound } from '../sounds.js';
 import { set_text, clear_all_text, info_div, error_div, success_div } from '../info_boxes.js';
 
-export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = () => {}, onStop = () => {},
+export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = () => {},
     onPosition = () => {}, showHints = () => {}, onDecision = () => {}, saveResult = () => {},
     getHistory = () => [], createEngine = createSparringEngine }) {
     const opener = document.getElementById('practice_sparring');
     const panel = document.getElementById('study_sparring');
+    const boardStatus = document.querySelector('[data-sparring-board-status]');
     if (!opener || !panel) return null;
     const workspace = opener.closest('.study-workspace');
-    const find = name => panel.querySelector(`[data-sparring="${name}"]`);
+    const find = name => panel.querySelector(`[data-sparring="${name}"]`) || boardStatus?.querySelector(`[data-sparring="${name}"]`);
     const labels = find('status').dataset;
     let session, ports, picker, pendingPromotion, currentState, sessionId, startedAt;
     let generation = 0, soundCount = 0, heardReviews = 0, readIndex = null, lineRoot = [], lineLength = -1, previousPhase;
@@ -52,8 +53,8 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
     }
     function history() {
         find('recent').replaceChildren();
-        const records = getHistory().sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
-        find('empty-history').hidden = records.length > 0;
+        const records = getHistory().filter(record => record.id !== sessionId).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
+        find('history').hidden = !records.length;
         for (const record of records) {
             const item = document.createElement('details');
             const heading = document.createElement('summary');
@@ -84,6 +85,8 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
         session = null; picker = null; pendingPromotion = null;
         workspace?.classList.remove('study-sparring-active', 'study-sparring-paused');
         panel.hidden = true; opener.setAttribute('aria-pressed', 'false');
+        if (boardStatus) boardStatus.hidden = true;
+        getBoard().state.dom.bounds.clear();
         window.dispatchEvent(new CustomEvent('study-sparring-updated', { detail: { active: false } }));
         document.getElementById('hints').disabled = false;
     }
@@ -114,9 +117,13 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
         board.setShapes([]);
         if (state.moves.length > soundCount && state.lastMove) playMoveSound(state.lastMove);
         soundCount = state.moves.length;
+        const phase = find('phase');
+        const phaseName = state.error ? 'error' : state.phase;
+        phase.textContent = phase.dataset[phaseName];
+        phase.dataset.phase = phaseName;
         find('status').textContent = state.error ? labels.error : review
             ? (state.reason === 'blunder' ? labels.blunder : state.phase === 'finished' ? labels.finished : labels.review)
-            : state.thinking ? labels.thinking : state.phase === 'theory' ? labels.theory : labels.free;
+            : state.thinking ? labels.thinking : labels.turn;
         clear_all_text();
         if (state.feedback === 'outside') set_text(error_div, labels.outside);
         if (state.feedback === 'correct' && find('live').checked) set_text(success_div, labels.correct);
@@ -183,6 +190,8 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
             if (previousPhase !== state.phase) document.getElementById('sparring_results_title').focus({ preventScroll: true });
         }
         previousPhase = state.phase;
+        // Status wrapping can move the board without changing its size.
+        board.state.dom.bounds.clear();
         if (lineLength !== state.moves.length) {
             lineRoot = []; let children = lineRoot;
             for (const san of ports.position.game().history()) { const node = { move: san, children: [] }; children.push(node); children = node.children; }
@@ -212,6 +221,7 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
         sessionId = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
         startedAt = Date.now(); soundCount = 0; heardReviews = 0; readIndex = null; lineLength = -1; previousPhase = null; savedSignature = ''; reportSignature = '';
         panel.hidden = false; workspace?.classList.add('study-sparring-active');
+        if (boardStatus) boardStatus.hidden = false;
         opener.setAttribute('aria-pressed', 'true');
         for (const id of ['study_mode', 'practice_smart', 'practice_lines']) document.getElementById(id)?.setAttribute('aria-pressed', 'false');
         window.dispatchEvent(new CustomEvent('study-sparring-updated', { detail: { active: true } }));
@@ -229,7 +239,6 @@ export function setupStudySparring({ getChapter, getPlayer, getBoard, onBegin = 
         } catch (_) { if (current === generation) set_text(error_div, labels.error); }
     }
     opener.addEventListener('click', () => { if (!session) start(); });
-    find('leave').addEventListener('click', () => { stop(); onStop(); document.getElementById('practice_lines')?.focus(); });
     find('continue').addEventListener('click', () => {
         pendingPromotion = null; picker?.close(); readIndex = null;
         const current = generation;

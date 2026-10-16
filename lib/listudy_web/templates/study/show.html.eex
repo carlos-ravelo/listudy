@@ -38,6 +38,7 @@
      :class="{ 'study-reading-layout': reading }"
      @study-reading-updated.window="if (reading !== $event.detail.reading) { reading = $event.detail.reading; $nextTick(() => $dispatch('study-reading-layout-updated')); } expanded = false; $nextTick(() => overflowing = $refs.comments.scrollHeight > $refs.comments.clientHeight)">
   <div id="game_container" class="sidebar_main">
+    <%= render "_sparring_status.html" %>
     <div class="study-board-frame">
       <%= render ListudyWeb.ComponentView, "chessground.html" %>
       <%= render ListudyWeb.ComponentView, "promotion_picker.html" %>
