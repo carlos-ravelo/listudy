@@ -15,7 +15,7 @@ export function setupStudySessions({ getStats, persist, storage, labels, onConti
             persist();
         }
     });
-    const eligible = () => !document.hidden && document.hasFocus() && !document.querySelector('dialog[open]') &&
+    const eligible = () => !document.hidden && document.hasFocus() && !document.querySelector('dialog[open]') && !document.querySelector('.study-sparring-paused') &&
         document.getElementById('progress_modal')?.style.display !== 'block';
     const duration = ms => {
         const seconds = Math.floor(ms / 1000);
@@ -33,7 +33,7 @@ export function setupStudySessions({ getStats, persist, storage, labels, onConti
         history.replaceChildren();
         for (const record of totals.recent) {
             const item = document.createElement('li');
-            const mode = record.mode === 'smart' ? 'Smart' : record.mode === 'positions' ? labels.positions : labels.lines;
+            const mode = record.mode === 'sparring' ? 'Sparring' : record.mode === 'smart' ? 'Smart' : record.mode === 'positions' ? labels.positions : labels.lines;
             const state = record.id === tracker.current?.id && record.status === 'active' ? labels.inProgress
                 : record.status === 'goal' ? labels.goalReached : record.status === 'no-work' ? labels.noWork : labels.saved;
             item.textContent = `${new Date(record.startedAt).toLocaleString()} · ${mode} · ${description(record)} · ${state}`;

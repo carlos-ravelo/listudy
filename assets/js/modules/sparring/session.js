@@ -1,0 +1,143 @@
+import { assessMove } from './evaluation.js';
+
+// The session owns play and analysis; Listudy supplies its board, hints and progress UI.
+export function createSparringSession({ position, repertoire, engine, player, random = Math.random,
+    onChange = () => {}, onDecision = () => {}, checkpointEvery = 6 }) {
+    let phase = 'theory', thinking = false, disposed = false, started = false;
+    let feedback = null, error = null, firstDeviation = null, reason = null;
+    let attempts = 0, correct = 0, assisted = false, revision = 0, freeCount = 0;
+    let nextCheckpoint = checkpointEvery, retryPly = null;
+    const moves = [], reviews = [];
+    const freeDecisions = new Set();
+    const snapshot = () => ({ ...position.snapshot(), phase, thinking, feedback, error, reason,
+        player, firstDeviation, attempts, correct, freeCount, moves: [...moves], reviews: reviews.map(row => ({ ...row })),
+        canPlay: started && !disposed && !thinking && !error && ['theory', 'free'].includes(phase) && position.snapshot().turn === player });
+    const emit = () => { if (!disposed) onChange(snapshot()); };
+    function play(uci) {
+        if (!position.play(uci)) throw new Error('Illegal move');
+        moves.push(uci);
+    }
+    function pause(why, finish = false) {
+        revision++;
+        engine.cancel?.();
+        thinking = false; error = null; feedback = null;
+        phase = finish ? 'finished' : 'review'; reason = why;
+        nextCheckpoint = freeCount + checkpointEvery;
+        emit();
+    }
+    async function settle(reply = null) {
+        if (disposed || !['theory', 'free'].includes(phase)) return;
+        if (position.snapshot().over) { phase = 'finished'; reason = 'gameover'; emit(); return; }
+        if (phase === 'theory' && !repertoire.choices().length) phase = 'free';
+        if (position.snapshot().turn === player) {
+            if (phase === 'free' && freeCount >= nextCheckpoint) pause('checkpoint');
+            else emit();
+            return;
+        }
+        const request = revision;
+        thinking = true; emit();
+        try {
+            let uci;
+            if (phase === 'theory') {
+                const choices = repertoire.choices();
+                uci = choices[Math.floor(random() * choices.length)].uci;
+            } else uci = reply || await engine.bestMove({ ...position.snapshot(), moves: [...moves] });
+            if (disposed || request !== revision) return;
+            if (phase === 'theory') repertoire.advance(uci);
+            play(uci); assisted = false;
+        } catch (_) {
+            if (!disposed && request === revision) error = 'opponent';
+        } finally {
+            if (request === revision) thinking = false;
+        }
+        if (!disposed && request === revision && !error) await settle();
+        else if (request === revision) emit();
+    }
+    return {
+        snapshot,
+        async start() { if (started || disposed) return; started = true; await settle(); },
+        async move(uci) {
+            if (!snapshot().canPlay) return false;
+            if (!position.snapshot().legal.includes(uci)) { feedback = 'illegal'; emit(); return false; }
+            feedback = null;
+            const before = { ...position.snapshot(), moves: [...moves] };
+            const ply = moves.length;
+            const wasTheory = phase === 'theory';
+            if (wasTheory) {
+                const valid = repertoire.choices().some(move => move.uci === uci);
+                if (!assisted) {
+                    attempts++; if (valid) correct++;
+                    onDecision({ key: `theory:${ply}`, correct: valid, assisted: false });
+                }
+                if (!valid) {
+                    firstDeviation ||= { fen: before.fen, uci, ply };
+                    assisted = true; feedback = 'outside'; emit(); return false;
+                }
+                repertoire.advance(uci);
+                feedback = 'correct';
+            }
+            play(uci); assisted = false;
+            let reply = null;
+            if (!wasTheory) {
+                if (!freeDecisions.has(ply)) { freeDecisions.add(ply); freeCount++; }
+                const request = revision;
+                thinking = true; emit();
+                try {
+                    if (engine.analyze) {
+                        const first = await engine.analyze(before);
+                        if (disposed || request !== revision) return false;
+                        const after = { ...position.snapshot(), moves: [...moves] };
+                        let last = after.over ? { score: after.result === '1/2-1/2' ? { type: 'cp', value: 0 } : { type: 'mate', value: 0 } }
+                            : await engine.analyze(after);
+                        if (disposed || request !== revision) return false;
+                        let assessment = assessMove({ ...first, turn: before.turn }, { ...last, turn: after.turn }, player);
+                        if (assessment?.grade === 'blunder' && !after.over) {
+                            const confirmed = await engine.analyze(before, { movetime: 800 });
+                            if (disposed || request !== revision) return false;
+                            last = await engine.analyze(after, { movetime: 800 });
+                            if (disposed || request !== revision) return false;
+                            assessment = assessMove({ ...confirmed, turn: before.turn }, { ...last, turn: after.turn }, player);
+                            first.uci = confirmed.uci; first.pv = confirmed.pv;
+                        }
+                        if (!assessment) throw new Error('No evaluation');
+                        const retried = retryPly === ply;
+                        reviews.push({ ...assessment, ply, uci, san: position.snapshot().lastMove?.san || uci,
+                            best: first.uci, pv: first.pv || [], assisted: retried });
+                        onDecision({ key: `free:${ply}`, correct: assessment.grade === 'good', assisted: retried });
+                        reply = last.uci;
+                        if (assessment.grade === 'blunder' && !position.snapshot().over) { pause('blunder'); return true; }
+                    } else onDecision({ key: `free:${ply}`, correct: false, assisted: false });
+                } catch (_) {
+                    if (!disposed && request === revision) error = 'analysis';
+                } finally {
+                    if (request === revision) thinking = false;
+                }
+                if (disposed || request !== revision) return false;
+                if (error) { emit(); return true; }
+            }
+            await settle(reply);
+            return true;
+        },
+        hint() {
+            if (!snapshot().canPlay || phase !== 'theory') return [];
+            assisted = true; feedback = 'hint'; emit();
+            return repertoire.choices().map(move => ({ ...move }));
+        },
+        async continueWithEngine() {
+            if (!started || disposed || thinking || phase === 'finished') return;
+            phase = 'free'; reason = null; feedback = null; error = null;
+            await settle();
+        },
+        analyzeHere() { if (!disposed && started && !thinking && phase !== 'finished') pause('manual'); },
+        resign() { if (!disposed && started && phase !== 'finished') pause('resigned', true); },
+        retry() {
+            const row = reviews[reviews.length - 1];
+            if (disposed || phase !== 'review' || !row || !position.restore) return;
+            revision++; engine.cancel?.();
+            position.restore(row.ply); moves.splice(row.ply);
+            retryPly = row.ply;
+            phase = 'free'; reason = null; feedback = null; error = null; emit();
+        },
+        dispose() { disposed = true; revision++; engine.dispose(); }
+    };
+}

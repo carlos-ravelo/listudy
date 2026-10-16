@@ -52,7 +52,7 @@ function mergeReview(base, local, remote, kind) {
 }
 
 function mergeNode(base, local, remote, field, kind) {
-    if (field === 'studySessions') {
+    if (field === 'studySessions' || field === 'sparringSessions') {
         const sessions = {};
         for (const id of new Set([...Object.keys(local || {}), ...Object.keys(remote || {})])) {
             const candidates = [local?.[id], remote?.[id]].filter(Boolean);

@@ -107,7 +107,7 @@
 .study-workspace .study-tools-content a:hover,
 .study-workspace .study-tools-content button:hover { background: var(--bg-highlight-color); }
 .study-workspace .study-session-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 16px; }
-.study-workspace #study_practice_choices { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--study-divider); border-radius: 8px; }
+.study-workspace #study_practice_choices { display: inline-flex; min-width: 0; gap: 2px; padding: 3px; border: 1px solid var(--study-divider); border-radius: 8px; }
 .study-workspace .study-session-controls button,
 .study-workspace .study-primary-actions button { min-height: 44px; height: auto; margin: 0; padding: 8px 12px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--font-color); font: inherit; font-size: 14px; letter-spacing: normal; text-transform: none; touch-action: manipulation; }
 .study-workspace #study_practice_choices button[aria-pressed="true"] { background: var(--bg-highlight-color); font-weight: 600; box-shadow: inset 0 0 0 1px var(--study-divider); }
@@ -126,8 +126,8 @@
 .study-workspace .study-tools-content a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 @media (max-width: 600px) {
   .study-workspace .study-session-controls { gap: 8px; }
-  .study-workspace #study_practice_choices { flex: 1 1 auto; }
-  .study-workspace #study_practice_choices button { flex: 1; }
+  .study-workspace #study_practice_choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: 1 1 100%; }
+  .study-workspace #study_practice_choices button { min-width: 0; padding-inline: 6px; font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
   .study-workspace #line_order_control { order: 3; flex: 1 1 100%; flex-wrap: wrap; }
   .study-workspace .study-session-controls .option_item { order: 4; }
   .study-workspace .study-chapter-buttons { grid-template-columns: 44px minmax(0, 1fr) 44px; }

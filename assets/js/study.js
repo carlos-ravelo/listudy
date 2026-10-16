@@ -2,6 +2,7 @@ import { reconcileStudyProgress } from './modules/study/progress_preservation.js
 import { chapterLearningProgress } from './modules/study/learning_progress.js';
 import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
 import { setupStudySessions } from './modules/study_sessions.js';
+import { setupStudySparring } from './modules/sparring/study_adapter.js';
 import { replayPositionContext } from './modules/study/position_context.js';
 import { applyGameEvidence, gameLineTarget } from './modules/analysis/game_progress.js';
 import { positionReviews, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, reviewExposureKey, continuationKey, nextSmartPosition } from './modules/study/position_review.js';
@@ -41,6 +42,7 @@ Alpine.start();
 
 
 let studyFeatureViews = [];
+let sparring = null;
 let studyMoveNavigation = { update() {} };
 let studyMoveTree = { update() {} };
 let readMode = false;
@@ -342,6 +344,7 @@ function possible_promotion(moves, san) {
 }
 
 async function handle_move(orig, dest) {
+    if (sparring?.active) { await sparring.move(orig, dest); return; }
     if (contextReplayActive) return;
     if (readMode) {
         let san = uci_to_san(chess, orig, dest);
@@ -928,6 +931,7 @@ function change_analysis_board() {
 }
 
 function setup_move() {
+    if (sparring?.active) { sparring.render(); return; }
     updateContextReplayUi();
     if (contextReplayActive) {
         const last = chess.history({ verbose: true }).slice(-1)[0];
@@ -1009,6 +1013,7 @@ function play_move(san) {
 }
 
 function start_training() {
+    if (sparring?.active) { sparring.stop(); studySessions.end(); }
     if (!readMode) studySessions.begin(smartSession ? 'smart' : 'lines');
     contextReplayActive = false;
     failedPositionRun = null;
@@ -1168,6 +1173,7 @@ function setup_chapter_select() {
     }
 
     select.onchange = function(event) {
+        if (sparring?.active) { sparring.stop(); studySessions.end(); }
         if (smartSession && !event.detail?.smartRun) window.dispatchEvent(new Event('study-puzzle-run-off'));
         if (weakChapterRunActive && !(event.detail && event.detail.weakRun)) stopWeakChapterRun();
         if (spacedReviewRunActive && !(event.detail && event.detail.spacedRun)) stopSpacedReviewRun();
@@ -1251,6 +1257,7 @@ function setup_intro() {
 }
 
 function turn_on_hints_for_current_move() {
+    if (sparring?.active) { sparring.hint(); return; }
     if (readMode || contextReplayActive) return;
     assistedPositions.add(currentPositionId());
     display_arrows(true);
@@ -1467,6 +1474,7 @@ function practiceDepthChanged() {
 }
 
 function reset_line() {
+    if (sparring?.active) { sparring.start(); return; }
     if (smartSession) { selectNextSmartPosition(); return; }
     start_training();
 }
@@ -1746,6 +1754,37 @@ async function main() {
         update_progress();
     });
     setup_chapter_select();
+    sparring = setupStudySparring({ getChapter: () => trees[chapter], getPlayer: () => studyColor,
+        getBoard: () => ground,
+        onBegin() {
+            trainingSessionId += 1;
+            contextReplayActive = false;
+            finish_chapter_practice(false);
+            stopWeakChapterRun(); stopSpacedReviewRun();
+            window.dispatchEvent(new Event('study-puzzle-run-off'));
+            failedPositionRun = null; updateFailedPositionsUi();
+            readMode = false; update_read_mode_ui();
+            overlay_manager.clear_overlays();
+            studySessions.begin('sparring');
+        },
+        onStop() { studySessions.end(); start_training(); },
+        onPosition(position, path, phase) {
+            window.chess = position;
+            window.curr_move = [chapter, ...path];
+            if (phase !== 'theory') document.getElementById('comments').replaceChildren();
+            if (phase === 'finished') studySessions.end();
+            change_play_stockfish(); change_analysis_board(); studyMoveNavigation.update();
+        },
+        showHints() { display_arrows(true); display_comments(true); },
+        onDecision(result) { studySessions.decision('sparring', result.key, false, result.correct, result.assisted); },
+        saveResult(result) {
+            chapterStats.sparringSessions = { ...chapterStats.sparringSessions, [result.id]: {
+                ...result, chapter: chapterStats.chapterIds?.[chapter] || String(chapter) } };
+            StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
+            studySessions.refresh();
+        },
+        getHistory: () => Object.values(chapterStats.sparringSessions || {})
+    });
     const editChapter = document.getElementById('edit_chapter');
     if (editChapter) {
         const updateEditorLink = () => {
@@ -1794,7 +1833,7 @@ async function main() {
     studyMoveNavigation = setupStudyMoveNavigation({
         goBack: go_back,
         goForward: go_forward,
-        getState: () => ({
+        getState: () => sparring?.active ? sparring.navigation() : ({
             canGoBack: !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && curr_move.length > 1,
             canGoForward: !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && tree_children(curr_move).length > 0
         })
@@ -1883,6 +1922,7 @@ function refresh_manual_navigation() {
 }
 
 function go_back() {
+    if (sparring?.active) { sparring.back(); return; }
     if (contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession || curr_move.length <= 1) return;
     chess.undo();
     curr_move.pop();
@@ -1890,6 +1930,7 @@ function go_back() {
 }
 
 function go_forward() {
+    if (sparring?.active) { sparring.forward(); return; }
     if (contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession) return;
     const nextNode = tree_children(curr_move)[0];
     if (!nextNode) return;

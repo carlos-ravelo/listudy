@@ -5,9 +5,11 @@
 </div>
 
 <div class="study-session-controls">
-  <div id="study_practice_choices" role="group" aria-label="<%= dgettext("study", "Practice mode") %>">
+  <div id="study_practice_choices" role="group" aria-label="<%= dgettext("study", "Study mode") %>">
+    <button type="button" id="study_mode" aria-pressed="false"><%= dgettext("study", "Read") %></button>
     <button type="button" id="practice_smart" aria-pressed="false">Smart</button>
     <button type="button" id="practice_lines" aria-pressed="true"><%= dgettext("study", "Full lines") %></button>
+    <button type="button" id="practice_sparring" aria-pressed="false" aria-controls="study_sparring"><%= dgettext("study", "Sparring") %></button>
   </div>
   <label id="line_order_control" for="puzzle_run"><%= dgettext("study", "After a line") %>
     <select id="puzzle_run">
@@ -19,16 +21,7 @@
   <button type="button" id="stop_smart_run" hidden><%= dgettext("study", "Stop session") %></button>
   <div class="study-session-tools">
   <button type="button" id="progress" class="modal_open"><%= dgettext("study", "Progress") %></button>
-  <div class="option_item">
-    <button type="button" id="study_mode" class="study-mode-toggle"
-            x-data="{ reading: false }"
-            @study-reading-updated.window="reading = $event.detail.reading"
-            aria-pressed="false" :aria-pressed="reading"
-            @click="$dispatch('study-reading-change', { reading: !reading })">
-      <span x-show="!reading"><%= dgettext("study", "Read study") %></span>
-      <span x-show="reading" x-cloak><%= dgettext("study", "Back to practice") %></span>
-    </button>
-  </div>
+
   <button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog"
           aria-label="<%= dgettext("study", "Settings") %>" title="<%= dgettext("study", "Settings") %>">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -47,6 +40,7 @@
   <div id="game_container" class="sidebar_main">
     <div class="study-board-frame">
       <%= render ListudyWeb.ComponentView, "chessground.html" %>
+      <%= render ListudyWeb.ComponentView, "promotion_picker.html" %>
     </div>
     <div id="study_board_actions" class="study-board-actions">
 <!-- Actions used while training -->
@@ -77,6 +71,7 @@
       <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
 
       <div class="sidebar_padded">
+        <%= render "_sparring.html" %>
         <section class="study-reading-tree" x-show="reading" x-cloak aria-label="<%= dgettext("study", "Chapter moves") %>">
           <div id="study_moves_heading" class="study-moves-heading">
             <h3><%= dgettext("study", "Moves") %></h3>

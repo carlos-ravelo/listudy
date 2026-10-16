@@ -2,14 +2,15 @@ import { Chessground } from 'chessground';
 import { createChapterEditor } from './modules/study/chapter_editor.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
 import { ground_legal_moves } from './modules/chess_utils.js';
+import { createPromotionPicker } from './modules/promotion_picker.js';
 
 import Alpine from 'alpinejs';
 
 Alpine.data('chapterEditor', () => {
-    let chapters, editor, ground, moveTree, config, pgnSnapshot;
+    let chapters, editor, ground, moveTree, config, pgnSnapshot, promotionPicker;
 
     return {
-        exportPgn: '', pgnEdited: false, options: [], chapter: 0, title: '', comment: '', pendingPromotion: null, promotionColor: 'white', promotionLeft: '0%', promotionBottom: false, analysisUrl: '',
+        exportPgn: '', pgnEdited: false, options: [], chapter: 0, title: '', comment: '', pendingPromotion: null, analysisUrl: '',
         editingTitle: false, titleBeforeEdit: '', saving: false, dirty: false, hasPrevious: false, hasNext: false, status: '',
 
         init() {
@@ -21,6 +22,8 @@ Alpine.data('chapterEditor', () => {
                 this.chapter = Number(requested);
             }
             editor = createChapterEditor(chapters[this.chapter]);
+            promotionPicker = createPromotionPicker({ element: this.$refs.promotionPicker,
+                onChoose: role => this.choosePromotion(role), onCancel: () => this.cancelPromotion() });
             ground = Chessground(this.$refs.board, {
                 orientation: config.color === 'black' ? 'black' : 'white',
                 drawable: { enabled: false },
@@ -35,7 +38,7 @@ Alpine.data('chapterEditor', () => {
             this.refresh();
         },
 
-        destroy() { ground?.destroy(); },
+        destroy() { promotionPicker?.destroy(); ground?.destroy(); },
 
         syncPgn(force = false) {
             const snapshot = JSON.stringify([this.chapter, editor.tree]);
@@ -76,13 +79,8 @@ Alpine.data('chapterEditor', () => {
             const choices = position.moves({ verbose: true }).filter(move => move.from === from && move.to === to && move.promotion);
             if (choices.length && !promotion) {
                 this.pendingPromotion = { from, to };
-                this.promotionColor = position.turn() === 'w' ? 'white' : 'black';
-                const flipped = ground.state.orientation === 'black';
-                const file = to.charCodeAt(0) - 97;
-                this.promotionLeft = `${(flipped ? 7 - file : file) * 12.5}%`;
-                this.promotionBottom = (to[1] === '1') !== flipped;
                 this.refresh();
-                this.$nextTick(() => this.$refs.promotionChoices?.querySelector('button')?.focus());
+                promotionPicker.open({ to, color: position.turn() === 'w' ? 'white' : 'black', orientation: ground.state.orientation });
                 return;
             }
             try {
@@ -97,6 +95,7 @@ Alpine.data('chapterEditor', () => {
         choosePromotion(role) {
             const move = this.pendingPromotion;
             if (!move || !['q', 'n', 'r', 'b'].includes(role)) return;
+            promotionPicker.close();
             this.pendingPromotion = null;
             this.play(move.from, move.to, role);
             this.$refs.board.focus();
@@ -104,6 +103,7 @@ Alpine.data('chapterEditor', () => {
 
         cancelPromotion() {
             if (!this.pendingPromotion) return;
+            promotionPicker.close();
             this.pendingPromotion = null;
             this.refresh();
             this.$refs.board.focus();

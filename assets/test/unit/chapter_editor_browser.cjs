@@ -9,22 +9,24 @@ const data = { chapters: [
     { title: 'First', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', comment: '', root: [
         { move: 'e4', comment: 'Original', children: [{ move: 'e5', comment: '', children: [] }] }
     ] },
-    { title: 'Second', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', comment: '', root: [] }
+    { title: 'Second', fen: '7k/P7/8/8/8/8/8/7K w - - 0 1', comment: '', root: [] }
 ] };
+const promotionPicker = fs.readFileSync(path.join(__dirname, '../../../lib/listudy_web/templates/component/promotion_picker.html.eex'), 'utf8')
+    .replace(/<%=\s*dgettext[^%]*%>/g, expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
 const html = `<!doctype html><html class="blue cburnett"><head>
 <meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/chessground.css"></head><body><main class="container">
 <section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)" data-editor="${escape(JSON.stringify(data))}"
 data-revision="original" data-save-url="/save" data-color="white" data-start="Start"
 data-variation="Variation" data-discard-prompt="Discard?" data-saving="Saving"
-data-save-error="Save failed" data-unsaved="Unsaved" data-invalid-move="Illegal">
+data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-invalid-move="Illegal">
 <select id="editor_chapter" :disabled="saving" :value="chapter" @change="changeChapter($event)">
 <template x-for="(option, index) in options" :key="index"><option :value="index" x-text="option.title" :selected="index === chapter"></option></template></select>
 <button id="editor_save" :disabled="saving || !dirty" @click="save()">Save</button>
 <button id="editor_discard" :disabled="saving || !dirty" @click="discard()">Discard</button>
-<div class="chapter-editor-layout"><div><div id="editor_board" class="cg-wrap" x-ref="board"></div>
+<div class="chapter-editor-layout"><div><div class="chapter-editor-board"><div id="editor_board" class="cg-wrap" x-ref="board"></div>${promotionPicker}</div>
 <button id="editor_previous" :disabled="saving || !hasPrevious" @click="previous()">Previous</button><button id="editor_next" :disabled="saving || !hasNext" @click="next()">Next</button>
-<select id="editor_promotion" x-model="promotion" :disabled="saving"><option value="q">Queen</option><option value="n">Knight</option></select></div>
+</div>
 <div><div id="editor_moves" x-ref="moves"></div><textarea id="editor_comment" x-model="comment" :disabled="saving" @input="updateComment($event.target.value)"></textarea></div></div>
 <p id="editor_status" role="status" x-text="status"></p></section></main><script src="/js/study_editor.js"></script></body></html>`;
 
@@ -44,7 +46,7 @@ data-save-error="Save failed" data-unsaved="Unsaved" data-invalid-move="Illegal"
                 saved = JSON.parse(body);
                 response.statusCode = conflict ? 409 : 200;
                 response.setHeader('Content-Type', 'application/json');
-                response.end(JSON.stringify(conflict ? { error: 'Study changed' } : { url: '/saved' }));
+                response.end(JSON.stringify(conflict ? { error: 'Study changed' } : { revision: 'saved-revision' }));
             });
             return;
         }
@@ -97,7 +99,18 @@ data-save-error="Save failed" data-unsaved="Unsaved" data-invalid-move="Illegal"
         await page.fill('#editor_comment', 'New Sicilian comment');
         conflict = false;
         await page.click('#editor_save');
-        await page.waitForURL('**/saved');
+        await page.waitForFunction(() => document.getElementById('editor_status').textContent === 'Saved');
+        assert.equal(await page.locator('#editor_save').isDisabled(), true);
+        await page.selectOption('#editor_chapter', '1');
+        await square('a7'); await square('a8');
+        await page.waitForSelector('[data-promotion-picker]', { state: 'visible' });
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('[data-promotion-picker]').isHidden(), true);
+        assert.equal(await page.locator('#editor_save').isDisabled(), true);
+        await square('a7'); await square('a8');
+        await page.click('[data-promotion="n"]');
+        await page.waitForFunction(() => document.getElementById('editor_moves').textContent.includes('a8=N'));
+        assert.equal(await page.locator('#editor_save').isDisabled(), false);
         assert.deepEqual(errors, []);
         console.log('Chapter editor browser checks passed.');
     } finally {
