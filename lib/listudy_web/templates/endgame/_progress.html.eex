@@ -1,0 +1,3 @@
+<span class="endgame-progress" data-endgame-progress
+      data-endgame-ids="<%= Jason.encode!(Enum.map(@games, & &1.id)) %>"
+      data-progress-template="<%= dgettext("endgame", "%{solved} / %{total} solved", solved: "{solved}", total: length(@games)) %>"><%= dgettext("endgame", "%{solved} / %{total} solved", solved: 0, total: length(@games)) %></span>

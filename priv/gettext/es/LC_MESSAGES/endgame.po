@@ -335,3 +335,18 @@ msgstr "Continuar practicando"
 #, elixir-autogen, elixir-format
 msgid "Explore exercises"
 msgstr "Explorar ejercicios"
+
+msgid "Practice endgames against Stockfish."
+msgstr "Practica finales contra Stockfish."
+
+msgid "%{solved} / %{total} solved"
+msgstr "%{solved} / %{total} resueltos"
+
+msgid "Exercise %{number}"
+msgstr "Ejercicio %{number}"
+
+msgid "Solved"
+msgstr "Resuelto"
+
+msgid "About this category"
+msgstr "Acerca de esta categoría"

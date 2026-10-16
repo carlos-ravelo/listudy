@@ -37,7 +37,7 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         if (!file.startsWith(root + '/priv/static/') || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
             response.statusCode = 404; response.end(); return;
         }
-        response.setHeader('Content-Type', file.endsWith('.css') ? 'text/css' : file.endsWith('.js') ? 'text/javascript' : file.endsWith('.wasm') ? 'application/wasm' : 'application/octet-stream');
+        response.setHeader('Content-Type', file.endsWith('.css') ? 'text/css' : file.endsWith('.js') ? 'text/javascript' : file.endsWith('.wasm') ? 'application/wasm' : file.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream');
         response.end(fs.readFileSync(file));
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -88,9 +88,43 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         await page.reload();
         await page.waitForFunction(() => document.querySelector('[data-endgame-start]').textContent === 'Continue practicing');
         assert((await page.locator('[data-endgame-start]').getAttribute('href')).endsWith('/basic/queen/2'));
+        assert.equal(await page.locator('.endgame-category').count(), 12);
+        await page.waitForFunction(() => [...document.querySelectorAll('.endgame-material img')].every(image => image.complete && image.naturalWidth > 0));
+        assert((await page.locator('[data-endgame-progress]').first().textContent()).startsWith('1 / '));
+        await page.goto(base + '/en/endgames/basic');
+        await page.waitForSelector('#basic_queen_1.is-solved');
+        assert.equal(await page.locator('#basic_queen_1').getAttribute('aria-label'), 'Exercise 1 · Solved');
+        assert.equal(await page.locator('#basic_queen_2').getAttribute('aria-label'), 'Exercise 2');
+        assert.equal(await page.locator('.endgame-exercise-group').count(), 4);
+        assert.equal(await page.locator('.endgame-exercise').count(), await page.locator('[data-endgame-start]').evaluate(node => JSON.parse(node.dataset.endgameGames).length));
+        assert((await page.locator('[data-endgame-progress]').first().textContent()).startsWith('1 / 7'));
+        const exerciseBounds = await page.locator('#basic_queen_1').boundingBox();
+        assert(exerciseBounds.width >= 44 && exerciseBounds.height >= 44);
+        await page.locator('#basic_queen_1').focus();
+        await page.keyboard.press('Tab');
+        assert(await page.locator('#basic_queen_2').evaluate(node => getComputedStyle(node).outlineStyle !== 'none'));
+        await page.evaluate(() => {
+            localStorage.setItem('solved_endgames', JSON.stringify(['basic_queen_1', 'basic_queen_2', 'basic_queen_2']));
+            window.dispatchEvent(new StorageEvent('storage', {key: 'solved_endgames'}));
+        });
+        await page.waitForSelector('#basic_queen_2.is-solved');
+        assert((await page.locator('[data-endgame-progress]').first().textContent()).startsWith('2 / 7'));
+        assert((await page.locator('[data-endgame-start]').getAttribute('href')).endsWith('/basic/queen/3'));
+        await page.evaluate(() => {
+            localStorage.setItem('solved_endgames', 'invalid json');
+            window.dispatchEvent(new StorageEvent('storage', {key: 'solved_endgames'}));
+        });
+        assert.equal(await page.locator('.endgame-exercise.is-solved').count(), 0);
+        assert.equal(await page.locator('[data-endgame-start]').textContent(), 'Start practicing');
+        await page.evaluate(() => {
+            localStorage.setItem('solved_endgames', JSON.stringify(['basic_queen_1']));
+            window.dispatchEvent(new Event('pageshow'));
+        });
+        await page.waitForSelector('#basic_queen_1.is-solved');
+
         for (const width of [390, 1280]) {
             await page.setViewportSize({ width, height: 960 });
-            for (const route of ['/es', '/en', '/en/studies', '/en/studies/new', '/en/endgames']) {
+            for (const route of ['/es', '/en', '/en/studies', '/en/studies/new', '/en/endgames', '/en/endgames/basic']) {
                 await page.goto(base + route);
                 await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${route} overflows at ${width}px`);

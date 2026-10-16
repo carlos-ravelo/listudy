@@ -344,3 +344,18 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Explore exercises"
 msgstr ""
+
+msgid "Practice endgames against Stockfish."
+msgstr ""
+
+msgid "%{solved} / %{total} solved"
+msgstr ""
+
+msgid "Exercise %{number}"
+msgstr ""
+
+msgid "Solved"
+msgstr ""
+
+msgid "About this category"
+msgstr ""
