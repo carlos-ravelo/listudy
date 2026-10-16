@@ -1,5 +1,5 @@
 <details class="study-tools-menu" id="study_more_actions">
-  <summary><%= dgettext("study", "More") %></summary>
+  <summary aria-label="<%= dgettext("study", "More") %>" title="<%= dgettext("study", "More") %>"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></summary>
   <div class="study-tools-content">
 <div class="study-feature-actions">
   <a href="/random_study" class="button secondary"><%= dgettext("study", "Another study") %></a>

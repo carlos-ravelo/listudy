@@ -19,6 +19,12 @@ Your daily studies| Daily puzzle
 
 Daily studies use the library’s existing Daily selection, with the most recently opened daily study first and the study with the most recorded active training time next. Those rows have quiet text cues; no usage cue is shown without recorded training. Desktop shows about six rows with scrolling. Mobile stacks the cards, shows four studies and links to the complete Daily list without a nested scroll area. Guest and empty-library cards provide one next action.
 
+## Navigation layout
+
+At widths of 1280 px and above, navigation occupies a fixed 176 px left column. The main links stay at the top; preferences and account stay below. Submenus expand within the scrollable navigation area, including in short windows. The existing top navigation remains between 901 and 1279 px, and the Menu button remains on smaller screens. Settings overlays cover the sidebar and content. Embedded board pages retain their full-width layout.
+
+Review the breakpoint transitions, Escape and keyboard focus, settings dialogs, and the home, study and analysis pages with `assets/test/unit/site_navigation_browser.cjs`.
+
 ## Before and after
 
 | Task | Before | After |

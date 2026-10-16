@@ -35,6 +35,23 @@
 @media (pointer: coarse) {
   .site-footer nav a { display: inline-flex; align-items: center; min-height: 44px; }
 }
+@media (min-width: 1280px) {
+  body.site-layout { padding-left: 176px; }
+  .site-header { position: fixed; inset: 0 auto 0 0; width: 176px; z-index: 200; margin: 0; border-bottom: 0; border-right: 1px solid var(--bg-highlight-color); background: var(--bg-color); box-sizing: border-box; }
+  .site-header .site-navigation { flex-direction: column; align-items: stretch; gap: 20px; width: 100%; max-width: none; height: 100vh; height: 100dvh; min-height: 0; margin: 0; padding: 20px 12px; box-sizing: border-box; }
+  .site-header .site-brand { align-self: flex-start; }
+  .site-header .site-navigation-links { flex-direction: column; align-items: stretch; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .site-primary-navigation, .site-account-navigation { flex-direction: column; align-items: stretch; flex-shrink: 0; }
+  .site-header .site-navigation-links > .site-account-navigation { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--bg-highlight-color); }
+  .site-primary-navigation > a, .site-account-navigation > a, .site-menu > summary { min-height: 44px; }
+  .site-menu > summary { justify-content: space-between; max-width: none; }
+  .site-menu-panel { position: static; min-width: 0; max-width: none; margin: 4px 0 4px 8px; padding: 0 0 0 4px; border: 0; border-left: 1px solid var(--bg-highlight-color); border-radius: 0; }
+  .site-menu-panel a, .site-language-menu > summary { min-height: 44px; box-sizing: border-box; overflow-wrap: anywhere; }
+  .site-header :is(a, button, summary):focus-visible { outline-offset: -2px; }
+  .site-language-menu > div { max-height: none; }
+  .site-skip-link { left: 188px; }
+  .site-layout .modal { z-index: 1000; }
+}
 @media (max-width: 900px) {
   .site-header .site-navigation { flex-wrap: wrap; gap: 0; padding-top: 8px; padding-bottom: 8px; }
   .site-header .site-menu-toggle { display: block; margin-left: auto; min-height: 44px; }

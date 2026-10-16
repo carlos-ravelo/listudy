@@ -1,9 +1,4 @@
 <div class="study-workspace" data-game-positions-url="<%= if @study.is_owner, do: Routes.analysis_path(@conn, :positions, @study.id), else: "" %>">
-<div class="study-heading">
-  <h1 class="study-feature-title"><%= String.replace(@study.title, "_", " ") %></h1>
-  <%= render "_study_tools.html", study: @study, conn: @conn, locale: @locale %>
-</div>
-
 <div class="study-session-controls">
   <div id="study_practice_choices" role="group" aria-label="<%= dgettext("study", "Study mode") %>">
     <button type="button" id="study_mode" aria-pressed="false"><%= dgettext("study", "Read") %></button>
@@ -20,6 +15,7 @@
   </label>
   <button type="button" id="stop_smart_run" hidden><%= dgettext("study", "Stop session") %></button>
   <div class="study-session-tools">
+  <%= render "_study_tools.html", study: @study, conn: @conn, locale: @locale %>
   <button type="button" id="progress" class="modal_open"><%= dgettext("study", "Progress") %></button>
 
   <button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog"
@@ -32,7 +28,10 @@
   </div>
 </div>
 
-<%= render "_chapter_controls.html" %>
+<div class="study-context">
+  <h1 class="study-feature-title" title="<%= String.replace(@study.title, "_", " ") %>"><%= String.replace(@study.title, "_", " ") %></h1>
+  <%= render "_chapter_controls.html" %>
+</div>
 
 <div id="study_layout" class="with_sidebar" x-data="{ reading: false, expanded: false, overflowing: false }"
      :class="{ 'study-reading-layout': reading }"

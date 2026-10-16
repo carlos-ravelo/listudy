@@ -18,6 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
         toggle.setAttribute('aria-expanded', 'false');
         header.classList.remove('is-expanded');
     };
+    const compact = window.matchMedia('(max-width: 900px)');
+    const sidebar = window.matchMedia('(min-width: 1280px)');
+    const resetLayout = () => {
+        const hadFocus = header.contains(document.activeElement);
+        close();
+        if (hadFocus) (compact.matches ? toggle : header.querySelector('.site-brand')).focus();
+    };
+    compact.addEventListener('change', resetLayout);
+    sidebar.addEventListener('change', resetLayout);
     toggle.addEventListener('click', () => {
         const expanded = toggle.getAttribute('aria-expanded') !== 'true';
         if (!expanded) close();
@@ -39,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         close();
     });
     header.addEventListener('keydown', event => {
+        if (!event.target.closest('.site-navigation')) return;
         if (event.key !== 'Escape') return;
         const menu = event.target.closest('details[open]');
         if (menu) {
@@ -46,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
             menu.querySelector('summary').focus();
         } else {
             close();
-            toggle.focus();
+            (compact.matches ? toggle : header.querySelector('.site-brand')).focus();
         }
         event.preventDefault();
     });
