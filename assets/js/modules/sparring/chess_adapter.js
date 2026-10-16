@@ -3,13 +3,32 @@ const Chess = ChessModule.Chess || ChessModule;
 
 const uci = move => move.from + move.to + (move.promotion || '');
 
-// Listudy's chapter tree is translated lazily; source nodes are never mutated.
-export function createChapterSparring(chapter) {
-    let chess = new Chess();
-    if (chapter.headers.FEN && !chess.load(chapter.headers.FEN)) throw new Error('Invalid chapter FEN');
+export function sparringStartPositions(chapters) {
+    const standard = new Chess().fen();
+    const normalized = new Map([[standard, standard]]);
+    const groups = new Map();
+    chapters.forEach((chapter, index) => {
+        const raw = chapter.headers.FEN || standard;
+        let fen = normalized.get(raw);
+        if (!fen) {
+            const game = new Chess();
+            if (!game.load(raw)) throw new Error('Invalid chapter FEN');
+            fen = game.fen(); normalized.set(raw, fen);
+        }
+        if (!groups.has(fen)) groups.set(fen, { fen, standard: fen === standard, chapters: [] });
+        groups.get(fen).chapters.push(index);
+    });
+    return [...groups.values()].sort((a, b) => Number(b.fen === standard) - Number(a.fen === standard));
+}
+
+// Keep only references to compatible branches. Descendants are read on advance.
+export function createStudySparring(chapters, { startFen, starts = sparringStartPositions(chapters) } = {}) {
+    const group = startFen ? starts.find(group => group.fen === startFen) : starts[0];
+    if (!group) throw new Error('No matching repertoire starting position');
+    let chess = new Chess(group.fen);
     const initialFen = chess.fen();
-    let children = chapter.root;
-    const path = [];
+    let frontier = group.chapters.map(chapter => ({ chapter, path: [], children: chapters[chapter].root }));
+    let available = null;
     const position = {
         game: () => chess,
         at(ply) {
@@ -29,22 +48,41 @@ export function createChapterSparring(chapter) {
             return !!chess.move({ from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4] });
         }
     };
-    function choices() {
-        const legal = chess.moves({ verbose: true });
-        return children.map(node => {
-            const move = legal.find(move => move.san === node.move);
+    function continuations() {
+        if (available) return available;
+        const legal = new Map(chess.moves({ verbose: true }).map(move => [move.san, move]));
+        const next = new Map();
+        for (const route of frontier) route.children.forEach((node, index) => {
+            const move = legal.get(node.move);
             if (!move) throw new Error('Illegal repertoire continuation');
-            return { uci: uci(move), san: move.san };
+            const key = uci(move);
+            if (!next.has(key)) next.set(key, { uci: key, san: move.san, matches: [] });
+            next.get(key).matches.push({ route, node, index });
         });
+        available = next;
+        return available;
     }
-    return { position, repertoire: {
-        path: () => [...path],
-        choices,
+    const source = route => ({ chapter: route.chapter, path: [...route.path],
+        id: chapters[route.chapter].headers.ListudyChapterId || String(route.chapter) });
+    function routes() {
+        const continuing = frontier.filter(route => route.children.length);
+        return (continuing.length ? continuing : frontier).map(source);
+    }
+    return { position, startPositions: starts, repertoire: {
+        routes,
+        sources: () => frontier.map(source),
+        path: () => routes()[0]?.path || [],
+        choices: () => [...continuations().values()].map(({ uci, san }) => ({ uci, san })),
         advance(move) {
-            const index = choices().findIndex(choice => choice.uci === move);
-            if (index < 0) throw new Error('Unknown repertoire continuation');
-            path.push(index);
-            children = children[index].children || [];
+            const choice = continuations().get(move);
+            if (!choice) throw new Error('Unknown repertoire continuation');
+            frontier = choice.matches.map(({ route, node, index }) => ({ chapter: route.chapter,
+                path: [...route.path, index], children: node.children || [] }));
+            available = null;
         }
     } };
+}
+
+export function createChapterSparring(chapter) {
+    return createStudySparring([chapter]);
 }

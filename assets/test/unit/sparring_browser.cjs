@@ -35,9 +35,9 @@ window.Worker = class extends Worker {
 window.chapter = {headers: {Event:'Test chapter'},root:[{move:'e4',children:[{move:'e5',children:[{move:'Nf3',children:[]}]}]}]};
 window.savedResults={};window.decisions=[];window.stops=0;
 window.board=Sparring.Chessground(document.getElementById('chessground'),{drawable:{brushes:{normal:{key:'n',color:'#3333ff',opacity:0.6,lineWidth:10}}},movable:{free:false,events:{after:(from,to)=>controller.move(from,to)}}});
-window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapter:()=>chapter,getBoard:()=>board,
+window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapters:()=>window.studyChapters || [chapter],getTitle:()=> 'Test study',getBoard:()=>board,
  createEngine:()=>window.fakeEngine || Sparring.createSparringEngine(),
- showHints(){board.setShapes([{orig:'e2',dest:'e4',brush:'green'}])},
+ showHints(routes){window.hintRoutes=routes;board.setShapes([{orig:'e2',dest:'e4',brush:'green'}])},
  onDecision(record){decisions.push(record)},saveResult(record){savedResults[record.id]=record},getHistory:()=>Object.values(savedResults)});
 document.getElementById('hints').onclick=()=>controller.hint();
 document.getElementById('reset_line').onclick=()=>controller.start();
@@ -106,7 +106,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
             const download = await pending;
             assert.equal(download.suggestedFilename(), 'listudy-sparring.pgn');
             const pgn = fs.readFileSync(await download.path(), 'utf8');
-            assert(pgn.includes('[Event "Test chapter"]'));
+            assert(pgn.includes('[Event "Test study"]'));
             assert(pgn.includes('1. e4 e5'));
         }
         await auditButtons();
@@ -221,9 +221,51 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert(dimensions.x >= 0 && dimensions.x + dimensions.width <= 390);
         const badge = await page.locator('[data-sparring-board-status]').boundingBox();
         assert(badge.y < dimensions.y);
+        // Study scope: the currently selected chapter is not the repertoire boundary.
+        await page.click('#practice_lines');
+        await page.evaluate(() => {
+            const line = moves => moves.length ? [{move:moves[0],children:line(moves.slice(1))}] : [];
+            studyChapters = [
+                {headers:{Event:'Promotion',FEN:'k7/7P/8/8/8/8/8/K7 w - - 0 1'},root:line(['h8=N'])},
+                {headers:{Event:'Italian',ListudyChapterId:'italian'},root:line(['e4','e5','Nf3','Nc6','Bc4'])},
+                {headers:{Event:'Scotch',ListudyChapterId:'scotch'},root:line(['e4','e5','Nf3','Nc6','d4'])},
+                {headers:{Event:'Short line'},root:line(['e4'])},
+                {headers:{Event:'Queen'},root:line(['d4','d5','c4'])}
+            ];
+            unionEngineCalls = 0;
+            fakeEngine = {async bestMove(){unionEngineCalls++;return 'e5d4'},cancel(){},dispose(){}};
+        });
+        await page.click('#practice_sparring');
+        assert.equal(await page.locator('[data-sparring="start-control"]').isVisible(), true);
+        assert.equal(await page.locator('[data-sparring="start"] option').count(), 2);
+        assert.equal(await page.locator('[data-sparring="start"] option:checked').textContent(), 'Initial position');
+        await move('d2','d4');
+        await page.waitForFunction(() => board.state.pieces.get('d5')?.color === 'black');
+        assert.equal(await page.textContent('[data-sparring="phase"]'), 'Repertoire');
+        await page.click('#reset_line');
+        await move('e2','e4');
+        await page.waitForFunction(() => board.state.pieces.get('e5')?.color === 'black');
+        assert.equal(await page.evaluate(() => unionEngineCalls), 0);
+        assert.equal(await page.textContent('[data-sparring="phase"]'), 'Repertoire');
+        await move('g1','f3');
+        await page.waitForFunction(() => board.state.pieces.get('c6')?.role === 'knight');
+        await page.click('#hints');
+        assert.deepEqual(await page.evaluate(() => hintRoutes.map(route => route.chapter)), [1,2]);
+        await move('d2','d4');
+        await page.waitForFunction(() => document.querySelector('[data-sparring="phase"]').textContent === 'Against Stockfish');
+        assert.equal(await page.evaluate(() => unionEngineCalls), 1);
+        await page.click('[data-sparring="analyze"]');
+        assert.equal(await page.evaluate(() => Object.values(savedResults).some(record => record.scope === 'study' && record.sources.some(source => source.id === 'scotch'))), true);
+        await page.selectOption('[data-sparring="start"]','k7/7P/8/8/8/8/8/K7 w - - 0 1');
+        await page.waitForFunction(() => board.state.pieces.get('h7')?.role === 'pawn');
+        assert.equal(await page.textContent('[data-sparring="phase"]'), 'Repertoire');
+        await move('h7','h8');
+        await page.click('[data-promotion="n"]');
+        await page.waitForFunction(() => document.querySelector('[data-sparring="phase"]').textContent === 'Session finished');
         console.log('Bundled engine:', await page.evaluate(() => engineTrace.find(line => line.startsWith('id name '))));
         assert.deepEqual(errors, []);
         console.log('All Sparring buttons: labels, keyboard focus, touch targets, continue, retry, downloads, history, resignation and promotion passed');
+        console.log('Study-wide chapters, merged hints, delayed engine transition, provenance and independent custom starts passed');
     } finally {
         if (browser) await browser.close();
         await new Promise(resolve => server.close(resolve));

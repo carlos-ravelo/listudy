@@ -17,6 +17,8 @@
 .study-sparring .sparring-actions button[data-primary="true"]:hover:not(:disabled) { opacity: .85; }
 .study-sparring [hidden] { display: none !important; }
 .study-sparring > label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.study-sparring [data-sparring="start-control"] { flex-wrap: wrap; }
+.study-sparring select { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; background: var(--bg-color); color: var(--font-color); }
 .study-sparring summary { display: list-item; padding-block: 10px; cursor: pointer; box-sizing: border-box; }
 .study-sparring summary:focus-visible, .study-sparring input:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 .sparring-note { color: var(--study-muted); font-size: 12px; }
@@ -30,6 +32,7 @@
 .study-sparring th, .study-sparring td { text-align: left; vertical-align: top; padding: 6px; }
 .study-sparring [data-sparring="moves"] { max-height: 220px; overflow: auto; margin-top: 12px; }
 .study-sparring-active #line_order_control,
+.study-sparring-active .study-chapter-navigation,
 .study-sparring-active #stop_smart_run,
 .study-sparring-active #replay_position_context { display: none; }
 .study-sparring-active #practice_sparring { background: var(--bg-highlight-color); }
