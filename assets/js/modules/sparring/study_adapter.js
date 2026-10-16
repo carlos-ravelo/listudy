@@ -1,4 +1,4 @@
-import { createSparringSession } from './session.js';
+import { createSparringSession, sparringReviewEvery } from './session.js';
 import { createStudySparring, sparringStartPositions } from './chess_adapter.js';
 import { createSparringEngine, sparringStrength, sparringRating } from './uci_engine.js';
 import { createPromotionPicker } from '../promotion_picker.js';
@@ -8,7 +8,7 @@ import { set_text, clear_all_text, info_div, error_div, success_div } from '../i
 
 export function setupStudySparring({ getChapters, getTitle = () => 'Listudy sparring', getPlayer, getBoard, onBegin = () => {},
     onPosition = () => {}, showHints = () => {}, onDecision = () => {}, saveResult = () => {},
-    getHistory = () => [], createEngine = createSparringEngine, readStrength = () => null, writeStrength = () => {} }) {
+    getHistory = () => [], createEngine = createSparringEngine, readStrength = () => null, writeStrength = () => {}, readPreferences = () => ({}), writePreferences = () => {} }) {
     const opener = document.getElementById('practice_sparring');
     const panel = document.getElementById('study_sparring');
     const boardStatus = document.querySelector('[data-sparring-board-status]');
@@ -32,6 +32,17 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     const isError = grade => ['inaccuracy', 'mistake', 'blunder'].includes(grade);
     const gradeSymbol = grade => ({ best: '★', acceptable: '✓', good: '✓', inaccuracy: '?!', mistake: '?', blunder: '??' })[grade];
     find('strength').value = String(strength);
+    const preferences = readPreferences() || {};
+    find('review-every').value = String(sparringReviewEvery(preferences.reviewEvery));
+    find('pause-blunder').checked = preferences.pauseOnBlunder === true || preferences.pauseOnBlunder === 'true';
+    find('live').checked = preferences.live !== false && preferences.live !== 'false';
+    const reviewOptions = () => ({ checkpointEvery: sparringReviewEvery(find('review-every').value), pauseOnBlunder: find('pause-blunder').checked });
+    function persistPreferences() {
+        const options = reviewOptions();
+        writePreferences({ reviewEvery: options.checkpointEvery, pauseOnBlunder: options.pauseOnBlunder, live: find('live').checked });
+        session?.configure(options);
+        if (session) render(session.snapshot());
+    }
     const numbers = new Intl.NumberFormat(document.documentElement.lang || undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const format = number => numbers.format(number);
     function continuation(ply, pv) {
@@ -52,7 +63,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             'Black', state.player === 'b' ? 'You' : 'Stockfish / repertoire');
         return { id: sessionId, startedAt, updatedAt: Date.now(), status: state.phase, reason: state.reason,
             scope: 'study', startFen: state.initialFen, sources: ports.repertoire.sources(),
-            gradingVersion: 'lichess-style-v1', engine: engine?.metadata?.() || null, opponentLevels: strengthChanges.map(change => ({ ...change })),
+            gradingVersion: 'lichess-style-v1', reviewSettings: reviewOptions(), engine: engine?.metadata?.() || null, opponentLevels: strengthChanges.map(change => ({ ...change })),
             attempts: state.attempts, correct: state.correct, firstDeviation: state.firstDeviation,
             freeCount: state.freeCount, result: outcome, pgn: game.pgn(),
             reviews: state.reviews.map(row => ({ ...row, line: continuation(row.ply, row.pv) })) };
@@ -196,7 +207,10 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
                 const item = document.createElement('span');
                 item.setAttribute('role', 'listitem');
                 item.dataset.grade = grade;
-                item.textContent = `${gradeSymbol(grade)} ${gradeLabel(grade)} · ${count}`;
+                item.dataset.empty = String(count === 0);
+                const total = document.createElement('strong'); total.textContent = count;
+                const label = document.createElement('span'); label.textContent = `${gradeSymbol(grade)} ${gradeLabel(grade)}`;
+                item.append(total, label);
                 find('grade-counts').appendChild(item);
             }
             save(state);
@@ -298,7 +312,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
                 },
                 onCancel() { pendingPromotion = null; render(session.snapshot()); document.getElementById('chessground').focus(); } });
             engine = createEngine({ strength });
-            session = createSparringSession({ ...ports, engine, player: getPlayer() === 'white' ? 'w' : 'b',
+            session = createSparringSession({ ...ports, engine, ...reviewOptions(), player: getPlayer() === 'white' ? 'w' : 'b',
                 onDecision, onChange: state => { if (current === generation) {
                     if (readIndex !== null && readIndex >= state.moves.length) readIndex = null;
                     inspectedRow = null; render(state);
@@ -335,7 +349,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         pendingPromotion = null; picker?.close(); session?.resign();
     });
     find('retry').addEventListener('click', () => { readIndex = null; inspectedRow = null; session?.retry(); document.getElementById('chessground').focus(); });
-    find('live').addEventListener('change', () => { if (session) render(session.snapshot()); });
+    for (const name of ['review-every', 'pause-blunder', 'live']) find(name).addEventListener('change', persistPreferences);
     find('download').addEventListener('click', () => { if (session) download(result(session.snapshot())); });
     for (const opener of document.querySelectorAll('[data-study-dialog="study_sparring_history_dialog"]')) opener.addEventListener('click', history);
     history();

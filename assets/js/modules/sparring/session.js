@@ -1,16 +1,22 @@
 import { assessMove } from './evaluation.js';
 
+export function sparringReviewEvery(value) {
+    const interval = Number(value);
+    return Number.isInteger(interval) && interval >= 0 && interval <= 100 ? interval : 0;
+}
+
 // The session owns play and analysis; Listudy supplies its board, hints and progress UI.
 export function createSparringSession({ position, repertoire, engine, player, random = Math.random,
-    onChange = () => {}, onDecision = () => {}, checkpointEvery = 6 }) {
+    onChange = () => {}, onDecision = () => {}, checkpointEvery = 0, pauseOnBlunder = false }) {
     let phase = 'theory', thinking = false, disposed = false, started = false;
     let feedback = null, error = null, firstDeviation = null, reason = null;
     let attempts = 0, correct = 0, assisted = false, revision = 0, freeCount = 0;
-    let nextCheckpoint = checkpointEvery, retryPly = null;
+    checkpointEvery = sparringReviewEvery(checkpointEvery);
+    let nextCheckpoint = checkpointEvery || Infinity, retryPly = null;
     const moves = [], reviews = [], theoryPlies = [];
     const freeDecisions = new Set();
     const snapshot = () => ({ ...position.snapshot(), phase, thinking, feedback, error, reason,
-        theoryPlies: [...theoryPlies], player, firstDeviation, attempts, correct, freeCount, moves: [...moves], reviews: reviews.map(row => ({ ...row })),
+        theoryPlies: [...theoryPlies], player, firstDeviation, attempts, correct, freeCount, checkpointEvery, pauseOnBlunder, moves: [...moves], reviews: reviews.map(row => ({ ...row })),
         canPlay: started && !disposed && !thinking && !error && ['theory', 'free'].includes(phase) && position.snapshot().turn === player });
     const emit = () => { if (!disposed) onChange(snapshot()); };
     function play(uci) {
@@ -22,7 +28,7 @@ export function createSparringSession({ position, repertoire, engine, player, ra
         engine.cancel?.();
         thinking = false; error = null; feedback = null;
         phase = finish ? 'finished' : 'review'; reason = why;
-        nextCheckpoint = freeCount + checkpointEvery;
+        nextCheckpoint = checkpointEvery ? freeCount + checkpointEvery : Infinity;
         emit();
     }
     async function settle(reply = null) {
@@ -55,6 +61,12 @@ export function createSparringSession({ position, repertoire, engine, player, ra
     }
     return {
         snapshot,
+        configure(options) {
+            const interval = sparringReviewEvery(options.checkpointEvery ?? checkpointEvery);
+            if (interval !== checkpointEvery) nextCheckpoint = interval ? freeCount + interval : Infinity;
+            checkpointEvery = interval;
+            pauseOnBlunder = options.pauseOnBlunder ?? pauseOnBlunder;
+        },
         async start() { if (started || disposed) return; started = true; await settle(); },
         async move(uci) {
             if (!snapshot().canPlay) return false;
@@ -109,7 +121,7 @@ export function createSparringSession({ position, repertoire, engine, player, ra
                             evaluationAfter: { ...last.score, turn: after.turn } });
                         onDecision({ key: `free:${ply}`, correct: ['best', 'acceptable'].includes(assessment.grade), assisted: retried });
                         reply = engine.canReuseAnalysisMove?.() === false ? null : last.uci;
-                        if (assessment.grade === 'blunder' && !position.snapshot().over) { pause('blunder'); return true; }
+                        if (pauseOnBlunder && assessment.grade === 'blunder' && !position.snapshot().over) { pause('blunder'); return true; }
                     } else onDecision({ key: `free:${ply}`, correct: false, assisted: false });
                 } catch (_) {
                     if (!disposed && request === revision) error = 'analysis';

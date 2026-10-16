@@ -259,7 +259,7 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert.equal(analyzed.snapshot().phase, 'finished');
 
     let searches = 0;
-    const blunder = createSparringSession({ ...createChapterSparring({ headers: {}, root: [] }), player: 'w', engine: {
+    const blunder = createSparringSession({ ...createChapterSparring({ headers: {}, root: [] }), player: 'w', pauseOnBlunder: true, engine: {
         async analyze(state) { searches++; return { score: { type: 'cp', value: state.turn === 'w' ? 500 : 0 },
             uci: state.turn === 'w' ? 'd2d4' : 'e7e5', pv: ['d2d4'] }; },
         cancel() {}, dispose() {}
@@ -268,6 +268,24 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert.equal(searches, 4);
     assert.equal(blunder.snapshot().reason, 'blunder');
     assert.deepEqual(plain(blunder.snapshot().moves), ['e2e4']);
+
+    // Default play never interrupts for an engine judgement; optional pauses are explicit.
+    const continuous = createSparringSession({ ...createChapterSparring({headers:{},root:[]}),player:'w',engine:{
+        async analyze(state) { return {score:{type:'cp',value:state.turn==='w'?500:0},uci:state.turn==='w'?'d2d4':'e7e5',pv:[]}; },
+        cancel(){},dispose(){}
+    }});
+    await continuous.start();await continuous.move('e2e4');
+    assert.equal(continuous.snapshot().reviews[0].grade,'blunder');
+    assert.equal(continuous.snapshot().phase,'free');
+    assert.equal(continuous.snapshot().canPlay,true);
+    assert.deepEqual(plain(continuous.snapshot().moves),['e2e4','e7e5']);
+    assert.equal(continuous.snapshot().checkpointEvery,0);
+    continuous.configure({checkpointEvery:10,pauseOnBlunder:true});
+    assert.equal(continuous.snapshot().checkpointEvery,10);
+    assert.equal(continuous.snapshot().pauseOnBlunder,true);
+    continuous.configure({checkpointEvery:0,pauseOnBlunder:false});
+    assert.equal(continuous.snapshot().checkpointEvery,0);
+    continuous.dispose();
 
     let resolveAnalysis;
     let cancelled = false;

@@ -22,7 +22,14 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
         frame = null;
         if (!current || current.classList.contains('hidden')) return;
         region.style.maxHeight = '';
+        const board = document.querySelector('#chessground')?.getBoundingClientRect();
+        const width = Math.min(360, innerWidth - 24);
+        const beside = board && innerWidth - board.right >= 280;
+        region.style.width = `${beside ? Math.min(360, innerWidth - board.right - 24) : Math.min(width, board?.width || width)}px`;
+        region.style.insetInlineEnd = 'auto';
+        region.style.left = `${beside ? board.right + 12 : Math.max(12, Math.min(board?.left || 12, innerWidth - region.getBoundingClientRect().width - 12))}px`;
         const rect = region.getBoundingClientRect();
+        const desiredTop = board ? (beside ? Math.max(12, board.top + 16) : board.bottom + 8) : 12;
         const height = Math.min(region.scrollHeight, 160, innerHeight / 4);
         // Find a viewport gap beside the board and the active game controls.
         const obstacles = [...document.querySelectorAll('#chessground, #study_board_actions, .study-session-controls, .study-chapter-navigation, .sparring-actions, .sparring-navigation, #hints, #reset_line, #study_previous_move, #study_next_move, #open_study_settings, #study_more_actions, .study-tree-move')]
@@ -36,11 +43,14 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
             top = Math.max(top, end);
         }
         if (top < innerHeight - 12) gaps.push([top, innerHeight - 12]);
-        const gap = gaps.reverse().find(([start, end]) => end - start >= Math.min(height, 64));
+        const candidates = gaps.filter(([start, end]) => end - start >= Math.min(height, 64))
+            .map(([start, end]) => ({ start, end, top: Math.max(start, Math.min(desiredTop, end - Math.min(height, end - start))) }));
+        const gap = candidates.sort((a, b) => Math.abs(a.top - desiredTop) - Math.abs(b.top - desiredTop))[0];
         if (gap) {
-            region.style.bottom = `${innerHeight - gap[1]}px`;
-            region.style.maxHeight = `${Math.min(160, gap[1] - gap[0])}px`;
-        } else region.style.bottom = 'max(12px, env(safe-area-inset-bottom))';
+            region.style.bottom = 'auto';
+            region.style.top = `${gap.top}px`;
+            region.style.maxHeight = `${Math.min(160, gap.end - gap.top)}px`;
+        } else { region.style.top = '12px'; region.style.bottom = 'auto'; }
     }
     function schedulePosition() { if (!frame) frame = requestAnimationFrame(position); }
     for (const close of region.querySelectorAll('.close_button')) {
