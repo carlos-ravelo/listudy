@@ -1,0 +1,28 @@
+<fieldset id="study_sparring_settings" class="study-setting-group study-sparring"><legend><%= dgettext("study", "Sparring") %></legend>
+  <label class="sparring-strength-control"><%= dgettext("study", "Opponent strength") %>
+    <select data-sparring="strength" name="sparring_strength" aria-describedby="sparring_strength_help">
+      <option value="1"><%= dgettext("study", "≈ 1320") %></option>
+      <option value="2"><%= dgettext("study", "≈ 1500") %></option>
+      <option value="3"><%= dgettext("study", "≈ 1700") %></option>
+      <option value="4"><%= dgettext("study", "≈ 1900") %></option>
+      <option value="5"><%= dgettext("study", "≈ 2100") %></option>
+      <option value="6"><%= dgettext("study", "≈ 2400") %></option>
+      <option value="7"><%= dgettext("study", "≈ 2700") %></option>
+      <option value="8"><%= dgettext("study", "Full strength") %></option>
+    </select>
+  </label>
+  <label data-sparring="start-control" hidden><%= dgettext("study", "Starting position") %>
+    <select data-sparring="start" name="sparring_start_position"
+            data-standard="<%= dgettext("study", "Initial position") %>"
+            data-custom="<%= dgettext("study", "Custom position") %>"
+            data-white="<%= dgettext("study", "White to move") %>"
+            data-black="<%= dgettext("study", "Black to move") %>"></select>
+  </label>
+
+  <label><input type="checkbox" name="sparring_live_feedback" data-sparring="live" checked> <%= dgettext("study", "Show feedback while playing") %></label>
+  <details class="sparring-help">
+    <summary><%= dgettext("study", "About sparring") %></summary>
+    <p id="sparring_strength_help" class="sparring-note"><%= dgettext("study", "Ratings are approximate engine targets, not equivalent to your rating on a chess site.") %></p>
+    <p class="sparring-note"><%= dgettext("study", "Train against all chapters that share the selected starting position.") %></p>
+  </details>
+</fieldset>

@@ -12,18 +12,25 @@ const render = source => source.replace(/<%=\s*dgettext[^%]*%>/g,
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const infoBoxes = read('lib/listudy_web/templates/component/infoboxes.html.eex').replace(/<%[\s\S]*?%>/g, '');
 const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/assets/css/colors.css">
 <link rel="stylesheet" href="/assets/static/css/chessground.css">
 <link rel="stylesheet" href="/assets/css/features/chapter_editor.css">
 <link rel="stylesheet" href="/assets/css/features/study_presentation.css">
 <link rel="stylesheet" href="/assets/css/features/sparring.css">
-<style>:root{--font-color:#222;--bg-color:#fff;--bg-highlight-color:#ddd;--study-divider:#bbb}.study-board-frame{width:min(500px,90vw)}#chessground{width:100%;height:auto;aspect-ratio:1}.hidden{display:none}</style></head><body>
-<div class="study-workspace"><div class="study-session-controls"><button id="practice_sparring">Sparring</button><button id="practice_smart">Smart</button><button id="practice_lines">Lines</button></div>
+<style>:root{--study-divider:#bbb}.study-board-frame{width:min(500px,90vw)}#chessground{width:100%;height:auto;aspect-ratio:1}.hidden{display:none}</style></head><body>
+<div class="study-workspace">
+<button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog">Settings</button>
+<details id="study_more_actions" class="study-tools-menu"><summary>More</summary><button type="button" data-study-dialog="study_sparring_history_dialog">Sparring history</button></details>
+<div class="study-session-controls"><button id="practice_sparring">Sparring</button><button id="practice_smart">Smart</button><button id="practice_lines">Lines</button></div>
 <div class="study-primary-actions"><button id="hints">Hint</button><button id="reset_line">Reset line</button></div>
 ${render(read('lib/listudy_web/templates/study/_sparring_status.html.eex'))}
 <div class="study-board-frame"><div id="chessground" class="cg-wrap" tabindex="-1"></div>
 ${render(read('lib/listudy_web/templates/component/promotion_picker.html.eex'))}</div>
+<nav aria-label="Move navigation"><button id="study_previous_move" aria-label="Previous move">←</button><button id="study_next_move" aria-label="Next move">→</button></nav>
 ${infoBoxes}
-${render(read('lib/listudy_web/templates/study/_sparring.html.eex'))}</div>
+${render(read('lib/listudy_web/templates/study/_sparring.html.eex'))}
+${render(read('lib/listudy_web/templates/study/_study_settings.html.eex').replace('<%= render "_sparring_settings.html" %>', read('lib/listudy_web/templates/study/_sparring_settings.html.eex')))}
+${render(read('lib/listudy_web/templates/study/_sparring_history.html.eex'))}</div>
 <script>window.sound_enabled=true;window.sound_volume=0.5;window.playedSounds=[];
 window.Audio=class {constructor(src){this.src=src}load(){}cloneNode(){return this}play(){playedSounds.push(this.src);return Promise.resolve()}};</script>
 <script src="/bundle.js"></script><script>
@@ -33,19 +40,22 @@ window.Worker = class extends Worker {
   postMessage(message) { this.commands.push(message); engineTrace.push('> ' + message); super.postMessage(message); }
 };
 window.chapter = {headers: {Event:'Test chapter'},root:[{move:'e4',children:[{move:'e5',children:[{move:'Nf3',children:[]}]}]}]};
-window.savedResults={};window.decisions=[];window.stops=0;
+window.savedResults={};window.decisions=[];window.stops=0;window.moveNavigation={update(){}};
 window.board=Sparring.Chessground(document.getElementById('chessground'),{drawable:{brushes:{normal:{key:'n',color:'#3333ff',opacity:0.6,lineWidth:10}}},movable:{free:false,events:{after:(from,to)=>controller.move(from,to)}}});
 window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapters:()=>window.studyChapters || [chapter],getTitle:()=> 'Test study',getBoard:()=>board,
+ onPosition(){moveNavigation.update()},
  createEngine:options=>window.fakeEngine || Sparring.createSparringEngine(options),
  readStrength:()=>localStorage.getItem('test_strength'),writeStrength:level=>localStorage.setItem('test_strength',level),
  showHints(routes){window.hintRoutes=routes;board.setShapes([{orig:'e2',dest:'e4',brush:'green'}])},
  onDecision(record){decisions.push(record)},saveResult(record){savedResults[record.id]=record},getHistory:()=>Object.values(savedResults)});
+moveNavigation=Sparring.setupStudyMoveNavigation({goBack:()=>controller.back(),goForward:()=>controller.forward(),getState:()=>controller.navigation()});
+Sparring.setupStudyToolsMenu();Sparring.setupStudyDialogs();
 document.getElementById('hints').onclick=()=>controller.hint();
 document.getElementById('reset_line').onclick=()=>controller.start();
 document.getElementById('practice_lines').onclick=()=>{controller.stop();stops++};
 </script></body></html>`;
 const fixtureEntry = path.join(temp, 'fixture.cjs');
-fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/study_adapter.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/uci_engine.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/stockfish.js'))}),Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground}`);
+fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/study_adapter.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/uci_engine.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/stockfish.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/study_page_controls.js'))}),Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground}`);
 
 (async () => {
     await new Promise((resolve, reject) => webpack({ mode: 'development',
@@ -75,6 +85,11 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         page.on('pageerror', error => errors.push(error.message));
         page.on('requestfailed', request => errors.push(request.url() + ': ' + request.failure().errorText));
         await page.goto(`http://127.0.0.1:${server.address().port}`);
+        await page.click('#study_more_actions > summary');
+        await page.click('[data-study-dialog="study_sparring_history_dialog"]');
+        assert.equal(await page.locator('[data-sparring="history-empty"]').isVisible(), true);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.evaluate(() => document.activeElement.parentElement.id), 'study_more_actions');
         await page.click('#practice_sparring');
         await page.waitForSelector('cg-board piece');
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -83,13 +98,40 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.locator('#sparring_title, [data-sparring="leave"]').count(), 0);
         assert.equal(await page.locator('[data-sparring="history"]').isHidden(), true);
         assert.equal(await page.textContent('[data-sparring="analyze"]'), 'Pause and review');
-        assert.equal(await page.textContent('[data-sparring="resign"]'), 'Resign game');
+        assert.equal(await page.getAttribute('[data-sparring="resign"]','aria-label'), 'Resign game');
         assert.equal(await page.locator('cg-board').count(), 1);
+        assert.equal(await page.locator('[data-sparring="back"], [data-sparring="forward"]').count(),0);
         assert.equal(await page.inputValue('[data-sparring="strength"]'), '2');
+        assert.equal(await page.locator('#study_sparring [data-sparring="strength"], #study_sparring [data-sparring="history"]').count(),0);
+        assert.equal(await page.locator('#study_sparring .sparring-note').filter({hasText:'six decisions'}).count(),0);
+        await page.click('#open_study_settings');
+        assert.equal(await page.getAttribute('#settings_tab_sparring','aria-selected'),'true');
+        await page.locator('#settings_tab_sparring').focus();
+        await page.keyboard.press('ArrowLeft');
+        assert.equal(await page.getAttribute('#settings_tab_practice','aria-selected'),'true');
+        assert.equal(await page.locator('#settings_panel_sparring').isHidden(),true);
+        await page.screenshot({path:'/tmp/listudy-settings-practice-desktop.png'});
+        await page.keyboard.press('Home');
+        assert.equal(await page.getAttribute('#settings_tab_general','aria-selected'),'true');
+        await page.keyboard.press('End');
+        assert.equal(await page.getAttribute('#settings_tab_sparring','aria-selected'),'true');
+        await page.setViewportSize({width:320,height:844});
+        await page.screenshot({path:'/tmp/listudy-settings-sparring-mobile.png'});
+        await page.evaluate(()=>document.documentElement.dataset.theme='dark');
+        await page.screenshot({path:'/tmp/listudy-settings-sparring-dark.png'});
+        await page.evaluate(()=>delete document.documentElement.dataset.theme);
+        await auditButtons();
+        await page.setViewportSize({width:1280,height:900});
+        assert.equal(await page.locator('.sparring-help > p').first().isVisible(),false);
+        await auditButtons();
         await page.selectOption('[data-sparring="strength"]', '1');
+        await page.locator('#study_settings_dialog button').filter({hasText:'Close'}).click();
+        assert.equal(await page.evaluate(()=>document.activeElement.id),'open_study_settings');
         assert.equal(await page.evaluate(() => localStorage.getItem('test_strength')), '1');
         async function auditButtons() {
-            const buttons = page.locator('#study_sparring button:visible, [data-promotion-picker]:visible button, #practice_sparring, #hints, #reset_line');
+            const dialog = page.locator('dialog[open]');
+            const buttons = await dialog.count() ? dialog.locator('button:visible, summary:visible')
+                : page.locator('#study_sparring button:visible, [data-promotion-picker]:visible button, #practice_sparring, #hints, #reset_line');
             await page.keyboard.press('Tab');
             for (let index = 0; index < await buttons.count(); index++) {
                 const button = buttons.nth(index);
@@ -113,7 +155,29 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
             assert(pgn.includes('[Event "Test study"]'));
             assert(pgn.includes('1. e4 e5'));
         }
+        async function auditActionLayout() {
+            const state = await page.locator('.sparring-actions').evaluate(group=>{
+                const primary=group.querySelector('[data-primary="true"]');
+                const other=[...group.children].find(button=>!button.hidden && button!==primary && !button.classList.contains('sparring-resign'));
+                return {primary:primary.getAttribute('data-sparring'),first:group.firstElementChild===primary,
+                    columns:getComputedStyle(group).display,theory:group.dataset.theory==='true',
+                    sameRow:!other || Math.abs(primary.getBoundingClientRect().top-other.getBoundingClientRect().top)<1,
+                    primaryWidth:primary.getBoundingClientRect().width,groupWidth:group.getBoundingClientRect().width,
+                    flagWidth:group.querySelector('.sparring-resign').getBoundingClientRect().width,hasOther:!!other};
+            });
+            assert.equal(state.columns,'grid');
+            assert.equal(state.first,true);
+            assert.equal(state.flagWidth,44);
+            if(state.theory) assert(state.sameRow);
+            else if(state.hasOther) assert(Math.abs(state.primaryWidth-state.groupWidth)<1);
+        }
         await auditButtons();
+        await auditActionLayout();
+        await page.setViewportSize({width:320,height:844});
+        await auditActionLayout();
+        await auditButtons();
+        await page.screenshot({path:'/tmp/listudy-sparring-actions-mobile.png'});
+        await page.setViewportSize({width:1280,height:900});
         async function move(from, to) {
             await page.locator('#chessground').scrollIntoViewIfNeeded();
             await page.evaluate(() => board.state.dom.bounds.clear());
@@ -130,7 +194,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await page.waitForFunction(() => board.state.pieces.get('e5')?.color === 'black');
         assert.equal(await page.locator('[data-sparring="moves"] [data-grade="theory"]').count(), 1);
         const liveFen = await page.evaluate(() => board.state.pieces.get('e4')?.color);
-        await page.click('[data-sparring="back"]');
+        await page.click('#study_previous_move');
         assert.equal(await page.evaluate(() => controller.navigation().canGoForward), true);
         assert.equal(await page.evaluate(() => board.state.movable.dests.size), 0);
         await page.evaluate(() => controller.move('g1', 'f3'));
@@ -160,6 +224,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
             elements.some(element => /percentage|winning chances|pp|3\.0/.test(element.textContent))), false);
         if (await page.locator('[data-sparring="summary"]').isHidden()) await page.click('[data-sparring="analyze"]');
         await page.waitForSelector('[data-sparring="summary"]', { state: 'visible' });
+        await auditActionLayout();
         assert.equal(await page.textContent('[data-sparring="theory-score"]'), '1/2');
         assert.equal(await page.textContent('[data-sparring="engine-score"]'), '1/1');
         const gradedMove = page.locator('[data-sparring="moves"] button[data-grade]:not([data-grade=""]):not([data-grade="theory"])').first();
@@ -185,10 +250,12 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await page.waitForFunction(() => !document.querySelector('[data-sparring="analyze"]').disabled);
         assert.equal(await page.locator('[data-sparring="summary"]').isHidden(), true);
         assert.equal(await page.evaluate(() => document.activeElement.id), 'chessground');
+        await page.click('#open_study_settings');
         await page.uncheck('[data-sparring="live"]');
         assert.equal(await page.locator('[data-sparring="move-detail"]').isHidden(), true);
         assert.equal(await page.locator('[data-sparring="moves"] [data-grade="blunder"], [data-sparring="moves"] [data-grade="best"], [data-sparring="moves"] [data-grade="acceptable"], [data-sparring="moves"] [data-grade="inaccuracy"], [data-sparring="moves"] [data-grade="mistake"]').count(), 0);
         await page.check('[data-sparring="live"]');
+        await page.keyboard.press('Escape');
         await page.click('[data-sparring="analyze"]');
         await gradedMove.click();
         await page.click('[data-sparring="retry-selected"]');
@@ -208,6 +275,11 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await page.click('#practice_lines');
         assert.equal(await page.locator('[data-sparring-board-status]').isHidden(), true);
         assert.equal(await page.evaluate(() => stops), 1);
+        await page.click('#study_more_actions > summary');
+        await page.click('[data-study-dialog="study_sparring_history_dialog"]');
+        assert.equal(await page.locator('[data-sparring="recent"] > details').count(),1);
+        assert.equal(await page.locator('[data-sparring="history-empty"]').isHidden(),true);
+        await page.keyboard.press('Escape');
         assert.equal(await page.locator('cg-board').count(), 1);
         assert.equal(await page.inputValue('[data-sparring="strength"]'), '1');
         // Reuse the editor's promotion picker; cancel and underpromote.
@@ -230,9 +302,12 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.textContent('[data-sparring="status"]'), 'Session finished');
         assert.equal(await page.locator('[data-sparring="summary"]').isVisible(), true);
         await auditButtons();
-        await page.locator('[data-sparring="history"] > summary').click();
+        await page.click('#study_more_actions > summary');
+        await page.click('[data-study-dialog="study_sparring_history_dialog"]');
         await page.locator('[data-sparring="recent"] details > summary').first().click();
+        await auditButtons();
         await downloadPGN(page.locator('[data-sparring="recent"] button').first());
+        await page.keyboard.press('Escape');
         // Theory exit, empty review and retrying an unavailable engine.
         await page.click('#practice_lines');
         assert.equal(await page.locator('[data-sparring-board-status]').isHidden(), true);
@@ -275,7 +350,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
             fakeEngine = {async bestMove(){unionEngineCalls++;return 'e5d4'},cancel(){},dispose(){}};
         });
         await page.click('#practice_sparring');
-        assert.equal(await page.locator('[data-sparring="start-control"]').isVisible(), true);
+        assert.equal(await page.locator('[data-sparring="start-control"]').getAttribute('hidden'), null);
         assert.equal(await page.locator('[data-sparring="start"] option').count(), 2);
         assert.equal(await page.locator('[data-sparring="start"] option:checked').textContent(), 'Initial position');
         await move('d2','d4');
@@ -295,7 +370,9 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.evaluate(() => unionEngineCalls), 1);
         await page.click('[data-sparring="analyze"]');
         assert.equal(await page.evaluate(() => Object.values(savedResults).some(record => record.scope === 'study' && record.sources.some(source => source.id === 'scotch'))), true);
+        await page.click('#open_study_settings');
         await page.selectOption('[data-sparring="start"]','k7/7P/8/8/8/8/8/K7 w - - 0 1');
+        await page.keyboard.press('Escape');
         await page.waitForFunction(() => board.state.pieces.get('h7')?.role === 'pawn');
         assert.equal(await page.textContent('[data-sparring="phase"]'), 'Repertoire');
         await move('h7','h8');

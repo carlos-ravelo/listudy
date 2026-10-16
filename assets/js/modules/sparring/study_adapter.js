@@ -14,7 +14,9 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     const boardStatus = document.querySelector('[data-sparring-board-status]');
     if (!opener || !panel) return null;
     const workspace = opener.closest('.study-workspace');
-    const find = name => panel.querySelector(`[data-sparring="${name}"]`) || boardStatus?.querySelector(`[data-sparring="${name}"]`);
+    const settings = document.getElementById('study_sparring_settings');
+    const historyDialog = document.getElementById('study_sparring_history_dialog');
+    const find = name => settings?.querySelector(`[data-sparring="${name}"]`) || historyDialog?.querySelector(`[data-sparring="${name}"]`) || panel.querySelector(`[data-sparring="${name}"]`) || boardStatus?.querySelector(`[data-sparring="${name}"]`);
     const labels = find('status').dataset;
     let session, ports, picker, pendingPromotion, currentState, sessionId, startedAt;
     let generation = 0, soundCount = 0, heardReviews = 0, readIndex = null, lineRoot = [], lineLength = -1, previousPhase;
@@ -63,8 +65,9 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     }
     function history() {
         find('recent').replaceChildren();
-        const records = getHistory().filter(record => record.id !== sessionId).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
+        const records = getHistory().filter(record => panel.hidden || record.id !== sessionId).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
         find('history').hidden = !records.length;
+        find('history-empty').hidden = !!records.length;
         for (const record of records) {
             const item = document.createElement('details');
             const heading = document.createElement('summary');
@@ -96,6 +99,8 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         workspace?.classList.remove('study-sparring-active', 'study-sparring-paused');
         panel.hidden = true; opener.setAttribute('aria-pressed', 'false');
         if (boardStatus) boardStatus.hidden = true;
+        history();
+        find('strength').disabled = false;
         getBoard().state.dom.bounds.clear();
         window.dispatchEvent(new CustomEvent('study-sparring-updated', { detail: { active: false } }));
         document.getElementById('hints').disabled = false;
@@ -156,11 +161,22 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         find('continue').disabled = state.thinking;
         find('continue').textContent = state.error ? find('continue').dataset.retry
             : state.phase === 'theory' ? find('continue').dataset.theory : find('continue').dataset.resume;
-        find('continue').dataset.primary = 'true';
-        find('analyze').dataset.primary = String(find('continue').hidden);
+
         find('retry').hidden = !review || state.phase === 'finished' || !latest;
         find('resign').disabled = state.phase === 'finished';
         find('resign').hidden = state.phase === 'finished';
+        const actions = panel.querySelector('.sparring-actions');
+        const primary = review && state.reason === 'blunder' && !find('retry').hidden ? find('retry')
+            : review || state.error ? find('continue') : find('analyze');
+        for (const name of ['analyze', 'continue', 'retry']) find(name).dataset.primary = String(find(name) === primary);
+        actions.hidden = state.phase === 'finished';
+        actions.dataset.theory = String(state.phase === 'theory' && !state.error);
+        actions.dataset.secondary = String(['analyze', 'continue', 'retry'].some(name => !find(name).hidden && find(name) !== primary));
+        if (actions.firstElementChild !== primary) {
+            const focused = document.activeElement;
+            actions.prepend(primary);
+            if (actions.contains(focused) && !focused.hidden) focused.focus({ preventScroll: true });
+        }
         find('download').disabled = !state.moves.length;
         find('summary').hidden = !review;
         if (review) {
@@ -232,8 +248,6 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             if (row.best?.length >= 4) board.setShapes([{ orig: row.best.slice(0, 2), dest: row.best.slice(2, 4), brush: 'normal' }]);
         };
         find('retry-selected').onclick = () => { readIndex = null; inspectedRow = null; session.retry(row.ply); document.getElementById('chessground').focus(); };
-        find('back').disabled = !selectedPly || !!pendingPromotion;
-        find('forward').disabled = selectedPly >= state.moves.length || !!pendingPromotion;
         find('latest').hidden = !browsing;
     }
     async function move(from, to, promotion) {
@@ -298,16 +312,15 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             ? (score.turn === 'w' ? '−#0' : '+#0') : `${value > 0 ? '+' : '−'}#${Math.abs(value)}`;
         return `${value > 0 ? '+' : ''}${format(value / 100)}`;
     }
-    find('back').addEventListener('click', () => seek((readIndex ?? currentState.moves.length) - 1));
-    find('forward').addEventListener('click', () => seek((readIndex ?? currentState.moves.length) + 1));
     find('latest').addEventListener('click', () => seek(currentState.moves.length));
     opener.addEventListener('click', () => { if (!session) start(); });
-    find('start').addEventListener('change', () => { selectedStartFen = find('start').value; start(); });
+    find('start').addEventListener('change', () => { selectedStartFen = find('start').value; if (session) start(); });
     find('strength').addEventListener('change', () => {
         strength = sparringStrength(find('strength').value);
         engine?.setStrength?.(strength);
         strengthChanges.push({ ply: session?.snapshot().moves.length || 0, level: strength, eloTarget: sparringRating(strength) });
         writeStrength(strength);
+        if (session) render(session.snapshot());
     });
     find('continue').addEventListener('click', () => {
         pendingPromotion = null; picker?.close(); readIndex = null;
@@ -324,6 +337,8 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     find('retry').addEventListener('click', () => { readIndex = null; inspectedRow = null; session?.retry(); document.getElementById('chessground').focus(); });
     find('live').addEventListener('change', () => { if (session) render(session.snapshot()); });
     find('download').addEventListener('click', () => { if (session) download(result(session.snapshot())); });
+    for (const opener of document.querySelectorAll('[data-study-dialog="study_sparring_history_dialog"]')) opener.addEventListener('click', history);
+    history();
     window.addEventListener('pagehide', stop);
     return { get active() { return !panel.hidden; }, start, stop, move, render: () => session && render(session.snapshot()),
         hint() { if (readIndex === null && session?.hint().length) showHints(ports.repertoire.routes()); },
