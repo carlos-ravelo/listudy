@@ -35,17 +35,25 @@ defmodule ListudyWeb.PageController do
             do: last_study,
             else: nil
 
-        favorites =
-          if user do
-            Listudy.Studies.get_studies_by_favorite!(user.id)
-            |> Enum.filter(&(!&1.private || &1.user_id == user.id))
-            |> Enum.sort_by(&String.downcase(&1.title))
-            |> Enum.take(3)
-          else
-            []
-          end
+        daily_studies = Listudy.StudyLibrary.daily_studies(user_id)
 
-        render(conn, "index.html", tactic: tactic, last_study: last_study, favorites: favorites)
+        most_used = Listudy.StudyLibrary.most_used(user_id, daily_studies)
+
+        daily_studies =
+          Enum.sort_by(daily_studies, fn study ->
+            cond do
+              last_study && study.id == last_study.id -> 0
+              study.id == most_used -> 1
+              true -> 2
+            end
+          end)
+
+        render(conn, "index.html",
+          tactic: tactic,
+          last_study: last_study,
+          most_used: most_used,
+          daily_studies: daily_studies
+        )
 
       _ ->
         conn

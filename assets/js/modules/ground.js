@@ -67,7 +67,7 @@ function onresize() {
     window.window_width = window.innerWidth;
     window.window_height = window.innerHeight;
     resize_ground();
-    window.overlay_manager.on_resize();
+    window.overlay_manager?.on_resize();
 }
 
 /*

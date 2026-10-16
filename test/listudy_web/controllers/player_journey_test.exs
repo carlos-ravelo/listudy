@@ -8,7 +8,7 @@ defmodule ListudyWeb.PlayerJourneyTest do
     end
   end
 
-  test "home keeps the original links and the last-study shortcut", %{conn: conn} do
+  test "home keeps the last-study shortcut without duplicate study links", %{conn: conn} do
     user =
       Listudy.Repo.insert!(%Listudy.Users.User{
         username: "JourneyPlayer",
@@ -36,7 +36,8 @@ defmodule ListudyWeb.PlayerJourneyTest do
     assert html =~ ~s(data-study-id="journey")
     assert html =~ "My repertoire"
     refute html =~ "home-practice-links"
-    assert html =~ "Random Study"
+    refute html =~ "home-study-links"
+    refute html =~ "Random Study"
     assert html =~ "Your Studies"
     preview("returning-home", html)
 
@@ -59,6 +60,108 @@ defmodule ListudyWeb.PlayerJourneyTest do
     assert html =~ "/es/studies/search"
     assert html =~ "home-daily"
     preview("new-home", html)
+  end
+
+  test "home uses daily organization, deduplicates saved studies and protects private sources", %{
+    conn: conn
+  } do
+    user =
+      Listudy.Repo.insert!(%Listudy.Users.User{
+        username: "DailyHome",
+        email: "daily-home@example.com"
+      })
+
+    other =
+      Listudy.Repo.insert!(%Listudy.Users.User{
+        username: "DailyAuthor",
+        email: "daily-author@example.com"
+      })
+
+    studies =
+      for index <- 1..9 do
+        Listudy.Repo.insert!(%Listudy.Studies.Study{
+          user_id: user.id,
+          title: "Daily repertoire #{index}",
+          slug: "daily#{index}-home",
+          color: if(rem(index, 2) == 0, do: "black", else: "white"),
+          private: true
+        })
+      end
+
+    reference = List.last(studies)
+
+    {:ok, _} =
+      Listudy.StudyLibrary.update(user.id, %{
+        "action" => "move",
+        "study_ids" => [reference.id],
+        "location" => "library"
+      })
+
+    public =
+      Listudy.Repo.insert!(%Listudy.Studies.Study{
+        user_id: other.id,
+        title: "Saved public repertoire",
+        slug: "daily-public-home",
+        color: "black",
+        private: false
+      })
+
+    hidden =
+      Listudy.Repo.insert!(%Listudy.Studies.Study{
+        user_id: other.id,
+        title: "Hidden opponent repertoire",
+        slug: "daily-private-home",
+        private: true
+      })
+
+    for study <- [hd(studies), public, hidden] do
+      Listudy.Repo.insert!(%Listudy.StudyFavorites.StudyFavorite{
+        user_id: user.id,
+        study_id: study.id
+      })
+    end
+
+    most_used = hd(studies)
+    assert Listudy.StudyLibrary.most_used(user.id, studies) == nil
+
+    for {owner, study, time} <- [{user, most_used, 60000}, {other, public, 999_999}] do
+      Listudy.Repo.insert!(%Listudy.Progress.UserSetting{
+        user_id: owner.id,
+        key: hd(String.split(study.slug, "-")) <> "_chapter_stats",
+        value:
+          Jason.encode!(%{
+            studySessions: %{practice: %{activeMs: time, newCount: 1, reviewCount: 0}}
+          })
+      })
+    end
+
+    assert Listudy.StudyLibrary.most_used(user.id, studies ++ [public]) == most_used.id
+
+    html =
+      conn
+      |> Pow.Plug.assign_current_user(user, [])
+      |> init_test_session(%{last_study_slug: public.slug, last_study_user_id: user.id})
+      |> get("/en")
+      |> html_response(200)
+
+    daily_list = html |> String.split("home-daily-studies-list") |> Enum.at(1)
+
+    [_, first] =
+      Regex.run(
+        ~r/class="home-daily-study"[^>]*>[\s\S]*?class="home-daily-study-title"[^>]*>([^<]+)</,
+        daily_list
+      )
+
+    assert first == public.title
+    assert html =~ "home-daily-study-recent"
+    assert html =~ "home-daily-study-most-used"
+    refute html =~ "home-daily-sparring"
+    assert length(Regex.scan(~r/class="home-daily-study"/, html)) == 9
+    assert html =~ "Saved public repertoire"
+    refute html =~ reference.title
+    refute html =~ hidden.title
+    assert Listudy.StudyLibrary.daily_studies(nil) == []
+    preview("daily-home", html)
   end
 
   test "endgames offer a direct exercise and a catalogue for progress-aware selection", %{

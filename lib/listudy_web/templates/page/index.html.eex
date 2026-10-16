@@ -18,18 +18,6 @@
             <% end %>
           </div>
         <% end %>
-        <div class="home-path-actions home-study-actions">
-          <%= if Pow.Plug.current_user(@conn) do %>
-            <div class="home-study-links">
-              <%= link (dgettext "index", "Your Studies"), to: Routes.study_path(@conn, :index, @locale), class: "home-study-link" %>
-              <span class="home-study-divider" aria-hidden="true">|</span>
-              <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "home-study-link" %>
-            </div>
-            <%= link (dgettext "index", "🎲 Random Study"), to: Routes.study_path(@conn, :random, locale: @locale), class: "button button-outline home-random-study" %>
-          <% else %>
-            <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "button button-primary" %>
-          <% end %>
-        </div>
       </div>
     </section>
 
@@ -45,17 +33,61 @@
         <% end %>
       </div>
     </section>
-  </div>
 
-  <section class="home-daily" aria-labelledby="home-daily-title">
-    <div class="home-daily-heading">
-      <div>
+    <section class="home-card home-daily-studies" aria-labelledby="home-daily-studies-title">
+      <h2 id="home-daily-studies-title"><%= dgettext "index", "Your daily studies" %></h2>
+      <%= if @daily_studies != [] do %>
+        <div class="home-daily-scroll" role="region" aria-labelledby="home-daily-studies-title" <%= if length(@daily_studies) > 6, do: raw("tabindex=\"0\"") %>>
+          <ul class="home-daily-studies-list">
+            <%= for study <- @daily_studies do %>
+              <% last = @last_study && study.id == @last_study.id %>
+              <li>
+                <%= link to: Routes.study_path(@conn, :show, @locale, study.slug), class: "home-daily-study",
+                      data: [study_continue: true, study_id: String.split(study.slug, "-") |> hd(), last_study: last] do %>
+                  <span class="home-daily-study-copy">
+                    <span class="home-daily-study-title" title="<%= study.title %>"><%= study.title %></span>
+                    <%= if last || study.id == @most_used do %>
+                      <span class="home-daily-study-signals">
+                        <%= if last do %>
+                          <span class="home-daily-study-recent"><%= dgettext "index", "Last study" %></span>
+                        <% end %>
+                        <%= if study.id == @most_used do %>
+                          <span class="home-daily-study-most-used" title="<%= dgettext "index", "Most training time" %>"><%= dgettext "index", "Most used" %></span>
+                        <% end %>
+                      </span>
+                    <% end %>
+                  </span>
+                  <%= if study.color in ["white", "black"] do %>
+                    <span class="home-daily-study-color" role="img" aria-label="<%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %>">
+                      <span aria-hidden="true"><%= if study.color == "white", do: "♔", else: "♚" %></span>
+                    </span>
+                  <% end %>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+        <%= link (dgettext "index", "View all"), to: Routes.study_path(@conn, :index, @locale), class: "home-text-link home-daily-studies-footer" %>
+      <% else %>
+        <div class="home-daily-studies-empty">
+          <%= if Pow.Plug.current_user(@conn) do %>
+            <p><%= dgettext "index", "Choose studies for your daily practice." %></p>
+            <%= link (dgettext "index", "Your Studies"), to: Routes.study_path(@conn, :index, @locale), class: "home-text-link" %>
+          <% else %>
+            <p><%= dgettext "index", "Sign in to see your daily studies." %></p>
+            <%= link gettext("Sign in"), to: Routes.pow_session_path(@conn, :new, request_path: Routes.study_path(@conn, :index, @locale)), class: "home-text-link" %>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="home-card home-daily" aria-labelledby="home-daily-title">
+      <div class="home-daily-heading">
         <h2 id="home-daily-title"><%= dgettext "index", "Daily Puzzle" %></h2>
-        <p><%= dgettext "index", "A quick position to solve when you have a moment." %></p>
+        <%= link (dgettext "index", "More tactics"), to: Routes.tactic_path(@conn, :random, @locale), class: "home-text-link" %>
       </div>
-      <%= link (dgettext "index", "More tactics"), to: Routes.tactic_path(@conn, :random, @locale), class: "home-text-link" %>
-    </div>
-    <% next_url = Routes.tactic_path(@conn, :random, @locale) %>
-    <%= render ListudyWeb.TacticView, "tactic.html", conn: @conn, tactic: @tactic, next: next_url %>
-  </section>
+      <% next_url = Routes.tactic_path(@conn, :random, @locale) %>
+      <%= render ListudyWeb.TacticView, "tactic.html", conn: @conn, tactic: @tactic, next: next_url %>
+    </section>
+  </div>
 </div>

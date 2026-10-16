@@ -1,6 +1,6 @@
 # Player journey: review guide
 
-This pass keeps the current home layout and improves the paths into training.
+The home keeps its study and analysis shortcuts and adds a second row with daily studies and the playable puzzle.
 Changes are intentionally left uncommitted for review.
 
 ## Design direction
@@ -9,6 +9,15 @@ Changes are intentionally left uncommitted for review.
 - Reuse white `#ffffff`, grey `#eeeeee`, text `#424242`, muted borders `#536390`, and link blue `#206a9d`. Dark mode follows existing theme variables, with `#6ab2e1` for links.
 - Give the returning study one blue accent. Keep other destinations quiet and text led.
 - Prioritize the next chess activity over study administration. Keep Read, Smart, Full lines and Sparring inside their study.
+
+Desktop layout:
+
+```text
+Study chess       | Analyze your games
+Your daily studies| Daily puzzle
+```
+
+Daily studies use the library’s existing Daily selection, with the most recently opened daily study first and the study with the most recorded active training time next. Those rows have quiet text cues; no usage cue is shown without recorded training. Desktop shows about six rows with scrolling. Mobile stacks the cards, shows four studies and links to the complete Daily list without a nested scroll area. Guest and empty-library cards provide one next action.
 
 ## Before and after
 
@@ -31,6 +40,7 @@ Changes are intentionally left uncommitted for review.
 5. Open an empty library and the import form. Check that blank required fields are not marked red before interaction.
 6. Solve an endgame and return to its catalogue. Continue practicing selects the first unsolved exercise.
 7. Review at mobile and desktop widths, in light and dark mode, with keyboard navigation.
+8. Move a study between Daily and Library, then reload home. Owned and saved public studies should follow that selection without duplicates; inaccessible private sources should never appear.
 
 ## Boundaries
 
