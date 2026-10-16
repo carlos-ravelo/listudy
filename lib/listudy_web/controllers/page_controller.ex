@@ -8,6 +8,7 @@ defmodule ListudyWeb.PageController do
     "terms-of-service",
     "imprint",
     "copyright",
+    "credits",
     "achievements",
     "icons",
     "thanks",

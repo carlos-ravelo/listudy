@@ -107,14 +107,14 @@
 }
 
 .home-continue-label {
-  color: #7f8c8d;
+  color: var(--font-color);
   font-weight: normal;
   font-size: .9em;
 }
 
 .home-continue-title {
   margin-left: 6px;
-  color: #2980b9;
+  color: #206a9d;
   font-weight: bold;
 }
 
@@ -134,7 +134,7 @@
 }
 
 .home-study-link {
-  color: #2980b9;
+  color: #206a9d;
   font-weight: bold;
   text-decoration: none;
 }

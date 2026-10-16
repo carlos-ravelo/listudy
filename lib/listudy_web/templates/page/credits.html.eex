@@ -1,0 +1,12 @@
+<h1><%= gettext("Credits and license") %></h1>
+
+<p><%= gettext("This application is a modified version of Listudy, originally created by Arne Vogel and its contributors.") %></p>
+<p><a href="https://github.com/ArneVogel/listudy" translate="no">Listudy</a> · <a href="https://github.com/ArneVogel/listudy/graphs/contributors"><%= gettext("Original contributors") %></a></p>
+
+<h2><%= gettext("Software license") %></h2>
+<p><%= gettext("The application is free software licensed under the GNU Affero General Public License, version 3. You may use, modify and redistribute it under the terms of that license. It comes without any warranty, to the extent permitted by law.") %></p>
+<p><a href="https://github.com/ArneVogel/listudy/blob/master/LICENSE" translate="no">GNU AGPLv3</a> · <a href="https://github.com/carlos-ravelo/listudy"><%= gettext("Source code for this version") %></a></p>
+
+<h2><%= gettext("Third-party credits") %></h2>
+<p><%= gettext("Original copyright notices and license terms remain in the source files. Third-party libraries, chess pieces and other assets retain their respective licenses.") %></p>
+<p><%= link gettext("Acknowledgments and asset credits"), to: Routes.page_path(@conn, :show, @conn.assigns.locale, "thanks") %> · <%= link gettext("Content copyright policy"), to: Routes.page_path(@conn, :show, @conn.assigns.locale, "copyright") %></p>

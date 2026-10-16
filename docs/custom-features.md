@@ -4,6 +4,7 @@
 
 - [Custom Listudy features](#custom-listudy-features)
   - [Table of contents](#table-of-contents)
+  - [Site navigation and credits](#site-navigation-and-credits)
   - [Study page](#study-page)
     - [Reading a chapter](#reading-a-chapter)
     - [Chapter progress and recovery](#chapter-progress-and-recovery)
@@ -17,6 +18,20 @@
   - [Chapter editing](#chapter-editing)
     - [Study maintenance](#study-maintenance)
   - [Collections and derived studies](#collections-and-derived-studies)
+
+## Site navigation and credits
+
+All pages use a compact footer with Privacy, Terms of Service, Credits and license,
+and a link to this version's source repository. The footer identifies Listudy,
+Arne Vogel and its contributors as the original project and authors. Credits
+identify this application as a modified version, link to GNU AGPLv3 and retain
+access to upstream acknowledgments, asset credits and the content copyright
+policy. Legacy feature lists and the original author's personal contact details
+are no longer displayed in the footer.
+
+A keyboard-focusable Skip to content link bypasses the header in both regular
+pages and LiveView layouts. Footer links have visible keyboard focus and larger
+touch targets on touch devices.
 
 ## Study page
 
