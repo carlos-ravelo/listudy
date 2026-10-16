@@ -1143,3 +1143,57 @@ msgstr "Nivel 8 — Máxima fuerza"
 
 msgid "The level changes your opponent, not the analysis. Levels are practice settings, not Elo ratings."
 msgstr "El nivel cambia la fuerza del rival, no la del análisis. Son niveles de práctica, no puntuaciones Elo."
+
+msgid "Repertoire recalled"
+msgstr "Repertorio recordado"
+
+msgid "Move classifications"
+msgstr "Clasificación de jugadas"
+
+msgid "Select a move below to see its evaluation and the engine’s recommendation."
+msgstr "Selecciona una jugada para ver su evaluación y la recomendación del motor."
+
+msgid "Analysis details"
+msgstr "Detalles del análisis"
+
+msgid "Moves analysed"
+msgstr "Jugadas analizadas"
+
+msgid "Classifications use your first attempts. Engine evaluations are estimates, shown from White’s perspective."
+msgstr "Las clasificaciones corresponden a tus primeros intentos. Las evaluaciones del motor son estimaciones desde la perspectiva de las blancas."
+
+msgid "Game navigation"
+msgstr "Navegación de la partida"
+
+msgid "Return to game"
+msgstr "Volver a la partida"
+
+msgid "Selected move"
+msgstr "Jugada seleccionada"
+
+msgid "Show best move"
+msgstr "Mostrar la mejor jugada"
+
+msgid "Play again from here"
+msgstr "Volver a jugar desde aquí"
+
+msgid "Browsing the game. Return to the latest position to play."
+msgstr "Revisando la partida. Vuelve a la posición actual para jugar."
+
+msgid "Evaluation (White)"
+msgstr "Evaluación (blancas)"
+
+msgid "Best continuation"
+msgstr "Mejor continuación"
+
+msgid "This move has not been analysed."
+msgstr "Esta jugada no se ha analizado."
+
+msgid "You won"
+msgstr "Has ganado"
+
+msgid "You lost"
+msgstr "Has perdido"
+
+msgid "Draw"
+msgstr "Tablas"

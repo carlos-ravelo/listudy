@@ -193,6 +193,33 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert.equal(weakenedReplies, 1);
     assert.deepEqual(plain(practice.snapshot().moves), ['e2e4','e7e5']);
 
+    // Retry an earlier decision during live play, preserving first-attempt results.
+    const rewindPorts = createChapterSparring({headers:{},root:[]});
+    const rewind = createSparringSession({...rewindPorts, player:'w', checkpointEvery:99,
+        engine:{
+            async analyze(state) { const line=['e2e4','e7e5','g1f3','b8c6']; return {
+                score:{type:'cp',value:0},uci:line[state.moves.length],pv:[line[state.moves.length]].filter(Boolean)}; },
+            bestMove:async()=> 'e7e5',cancel(){},dispose(){}
+        }});
+    await rewind.start();
+    await rewind.move('e2e4');
+    await rewind.move('g1f3');
+    assert.equal(rewind.snapshot().moves.length,4);
+    assert.deepEqual(plain(rewind.snapshot().reviews[0].evaluationBefore),{type:'cp',value:0,turn:'w'});
+    rewind.retry(1);
+    assert.equal(rewind.snapshot().moves.length,4);
+    rewind.retry(0);
+    assert.equal(rewind.snapshot().phase,'free');
+    assert.equal(rewind.snapshot().moves.length,0);
+    assert.equal(rewind.snapshot().canPlay,true);
+    await rewind.move('e2e4');
+    assert.equal(rewind.snapshot().reviews.at(-1).assisted,true);
+    assert.equal(rewind.snapshot().freeCount,2);
+    assert.equal(rewind.snapshot().reviews.filter(row=>!row.assisted).length,2);
+    rewind.resign();
+    rewind.retry(0);
+    assert.equal(rewind.snapshot().phase,'finished');
+
     const decisions = [];
     const analyzed = createSparringSession({ ...createChapterSparring({ headers: {}, root: [] }), player: 'w',
         checkpointEvery: 1, onDecision: result => decisions.push(result), engine: {

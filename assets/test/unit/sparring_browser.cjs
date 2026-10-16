@@ -11,7 +11,7 @@ const render = source => source.replace(/<%=\s*dgettext[^%]*%>/g,
     expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const infoBoxes = read('lib/listudy_web/templates/component/infoboxes.html.eex').replace(/<%[\s\S]*?%>/g, '');
-const html = `<html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="/assets/static/css/chessground.css">
 <link rel="stylesheet" href="/assets/css/features/chapter_editor.css">
 <link rel="stylesheet" href="/assets/css/features/study_presentation.css">
@@ -115,6 +115,8 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         }
         await auditButtons();
         async function move(from, to) {
+            await page.locator('#chessground').scrollIntoViewIfNeeded();
+            await page.evaluate(() => board.state.dom.bounds.clear());
             const bounds = await page.locator('#chessground').boundingBox();
             for (const square of [from, to]) await page.mouse.click(
                 bounds.x + (square.charCodeAt(0) - 97 + 0.5) * bounds.width / 8,
@@ -126,6 +128,17 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.evaluate(() => board.state.drawable.shapes[0].dest), 'e4');
         await move('e2', 'e4');
         await page.waitForFunction(() => board.state.pieces.get('e5')?.color === 'black');
+        assert.equal(await page.locator('[data-sparring="moves"] [data-grade="theory"]').count(), 1);
+        const liveFen = await page.evaluate(() => board.state.pieces.get('e4')?.color);
+        await page.click('[data-sparring="back"]');
+        assert.equal(await page.evaluate(() => controller.navigation().canGoForward), true);
+        assert.equal(await page.evaluate(() => board.state.movable.dests.size), 0);
+        await page.evaluate(() => controller.move('g1', 'f3'));
+        assert.equal(await page.evaluate(() => board.state.pieces.get('f3')?.role || null), null);
+        await page.click('[data-sparring="latest"]');
+        assert.equal(await page.evaluate(() => board.state.pieces.get('e4')?.color), liveFen);
+        assert.equal(await page.locator('[data-sparring="latest"]').isHidden(), true);
+
         await move('g1', 'f3');
         await page.waitForFunction(() => document.querySelector('[data-sparring="phase"]').textContent === 'Against Stockfish' && document.querySelector('[data-sparring="status"]').textContent === 'Your move',
             null, { timeout: 30000 });
@@ -149,24 +162,36 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await page.waitForSelector('[data-sparring="summary"]', { state: 'visible' });
         assert.equal(await page.textContent('[data-sparring="theory-score"]'), '1/2');
         assert.equal(await page.textContent('[data-sparring="engine-score"]'), '1/1');
-        assert.equal(await page.locator('[data-sparring="results"] tr').count(), 1);
+        const gradedMove = page.locator('[data-sparring="moves"] button[data-grade]:not([data-grade=""]):not([data-grade="theory"])').first();
+        assert.equal(await gradedMove.count(), 1);
+        assert.equal(await page.locator('[data-sparring="grade-counts"] [role="listitem"]').count(), 5);
         assert.equal(await page.evaluate(() => Object.keys(savedResults).length), 1);
         assert.equal(await page.evaluate(() => Object.values(savedResults)[0].gradingVersion), 'lichess-style-v1');
         assert.equal(await page.evaluate(() => Object.values(savedResults)[0].opponentLevels.at(-1).level), 1);
         await auditButtons();
         await downloadPGN(page.locator('[data-sparring="download"]'));
         assert.equal(await page.locator('[data-sparring="history"]').isHidden(), true);
-        await page.locator('[data-sparring="results"] button').first().click();
+        await gradedMove.click();
+        assert.equal(await page.locator('[data-sparring="move-detail"]').isVisible(), true);
+        assert((await page.textContent('[data-sparring="move-evaluation"]')).includes('→'),
+            await page.evaluate(() => JSON.stringify({rows:Object.values(savedResults)[0].reviews,card:document.querySelector('[data-sparring="move-detail"]').textContent,selected:document.querySelector('[data-sparring="moves"] [aria-current]')?.outerHTML})));
+        assert((await page.textContent('[data-sparring="move-recommendation"]')).includes('Best continuation'));
+        await page.click('[data-sparring="show-best"]');
         assert(await page.evaluate(() => board.state.drawable.shapes.length > 0));
-        await page.locator('[data-sparring="results"] button').first().focus();
+        await gradedMove.focus();
         await page.keyboard.press('Enter');
-        assert.equal(await page.evaluate(() => document.activeElement.hasAttribute('data-ply')), true);
+        assert.equal(await page.evaluate(() => document.activeElement.classList.contains('study-tree-move')), true);
         await page.click('[data-sparring="continue"]');
         await page.waitForFunction(() => !document.querySelector('[data-sparring="analyze"]').disabled);
         assert.equal(await page.locator('[data-sparring="summary"]').isHidden(), true);
         assert.equal(await page.evaluate(() => document.activeElement.id), 'chessground');
+        await page.uncheck('[data-sparring="live"]');
+        assert.equal(await page.locator('[data-sparring="move-detail"]').isHidden(), true);
+        assert.equal(await page.locator('[data-sparring="moves"] [data-grade="blunder"], [data-sparring="moves"] [data-grade="best"], [data-sparring="moves"] [data-grade="acceptable"], [data-sparring="moves"] [data-grade="inaccuracy"], [data-sparring="moves"] [data-grade="mistake"]').count(), 0);
+        await page.check('[data-sparring="live"]');
         await page.click('[data-sparring="analyze"]');
-        await page.click('[data-sparring="retry"]');
+        await gradedMove.click();
+        await page.click('[data-sparring="retry-selected"]');
         assert.equal(await page.locator('[data-sparring="summary"]').isHidden(), true);
         assert.equal(await page.evaluate(() => document.activeElement.id), 'chessground');
         await page.click('[data-sparring="analyze"]');

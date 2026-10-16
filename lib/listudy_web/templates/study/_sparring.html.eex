@@ -34,21 +34,21 @@
   <section data-sparring="summary" hidden aria-labelledby="sparring_results_title">
     <h2 id="sparring_results_title" tabindex="-1"><%= dgettext("study", "Session results") %></h2>
     <dl class="sparring-metrics">
-      <dt><%= dgettext("study", "Theory recalled without help") %></dt><dd data-sparring="theory-score"></dd>
-      <dt><%= dgettext("study", "Engine decisions analysed") %></dt><dd data-sparring="engine-score"></dd>
-      <dt><%= dgettext("study", "Average winning chances lost (percentage points)") %></dt><dd data-sparring="average"></dd>
+      <dt><%= dgettext("study", "Repertoire recalled") %></dt><dd data-sparring="theory-score"></dd>
     </dl>
+    <div class="sparring-grade-counts" data-sparring="grade-counts" role="list" aria-label="<%= dgettext("study", "Move classifications") %>"></div>
     <p data-sparring="outcome"></p>
     <p data-sparring="deviation"></p>
-    <p data-sparring="coverage"></p>
-    <p><%= dgettext("study", "Select a move to review its position and suggested continuation. Assessments are estimates from limited engine searches.") %></p>
-    <div class="sparring-report-scroll">
-      <table>
-        <caption><%= dgettext("study", "Engine move assessments") %></caption>
-        <thead><tr><th scope="col"><%= dgettext("study", "Move") %></th><th scope="col"><%= dgettext("study", "Feedback") %></th><th scope="col"><%= dgettext("study", "Loss (pp)") %></th><th scope="col"><%= dgettext("study", "Suggested continuation") %></th></tr></thead>
-        <tbody data-sparring="results"></tbody>
-      </table>
-    </div>
+    <p class="sparring-note"><%= dgettext("study", "Select a move below to see its evaluation and the engine’s recommendation.") %></p>
+    <details class="sparring-analysis-details">
+      <summary><%= dgettext("study", "Analysis details") %></summary>
+      <dl class="sparring-metrics">
+        <dt><%= dgettext("study", "Moves analysed") %></dt><dd data-sparring="engine-score"></dd>
+        <dt><%= dgettext("study", "Average winning chances lost (percentage points)") %></dt><dd data-sparring="average"></dd>
+      </dl>
+      <p data-sparring="coverage"></p>
+      <p class="sparring-note"><%= dgettext("study", "Classifications use your first attempts. Engine evaluations are estimates, shown from White’s perspective.") %></p>
+    </details>
     <p data-sparring="empty-analysis"><%= dgettext("study", "No moves against the engine have been analysed yet. Your theory results are shown above.") %></p>
     <button type="button" data-sparring="download"><%= dgettext("study", "Download game PGN") %></button>
   </section>
@@ -57,5 +57,17 @@
     <p class="sparring-note"><%= dgettext("study", "Review or download results from earlier games in this study.") %></p>
     <div data-sparring="recent"></div>
   </details>
+  <div class="sparring-navigation" role="group" aria-label="<%= dgettext("study", "Game navigation") %>">
+    <button type="button" data-sparring="back" aria-label="<%= dgettext("study", "Previous move") %>">←</button>
+    <button type="button" data-sparring="forward" aria-label="<%= dgettext("study", "Next move") %>">→</button>
+    <button type="button" data-sparring="latest"><%= dgettext("study", "Return to game") %></button>
+  </div>
+  <section data-sparring="move-detail" class="sparring-move-detail" aria-label="<%= dgettext("study", "Selected move") %>" aria-live="polite" hidden>
+    <strong data-sparring="move-grade"></strong>
+    <p data-sparring="move-evaluation"></p>
+    <p data-sparring="move-recommendation"></p>
+    <button type="button" data-sparring="show-best"><%= dgettext("study", "Show best move") %></button>
+    <button type="button" data-sparring="retry-selected"><%= dgettext("study", "Play again from here") %></button>
+  </section>
   <div class="study-reading-tree"><div data-sparring="moves"></div></div>
 </section>
