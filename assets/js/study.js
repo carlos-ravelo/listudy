@@ -1,6 +1,7 @@
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
 import { chapterLearningProgress } from './modules/study/learning_progress.js';
 import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
+import { setupStudyFeedback } from './modules/study_feedback.js';
 import { setupStudySessions } from './modules/study_sessions.js';
 import { setupStudySparring } from './modules/sparring/study_adapter.js';
 import { replayPositionContext } from './modules/study/position_context.js';
@@ -1696,6 +1697,7 @@ async function refreshGameEvidence(positionsRequest) {
 }
 
 async function main() {
+    setupStudyFeedback();
     const gamePositionsRequest = loadGamePositions();
     window.addEventListener('study-sync-status', event => {
         const indicator = document.getElementById('study_sync_status');

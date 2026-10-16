@@ -151,7 +151,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         heardReviews = state.reviews.length;
         if (!browsing && latest && state.feedback !== 'outside' && (find('live').checked || review)) {
             set_text(isError(latest.grade) ? error_div : latest.grade === 'best' ? success_div : info_div,
-                gradeLabel(latest.grade), { symbol: gradeSymbol(latest.grade) });
+                gradeLabel(latest.grade), { symbol: gradeSymbol(latest.grade), transient: !isError(latest.grade) && !review });
         }
         document.getElementById('hints').disabled = !playable || state.phase !== 'theory';
         find('strength').disabled = state.thinking || !!pendingPromotion || state.phase === 'finished';

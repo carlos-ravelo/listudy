@@ -69,7 +69,9 @@
   </div>  
   <div class="sidebar">
     <div class="sidebar_innercontainer">
-      <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
+      <div class="study-feedback" role="status" aria-live="polite" aria-atomic="true" data-dismiss="<%= dgettext("study", "Dismiss notification") %>" aria-label="<%= dgettext("study", "Move feedback") %>">
+        <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
+      </div>
 
       <div class="sidebar_padded">
         <%= render "_sparring.html" %>

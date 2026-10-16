@@ -1257,3 +1257,9 @@ msgstr "Práctica"
 
 msgid "Practice depth"
 msgstr "Profundidad de práctica"
+
+msgid "Move feedback"
+msgstr "Comentarios sobre la jugada"
+
+msgid "Dismiss notification"
+msgstr "Cerrar aviso"
