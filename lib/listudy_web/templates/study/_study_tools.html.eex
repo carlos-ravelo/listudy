@@ -13,6 +13,7 @@
   <% end %>
 
 <div class="study-more-grid">
+  <button type="button" data-study-dialog="study_sparring_history_dialog" aria-haspopup="dialog" aria-controls="study_sparring_history_dialog"><%= dgettext("study", "Sparring history") %></button>
   <button type="button" data-study-dialog="study_info_dialog"><%= dgettext("study", "Study details") %></button>
   <button type="button" data-study-dialog="study_info_dialog" data-study-comments="true"><%= dgettext("comments", "Comments") %></button>
 <div class="option_item">

@@ -1227,3 +1227,33 @@ msgstr "≈ 2400"
 
 msgid "≈ 2700"
 msgstr "≈ 2700"
+
+msgid "About sparring"
+msgstr "Acerca del sparring"
+
+msgid "Ratings are approximate engine targets, not equivalent to your rating on a chess site."
+msgstr "Los Elo son objetivos aproximados del motor; no equivalen a tu rating en una plataforma de ajedrez."
+
+msgid "Train against all chapters that share the selected starting position."
+msgstr "Entrena con todos los capítulos que comparten la posición inicial seleccionada."
+
+msgid "Sparring history"
+msgstr "Historial de sparring"
+
+msgid "Your sparring sessions will appear here."
+msgstr "Tus sesiones de sparring aparecerán aquí."
+
+msgid "Play engine"
+msgstr "Jugar con la maquina"
+
+msgid "Settings sections"
+msgstr "Secciones de ajustes"
+
+msgid "General"
+msgstr "General"
+
+msgid "Practice"
+msgstr "Práctica"
+
+msgid "Practice depth"
+msgstr "Profundidad de práctica"

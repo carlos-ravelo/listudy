@@ -6,8 +6,10 @@
 .sparring-phase { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--study-divider); border-radius: 999px; background: var(--bg-highlight-color); color: var(--font-color); font-size: 13px; font-weight: 600; }
 .sparring-phase::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .sparring-status-detail { margin: 0; flex: 1 1 140px; min-width: 0; font-size: 13px; color: var(--study-muted); overflow-wrap: anywhere; }
-.sparring-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-.sparring-secondary-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.sparring-actions { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; margin: 0 0 12px; }
+.sparring-actions > button { width: 100%; min-height: 44px; }
+.sparring-actions[data-secondary="true"] > button[data-primary="true"] { grid-column: 1 / -1; }
+.study-sparring .sparring-resign { display: inline-flex; align-items: center; justify-content: center; width: 44px; padding: 10px; border-color: transparent; }
 .study-sparring button, .study-sparring summary, .study-sparring > label { min-height: 44px; touch-action: manipulation; }
 .study-sparring button { box-sizing: border-box; min-width: 44px; max-width: 100%; height: auto; margin: 0; padding: 8px 12px; border: 1px solid var(--study-divider); border-radius: 6px; background: transparent; color: var(--font-color); font: inherit; font-size: 14px; letter-spacing: normal; text-transform: none; white-space: normal; overflow-wrap: anywhere; }
 .study-sparring button:hover:not(:disabled) { background: var(--bg-highlight-color); }
@@ -46,3 +48,16 @@
 .study-sparring [data-grade="mistake"] .sparring-move-sticker,
 .study-sparring [data-grade="blunder"] .sparring-move-sticker { border: 1px solid currentColor; border-radius: 4px; padding-inline: 4px; }
 .study-sparring select:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+
+.study-sparring .sparring-help { margin-top: 8px; }
+#study_sparring_settings > label { margin-bottom: 12px; }
+#study_sparring_history_dialog [data-sparring="recent"] > details { border-bottom: 1px solid var(--study-divider); padding-bottom: 12px; }
+#study_sparring_history_dialog [data-sparring="recent"] > details:last-child { border-bottom: 0; }
+
+.sparring-actions[data-theory="true"] { grid-template-columns: minmax(0, 1fr) auto 44px; }
+.sparring-actions[data-theory="true"] > button[data-primary="true"] { grid-column: auto; }
+.study-sparring .sparring-actions[data-theory="true"] > [data-sparring="continue"] { width: auto; padding-inline: 4px; border-color: transparent; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+
+.study-sparring .sparring-actions [data-sparring="analyze"][data-primary="true"] { color: var(--font-color); background: color-mix(in srgb, var(--primary-color, #0034ff) 12%, var(--bg-color)); border-color: color-mix(in srgb, var(--primary-color, #0034ff) 32%, var(--bg-color)); }
+.study-sparring .sparring-actions [data-sparring="analyze"][data-primary="true"]:hover:not(:disabled) { opacity: 1; background: color-mix(in srgb, var(--primary-color, #0034ff) 18%, var(--bg-color)); }
+.study-sparring [data-sparring="moves"] > .study-tree-move { display: block; width: 100%; padding: 8px; border: 0; border-bottom: 1px solid var(--study-divider); border-radius: 0; color: var(--study-muted); font-size: 12px; text-align: left; }
