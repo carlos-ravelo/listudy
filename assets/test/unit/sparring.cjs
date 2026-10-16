@@ -125,6 +125,73 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert.equal(winningChances({ type: 'mate', value: 0 }, 'w', 'w'), 0);
     assert.equal(assessMove({ score: { type: 'cp', value: 100 }, turn: 'b' },
         { score: { type: 'cp', value: -100 }, turn: 'w' }, 'b').loss, 0);
+    const { lossJudgement, sparringStrength } = context;
+    assert.equal(lossJudgement(4.999), null);
+    assert.equal(lossJudgement(5), 'inaccuracy');
+    assert.equal(lossJudgement(10), 'mistake');
+    assert.equal(lossJudgement(15), 'blunder');
+    const beforeMove = { score: { type: 'cp', value: 0 }, turn: 'w', uci: 'e2e4' };
+    const afterMove = { score: { type: 'cp', value: 33 }, turn: 'b' };
+    assert.equal(assessMove(beforeMove, afterMove, 'w', 'd2d4').grade, 'acceptable');
+    assert.equal(assessMove(beforeMove, { ...afterMove, score: {type:'cp',value:0} }, 'w', 'e2e4').grade, 'best');
+    assert.equal(assessMove(beforeMove, { score: {type:'mate',value:2}, turn:'b' }, 'w', 'e2e4').grade, 'blunder');
+    assert.equal(assessMove({ ...beforeMove, score: {type:'cp',value:-800} }, { score:{type:'mate',value:2},turn:'b' }, 'w').grade, 'mistake');
+    assert.equal(assessMove({ ...beforeMove, score: {type:'cp',value:-1000} }, { score:{type:'mate',value:2},turn:'b' }, 'w').grade, 'inaccuracy');
+    assert.equal(assessMove({ score:{type:'mate',value:3},turn:'w' }, { score:{type:'cp',value:-800},turn:'b' }, 'w').grade, 'mistake');
+    assert.equal(assessMove({ score:{type:'mate',value:3},turn:'w' }, { score:{type:'cp',value:-1000},turn:'b' }, 'w').grade, 'inaccuracy');
+    assert.equal(assessMove({ score:{type:'mate',value:-3},turn:'w' }, { score:{type:'mate',value:0},turn:'w' }, 'w').grade, 'acceptable');
+    assert.equal(sparringStrength(null), 2);
+    assert.equal(sparringStrength('1'), 1);
+    assert.equal(sparringStrength(8), 8);
+    assert.equal(sparringStrength(99), 2);
+
+    const workers = [];
+    const separated = createSparringEngine({ createWorker() {
+        const fake = { messages: [], skill: 20, stopped: false,
+            terminate() { this.stopped = true; }, postMessage(message) {
+                this.messages.push(message);
+                if (message.startsWith('setoption name Skill Level')) this.skill = Number(message.split(' ').pop());
+                const reply = message === 'uci' ? 'uciok' : message === 'isready' ? 'readyok' : null;
+                if (reply) queueMicrotask(() => this.onmessage({data:reply}));
+                if (message.startsWith('go ')) queueMicrotask(() => {
+                    this.onmessage({data:'info depth 4 multipv 1 score cp 20 pv e7e5 g1f3'});
+                    this.onmessage({data:'info depth 4 multipv 2 score cp 999 pv c7c5'});
+                    this.onmessage({data:`bestmove ${this.skill === 20 ? 'e7e5' : 'c7c5'}`});
+                });
+            } };
+        workers.push(fake); return fake;
+    } });
+    const enginePosition = { initialFen: initial, moves: ['e2e4'] };
+    assert.equal(await separated.bestMove(enginePosition), 'c7c5');
+    assert(workers[0].messages.includes('setoption name Skill Level value 1'));
+    assert(workers[0].messages.includes('go depth 2 movetime 150'));
+    const evaluated = await separated.analyze(enginePosition);
+    assert.equal(evaluated.score.value, 20);
+    assert.equal(evaluated.uci, 'e7e5');
+    assert(workers[1].messages.includes('setoption name Skill Level value 20'));
+    assert(workers[1].messages.includes('go movetime 700'));
+    assert.equal(separated.canReuseAnalysisMove(), false);
+    separated.setStrength(8);
+    assert.equal(workers[0].stopped, true);
+    assert.equal(workers[1].stopped, false);
+    assert.equal(separated.canReuseAnalysisMove(), true);
+    assert.equal(await separated.bestMove(enginePosition), 'e7e5');
+    assert.equal(workers.length, 3);
+    await separated.analyze(enginePosition);
+    assert.equal(workers.length, 3);
+    separated.dispose();
+    assert(workers.every(worker => worker.stopped));
+
+    let weakenedReplies = 0;
+    const practice = createSparringSession({ ...createChapterSparring({headers:{},root:[]}), player:'w', engine:{
+        async analyze(state) { return {score:{type:'cp',value:0},uci:state.turn === 'w' ? 'e2e4' : 'c7c5',pv:[]}; },
+        canReuseAnalysisMove: () => false,
+        async bestMove() { weakenedReplies++; return 'e7e5'; },dispose() {}
+    } });
+    await practice.start(); await practice.move('e2e4');
+    assert.equal(practice.snapshot().reviews[0].grade, 'best');
+    assert.equal(weakenedReplies, 1);
+    assert.deepEqual(plain(practice.snapshot().moves), ['e2e4','e7e5']);
 
     const decisions = [];
     const analyzed = createSparringSession({ ...createChapterSparring({ headers: {}, root: [] }), player: 'w',

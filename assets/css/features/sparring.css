@@ -17,6 +17,7 @@
 .study-sparring .sparring-actions button[data-primary="true"]:hover:not(:disabled) { opacity: .85; }
 .study-sparring [hidden] { display: none !important; }
 .study-sparring > label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.study-sparring .sparring-strength-control { flex-direction: column; align-items: stretch; gap: 4px; }
 .study-sparring [data-sparring="start-control"] { flex-wrap: wrap; }
 .study-sparring select { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; background: var(--bg-color); color: var(--font-color); }
 .study-sparring summary { display: list-item; padding-block: 10px; cursor: pointer; box-sizing: border-box; }

@@ -27,16 +27,17 @@ ${render(read('lib/listudy_web/templates/study/_sparring.html.eex'))}</div>
 <script>window.sound_enabled=true;window.sound_volume=0.5;window.playedSounds=[];
 window.Audio=class {constructor(src){this.src=src}load(){}cloneNode(){return this}play(){playedSounds.push(this.src);return Promise.resolve()}};</script>
 <script src="/bundle.js"></script><script>
-window.engineTrace = [];
+window.engineTrace = []; window.workerCommands = [];
 window.Worker = class extends Worker {
-  constructor(url) { super(url); this.addEventListener('message', event => engineTrace.push(String(event.data))); }
-  postMessage(message) { engineTrace.push('> ' + message); super.postMessage(message); }
+  constructor(url) { super(url); this.commands = []; workerCommands.push(this.commands); this.addEventListener('message', event => engineTrace.push(String(event.data))); }
+  postMessage(message) { this.commands.push(message); engineTrace.push('> ' + message); super.postMessage(message); }
 };
 window.chapter = {headers: {Event:'Test chapter'},root:[{move:'e4',children:[{move:'e5',children:[{move:'Nf3',children:[]}]}]}]};
 window.savedResults={};window.decisions=[];window.stops=0;
 window.board=Sparring.Chessground(document.getElementById('chessground'),{drawable:{brushes:{normal:{key:'n',color:'#3333ff',opacity:0.6,lineWidth:10}}},movable:{free:false,events:{after:(from,to)=>controller.move(from,to)}}});
 window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapters:()=>window.studyChapters || [chapter],getTitle:()=> 'Test study',getBoard:()=>board,
- createEngine:()=>window.fakeEngine || Sparring.createSparringEngine(),
+ createEngine:options=>window.fakeEngine || Sparring.createSparringEngine(options),
+ readStrength:()=>localStorage.getItem('test_strength'),writeStrength:level=>localStorage.setItem('test_strength',level),
  showHints(routes){window.hintRoutes=routes;board.setShapes([{orig:'e2',dest:'e4',brush:'green'}])},
  onDecision(record){decisions.push(record)},saveResult(record){savedResults[record.id]=record},getHistory:()=>Object.values(savedResults)});
 document.getElementById('hints').onclick=()=>controller.hint();
@@ -84,6 +85,9 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.textContent('[data-sparring="analyze"]'), 'Pause and review');
         assert.equal(await page.textContent('[data-sparring="resign"]'), 'Resign game');
         assert.equal(await page.locator('cg-board').count(), 1);
+        assert.equal(await page.inputValue('[data-sparring="strength"]'), '2');
+        await page.selectOption('[data-sparring="strength"]', '1');
+        assert.equal(await page.evaluate(() => localStorage.getItem('test_strength')), '1');
         async function auditButtons() {
             const buttons = page.locator('#study_sparring button:visible, [data-promotion-picker]:visible button, #practice_sparring, #hints, #reset_line');
             await page.keyboard.press('Tab');
@@ -127,6 +131,8 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
             null, { timeout: 30000 });
         assert.equal(await page.textContent('[data-sparring="phase"]'), 'Against Stockfish', await page.evaluate(() => engineTrace.slice(-12).join('; ')));
         assert((await page.evaluate(() => playedSounds.length)) >= 4);
+        assert(await page.evaluate(() => workerCommands.some(commands =>
+            commands.includes('setoption name Skill Level value 0') && commands.includes('go depth 1 movetime 100'))));
         // Make a legal engine-phase decision, then review before the checkpoint.
         const next = await page.evaluate(() => {
             const [from, tos] = [...board.state.movable.dests][0]; return [from, tos[0]];
@@ -134,12 +140,19 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await move(...next);
         await page.waitForFunction(() => !document.querySelector('[data-sparring="analyze"]').disabled ||
             !document.querySelector('[data-sparring="summary"]').hidden, null, { timeout: 30000 });
+        assert(await page.evaluate(() => workerCommands.some(commands =>
+            commands.includes('setoption name Skill Level value 20') &&
+            !commands.includes('setoption name Skill Level value 0'))));
+        assert.equal(await page.locator('#error_text, #success_text, #info_text').evaluateAll(elements =>
+            elements.some(element => /percentage|winning chances|pp|3\.0/.test(element.textContent))), false);
         if (await page.locator('[data-sparring="summary"]').isHidden()) await page.click('[data-sparring="analyze"]');
         await page.waitForSelector('[data-sparring="summary"]', { state: 'visible' });
         assert.equal(await page.textContent('[data-sparring="theory-score"]'), '1/2');
         assert.equal(await page.textContent('[data-sparring="engine-score"]'), '1/1');
         assert.equal(await page.locator('[data-sparring="results"] tr').count(), 1);
         assert.equal(await page.evaluate(() => Object.keys(savedResults).length), 1);
+        assert.equal(await page.evaluate(() => Object.values(savedResults)[0].gradingVersion), 'lichess-style-v1');
+        assert.equal(await page.evaluate(() => Object.values(savedResults)[0].opponentLevels.at(-1).level), 1);
         await auditButtons();
         await downloadPGN(page.locator('[data-sparring="download"]'));
         assert.equal(await page.locator('[data-sparring="history"]').isHidden(), true);
@@ -171,6 +184,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.locator('[data-sparring-board-status]').isHidden(), true);
         assert.equal(await page.evaluate(() => stops), 1);
         assert.equal(await page.locator('cg-board').count(), 1);
+        assert.equal(await page.inputValue('[data-sparring="strength"]'), '1');
         // Reuse the editor's promotion picker; cancel and underpromote.
         await page.setViewportSize({ width: 320, height: 844 });
         await page.evaluate(() => { chapter={headers:{FEN:'k7/7P/8/8/8/8/8/K7 w - - 0 1'},root:[{move:'h8=N',children:[]}]}; });
