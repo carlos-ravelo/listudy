@@ -1,0 +1,9 @@
+<div class="chapter-editor-promotion-overlay" x-ref="promotionPicker" data-promotion-picker hidden>
+  <div class="chapter-editor-promotion-choices" role="group" aria-label="<%= dgettext("study", "Promote to") %>">
+    <button type="button" data-promotion="q" aria-label="<%= dgettext("study", "Queen") %>" title="<%= dgettext("study", "Queen") %>"><piece class="queen" aria-hidden="true"></piece></button>
+    <button type="button" data-promotion="n" aria-label="<%= dgettext("study", "Knight") %>" title="<%= dgettext("study", "Knight") %>"><piece class="knight" aria-hidden="true"></piece></button>
+    <button type="button" data-promotion="r" aria-label="<%= dgettext("study", "Rook") %>" title="<%= dgettext("study", "Rook") %>"><piece class="rook" aria-hidden="true"></piece></button>
+    <button type="button" data-promotion="b" aria-label="<%= dgettext("study", "Bishop") %>" title="<%= dgettext("study", "Bishop") %>"><piece class="bishop" aria-hidden="true"></piece></button>
+  </div>
+  <button type="button" class="chapter-editor-promotion-cancel" data-promotion-cancel aria-label="<%= dgettext("study", "Cancel") %>">×</button>
+</div>

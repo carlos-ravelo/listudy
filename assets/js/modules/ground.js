@@ -1,6 +1,6 @@
 const Chessground = require('chessground').Chessground;
 import { ground_legal_moves, cal_to_ftc, san_to_uci, move_to_ucistr } from './chess_utils';
-import { sounds } from './sounds.js';
+import { playMoveSound as play_sound } from './sounds.js';
 import { array_contains } from './utils.js';
 
 /*
@@ -274,16 +274,6 @@ function cjs_turn(color) {
         return "white";
     } else {
         return "black";
-    }
-}
-
-function play_sound(move) {
-    let flags = move.flags;
-    // clone the sound so it can be repeated in quick succession
-    if (flags.indexOf("c") !== -1 || flags.indexOf("e") !== -1) {
-        sounds.play("capture");
-    } else {
-        sounds.play("move");
     }
 }
 

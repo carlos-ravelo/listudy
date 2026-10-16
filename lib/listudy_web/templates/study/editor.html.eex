@@ -49,17 +49,7 @@
     <div>
       <div class="chapter-editor-board">
         <div id="editor_board" class="cg-wrap" x-ref="board" tabindex="-1"></div>
-        <div class="chapter-editor-promotion-overlay" x-cloak x-show="pendingPromotion" @click.self="cancelPromotion()">
-          <div class="chapter-editor-promotion-choices" x-ref="promotionChoices" role="group"
-               aria-label="<%= dgettext "study", "Promote to" %>" :style="{ left: promotionLeft, top: promotionBottom ? 'auto' : '0', bottom: promotionBottom ? '0' : 'auto' }"
-               :class="{ 'from-bottom': promotionBottom }">
-            <button type="button" @click="choosePromotion('q')" aria-label="<%= dgettext "study", "Queen" %>" title="<%= dgettext "study", "Queen" %>"><piece aria-hidden="true" :class="'queen ' + promotionColor"></piece></button>
-            <button type="button" @click="choosePromotion('n')" aria-label="<%= dgettext "study", "Knight" %>" title="<%= dgettext "study", "Knight" %>"><piece aria-hidden="true" :class="'knight ' + promotionColor"></piece></button>
-            <button type="button" @click="choosePromotion('r')" aria-label="<%= dgettext "study", "Rook" %>" title="<%= dgettext "study", "Rook" %>"><piece aria-hidden="true" :class="'rook ' + promotionColor"></piece></button>
-            <button type="button" @click="choosePromotion('b')" aria-label="<%= dgettext "study", "Bishop" %>" title="<%= dgettext "study", "Bishop" %>"><piece aria-hidden="true" :class="'bishop ' + promotionColor"></piece></button>
-          </div>
-          <button type="button" class="chapter-editor-promotion-cancel" @click="cancelPromotion()" aria-label="<%= dgettext "study", "Cancel" %>">×</button>
-        </div>
+        <%= render ListudyWeb.ComponentView, "promotion_picker.html" %>
       </div>
       <div class="chapter-editor-pgn">
         <label for="editor_pgn"><%= dgettext "study", "PGN" %></label>

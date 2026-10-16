@@ -5,17 +5,17 @@ const vm = require('node:vm');
 const parser = require('@babel/parser');
 const chessModule = require('chess.js');
 const Chess = chessModule.Chess || chessModule;
-const statsContext = vm.createContext({});
+const statsContext = vm.createContext({ sparring: null,});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_stats.js'), 'utf8')
     .replace(/export \{[^}]+\};/, ''), statsContext);
-const moveTreeContext = vm.createContext({ require });
+const moveTreeContext = vm.createContext({ sparring: null, require });
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/study_move_tree.js'), 'utf8')
     .replace(/^export /gm, ''), moveTreeContext);
 
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/position_context.js'), 'utf8')
     .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), moveTreeContext);
 const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
-const reviewContext = vm.createContext({ ...require('ts-fsrs'), ChessModule: chessModule });
+const reviewContext = vm.createContext({ sparring: null, ...require('ts-fsrs'), ChessModule: chessModule });
 for (const file of ['review_history.js', 'position_review.js', 'failed_positions.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study', file), 'utf8').replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), reviewContext);
 const names = new Set([
     'currentPositionId', 'currentFailures', 'presentPracticePosition', 'replayContextFromStart',
@@ -35,7 +35,7 @@ const depthNodes = Object.fromEntries(['max_depth_container', 'max_depth_label',
     'max_depth_sub', 'max_depth_add', 'limit_practice_depth'].map(id => [id, {
     classList: { toggle() {} }
 }]));
-const depthContext = vm.createContext({
+const depthContext = vm.createContext({ sparring: null,
     chapter: 0, max_depth_key_base: 'depth_', DEPTH_MAX: -1, depth_limit_enabled: false,
     document: { getElementById: id => depthNodes[id] },
     get_repertoire_depth: () => 5,
@@ -73,7 +73,7 @@ function fixture(moves, fen, orientation = 'white') {
     const board = { orientation };
     const waits = [];
     const timers = [];
-    const context = vm.createContext({
+    const context = vm.createContext({ sparring: null,
         chess: new Chess(fen), chapter: 0, curr_move: [0],
         trees: [{ root, headers: fen ? { SetUp: '1', FEN: fen } : {} }],
         trainingSessionId: 0, lineEligibleForReview: true, lineReviewRecorded: false,

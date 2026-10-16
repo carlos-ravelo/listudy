@@ -35,4 +35,15 @@ assert.equal(merged.chapters.a.history.length, 2);
 assert.equal(merged.chapters.a.card.reps, 2);
 assert.equal(merged.chapters.a.recovered, false);
 assert.equal(merged.chapters.a.successes, 1);
-console.log('Three-way progress merge, disjoint devices, resets and FSRS event replay passed');
+const sparring = mergeProgress({ version: 1, chapters: {} },
+    { version: 1, chapters: {}, sparringSessions: {
+        one: { id: 'one', updatedAt: 10, attempts: 4, correct: 2, status: 'review', reviews: [{ loss: 10 }] }
+    } }, { version: 1, chapters: {}, sparringSessions: {
+        one: { id: 'one', updatedAt: 20, attempts: 4, correct: 2, status: 'finished', reviews: [{ loss: 10 }, { loss: 1 }] },
+        two: { id: 'two', updatedAt: 15, attempts: 2, correct: 2 }
+    } });
+assert.equal(sparring.sparringSessions.one.attempts, 4);
+assert.equal(sparring.sparringSessions.one.status, 'finished');
+assert.equal(sparring.sparringSessions.one.reviews.length, 2);
+assert.equal(sparring.sparringSessions.two.correct, 2);
+console.log('Three-way progress merge, disjoint devices, resets, Sparring snapshots and FSRS event replay passed');
