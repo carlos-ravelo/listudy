@@ -90,3 +90,32 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Continue last study:"
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Your daily studies"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "View all"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Choose studies for your daily practice."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Sign in to see your daily studies."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Last study"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Most used"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Most training time"
+msgstr ""
+

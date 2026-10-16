@@ -24,6 +24,47 @@ defmodule Listudy.StudyLibrary do
 
   def fetch(_), do: @empty
 
+  def daily_studies(user_id) when is_integer(user_id) and user_id > 0 do
+    settings = fetch(user_id)
+
+    (Studies.get_study_by_user!(user_id) ++ Studies.get_studies_by_favorite!(user_id))
+    |> Enum.uniq_by(& &1.id)
+    |> Enum.filter(fn study ->
+      entry = Map.get(settings["studies"], Integer.to_string(study.id), %{})
+      Map.get(entry, "location", "daily") == "daily"
+    end)
+  end
+
+  def daily_studies(_), do: []
+
+  def most_used(user_id, studies) when is_integer(user_id) and user_id > 0 do
+    keys = Map.new(studies, &{hd(String.split(&1.slug, "-")) <> "_chapter_stats", &1.id})
+
+    Repo.all(
+      from s in UserSetting,
+        where: s.user_id == ^user_id and s.key in ^Map.keys(keys),
+        select: {s.key, s.value}
+    )
+    |> Enum.map(fn {key, value} -> {keys[key], training_time(value)} end)
+    |> Enum.filter(fn {_, time} -> time > 0 end)
+    |> Enum.max_by(fn {id, time} -> {time, -id} end, fn -> {nil, 0} end)
+    |> elem(0)
+  end
+
+  def most_used(_, _), do: nil
+
+  defp training_time(value) do
+    with {:ok, %{"studySessions" => sessions}} <- Jason.decode(value),
+         true <- is_map(sessions) do
+      Enum.reduce(sessions, 0, fn
+        {_, %{"activeMs" => time}}, total when is_number(time) and time > 0 -> total + time
+        _, total -> total
+      end)
+    else
+      _ -> 0
+    end
+  end
+
   def update(user_id, operation) do
     Repo.transaction(fn ->
       Repo.query!("SELECT pg_advisory_xact_lock(hashtext($1))", ["study-library:#{user_id}"])

@@ -101,3 +101,28 @@ msgstr "Tus favoritos"
 #, elixir-format
 msgid "View all"
 msgstr "Ver todos"
+
+#, elixir-autogen, elixir-format
+msgid "Your daily studies"
+msgstr "Tus estudios diarios"
+
+#, elixir-autogen, elixir-format
+msgid "Choose studies for your daily practice."
+msgstr "Elige estudios para tu práctica diaria."
+
+#, elixir-autogen, elixir-format
+msgid "Sign in to see your daily studies."
+msgstr "Inicia sesión para ver tus estudios diarios."
+
+#, elixir-autogen, elixir-format
+msgid "Last study"
+msgstr "Último estudio"
+
+#, elixir-autogen, elixir-format
+msgid "Most used"
+msgstr "Más usado"
+
+#, elixir-autogen, elixir-format
+msgid "Most training time"
+msgstr "Mayor tiempo de entrenamiento"
+

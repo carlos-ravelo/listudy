@@ -9,7 +9,7 @@ const read = name => fs.readFileSync(path.join(previews, name + '.html'), 'utf8'
 
 (async () => {
     const pages = {
-        '/en': 'returning-home', '/es': 'new-home', '/en/studies': 'empty-library',
+        '/en': 'returning-home', '/daily-home': 'daily-home', '/es': 'new-home', '/en/studies': 'empty-library',
         '/en/studies/new': 'import', '/en/endgames': 'endgames', '/en/endgames/basic': 'endgame-chapter',
         '/en/studies/journey-repertoire': 'study'
     };
@@ -42,10 +42,10 @@ const read = name => fs.readFileSync(path.join(previews, name + '.html'), 'utf8'
         await page.goto(base + '/en');
         await page.evaluate(() => localStorage.setItem('studyActivity:journey', 'sparring'));
         await page.reload();
-        const resume = page.locator('[data-study-continue]');
+        const resume = page.locator('.home-continue[data-study-continue]');
         await page.waitForFunction(() => document.querySelector('[data-study-continue]').href.endsWith('?mode=sparring'));
         assert.equal(await page.locator('.home-practice-links').count(), 0);
-        assert.equal(await page.locator('.home-random-study').count(), 1);
+        assert.equal(await page.locator('.home-random-study').count(), 0);
         assert((await resume.getAttribute('href')).endsWith('?mode=sparring'));
         await page.screenshot({ path: '/tmp/listudy-journey-after-home-desktop.png', fullPage: true });
         await resume.click();
@@ -55,7 +55,7 @@ const read = name => fs.readFileSync(path.join(previews, name + '.html'), 'utf8'
         await page.waitForFunction(() => localStorage.getItem('studyActivity:journey') === 'read');
         await page.goto(base + '/en');
         await page.waitForFunction(() => document.querySelector('[data-study-continue]').href.endsWith('?mode=read'));
-        await page.locator('[data-study-continue]').click();
+        await page.locator('.home-continue[data-study-continue]').click();
         await page.waitForSelector('#study_read_moves:not([hidden])');
         await page.reload();
         await page.waitForSelector('#study_read_moves:not([hidden])');
@@ -68,6 +68,8 @@ const read = name => fs.readFileSync(path.join(previews, name + '.html'), 'utf8'
         await page.waitForSelector('cg-board');
         await page.waitForFunction(() => document.getElementById('practice_lines').getAttribute('aria-pressed') === 'true');
         assert.equal(await page.evaluate(() => localStorage.getItem('studyActivity:journey')), 'smart');
+        await page.goto(base + '/en');
+        await page.waitForFunction(() => document.querySelector('.home-daily-study').href.endsWith('?mode=smart'));
         await page.goto(base + '/en/endgames');
         const first = await page.locator('[data-endgame-start]').getAttribute('href');
         assert(first.endsWith('/basic/queen/1'));
@@ -89,8 +91,51 @@ const read = name => fs.readFileSync(path.join(previews, name + '.html'), 'utf8'
                 await page.screenshot({ path: `/tmp/listudy-journey-after-${name}-${width}.png`, fullPage: true });
             }
         }
+        await page.setViewportSize({ width: 1280, height: 960 });
+        await page.goto(base + '/daily-home');
+        await page.waitForSelector('cg-board');
+        assert.equal(await page.locator('.home-paths > section').count(), 4);
+        assert.equal(await page.locator('.home-daily-study').count(), 9);
+        assert.equal(await page.locator('.home-daily-study[data-last-study="true"]').count(), 1);
+        assert.equal(await page.locator('.home-daily-studies-list li').first().locator('.home-daily-study-recent').count(), 1);
+        assert.equal(await page.locator('.home-daily-study-most-used').count(), 1);
+        assert.equal(await page.locator('.home-daily-sparring').count(), 0);
+
+        assert(await page.locator('.home-daily-scroll').evaluate(node => node.scrollHeight > node.clientHeight));
+        await page.locator('.home-daily-scroll').focus();
+        await page.keyboard.press('End');
+        await page.waitForFunction(() => document.querySelector('.home-daily-scroll').scrollTop > 0);
+        await page.locator('.home-daily-scroll').evaluate(node => node.blur());
+        for (const width of [320, 390, 1280]) {
+            await page.setViewportSize({width, height: 1100});
+            await page.waitForTimeout(100);
+            assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Home grid overflows at ${width}px`);
+            assert.equal(await page.locator('.home-daily-study:visible').count(), width < 650 ? 4 : 9);
+            const board = await page.locator('cg-board').boundingBox();
+            assert(board.width >= 250 && Math.abs(board.width - board.height) < 2);
+            const card = await page.locator('.home-daily').boundingBox();
+            assert(board.x >= card.x && board.x + board.width <= card.x + card.width);
+            for (const theme of ['light', 'dark']) {
+                await page.evaluate(value => document.documentElement.setAttribute('data-theme', value), theme);
+                await page.screenshot({path: `/tmp/listudy-home-grid-${width}-${theme}.png`, fullPage: true});
+            }
+        }
+        await page.locator('cg-board').scrollIntoViewIfNeeded();
+        const move = await page.evaluate(() => {
+            const [from, targets] = [...ground.state.movable.dests.entries()][0];
+            return {from, to: targets[0], black: ground.state.orientation === 'black'};
+        });
+        const board = await page.locator('cg-board').boundingBox();
+        const square = name => {
+            const file = name.charCodeAt(0) - 97, rank = Number(name[1]);
+            return {x: board.x + ((move.black ? 7 - file : file) + .5) * board.width / 8,
+                y: board.y + ((move.black ? rank - 1 : 8 - rank) + .5) * board.height / 8};
+        };
+        const from = square(move.from), to = square(move.to);
+        await page.mouse.click(from.x, from.y); await page.mouse.click(to.x, to.y);
+        await page.waitForFunction(() => document.getElementById('error').textContent.trim() || document.getElementById('success').textContent.trim() || chess.history().length > 0);
         assert.deepEqual(errors, []);
-        console.log('Home-to-study mode restoration, chapter-link priority, endgame continuation, localization and mobile/desktop layouts passed');
+        console.log('Home grid, Daily list scrolling, study-mode shortcuts, responsive layouts and playable puzzle passed');
     } finally {
         if (browser) await browser.close();
         await new Promise(resolve => server.close(resolve));
