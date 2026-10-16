@@ -242,3 +242,12 @@
 .study-workspace #study_settings_dialog input[type="number"] { color: var(--font-color); background: var(--bg-color); border: 1px solid var(--study-divider); border-radius: 6px; padding: 8px; }
 .study-workspace #study_settings_dialog [data-settings-panel="sparring"] legend { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 [data-theme="dark"] .study-workspace #study_settings_dialog { color-scheme: dark; }
+
+/* Floating move feedback never participates in the board or sidebar layout. */
+.study-workspace .study-feedback { position: fixed; z-index: 140; inset-inline-end: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); inline-size: min(360px, calc(100vw - 24px)); max-block-size: min(160px, 25dvh); overflow: auto; overscroll-behavior: contain; box-sizing: border-box; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; pointer-events: none; }
+.study-workspace .study-feedback > div { border-radius: 8px; }
+.study-workspace .study-feedback .infoBox { margin: 0; padding: 12px 52px 12px 14px; border-radius: 8px; pointer-events: auto; }
+.study-workspace .study-feedback .infoBox:not(.hidden) { min-block-size: 44px; box-sizing: border-box; }
+.study-workspace .study-feedback .close_button { position: absolute; inset-block-start: 0; inset-inline-end: 0; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-height: 44px; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-size: 22px; cursor: pointer; }
+.study-workspace .study-feedback .close_button:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
+.study-workspace:has(dialog[open]) .study-feedback { visibility: hidden; }

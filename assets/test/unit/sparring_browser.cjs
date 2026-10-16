@@ -27,7 +27,7 @@ ${render(read('lib/listudy_web/templates/study/_sparring_status.html.eex'))}
 <div class="study-board-frame"><div id="chessground" class="cg-wrap" tabindex="-1"></div>
 ${render(read('lib/listudy_web/templates/component/promotion_picker.html.eex'))}</div>
 <nav aria-label="Move navigation"><button id="study_previous_move" aria-label="Previous move">←</button><button id="study_next_move" aria-label="Next move">→</button></nav>
-${infoBoxes}
+<div class="study-feedback" role="status" aria-live="polite" aria-label="Move feedback">${infoBoxes}</div>
 ${render(read('lib/listudy_web/templates/study/_sparring.html.eex'))}
 ${render(read('lib/listudy_web/templates/study/_study_settings.html.eex').replace('<%= render "_sparring_settings.html" %>', read('lib/listudy_web/templates/study/_sparring_settings.html.eex')))}
 ${render(read('lib/listudy_web/templates/study/_sparring_history.html.eex'))}</div>
@@ -42,6 +42,7 @@ window.Worker = class extends Worker {
 window.chapter = {headers: {Event:'Test chapter'},root:[{move:'e4',children:[{move:'e5',children:[{move:'Nf3',children:[]}]}]}]};
 window.savedResults={};window.decisions=[];window.stops=0;window.moveNavigation={update(){}};
 window.board=Sparring.Chessground(document.getElementById('chessground'),{drawable:{brushes:{normal:{key:'n',color:'#3333ff',opacity:0.6,lineWidth:10}}},movable:{free:false,events:{after:(from,to)=>controller.move(from,to)}}});
+Sparring.setupStudyFeedback({durationMs:400});
 window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapters:()=>window.studyChapters || [chapter],getTitle:()=> 'Test study',getBoard:()=>board,
  onPosition(){moveNavigation.update()},
  createEngine:options=>window.fakeEngine || Sparring.createSparringEngine(options),
@@ -55,7 +56,7 @@ document.getElementById('reset_line').onclick=()=>controller.start();
 document.getElementById('practice_lines').onclick=()=>{controller.stop();stops++};
 </script></body></html>`;
 const fixtureEntry = path.join(temp, 'fixture.cjs');
-fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/study_adapter.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/uci_engine.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/stockfish.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/study_page_controls.js'))}),Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground}`);
+fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/study_adapter.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/uci_engine.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/stockfish.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/study_page_controls.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/study_feedback.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/info_boxes.js'))}),Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground}`);
 
 (async () => {
     await new Promise((resolve, reject) => webpack({ mode: 'development',
@@ -186,13 +187,56 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
                 bounds.x + (square.charCodeAt(0) - 97 + 0.5) * bounds.width / 8,
                 bounds.y + (8 - Number(square[1]) + 0.5) * bounds.height / 8, { delay: 70 });
         }
+        const actionTop = () => page.locator('.sparring-actions').evaluate(element=>element.getBoundingClientRect().top+scrollY);
+        const initialActionTop = await actionTop();
         await move('d2', 'd4');
         await page.waitForFunction(() => document.getElementById('error_text').textContent.includes('Outside your repertoire'));
+        assert.equal(await page.locator('.study-feedback').evaluate(element=>getComputedStyle(element).position),'fixed');
+        await page.waitForTimeout(500);
+        assert.equal(await page.locator('#error').isVisible(),true,'Errors must not disappear on a timer');
+        const feedbackAvoidsBoard = () => page.evaluate(()=>{
+            const notice=document.querySelector('.study-feedback').getBoundingClientRect();
+            return ['#chessground','.sparring-actions','#study_previous_move','#study_next_move'].every(selector=>{
+                const target=document.querySelector(selector).getBoundingClientRect();
+                return notice.right<=target.left || notice.left>=target.right || notice.bottom<=target.top || notice.top>=target.bottom;
+            });
+        });
+        await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+        assert(await feedbackAvoidsBoard());
+        await page.setViewportSize({width:320,height:844});
+        await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+        assert(await feedbackAvoidsBoard(),'Mobile notifications must avoid the board and play controls');
+        await page.screenshot({path:'/tmp/listudy-floating-feedback-mobile.png'});
+        await page.setViewportSize({width:1280,height:900});
+        assert.equal(await page.evaluate(()=>document.activeElement.closest('.study-feedback')),null);
+        assert(Math.abs(await actionTop()-initialActionTop)<1,'Error feedback must not shift controls');
+        await page.evaluate(()=>{
+            document.getElementById('error_text').textContent='Long translated feedback '.repeat(100);
+            document.getElementById('success_text').textContent='A second message';
+            document.getElementById('success').classList.remove('hidden');
+        });
+        assert(Math.abs(await actionTop()-initialActionTop)<1,'Long and simultaneous messages must not shift controls');
+        await page.waitForFunction(()=>document.querySelector('.study-feedback').scrollHeight>document.querySelector('.study-feedback').clientHeight);
+        await page.evaluate(()=>controller.render());
         await page.click('#hints');
         assert.equal(await page.evaluate(() => board.state.drawable.shapes[0].dest), 'e4');
         await move('e2', 'e4');
         await page.waitForFunction(() => board.state.pieces.get('e5')?.color === 'black');
+        assert(Math.abs(await actionTop()-initialActionTop)<1,'Success feedback must not shift controls');
         assert.equal(await page.locator('[data-sparring="moves"] [data-grade="theory"]').count(), 1);
+        await page.mouse.move(0,0);
+        await page.waitForFunction(()=>document.getElementById('success').classList.contains('hidden'));
+        assert.equal(await page.locator('.study-feedback').evaluate(element=>element.getBoundingClientRect().height),0);
+        await page.evaluate(()=>Sparring.set_text('success','Confirmation'));
+        await page.locator('#success .close_button').focus();
+        await page.waitForTimeout(500);
+        assert.equal(await page.locator('#success').isVisible(),true,'Focused messages must stay available');
+        await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#success').isHidden(),true);
+        await page.evaluate(()=>Sparring.set_text('error','Persistent error'));
+        await page.locator('#error .close_button').click();
+        assert.equal(await page.locator('#error').isHidden(),true);
+        assert(Math.abs(await actionTop()-initialActionTop)<1,'Dismissing notifications must not shift controls');
         const liveFen = await page.evaluate(() => board.state.pieces.get('e4')?.color);
         await page.click('#study_previous_move');
         assert.equal(await page.evaluate(() => controller.navigation().canGoForward), true);
