@@ -19,6 +19,7 @@ const html = `<html><head><meta name="viewport" content="width=device-width,init
 <style>:root{--font-color:#222;--bg-color:#fff;--bg-highlight-color:#ddd;--study-divider:#bbb}.study-board-frame{width:min(500px,90vw)}#chessground{width:100%;height:auto;aspect-ratio:1}.hidden{display:none}</style></head><body>
 <div class="study-workspace"><div class="study-session-controls"><button id="practice_sparring">Sparring</button><button id="practice_smart">Smart</button><button id="practice_lines">Lines</button></div>
 <div class="study-primary-actions"><button id="hints">Hint</button><button id="reset_line">Reset line</button></div>
+${render(read('lib/listudy_web/templates/study/_sparring_status.html.eex'))}
 <div class="study-board-frame"><div id="chessground" class="cg-wrap" tabindex="-1"></div>
 ${render(read('lib/listudy_web/templates/component/promotion_picker.html.eex'))}</div>
 ${infoBoxes}
@@ -36,10 +37,11 @@ window.savedResults={};window.decisions=[];window.stops=0;
 window.board=Sparring.Chessground(document.getElementById('chessground'),{drawable:{brushes:{normal:{key:'n',color:'#3333ff',opacity:0.6,lineWidth:10}}},movable:{free:false,events:{after:(from,to)=>controller.move(from,to)}}});
 window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapter:()=>chapter,getBoard:()=>board,
  createEngine:()=>window.fakeEngine || Sparring.createSparringEngine(),
- showHints(){board.setShapes([{orig:'e2',dest:'e4',brush:'green'}])},onStop(){stops++},
+ showHints(){board.setShapes([{orig:'e2',dest:'e4',brush:'green'}])},
  onDecision(record){decisions.push(record)},saveResult(record){savedResults[record.id]=record},getHistory:()=>Object.values(savedResults)});
 document.getElementById('hints').onclick=()=>controller.hint();
 document.getElementById('reset_line').onclick=()=>controller.start();
+document.getElementById('practice_lines').onclick=()=>{controller.stop();stops++};
 </script></body></html>`;
 const fixtureEntry = path.join(temp, 'fixture.cjs');
 fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/study_adapter.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/uci_engine.js'))}),Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground}`);
@@ -75,7 +77,12 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await page.click('#practice_sparring');
         await page.waitForSelector('cg-board piece');
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-        assert.equal(await page.textContent('[data-sparring="status"]'), 'Training theory');
+        assert.equal(await page.textContent('[data-sparring="phase"]'), 'Repertoire');
+        assert.equal(await page.textContent('[data-sparring="status"]'), 'Your move');
+        assert.equal(await page.locator('#sparring_title, [data-sparring="leave"]').count(), 0);
+        assert.equal(await page.locator('[data-sparring="history"]').isHidden(), true);
+        assert.equal(await page.textContent('[data-sparring="analyze"]'), 'Pause and review');
+        assert.equal(await page.textContent('[data-sparring="resign"]'), 'Resign game');
         assert.equal(await page.locator('cg-board').count(), 1);
         async function auditButtons() {
             const buttons = page.locator('#study_sparring button:visible, [data-promotion-picker]:visible button, #practice_sparring, #hints, #reset_line');
@@ -116,9 +123,9 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await move('e2', 'e4');
         await page.waitForFunction(() => board.state.pieces.get('e5')?.color === 'black');
         await move('g1', 'f3');
-        await page.waitForFunction(() => /Free play|unavailable/.test(document.querySelector('[data-sparring="status"]').textContent),
+        await page.waitForFunction(() => document.querySelector('[data-sparring="phase"]').textContent === 'Against Stockfish' && document.querySelector('[data-sparring="status"]').textContent === 'Your move',
             null, { timeout: 30000 });
-        assert.equal(await page.textContent('[data-sparring="status"]'), 'Free play against Stockfish', await page.evaluate(() => engineTrace.slice(-12).join('; ')));
+        assert.equal(await page.textContent('[data-sparring="phase"]'), 'Against Stockfish', await page.evaluate(() => engineTrace.slice(-12).join('; ')));
         assert((await page.evaluate(() => playedSounds.length)) >= 4);
         // Make a legal engine-phase decision, then review before the checkpoint.
         const next = await page.evaluate(() => {
@@ -135,9 +142,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.evaluate(() => Object.keys(savedResults).length), 1);
         await auditButtons();
         await downloadPGN(page.locator('[data-sparring="download"]'));
-        await page.locator('[data-sparring="history"] > summary').click();
-        await page.locator('[data-sparring="recent"] details > summary').first().click();
-        await downloadPGN(page.locator('[data-sparring="recent"] button').first());
+        assert.equal(await page.locator('[data-sparring="history"]').isHidden(), true);
         await page.locator('[data-sparring="results"] button').first().click();
         assert(await page.evaluate(() => board.state.drawable.shapes.length > 0));
         await page.locator('[data-sparring="results"] button').first().focus();
@@ -162,7 +167,8 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.locator('[data-sparring="resign"]').isDisabled(), true);
         assert.equal(await page.locator('[data-sparring="resign"]').isHidden(), true);
         await auditButtons();
-        await page.click('[data-sparring="leave"]');
+        await page.click('#practice_lines');
+        assert.equal(await page.locator('[data-sparring-board-status]').isHidden(), true);
         assert.equal(await page.evaluate(() => stops), 1);
         assert.equal(await page.locator('cg-board').count(), 1);
         // Reuse the editor's promotion picker; cancel and underpromote.
@@ -185,15 +191,19 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.textContent('[data-sparring="status"]'), 'Session finished');
         assert.equal(await page.locator('[data-sparring="summary"]').isVisible(), true);
         await auditButtons();
+        await page.locator('[data-sparring="history"] > summary').click();
+        await page.locator('[data-sparring="recent"] details > summary').first().click();
+        await downloadPGN(page.locator('[data-sparring="recent"] button').first());
         // Theory exit, empty review and retrying an unavailable engine.
-        await page.click('[data-sparring="leave"]');
+        await page.click('#practice_lines');
+        assert.equal(await page.locator('[data-sparring-board-status]').isHidden(), true);
         await page.evaluate(() => {
             chapter = { headers: {Event:'Test chapter'}, root: [{move:'e4',children:[]}] };
             fakeEngine = { async analyze() { throw new Error('offline'); }, async bestMove() { return 'e7e5'; }, cancel() {}, dispose() {} };
         });
         await page.click('#practice_sparring');
         await page.click('[data-sparring="continue"]');
-        assert.equal(await page.textContent('[data-sparring="status"]'), 'Free play against Stockfish');
+        assert.equal(await page.textContent('[data-sparring="phase"]'), 'Against Stockfish');
         await page.click('[data-sparring="analyze"]');
         assert.equal(await page.locator('[data-sparring="empty-analysis"]').isVisible(), true);
         assert.equal(await page.locator('[data-sparring="download"]').isDisabled(), true);
@@ -209,6 +219,9 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         const dimensions = await page.locator('#chessground').boundingBox();
         assert(Math.abs(dimensions.width - dimensions.height) < 2);
         assert(dimensions.x >= 0 && dimensions.x + dimensions.width <= 390);
+        const badge = await page.locator('[data-sparring-board-status]').boundingBox();
+        assert(badge.y < dimensions.y);
+        console.log('Bundled engine:', await page.evaluate(() => engineTrace.find(line => line.startsWith('id name '))));
         assert.deepEqual(errors, []);
         console.log('All Sparring buttons: labels, keyboard focus, touch targets, continue, retry, downloads, history, resignation and promotion passed');
     } finally {

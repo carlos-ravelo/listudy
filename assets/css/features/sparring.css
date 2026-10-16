@@ -1,6 +1,11 @@
 .study-board-frame { position: relative; }
-.study-sparring { border-top: 1px solid var(--study-divider); margin-top: 16px; padding-top: 12px; }
-.study-sparring h3, .study-sparring h4 { margin: 0 0 8px; }
+.study-sparring { min-width: 0; }
+.study-sparring h2 { margin: 0 0 8px; font-size: 16px; }
+.sparring-board-status { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 10px; }
+.sparring-board-status[hidden] { display: none; }
+.sparring-phase { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--study-divider); border-radius: 999px; background: var(--bg-highlight-color); color: var(--font-color); font-size: 13px; font-weight: 600; }
+.sparring-phase::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.sparring-status-detail { margin: 0; flex: 1 1 140px; min-width: 0; font-size: 13px; color: var(--study-muted); overflow-wrap: anywhere; }
 .sparring-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .sparring-secondary-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .study-sparring button, .study-sparring summary, .study-sparring > label { min-height: 44px; touch-action: manipulation; }

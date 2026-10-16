@@ -1767,7 +1767,6 @@ async function main() {
             overlay_manager.clear_overlays();
             studySessions.begin('sparring');
         },
-        onStop() { studySessions.end(); start_training(); },
         onPosition(position, path, phase) {
             window.chess = position;
             window.curr_move = [chapter, ...path];

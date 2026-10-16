@@ -1,40 +1,17 @@
-<section id="study_sparring" class="study-sparring" aria-labelledby="sparring_title" hidden>
-  <h3 id="sparring_title"><%= dgettext("study", "Opening sparring") %></h3>
-  <p data-sparring="status" role="status" aria-live="polite"
-     data-theory="<%= dgettext("study", "Training theory") %>"
-     data-free="<%= dgettext("study", "Free play against Stockfish") %>"
-     data-thinking="<%= dgettext("study", "Opponent thinking…") %>"
-     data-finished="<%= dgettext("study", "Session finished") %>"
-     data-review="<%= dgettext("study", "Review your play so far, or continue playing.") %>"
-     data-blunder="<%= dgettext("study", "A serious mistake was detected. Review the continuation or retry your move.") %>"
-     data-error="<%= dgettext("study", "Analysis unavailable. Retry with Stockfish or restart the line.") %>"
-     data-outside="<%= dgettext("study", "Outside your repertoire. Try again or use Hint.") %>"
-     data-deviation="<%= dgettext("study", "First move outside your repertoire") %>"
-     data-review-move="<%= dgettext("study", "Review move") %>"
-     data-assisted="<%= dgettext("study", "Assisted retry") %>"
-     data-good="<%= dgettext("study", "Good move") %>"
-     data-correct="<%= dgettext("study", "Repertoire move") %>"
-     data-grade-blunder="<%= dgettext("study", "Serious mistake") %>"
-     data-inaccuracy="<%= dgettext("study", "Inaccuracy") %>"
-     data-mistake="<%= dgettext("study", "Mistake") %>"
-     data-loss="<%= dgettext("study", "Estimated winning chances lost (percentage points)") %>"
-     data-resigned="<%= dgettext("study", "You resigned") %>"
-     data-unanalysed="<%= dgettext("study", "Analysis pending or unavailable for some moves") %>"
-     data-start="<%= dgettext("study", "Starting position") %>"
-     data-variation="<%= dgettext("study", "Variation") %>"></p>
+<section id="study_sparring" class="study-sparring" aria-label="<%= dgettext("study", "Sparring controls and results") %>" hidden>
+
   <div class="sparring-actions" role="group" aria-label="<%= dgettext("study", "Play and review") %>">
-    <button type="button" data-sparring="analyze"><%= dgettext("study", "Review play so far") %></button>
+    <button type="button" data-sparring="analyze"><%= dgettext("study", "Pause and review") %></button>
     <button type="button" data-sparring="continue" data-theory="<%= dgettext("study", "Play against Stockfish") %>" data-resume="<%= dgettext("study", "Continue playing") %>" data-retry="<%= dgettext("study", "Retry Stockfish") %>"><%= dgettext("study", "Play against Stockfish") %></button>
     <button type="button" data-sparring="retry" hidden><%= dgettext("study", "Retry move") %></button>
   </div>
   <div class="sparring-secondary-actions" role="group" aria-label="<%= dgettext("study", "Session actions") %>">
-    <button type="button" data-sparring="resign" data-confirm="<%= dgettext("study", "Resign this game? You can still review and download your results.") %>"><%= dgettext("study", "Resign") %></button>
-    <button type="button" data-sparring="leave"><%= dgettext("study", "Back to practice") %></button>
+    <button type="button" data-sparring="resign" data-confirm="<%= dgettext("study", "Resign this game? You can still review and download your results.") %>"><%= dgettext("study", "Resign game") %></button>
   </div>
   <label><input type="checkbox" name="sparring_live_feedback" data-sparring="live" checked> <%= dgettext("study", "Show feedback while playing") %></label>
   <p class="sparring-note"><%= dgettext("study", "An analysis checkpoint appears after every six decisions against the engine. You can continue playing from there.") %></p>
   <section data-sparring="summary" hidden aria-labelledby="sparring_results_title">
-    <h4 id="sparring_results_title" tabindex="-1"><%= dgettext("study", "Session results") %></h4>
+    <h2 id="sparring_results_title" tabindex="-1"><%= dgettext("study", "Session results") %></h2>
     <dl class="sparring-metrics">
       <dt><%= dgettext("study", "Theory recalled without help") %></dt><dd data-sparring="theory-score"></dd>
       <dt><%= dgettext("study", "Engine decisions analysed") %></dt><dd data-sparring="engine-score"></dd>
@@ -54,6 +31,10 @@
     <p data-sparring="empty-analysis"><%= dgettext("study", "No moves against the engine have been analysed yet. Your theory results are shown above.") %></p>
     <button type="button" data-sparring="download"><%= dgettext("study", "Download game PGN") %></button>
   </section>
-  <details data-sparring="history"><summary><%= dgettext("study", "Recent sparring results") %></summary><p data-sparring="empty-history"><%= dgettext("study", "Your saved sessions will appear here after you review or finish a game.") %></p><div data-sparring="recent"></div></details>
+  <details data-sparring="history" hidden>
+    <summary><%= dgettext("study", "Previous sessions") %></summary>
+    <p class="sparring-note"><%= dgettext("study", "Review or download results from earlier games in this study.") %></p>
+    <div data-sparring="recent"></div>
+  </details>
   <div class="study-reading-tree"><div data-sparring="moves"></div></div>
 </section>
