@@ -3,7 +3,7 @@
   <head>
     <%= render "_head.html", assigns: assigns, conn: @conn%>
   </head>
-  <body>
+  <body class="site-layout">
     <a class="site-skip-link" href="#main-content"><%= gettext("Skip to content") %></a>
     <%= render "_header.html", assigns: assigns, conn: @conn%>
     <main id="main-content" role="main" class="container" tabindex="-1">
