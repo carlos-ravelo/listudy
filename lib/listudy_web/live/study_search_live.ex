@@ -39,9 +39,9 @@ defmodule ListudyWeb.StudySearchLive do
   end
 
   def mount(%{"locale" => locale}, _session, socket) do
-    result = Studies.search_by_title("")
+    result = Studies.search_by_title("", "newest")
     Gettext.put_locale(ListudyWeb.Gettext, locale)
-    {:ok, assign(socket, query: nil, ordering: "favorites", matches: result, locale: locale)}
+    {:ok, assign(socket, query: nil, ordering: "newest", matches: result, locale: locale)}
   end
 
   def handle_event(_, %{"q" => query, "ordering" => order}, socket)
