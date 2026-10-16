@@ -14,7 +14,7 @@
             <%= link to: Routes.study_path(@conn, :show, @locale, @last_study.slug), class: "home-continue",
                   data: [study_continue: true, study_id: String.split(@last_study.slug, "-") |> hd()] do %>
               <span class="home-continue-label"><%= dgettext "index", "Continue learning study:" %></span>
-              <span class="home-continue-title"><%= @last_study.title %></span>
+              <span class="home-continue-title" title="<%= @last_study.title %>"><%= @last_study.title %></span>
             <% end %>
           </div>
         <% end %>
@@ -24,7 +24,7 @@
 
     <section class="home-path" aria-labelledby="home-analysis-title">
       <h2 id="home-analysis-title"><%= dgettext "index", "Analyze your games" %></h2>
-      <p><%= dgettext "index", "Compare a PGN or your Chess.com and Lichess games with your studies." %></p>
+      <p><%= emphasize_analysis_sources(dgettext("index", "Compare a PGN or your Chess.com and Lichess games with your studies.")) %></p>
       <div class="home-path-actions">
         <%= if Pow.Plug.current_user(@conn) do %>
           <%= link (dgettext "index", "Open game analysis"), to: Routes.analysis_path(@conn, :index), class: "button button-primary" %>

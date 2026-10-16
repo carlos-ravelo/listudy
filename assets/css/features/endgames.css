@@ -1,20 +1,50 @@
-.endgame_chapter_span {
-    color: var(--font-color);
-    padding: 20px 40px;
-    background: var(--bg-highlight-color);
-    display: inline-block;
-    margin-top: 10px;
-    width: 2rem;
-    text-align: center;
-}
-.endgame_chapter_link {
-    text-decoration: none;
-}
-
-.endgame_fix {
-    margin-top: 10px;
-}
-
-.endgame_solved {
-    border-top: 3px var(--success-color) solid;
+.endgame-library { --endgame-divider: color-mix(in srgb, var(--font-color) 14%, transparent); --endgame-muted: color-mix(in srgb, var(--font-color) 75%, var(--bg-color)); --endgame-accent: #206a9d; --endgame-solved: #287448; }
+[data-theme="dark"] .endgame-library { --endgame-accent: #6ab2e1; --endgame-solved: #8bce9f; }
+.endgame-library-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; margin-bottom: 24px; padding: 0; border: 0; background: transparent; }
+.endgame-library-heading > div { min-width: 0; }
+.endgame-library h1 { margin: 0 0 6px; font-size: clamp(22px, 3vw, 30px); font-weight: 600; line-height: 1.25; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.endgame-library-heading p { max-width: 65ch; margin: 0; color: var(--endgame-muted); font-size: 14px; line-height: 1.5; }
+.endgame-library .endgame-start { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 44px; height: auto; margin: 0; padding: 8px 14px; border: 1px solid var(--endgame-accent); border-radius: 6px; background: var(--endgame-accent); color: var(--bg-color); font: inherit; font-size: 14px; line-height: 1.4; text-transform: none; letter-spacing: normal; white-space: normal; text-align: center; box-sizing: border-box; }
+.endgame-library .endgame-start:hover { filter: brightness(.92); }
+.endgame-category-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--endgame-divider); }
+.endgame-category-list > li { min-width: 0; margin: 0; border-bottom: 1px solid var(--endgame-divider); }
+.endgame-category { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 100%; padding: 16px 10px; border-radius: 6px; color: var(--font-color); text-decoration: none; box-sizing: border-box; }
+.endgame-category:hover { color: var(--font-color); background: var(--bg-highlight-color); }
+.endgame-category-copy { min-width: 0; }
+.endgame-category-title { display: flex; align-items: center; gap: 8px; }
+.endgame-material { display: inline-flex; align-items: center; flex: none; padding-right: 3px; }
+.endgame-material img { display: block; width: 28px; height: 28px; max-width: none; }
+.endgame-material img + img { margin-left: -6px; }
+.endgame-exercise-group .endgame-material img { width: 25px; height: 25px; }
+.endgame-category > svg { flex: none; color: var(--endgame-muted); }
+.endgame-library h2 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.endgame-category p { margin: 4px 0 10px; color: var(--endgame-muted); font-size: 13px; line-height: 1.5; }
+.endgame-progress { display: inline-flex; align-items: center; padding: 2px 7px; border: 1px solid var(--endgame-divider); border-radius: 4px; color: var(--endgame-muted); font-size: 12px; font-weight: 500; line-height: 1.4; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.endgame-progress.has-progress { color: var(--endgame-solved); border-color: color-mix(in srgb, var(--endgame-solved) 28%, transparent); background: color-mix(in srgb, var(--endgame-solved) 7%, transparent); }
+.endgame-back { margin-bottom: 12px; }
+.endgame-back a { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; color: var(--endgame-muted); font-size: 13px; font-variant: normal; letter-spacing: normal; text-transform: none; text-decoration: none; }
+.endgame-back a:hover { color: var(--font-color); text-decoration: underline; text-underline-offset: 3px; }
+.endgame-exercise-groups { border-top: 1px solid var(--endgame-divider); }
+.endgame-exercise-group { padding: 20px 0; border-bottom: 1px solid var(--endgame-divider); }
+.endgame-exercise-group > header { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; padding: 0; border: 0; background: transparent; }
+.endgame-exercise-group > p { max-width: 70ch; margin: 0 0 12px; color: var(--endgame-muted); font-size: 14px; line-height: 1.5; }
+.endgame-exercises { display: grid; grid-template-columns: repeat(auto-fill, 52px); gap: 8px; list-style: none; padding: 0; margin: 0; }
+.endgame-exercises > li { margin: 0; }
+.endgame-exercise { position: relative; display: flex; align-items: center; justify-content: center; min-height: 48px; border: 1px solid var(--endgame-divider); border-radius: 6px; color: var(--font-color); background: var(--bg-color); text-decoration: none; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; box-sizing: border-box; }
+.endgame-exercise:hover { color: var(--endgame-accent); border-color: currentColor; background: var(--bg-highlight-color); }
+.endgame-exercise.is-solved { color: var(--endgame-solved); border-color: color-mix(in srgb, var(--endgame-solved) 35%, transparent); background: color-mix(in srgb, var(--endgame-solved) 7%, var(--bg-color)); }
+.endgame-solved-mark { position: absolute; top: 3px; right: 3px; visibility: hidden; }
+.endgame-exercise.is-solved .endgame-solved-mark { visibility: visible; }
+.endgame-about { margin-top: 16px; }
+.endgame-about > summary { display: flex; align-items: center; min-height: 44px; width: fit-content; gap: 8px; cursor: pointer; color: var(--endgame-muted); font-size: 13px; }
+.endgame-about > summary::before { content: "+"; font-size: 18px; }
+.endgame-about[open] > summary::before { content: "−"; }
+.endgame-about p { max-width: 70ch; margin: 4px 0 0; font-size: 14px; line-height: 1.6; color: var(--endgame-muted); }
+.endgame-library :is(a, summary):focus-visible { outline: 2px solid var(--endgame-accent); outline-offset: 3px; }
+@media (max-width: 650px) {
+  .endgame-library { padding-inline: 12px; }
+  .endgame-library-heading { align-items: flex-start; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+  .endgame-category-list { grid-template-columns: minmax(0, 1fr); }
+  .endgame-category { padding-inline: 4px; }
+  .endgame-exercises { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
 }
