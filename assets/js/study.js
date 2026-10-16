@@ -1755,6 +1755,8 @@ async function main() {
     });
     setup_chapter_select();
     sparring = setupStudySparring({ getChapters: () => trees, getTitle: () => document.querySelector('h1').textContent.trim(), getPlayer: () => studyColor,
+        readStrength: () => StorageAdapter.getItem('sparring_strength'),
+        writeStrength: level => StorageAdapter.setItem('sparring_strength', String(level)),
         getBoard: () => ground,
         onBegin() {
             trainingSessionId += 1;

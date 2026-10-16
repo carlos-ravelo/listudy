@@ -90,21 +90,21 @@ export function createSparringSession({ position, repertoire, engine, player, ra
                         let last = after.over ? { score: after.result === '1/2-1/2' ? { type: 'cp', value: 0 } : { type: 'mate', value: 0 } }
                             : await engine.analyze(after);
                         if (disposed || request !== revision) return false;
-                        let assessment = assessMove({ ...first, turn: before.turn }, { ...last, turn: after.turn }, player);
+                        let assessment = assessMove({ ...first, turn: before.turn }, { ...last, turn: after.turn }, player, uci);
                         if (assessment?.grade === 'blunder' && !after.over) {
                             const confirmed = await engine.analyze(before, { movetime: 800 });
                             if (disposed || request !== revision) return false;
                             last = await engine.analyze(after, { movetime: 800 });
                             if (disposed || request !== revision) return false;
-                            assessment = assessMove({ ...confirmed, turn: before.turn }, { ...last, turn: after.turn }, player);
+                            assessment = assessMove({ ...confirmed, turn: before.turn }, { ...last, turn: after.turn }, player, uci);
                             first.uci = confirmed.uci; first.pv = confirmed.pv;
                         }
                         if (!assessment) throw new Error('No evaluation');
                         const retried = retryPly === ply;
                         reviews.push({ ...assessment, ply, uci, san: position.snapshot().lastMove?.san || uci,
                             best: first.uci, pv: first.pv || [], assisted: retried });
-                        onDecision({ key: `free:${ply}`, correct: assessment.grade === 'good', assisted: retried });
-                        reply = last.uci;
+                        onDecision({ key: `free:${ply}`, correct: ['best', 'acceptable'].includes(assessment.grade), assisted: retried });
+                        reply = engine.canReuseAnalysisMove?.() === false ? null : last.uci;
                         if (assessment.grade === 'blunder' && !position.snapshot().over) { pause('blunder'); return true; }
                     } else onDecision({ key: `free:${ply}`, correct: false, assisted: false });
                 } catch (_) {

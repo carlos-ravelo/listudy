@@ -1098,3 +1098,48 @@ msgstr "¡Cadena de práctica completada!"
 
 msgid "Progress is saved on this device. Cloud sync will retry when a connection is available."
 msgstr "El progreso está guardado en este dispositivo. Se reintentará la sincronización cuando haya conexión."
+
+msgid "Best move"
+msgstr "Mejor jugada"
+
+msgid "Acceptable move"
+msgstr "Jugada aceptable"
+
+msgid "Inaccuracy"
+msgstr "Imprecisión"
+
+msgid "Mistake"
+msgstr "Error"
+
+msgid "Blunder"
+msgstr "Error grave"
+
+msgid "Opponent strength"
+msgstr "Fuerza del rival"
+
+msgid "Level 1 — Easiest"
+msgstr "Nivel 1 — El más fácil"
+
+msgid "Level 2 — Easy"
+msgstr "Nivel 2 — Fácil"
+
+msgid "Level 3"
+msgstr "Nivel 3"
+
+msgid "Level 4"
+msgstr "Nivel 4"
+
+msgid "Level 5"
+msgstr "Nivel 5"
+
+msgid "Level 6"
+msgstr "Nivel 6"
+
+msgid "Level 7"
+msgstr "Nivel 7"
+
+msgid "Level 8 — Full strength"
+msgstr "Nivel 8 — Máxima fuerza"
+
+msgid "The level changes your opponent, not the analysis. Levels are practice settings, not Elo ratings."
+msgstr "El nivel cambia la fuerza del rival, no la del análisis. Son niveles de práctica, no puntuaciones Elo."

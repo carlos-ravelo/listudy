@@ -1,6 +1,6 @@
 import { createSparringSession } from './session.js';
 import { createStudySparring, sparringStartPositions } from './chess_adapter.js';
-import { createSparringEngine } from './uci_engine.js';
+import { createSparringEngine, sparringStrength } from './uci_engine.js';
 import { createPromotionPicker } from '../promotion_picker.js';
 import { setupStudyMoveTree } from '../study/study_move_tree.js';
 import { sounds, playMoveSound } from '../sounds.js';
@@ -8,7 +8,7 @@ import { set_text, clear_all_text, info_div, error_div, success_div } from '../i
 
 export function setupStudySparring({ getChapters, getTitle = () => 'Listudy sparring', getPlayer, getBoard, onBegin = () => {},
     onPosition = () => {}, showHints = () => {}, onDecision = () => {}, saveResult = () => {},
-    getHistory = () => [], createEngine = createSparringEngine }) {
+    getHistory = () => [], createEngine = createSparringEngine, readStrength = () => null, writeStrength = () => {} }) {
     const opener = document.getElementById('practice_sparring');
     const panel = document.getElementById('study_sparring');
     const boardStatus = document.querySelector('[data-sparring-board-status]');
@@ -22,8 +22,14 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     let reportSignature = '';
     let selectedStartFen = null;
     let sessionTitle;
+    let engine;
+    let strength = sparringStrength(readStrength());
+    let strengthChanges = [];
     const paused = state => ['review', 'finished'].includes(state.phase);
-    const gradeLabel = grade => labels[grade === 'blunder' ? 'gradeBlunder' : grade];
+    const gradeLabel = grade => labels[grade === 'blunder' ? 'gradeBlunder' : grade === 'good' ? 'acceptable' : grade];
+    const isError = grade => ['inaccuracy', 'mistake', 'blunder'].includes(grade);
+    const gradeSymbol = grade => ({ best: '★', acceptable: '✓', good: '✓', inaccuracy: '?!', mistake: '?', blunder: '??' })[grade];
+    find('strength').value = String(strength);
     const numbers = new Intl.NumberFormat(document.documentElement.lang || undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const format = number => numbers.format(number);
     function continuation(ply, pv) {
@@ -44,6 +50,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             'Black', state.player === 'b' ? 'You' : 'Stockfish / repertoire');
         return { id: sessionId, startedAt, updatedAt: Date.now(), status: state.phase, reason: state.reason,
             scope: 'study', startFen: state.initialFen, sources: ports.repertoire.sources(),
+            gradingVersion: 'lichess-style-v1', opponentLevels: strengthChanges.map(change => ({ ...change })),
             attempts: state.attempts, correct: state.correct, firstDeviation: state.firstDeviation,
             freeCount: state.freeCount, result: outcome, pgn: game.pgn(),
             reviews: state.reviews.map(row => ({ ...row, line: continuation(row.ply, row.pv) })) };
@@ -85,7 +92,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         if (session && currentState) save(currentState);
         generation++;
         session?.dispose(); picker?.destroy();
-        session = null; picker = null; pendingPromotion = null;
+        session = null; engine = null; picker = null; pendingPromotion = null;
         workspace?.classList.remove('study-sparring-active', 'study-sparring-paused');
         panel.hidden = true; opener.setAttribute('aria-pressed', 'false');
         if (boardStatus) boardStatus.hidden = true;
@@ -131,13 +138,14 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         if (state.feedback === 'outside') set_text(error_div, labels.outside);
         if (state.feedback === 'correct' && find('live').checked) set_text(success_div, labels.correct);
         const latest = state.reviews[state.reviews.length - 1];
-        if (state.reviews.length > heardReviews && latest.grade !== 'good') sounds.play('error');
+        if (state.reviews.length > heardReviews && isError(latest.grade) && (find('live').checked || review)) sounds.play('error');
         heardReviews = state.reviews.length;
         if (latest && state.feedback !== 'outside' && (find('live').checked || review)) {
-            set_text(latest.grade === 'good' ? success_div : error_div,
-                `${gradeLabel(latest.grade)} · ${labels.loss}: ${format(latest.loss)}`);
+            set_text(isError(latest.grade) ? error_div : latest.grade === 'best' ? success_div : info_div,
+                gradeLabel(latest.grade), { symbol: gradeSymbol(latest.grade) });
         }
         document.getElementById('hints').disabled = !state.canPlay || state.phase !== 'theory';
+        find('strength').disabled = state.thinking || !!pendingPromotion || state.phase === 'finished';
         find('analyze').disabled = state.thinking || review;
         find('analyze').hidden = review;
         find('continue').hidden = state.phase === 'free' && !state.error || state.phase === 'finished';
@@ -223,6 +231,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         const current = generation;
         sessionId = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
         startedAt = Date.now(); soundCount = 0; heardReviews = 0; readIndex = null; lineLength = -1; previousPhase = null; savedSignature = ''; reportSignature = '';
+        strengthChanges = [{ ply: 0, level: strength }];
         panel.hidden = false; workspace?.classList.add('study-sparring-active');
         if (boardStatus) boardStatus.hidden = false;
         opener.setAttribute('aria-pressed', 'true');
@@ -249,13 +258,20 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
                     move(pending.from, pending.to, role); document.getElementById('chessground').focus();
                 },
                 onCancel() { pendingPromotion = null; render(session.snapshot()); document.getElementById('chessground').focus(); } });
-            session = createSparringSession({ ...ports, engine: createEngine(), player: getPlayer() === 'white' ? 'w' : 'b',
+            engine = createEngine({ strength });
+            session = createSparringSession({ ...ports, engine, player: getPlayer() === 'white' ? 'w' : 'b',
                 onDecision, onChange: state => { if (current === generation) { readIndex = null; render(state); } } });
             history(); await session.start();
         } catch (_) { if (current === generation) set_text(error_div, labels.error); }
     }
     opener.addEventListener('click', () => { if (!session) start(); });
     find('start').addEventListener('change', () => { selectedStartFen = find('start').value; start(); });
+    find('strength').addEventListener('change', () => {
+        strength = sparringStrength(find('strength').value);
+        engine?.setStrength?.(strength);
+        strengthChanges.push({ ply: session?.snapshot().moves.length || 0, level: strength });
+        writeStrength(strength);
+    });
     find('continue').addEventListener('click', () => {
         pendingPromotion = null; picker?.close(); readIndex = null;
         const current = generation;
