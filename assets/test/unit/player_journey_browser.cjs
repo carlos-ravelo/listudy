@@ -15,6 +15,7 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         '/en/studies/new': 'import', '/en/endgames': 'endgames', '/en/endgames/basic': 'endgame-chapter',
         '/en/studies/journey-repertoire': 'study'
     };
+    pages['/tactics-edit-preview'] = path.join(tacticsPreviews, 'edit.html');
     pages['/en/tactics'] = path.join(tacticsPreviews, 'library.html');
     pages[tacticsRoute] = path.join(tacticsPreviews, 'collection.html');
     const server = http.createServer(async (request, response) => {
@@ -101,6 +102,7 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         }
         await page.setViewportSize({ width: 1280, height: 960 });
         await page.goto(base + '/daily-home');
+        assert.equal(await page.locator('[aria-labelledby="home-studies-title"] .home-tactics-link').getAttribute('href'), '/en/tactics');
         await page.waitForSelector('cg-board');
         assert.equal(await page.locator('.home-paths > section').count(), 4);
         assert.equal(await page.locator('.home-daily-study').count(), 9);
@@ -146,11 +148,28 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         await page.goto(base + '/en/tactics');
         await page.waitForSelector('[data-study-library][data-initialized]');
         assert.equal(await page.locator('main h1').textContent(), 'Your tactics');
+        assert.equal(await page.locator('.site-menu[data-nav-section="practice"] a[href="/en/tactics"]').count(), 0);
         const collectionLink = page.locator('.study-library-content').filter({hasText: 'Book exercises'});
         assert.equal(await collectionLink.getAttribute('href'), tacticsRoute);
         await page.locator('.study-library-create').click();
-        assert.equal(await page.locator('#study_training_kind').inputValue(), 'tactics');
+        async function checkTacticsMetadata() {
+            assert.equal(await page.locator('#study_training_kind').inputValue(), 'tactics');
+            await page.locator('.study-management-side').waitFor({state: 'hidden'});
+            assert(await page.locator('.study-metadata-opening').isHidden());
+            const original = await page.locator('#study_color').inputValue();
+            await page.selectOption('#study_training_kind', 'repertoire');
+            await page.locator('.study-management-side').waitFor({state: 'visible'});
+            assert(await page.locator('.study-metadata-opening').isVisible());
+            assert.equal(await page.locator('#study_color').inputValue(), original);
+            await page.selectOption('#study_training_kind', 'tactics');
+            await page.locator('.study-management-side').waitFor({state: 'hidden'});
+            assert(await page.locator('.study-metadata-opening').isHidden());
+            assert.equal(await page.locator('#study_color').inputValue(), original);
+        }
+        await checkTacticsMetadata();
         await page.screenshot({path: '/tmp/listudy-tactics-import.png', fullPage: true});
+        await page.goto(base + '/tactics-edit-preview');
+        await checkTacticsMetadata();
         await page.goto(base + '/en/studies/journey-repertoire?mode=lines');
         await page.waitForFunction(() => window.trees?.length && window.ground);
         await page.evaluate(route => {
@@ -171,7 +190,7 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         assert.equal(await page.evaluate(() => chess.turn()), 'b');
         assert.equal(await page.locator('#comments').textContent(), '');
         assert.equal(await page.evaluate(() => ground.state.drawable.autoShapes.length), 0);
-        assert(await page.locator('.site-menu[data-nav-section="practice"]').evaluate(node => node.classList.contains('is-current')));
+        assert.equal(await page.locator('.site-primary-navigation > a[data-nav-section="tactics"]').getAttribute('aria-current'), 'location');
         await page.locator('#open_study_settings').click();
         await page.locator('#settings_tab_general').click();
         assert.equal(await page.locator('#comments_toggle').textContent(), await page.evaluate(() => i18n.comments_hidden));

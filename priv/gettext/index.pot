@@ -88,7 +88,7 @@ msgstr ""
 
 #: lib/listudy_web/templates/page/index.html.eex:15
 #, elixir-autogen, elixir-format
-msgid "Continue last study:"
+msgid "Continue learning study:"
 msgstr ""
 
 #, elixir-autogen, elixir-format

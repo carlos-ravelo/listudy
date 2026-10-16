@@ -19,25 +19,25 @@
   <div class="study-metadata-line">
   <div class="study-metadata-description">
 
-  <%= label f, :description, dgettext("study", "Description") %>
-  <%= textarea f, :description, class: "big_input", minlength: 20, maxlength: 1000, required: true, placeholder: if(tactics, do: dgettext("study", "Exercises and explanations to practice…"), else: dgettext("study", "In this study I work on my 1.e4 openings...")) %>
+  <%= label f, :description, dgettext("study", "Description (optional)") %>
+  <%= textarea f, :description, class: "big_input", maxlength: 1000, placeholder: if(tactics, do: dgettext("study", "Exercises and explanations to practice…"), else: dgettext("study", "In this study I work on my 1.e4 openings...")) %>
   <%= error_tag f, :description %>
 
   </div>
   </div>
 
-  <div class="study-management-settings-row">
+  <div class="study-management-settings-row" data-practice-kind="<%= Ecto.Changeset.get_field(@assigns.changeset, :training_kind) %>" x-data="{ kind: $el.dataset.practiceKind }">
   <div class="study-management-kind">
     <%= label f, :training_kind, dgettext("study", "Practice type") %>
-    <%= select f, :training_kind, [{dgettext("study", "Repertoire"), "repertoire"}, {dgettext("study", "Tactics collection"), "tactics"}] %>
+    <%= select f, :training_kind, [{dgettext("study", "Repertoire"), "repertoire"}, {dgettext("study", "Tactics collection"), "tactics"}], "x-model": "kind" %>
     <%= error_tag f, :training_kind %>
   </div>
-  <div class="study-metadata-opening">
+  <div class="study-metadata-opening" x-show="kind === 'repertoire'" x-cloak>
   <%= label f, :opening_id, dgettext("study", "Opening") %>
   <%= select(f, :opening_id, Enum.map(@assigns.openings, fn %{name: name, id: id} -> [key: name, value: id] end), selected: selected_opening(@assigns), class: "study_opening_id big_input") %>
 
   </div>
-    <div class="study-management-side">
+    <div class="study-management-side" x-show="kind === 'repertoire'" x-cloak>
       <%= label f, :color, dgettext("study", "For which side is this study") %>
       <%= select(f, :color, ["White": "white", "Black": "black"]) %>
     </div>
@@ -71,7 +71,7 @@
 <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@assigns.conn) %>>
 $(document).ready(function() {
     <%= unless Map.get(@assigns, :maintenance, false) do %>
-    $('#study_opening_id').select2();
+    $('#study_opening_id').select2({width: '100%'});
     <% end %>
 });
 </script>

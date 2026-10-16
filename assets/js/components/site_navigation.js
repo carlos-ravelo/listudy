@@ -4,9 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggle = header.querySelector('.site-menu-toggle');
     const menus = [...header.querySelectorAll('.site-menu')];
     const path = window.location.pathname;
-    const section = document.querySelector('[data-training-kind="tactics"]') ? 'practice' : /\/analysis(?:\/|$)/.test(path) ? 'analysis'
+    const section = document.querySelector('[data-training-kind="tactics"]') || /\/tactics(?:\/|$)/.test(path) ? 'tactics' : /\/analysis(?:\/|$)/.test(path) ? 'analysis'
         : /\/studies(?:\/|$)/.test(path) ? 'studies'
-        : /\/(?:tactics|blind-tactics|pieceless-tactics|endgames)(?:\/|$)/.test(path) ? 'practice' : null;
+        : /\/(?:blind-tactics|pieceless-tactics|endgames)(?:\/|$)/.test(path) ? 'practice' : null;
     header.querySelectorAll('[data-nav-section]').forEach(item => {
         if (item.dataset.navSection !== section) return;
         item.classList.add('is-current');

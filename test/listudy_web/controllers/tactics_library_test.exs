@@ -88,6 +88,8 @@ defmodule ListudyWeb.TacticsLibraryTest do
     assert html =~ "Black controls the centre"
     assert html =~ "hidden disabled"
     preview("collection", html)
+    edit_html = auth |> get("/en/studies/#{own.slug}/edit") |> html_response(200)
+    preview("edit", edit_html)
     auth |> get("/en/tactics/collections/#{repertoire.slug}") |> html_response(404)
     conn |> get("/en/tactics/collections/#{own.slug}") |> html_response(404)
     conn |> get("/en/tactics/collections/#{saved.slug}") |> html_response(200)
@@ -112,6 +114,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
     auth = Pow.Plug.assign_current_user(conn, user(), [])
     html = auth |> get("/en/studies/new?kind=tactics") |> html_response(200)
     assert html =~ "Import tactics PGN"
+    assert Floki.find(html, "#study_description[required], #study_description[minlength]") == []
     assert html =~ ~r/<option(?=[^>]*selected)(?=[^>]*value="tactics")[^>]*>/
     preview("import", html)
     normal = auth |> get("/en/studies/new") |> html_response(200)
@@ -149,7 +152,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
         "study" => %{
           "pgn" => upload,
           "title" => "Imported tactics",
-          "description" => "Exercises imported from a tactics PGN",
+          "description" => "",
           "color" => "white",
           "private" => "true",
           "training_kind" => "tactics"
@@ -165,6 +168,13 @@ defmodule ListudyWeb.TacticsLibraryTest do
     end)
 
     assert imported.training_kind == "tactics"
+    assert is_nil(imported.description)
+
+    conn
+    |> Pow.Plug.assign_current_user(owner, [])
+    |> get(redirected_to(result))
+    |> html_response(200)
+
     assert redirected_to(result) == "/en/tactics/collections/#{imported.slug}"
     assert File.read!(path) == original
   end
@@ -183,7 +193,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
     params = %{
       "study" => %{
         "title" => study.title,
-        "description" => study.description,
+        "description" => "",
         "training_kind" => "tactics"
       }
     }
@@ -200,6 +210,8 @@ defmodule ListudyWeb.TacticsLibraryTest do
 
     updated = Studies.get_study!(study.id)
     assert updated.training_kind == "tactics"
+    assert is_nil(updated.description)
+    assert Study.changeset(updated, %{description: "A"}).valid?
     assert redirected_to(result) == "/en/tactics/collections/#{updated.slug}"
     assert File.read!(path) == original
     assert Repo.get_by!(Listudy.Progress.UserSetting, user_id: owner.id, key: key).value == "{}"

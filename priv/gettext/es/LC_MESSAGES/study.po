@@ -1414,3 +1414,6 @@ msgstr "Tácticas de mi libro"
 
 msgid "Exercises and explanations to practice…"
 msgstr "Ejercicios y explicaciones para practicar…"
+
+msgid "Description (optional)"
+msgstr "Descripción (opcional)"
