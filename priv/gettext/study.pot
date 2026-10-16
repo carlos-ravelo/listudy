@@ -1129,3 +1129,17 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Import your repertoire"
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Sort studies"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "%{count} favorite"
+msgid_plural "%{count} favorites"
+msgstr[0] ""
+msgstr[1] ""
+
+#, elixir-autogen, elixir-format
+msgid "Both colors"
+msgstr ""

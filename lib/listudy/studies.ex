@@ -142,22 +142,32 @@ defmodule Listudy.Studies do
       order_by: [desc: c.updated_at]
   end
 
-  def search_by_title(word, "favorites") do
+  defp by_color(query, color) when color in ["white", "black"] do
+    from c in query, where: c.color == ^color
+  end
+
+  defp by_color(query, _color), do: query
+
+  def search_by_title(word, order, color \\ "all")
+
+  def search_by_title(word, "favorites", color) do
     query =
       Study
       |> by_title(word)
       |> not_private
+      |> by_color(color)
       |> title_limit
       |> order_by_favorites
 
     Repo.all(query) |> Repo.preload([:study_favorites, :user])
   end
 
-  def search_by_title(word, "newest") do
+  def search_by_title(word, "newest", color) do
     query =
       Study
       |> by_title(word)
       |> not_private
+      |> by_color(color)
       |> title_limit
       |> order_by_newest
 
