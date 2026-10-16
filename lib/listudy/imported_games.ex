@@ -16,7 +16,13 @@ defmodule Listudy.Games.ImportedGames do
     platform = allowed(params["platform"], @platforms)
     period = allowed(params["period"], @periods) || "all"
     status = allowed(params["status"], @statuses)
-    studies = Repo.all(from s in Study, where: s.user_id == ^user_id, order_by: [asc: s.title])
+
+    studies =
+      Repo.all(
+        from s in Study,
+          where: s.user_id == ^user_id and s.training_kind == "repertoire",
+          order_by: [asc: s.title]
+      )
 
     study_id =
       case params["study_id"] do
@@ -51,7 +57,7 @@ defmodule Listudy.Games.ImportedGames do
           from sg in StudyGame,
             join: s in Study,
             on: s.id == sg.study_id,
-            where: s.user_id == ^user_id,
+            where: s.user_id == ^user_id and s.training_kind == "repertoire",
             select: sg.user_game_id
 
         matching_games =

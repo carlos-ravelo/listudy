@@ -2,12 +2,12 @@
   <%= for study <- @studies do %>
     <li class="study-library-row" data-library-row data-study-id="<%= study.id %>" data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>">
       <label class="study-library-select" data-library-select hidden><input type="checkbox" data-library-check aria-label="<%= dgettext("study", "Select study") %>: <%= study.title %>"></label>
-      <a class="study-library-content" href="<%= Routes.study_path(@conn, :show, @locale, study.slug) %>">
+      <a class="study-library-content" href="<%= training_path(@conn, @locale, study) %>">
         <span class="study-library-title"><%= study.title %></span>
         <span class="study-library-description"><%= study.description %></span>
         <span class="study-library-group-label" data-library-row-group hidden></span>
       </a>
-      <%= if study.color in ["white", "black"] do %>
+      <%= if Map.get(assigns, :show_color, true) and study.color in ["white", "black"] do %>
         <span class="study-library-color" title="<%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %>">
           <span aria-hidden="true"><%= if study.color == "white", do: "♔", else: "♚" %></span>
           <span class="study-library-color-label"><%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %></span>

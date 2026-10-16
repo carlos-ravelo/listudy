@@ -61,6 +61,7 @@
 .study-management-form .study-metadata-line textarea:focus { height: 100px; overflow: auto; resize: vertical; }
 .study-management-settings-row { display: flex; gap: 16px; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; }
 .study-management-settings-row > div { min-width: 0; }
+.study-management-settings-row .study-management-kind,
 .study-management-settings-row .study-metadata-opening,
 .study-management-settings-row .study-management-side { flex: 1 1 0; }
 .study-management-form .study-management-settings-row select { width: 100%; max-width: 100%; height: 38px; margin: 0; box-sizing: border-box; }
@@ -112,3 +113,7 @@
   .study-maintenance-actions > button { width: 44px; height: 44px; }
   .study-maintenance-actions > a, .study-maintenance-actions summary { min-height: 44px; }
 }
+
+.study-management-settings-row .study-management-kind { flex: 1.5 1 180px; }
+.study-create .study-management-settings-row .study-management-private { flex-basis: 100%; }
+.study-create .study-management-settings-row select { width: 100%; max-width: 100%; box-sizing: border-box; }

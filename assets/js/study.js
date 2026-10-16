@@ -267,8 +267,10 @@ let move_delay_time_key = "move_delay_time";
 let move_delay_time = get_option_from_localstorage(move_delay_time_key, i18n.instant, [i18n.instant, i18n.fast, i18n.medium, i18n.slow]);
 
 // Option to control how and when arrows are displayed
-let show_arrows_key = "show_arrows";
-let show_arrows = get_option_from_localstorage(show_arrows_key, i18n.arrows_new2x, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
+const tacticsCollection = document.querySelector('[data-training-kind="tactics"]') !== null;
+let show_arrows_key = tacticsCollection ? "tactics_show_arrows" : "show_arrows";
+const defaultArrows = tacticsCollection ? i18n.arrows_hidden : i18n.arrows_new2x;
+let show_arrows = get_option_from_localstorage(show_arrows_key, defaultArrows, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
 
 // Option to control how and when arrows are displayed
 let arrow_type_key = "arrow_type";
@@ -283,8 +285,9 @@ let key_moves_mode_key = "key_moves_mode";
 let key_moves_mode = get_option_from_localstorage(key_moves_mode_key, i18n.key_move_enabled, [i18n.key_move_enabled, i18n.key_move_disabled]);
 
 //  When enabled the comments from the opposite side's responses are also shown.
-let show_comments_key = "show_comments";
-let show_comments = get_option_from_localstorage(show_comments_key, i18n.comments_when_arrows, [i18n.comments_when_arrows, i18n.comments_always_on, i18n.comments_hidden]);
+let show_comments_key = tacticsCollection ? "tactics_show_comments" : "show_comments";
+const defaultComments = tacticsCollection ? i18n.comments_hidden : i18n.comments_when_arrows;
+let show_comments = get_option_from_localstorage(show_comments_key, defaultComments, [i18n.comments_when_arrows, i18n.comments_always_on, i18n.comments_hidden]);
 
 // Option to control the maximum number of moves being played
 const DEPTH_MAX = -1;  // This constant is used to avoid having to calculate the tree depth when max_depth is at the max depth.
@@ -1711,11 +1714,11 @@ async function main() {
             if (await StorageAdapter.hydrate(study_id)) {
                 // Reload global variables that were initialized before this async call
                 move_delay_time = get_option_from_localstorage(move_delay_time_key, i18n.instant, [i18n.instant, i18n.fast, i18n.medium, i18n.slow]);
-                show_arrows = get_option_from_localstorage(show_arrows_key, i18n.arrows_new2x, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
+                show_arrows = get_option_from_localstorage(show_arrows_key, defaultArrows, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
                 arrow_type = get_option_from_localstorage(arrow_type_key, i18n.arrow_type_both, [i18n.arrow_type_playable, i18n.arrow_type_pgn, i18n.arrow_type_both]);
                 board_review = get_option_from_localstorage(board_review_key, i18n.review_fast, [i18n.review_fast, i18n.review_slow]);
                 key_moves_mode = get_option_from_localstorage(key_moves_mode_key, i18n.key_move_enabled, [i18n.key_move_enabled, i18n.key_move_disabled]);
-                show_comments = get_option_from_localstorage(show_comments_key, i18n.comments_when_arrows, [i18n.comments_when_arrows, i18n.comments_always_on, i18n.comments_hidden]);
+                show_comments = get_option_from_localstorage(show_comments_key, defaultComments, [i18n.comments_when_arrows, i18n.comments_always_on, i18n.comments_hidden]);
             }
         } catch (error) {
             console.log("Ignored cloud sync fetch error: ", error);
@@ -1834,7 +1837,8 @@ async function main() {
     const hasGamePosition = gamePractice.has('practice_fen') && gamePractice.has('practice_expected');
     const linkedChapter = chapterFromUrl(window.location.search, trees.map((_, index) => tree_chapter_name(index)));
     const directedPractice = gamePractice.has('practice_fen') || gamePractice.has('practice');
-    const activity = directedPractice ? null : requestedStudyActivity(window.location.search) || readStudyActivity(study_id);
+    const savedActivity = requestedStudyActivity(window.location.search) || readStudyActivity(study_id);
+    const activity = directedPractice ? null : tacticsCollection && !['read', 'lines'].includes(savedActivity) ? 'lines' : savedActivity;
     const puzzleRun = setupPuzzleRun(i18n, {
         initialMode: hasGamePosition || gamePractice.get('practice') === 'chapter' && linkedChapter !== null ? 'off'
             : activity === 'smart' ? 'smart' : activity ? localStorage.getItem('fullLineRunMode') || 'off' : undefined

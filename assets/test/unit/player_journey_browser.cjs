@@ -5,7 +5,9 @@ const http = require('node:http');
 const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '../../..');
 const previews = process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-journey-preview';
-const read = name => fs.readFileSync(path.join(previews, name + '.html'), 'utf8');
+const read = name => fs.readFileSync(path.isAbsolute(name) ? name : path.join(previews, name + '.html'), 'utf8');
+const tacticsPreviews = process.env.LISTUDY_TACTICS_PREVIEW || '/tmp/listudy-tactics-preview';
+const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'), 'utf8').match(/href="([^"]*tactics\/collections\/[^"]+)"/)[1];
 
 (async () => {
     const pages = {
@@ -13,6 +15,8 @@ const read = name => fs.readFileSync(path.join(previews, name + '.html'), 'utf8'
         '/en/studies/new': 'import', '/en/endgames': 'endgames', '/en/endgames/basic': 'endgame-chapter',
         '/en/studies/journey-repertoire': 'study'
     };
+    pages['/en/tactics'] = path.join(tacticsPreviews, 'library.html');
+    pages[tacticsRoute] = path.join(tacticsPreviews, 'collection.html');
     const server = http.createServer(async (request, response) => {
         const url = new URL(request.url, 'http://localhost');
         const json = data => { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify(data)); };
@@ -20,6 +24,10 @@ const read = name => fs.readFileSync(path.join(previews, name + '.html'), 'utf8'
         if (url.pathname === '/api/progress/sync') return json({ revision: '1' });
         if (url.pathname === '/api/collections') return json({ version: 1, collections: [] });
         if (/\/analysis\/studies\/\d+\/positions/.test(url.pathname)) return json({ positions: [] });
+        if (url.pathname === '/en/studies/new' && url.searchParams.get('kind') === 'tactics') {
+            response.setHeader('Content-Type', 'text/html; charset=utf-8');
+            response.end(read(path.join(tacticsPreviews, 'import.html'))); return;
+        }
         if (pages[url.pathname]) {
             response.setHeader('Content-Type', 'text/html; charset=utf-8');
             response.end(read(pages[url.pathname])); return;
@@ -134,8 +142,74 @@ const read = name => fs.readFileSync(path.join(previews, name + '.html'), 'utf8'
         const from = square(move.from), to = square(move.to);
         await page.mouse.click(from.x, from.y); await page.mouse.click(to.x, to.y);
         await page.waitForFunction(() => document.getElementById('error').textContent.trim() || document.getElementById('success').textContent.trim() || chess.history().length > 0);
+        await page.setViewportSize({width: 1366, height: 768});
+        await page.goto(base + '/en/tactics');
+        await page.waitForSelector('[data-study-library][data-initialized]');
+        assert.equal(await page.locator('main h1').textContent(), 'Your tactics');
+        const collectionLink = page.locator('.study-library-content').filter({hasText: 'Book exercises'});
+        assert.equal(await collectionLink.getAttribute('href'), tacticsRoute);
+        await page.locator('.study-library-create').click();
+        assert.equal(await page.locator('#study_training_kind').inputValue(), 'tactics');
+        await page.screenshot({path: '/tmp/listudy-tactics-import.png', fullPage: true});
+        await page.goto(base + '/en/studies/journey-repertoire?mode=lines');
+        await page.waitForFunction(() => window.trees?.length && window.ground);
+        await page.evaluate(route => {
+            localStorage.setItem('show_comments', i18n.comments_always_on);
+            localStorage.setItem('show_arrows', i18n.arrows_always);
+            localStorage.setItem('puzzleRunMode', 'smart');
+            localStorage.setItem(`studyActivity:${route.split('/').pop().split('-')[0]}`, 'smart');
+        }, tacticsRoute);
+        await page.goto(base + tacticsRoute);
+        await page.waitForFunction(() => window.trees?.length && window.ground && document.querySelector('#practice_lines[aria-pressed="true"]'));
+        assert(await page.locator('#practice_sparring').isHidden());
+        assert(await page.locator('#practice_smart').isHidden());
+        assert.equal(await page.locator('#study_practice_choices button:visible').count(), 2);
+        await page.goto(base + tacticsRoute + '?mode=smart');
+        await page.waitForFunction(() => window.trees?.length && window.ground && document.querySelector('#practice_lines[aria-pressed="true"]'));
+
+        assert.equal(await page.evaluate(() => ground.state.orientation), 'black');
+        assert.equal(await page.evaluate(() => chess.turn()), 'b');
+        assert.equal(await page.locator('#comments').textContent(), '');
+        assert.equal(await page.evaluate(() => ground.state.drawable.autoShapes.length), 0);
+        assert(await page.locator('.site-menu[data-nav-section="practice"]').evaluate(node => node.classList.contains('is-current')));
+        await page.locator('#open_study_settings').click();
+        await page.locator('#settings_tab_general').click();
+        assert.equal(await page.locator('#comments_toggle').textContent(), await page.evaluate(() => i18n.comments_hidden));
+        assert(await page.locator('#settings_tab_sparring').isHidden());
+        await page.locator('#comments_toggle').click();
+        await page.locator('#comments_toggle').click();
+        assert.equal(await page.evaluate(() => localStorage.getItem('tactics_show_comments')), await page.evaluate(() => i18n.comments_always_on));
+        assert.equal(await page.evaluate(() => localStorage.getItem('show_comments')), await page.evaluate(() => i18n.comments_always_on));
+        await page.keyboard.press('Escape');
+        await page.reload();
+        await page.waitForFunction(() => window.trees?.length && window.ground);
+        assert((await page.locator('#comments').textContent()).includes('Black controls the centre'));
+        await page.locator('#open_study_settings').click();
+        await page.locator('#settings_tab_general').click();
+        await page.locator('#comments_toggle').click();
+        assert.equal(await page.evaluate(() => localStorage.getItem('tactics_show_comments')), await page.evaluate(() => i18n.comments_hidden));
+        assert.equal(await page.evaluate(() => localStorage.getItem('show_comments')), await page.evaluate(() => i18n.comments_always_on));
+        await page.keyboard.press('Escape');
+        // Move through the same board handlers used by Full lines in repertoire studies.
+        await page.evaluate(() => { ground.selectSquare('e7'); ground.selectSquare('e5'); });
+        await page.waitForFunction(() => chess.history().length === 2);
+        assert.deepEqual(await page.evaluate(() => chess.history()), ['e5', 'Nf3']);
+        assert.equal(await page.locator('#comments').textContent(), '');
+        await page.locator('#study_mode').click();
+        await page.waitForFunction(() => document.querySelector('#study_mode').getAttribute('aria-pressed') === 'true');
+        assert((await page.locator('#comments').textContent()).includes('Black controls the centre'));
+        await page.locator('#practice_lines').click();
+        for (const width of [320, 390, 1366]) {
+            await page.setViewportSize({width, height: 768});
+            for (const route of ['/en/tactics', tacticsRoute, '/en/studies/new?kind=tactics']) {
+                await page.goto(base + route);
+                await page.waitForSelector('.site-header[data-navigation-ready]');
+                assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Tactics overflow at ${width}: ${route}`);
+                if (route === '/en/tactics' || route === tacticsRoute) await page.screenshot({path: `/tmp/listudy-tactics-${route === tacticsRoute ? 'play' : 'library'}-${width}.png`, fullPage: true});
+            }
+        }
         assert.deepEqual(errors, []);
-        console.log('Home grid, Daily list scrolling, study-mode shortcuts, responsive layouts and playable puzzle passed');
+        console.log('Home grid, Daily list scrolling, study-mode shortcuts, responsive layouts, playable puzzle and shared tactics PGN flow passed');
     } finally {
         if (browser) await browser.close();
         await new Promise(resolve => server.close(resolve));

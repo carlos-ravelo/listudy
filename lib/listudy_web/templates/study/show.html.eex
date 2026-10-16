@@ -1,10 +1,10 @@
-<div class="study-workspace" data-game-positions-url="<%= if @study.is_owner, do: Routes.analysis_path(@conn, :positions, @study.id), else: "" %>">
+<div data-training-kind="<%= @study.training_kind %>" class="study-workspace" data-game-positions-url="<%= if @study.is_owner, do: Routes.analysis_path(@conn, :positions, @study.id), else: "" %>">
 <div class="study-session-controls">
   <div id="study_practice_choices" role="group" aria-label="<%= dgettext("study", "Study mode") %>">
     <button type="button" id="study_mode" aria-pressed="false"><%= dgettext("study", "Read") %></button>
-    <button type="button" id="practice_smart" aria-pressed="false">Smart</button>
+    <button type="button" id="practice_smart" <%= if @study.training_kind == "tactics", do: "hidden" %> aria-pressed="false">Smart</button>
     <button type="button" id="practice_lines" aria-pressed="true"><%= dgettext("study", "Full lines") %></button>
-    <button type="button" id="practice_sparring" aria-pressed="false" aria-controls="study_sparring"><%= dgettext("study", "Sparring") %></button>
+    <button type="button" id="practice_sparring" <%= if @study.training_kind == "tactics", do: "hidden disabled" %> aria-pressed="false" aria-controls="study_sparring"><%= dgettext("study", "Sparring") %></button>
   </div>
   <label id="line_order_control" for="puzzle_run"><%= dgettext("study", "After a line") %>
     <select id="puzzle_run">
@@ -122,7 +122,7 @@
   </div>
 </div>
 
-<%= render "_study_settings.html" %>
+<%= render "_study_settings.html", study: @study %>
 
 <%= render "_sparring_history.html" %>
 

@@ -6,22 +6,33 @@ defmodule ListudyWeb.StudyController do
   alias Listudy.Studies.Study
   alias Listudy.StudyFavorites
 
-  def index(conn, _params) do
+  def index(conn, _params), do: library(conn, "repertoire")
+  def tactics(conn, _params), do: library(conn, "tactics")
+
+  def tactics_collection(conn, %{"id" => id}) do
+    case Studies.get_study_by_slug!(id) do
+      %Study{training_kind: "tactics"} = study -> show(conn, id, study)
+      _ -> conn |> put_status(:not_found) |> put_view(ListudyWeb.ErrorView) |> render("404.html")
+    end
+  end
+
+  defp library(conn, kind) do
     user =
       case get_user(conn) do
         {:ok, user} -> user.id
         {:error, _} -> -1
       end
 
-    studies = Studies.get_study_by_user!(user)
-    favorites = Studies.get_studies_by_favorite!(user)
+    studies = Enum.filter(Studies.get_study_by_user!(user), &(&1.training_kind == kind))
+    favorites = Enum.filter(Studies.get_studies_by_favorite!(user), &(&1.training_kind == kind))
     owned = MapSet.new(studies, & &1.id)
     favorites = Enum.reject(favorites, &MapSet.member?(owned, &1.id))
 
     render(conn, "index.html",
       studies: studies,
       favorites: favorites,
-      library_data: Listudy.StudyLibrary.fetch(user)
+      library_data: Listudy.StudyLibrary.fetch(user),
+      tactics: kind == "tactics"
     )
   end
 
@@ -53,11 +64,12 @@ defmodule ListudyWeb.StudyController do
     end
   end
 
-  def new(conn, _params) do
+  def new(conn, params) do
     case get_user(conn) do
       {:ok, _} ->
         openings = Listudy.Openings.list_openings_study_form()
-        changeset = Studies.change_study(%Study{})
+        kind = if params["kind"] == "tactics", do: "tactics", else: "repertoire"
+        changeset = Studies.change_study(%Study{training_kind: kind})
         render(conn, "new.html", changeset: changeset, openings: openings)
 
       {:error, error} ->
@@ -89,15 +101,19 @@ defmodule ListudyWeb.StudyController do
           conn
           |> put_flash(:info, "Study created successfully.")
           |> redirect(
-            to: Routes.study_path(conn, :show, conn.private.plug_session["locale"], study)
+            to:
+              ListudyWeb.StudyView.training_path(conn, conn.private.plug_session["locale"], study)
           )
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render(conn, "new.html", changeset: changeset)
+          render(conn, "new.html",
+            changeset: changeset,
+            openings: Listudy.Openings.list_openings_study_form()
+          )
       end
     else
       {:error, reason} ->
-        changeset = Studies.change_study(%Study{})
+        changeset = Studies.change_study(%Study{}, Map.take(study_params, ["training_kind"]))
         openings = Listudy.Openings.list_openings_study_form()
 
         conn
@@ -149,10 +165,16 @@ defmodule ListudyWeb.StudyController do
       {_, pgn} = File.read(get_path(file))
       study = Map.put(study, :pgn, pgn)
 
-      conn
-      |> put_session(:last_study_slug, study.slug)
-      |> put_session(:last_study_user_id, if(user_id == -1, do: nil, else: user_id))
-      |> render("show.html", study: study, noindex: noindex, opening: opening)
+      conn =
+        if study.training_kind == "tactics" do
+          conn
+        else
+          conn
+          |> put_session(:last_study_slug, study.slug)
+          |> put_session(:last_study_user_id, if(user_id == -1, do: nil, else: user_id))
+        end
+
+      render(conn, "show.html", study: study, noindex: noindex, opening: opening)
     else
       show(conn, id, nil)
     end
@@ -292,7 +314,7 @@ defmodule ListudyWeb.StudyController do
 
       json(conn, %{
         action: Routes.study_path(conn, :update, conn.assigns.locale, study),
-        study_url: Routes.study_path(conn, :show, conn.assigns.locale, study),
+        study_url: ListudyWeb.StudyView.training_path(conn, conn.assigns.locale, study),
         save_url: Routes.study_path(conn, :manage_chapters, conn.assigns.locale, study),
         editor_url: Routes.study_path(conn, :editor, conn.assigns.locale, study),
         revision: Listudy.StudyPgn.revision(pgn),
@@ -302,7 +324,7 @@ defmodule ListudyWeb.StudyController do
     else
       conn
       |> put_flash(:info, dgettext("study", "Study info updated."))
-      |> redirect(to: Routes.study_path(conn, :show, conn.assigns.locale, study))
+      |> redirect(to: ListudyWeb.StudyView.training_path(conn, conn.assigns.locale, study))
     end
   end
 
@@ -403,13 +425,25 @@ defmodule ListudyWeb.StudyController do
     if !allowed(study, user) do
       conn
       |> put_flash(:info, "You're not allowed to do that.")
-      |> redirect(to: Routes.study_path(conn, :index, conn.private.plug_session["locale"]))
+      |> redirect(
+        to:
+          if(study.training_kind == "tactics",
+            do: Routes.tactics_library_path(conn, :tactics, conn.assigns.locale),
+            else: Routes.study_path(conn, :index, conn.assigns.locale)
+          )
+      )
     else
       {:ok, _study} = Studies.delete_study(study)
 
       conn
       |> put_flash(:info, "Study deleted successfully.")
-      |> redirect(to: Routes.study_path(conn, :index, conn.private.plug_session["locale"]))
+      |> redirect(
+        to:
+          if(study.training_kind == "tactics",
+            do: Routes.tactics_library_path(conn, :tactics, conn.assigns.locale),
+            else: Routes.study_path(conn, :index, conn.assigns.locale)
+          )
+      )
     end
   end
 

@@ -1,3 +1,4 @@
+<% tactics = Ecto.Changeset.get_field(@assigns.changeset, :training_kind) == "tactics" %>
 <%= form_for @assigns.changeset, @action, [multipart: true, class: if(Map.get(@assigns, :maintenance, false), do: "study-management-form", else: "study-form"), "x-data": if(Map.get(@assigns, :maintenance, false), do: "studyMetadata", else: "{ changed: false }"), "@submit": if(Map.get(@assigns, :maintenance, false), do: "save($event)", else: ""), "@input": "changed = true", "@change": "changed = true"], fn f -> %>
   <%= if @assigns.changeset.action do %>
     <div class="alert alert-danger">
@@ -11,7 +12,7 @@
 
   <div class="study-metadata-title">
   <%= label f, :title, dgettext("study", "Title") %>
-  <%= text_input f, :title, class: "big_input", minlength: 3, maxlength: 60, placeholder: dgettext("study", "Caro-Kann Defense"), required: true %>
+  <%= text_input f, :title, class: "big_input", minlength: 3, maxlength: 60, placeholder: if(tactics, do: dgettext("study", "Tactics from my book"), else: dgettext("study", "Caro-Kann Defense")), required: true %>
   <%= error_tag f, :title %>
   </div>
 
@@ -19,13 +20,18 @@
   <div class="study-metadata-description">
 
   <%= label f, :description, dgettext("study", "Description") %>
-  <%= textarea f, :description, class: "big_input", minlength: 20, maxlength: 1000, required: true, placeholder: dgettext("study", "In this study I work on my 1.e4 openings...") %>
+  <%= textarea f, :description, class: "big_input", minlength: 20, maxlength: 1000, required: true, placeholder: if(tactics, do: dgettext("study", "Exercises and explanations to practice…"), else: dgettext("study", "In this study I work on my 1.e4 openings...")) %>
   <%= error_tag f, :description %>
 
   </div>
   </div>
 
   <div class="study-management-settings-row">
+  <div class="study-management-kind">
+    <%= label f, :training_kind, dgettext("study", "Practice type") %>
+    <%= select f, :training_kind, [{dgettext("study", "Repertoire"), "repertoire"}, {dgettext("study", "Tactics collection"), "tactics"}] %>
+    <%= error_tag f, :training_kind %>
+  </div>
   <div class="study-metadata-opening">
   <%= label f, :opening_id, dgettext("study", "Opening") %>
   <%= select(f, :opening_id, Enum.map(@assigns.openings, fn %{name: name, id: id} -> [key: name, value: id] end), selected: selected_opening(@assigns), class: "study_opening_id big_input") %>

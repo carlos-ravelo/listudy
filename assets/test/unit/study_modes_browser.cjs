@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '../../..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const render = source => source.replace(/<%=\s*dgettext[^%]*%>/g,
-    expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
+    expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1)).replace(/<%[\s\S]*?%>/g, '');
 const source = read('lib/listudy_web/templates/study/show.html.eex');
 const controls = render(source.slice(source.indexOf('<div class="study-session-controls">'), source.indexOf('<div class="study-context">')));
 const html = `<html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1">
