@@ -60,6 +60,7 @@
 .study-management-form .study-metadata-line .big_input:focus { border-color: var(--font-color); outline: none; }
 .study-management-form .study-metadata-line textarea:focus { height: 100px; overflow: auto; resize: vertical; }
 .study-management-settings-row { display: flex; gap: 16px; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; }
+.study-management-settings-row [x-cloak] { display: none !important; }
 .study-management-settings-row > div { min-width: 0; }
 .study-management-settings-row .study-management-kind,
 .study-management-settings-row .study-metadata-opening,

@@ -31,8 +31,8 @@ defmodule Listudy.Studies.Study do
       :training_kind
     ])
     |> validate_inclusion(:training_kind, ["repertoire", "tactics"])
-    |> validate_required([:title, :description, :slug, :training_kind])
+    |> validate_required([:title, :slug, :training_kind])
     |> validate_length(:title, min: 3, max: 100)
-    |> validate_length(:description, min: 10, max: 1000)
+    |> validate_length(:description, max: 1000)
   end
 end

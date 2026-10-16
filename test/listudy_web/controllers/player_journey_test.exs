@@ -39,6 +39,15 @@ defmodule ListudyWeb.PlayerJourneyTest do
     refute html =~ "home-study-links"
     refute html =~ "Random Study"
     assert html =~ "Your Studies"
+
+    assert [_] =
+             Floki.find(
+               html,
+               ".site-primary-navigation > a[data-nav-section=tactics][href='/en/tactics']"
+             )
+
+    assert [] = Floki.find(html, ".site-menu-panel a[href='/en/tactics']")
+    assert [_] = Floki.find(html, ".home-path-content .home-tactics-link[href='/en/tactics']")
     preview("returning-home", html)
 
     path = Application.app_dir(:listudy, "priv/static/study_pgn/journey.pgn")

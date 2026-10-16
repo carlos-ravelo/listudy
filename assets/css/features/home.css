@@ -99,7 +99,15 @@
 
 .home-path-content {
   min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
 }
+
+.home-path-content .home-quick-studies { flex: 1 1 220px; min-width: 0; }
+.home-path-content .home-continue { margin-bottom: 0; }
+.home-tactics-link { display: inline-flex; align-items: center; min-height: 44px; flex: 0 0 auto; font-size: 14px; }
 
 .home-continue {
   display: flex;

@@ -13,11 +13,12 @@
           <div class="home-quick-studies">
             <%= link to: Routes.study_path(@conn, :show, @locale, @last_study.slug), class: "home-continue",
                   data: [study_continue: true, study_id: String.split(@last_study.slug, "-") |> hd()] do %>
-              <span class="home-continue-label"><%= dgettext "index", "Continue last study:" %></span>
+              <span class="home-continue-label"><%= dgettext "index", "Continue learning study:" %></span>
               <span class="home-continue-title"><%= @last_study.title %></span>
             <% end %>
           </div>
         <% end %>
+        <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale), class: "home-text-link home-tactics-link" %>
       </div>
     </section>
 

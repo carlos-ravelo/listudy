@@ -6,14 +6,16 @@
       <div class="site-primary-navigation">
         <%= if Pow.Plug.current_user(@conn) do %>
           <%= link gettext("Your Studies"), to: Routes.study_path(@conn, :index, @assigns.locale), data: [nav_section: "studies"] %>
-          <%= link gettext("Analysis"), to: Routes.analysis_path(@conn, :index), data: [nav_section: "analysis"] %>
         <% else %>
           <%= link gettext("Search for Studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @assigns.locale), data: [nav_section: "studies"] %>
+        <% end %>
+        <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @assigns.locale), data: [nav_section: "tactics"] %>
+        <%= if Pow.Plug.current_user(@conn) do %>
+          <%= link gettext("Analysis"), to: Routes.analysis_path(@conn, :index), data: [nav_section: "analysis"] %>
         <% end %>
         <details class="site-menu" data-nav-section="practice">
           <summary><%= gettext("Practice") %></summary>
           <div class="site-menu-panel">
-            <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @assigns.locale) %>
             <%= link gettext("Blind Tactics"), to: Routes.blind_tactic_path(@conn, :random, @assigns.locale) %>
             <%= link gettext("Pieceless Tactics"), to: Routes.pieceless_tactic_path(@conn, :random, @assigns.locale) %>
             <%= link gettext("Endgames"), to: Routes.endgame_path(@conn, :index, @assigns.locale) %>
