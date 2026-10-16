@@ -12,7 +12,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     const opener = document.getElementById('practice_sparring');
     const panel = document.getElementById('study_sparring');
     const boardStatus = document.querySelector('[data-sparring-board-status]');
-    if (!opener || !panel) return null;
+    if (!opener || opener.disabled || !panel) return null;
     const workspace = opener.closest('.study-workspace');
     const settings = document.getElementById('study_sparring_settings');
     const historyDialog = document.getElementById('study_sparring_history_dialog');

@@ -31,7 +31,7 @@ defmodule Listudy.StudyLibrary do
     |> Enum.uniq_by(& &1.id)
     |> Enum.filter(fn study ->
       entry = Map.get(settings["studies"], Integer.to_string(study.id), %{})
-      Map.get(entry, "location", "daily") == "daily"
+      study.training_kind == "repertoire" and Map.get(entry, "location", "daily") == "daily"
     end)
   end
 

@@ -272,3 +272,8 @@
   .study-workspace .study-context .study-feature-title { flex: 1 1 100%; }
   .study-workspace .study-context .study-chapter-navigation { flex-basis: 100%; }
 }
+
+.study-workspace [data-settings-tab][hidden] { display: none; }
+@media (max-width: 600px) {
+  .study-workspace[data-training-kind="tactics"] #study_practice_choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

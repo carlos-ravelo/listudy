@@ -1,5 +1,5 @@
-<div class="study-create">
-<h1><%= dgettext("study", "Import your repertoire") %></h1>
+<div class="study-create" data-training-kind="<%= Ecto.Changeset.get_field(@changeset, :training_kind) %>">
+<h1><%= if Ecto.Changeset.get_field(@changeset, :training_kind) == "tactics", do: dgettext("study", "Import tactics PGN"), else: dgettext("study", "Import your repertoire") %></h1>
 
 <div class="row">
   <div class="two-thirds column">

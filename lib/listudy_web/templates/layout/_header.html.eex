@@ -13,7 +13,7 @@
         <details class="site-menu" data-nav-section="practice">
           <summary><%= gettext("Practice") %></summary>
           <div class="site-menu-panel">
-            <%= link gettext("Tactics"), to: Routes.tactic_path(@conn, :random, @assigns.locale) %>
+            <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @assigns.locale) %>
             <%= link gettext("Blind Tactics"), to: Routes.blind_tactic_path(@conn, :random, @assigns.locale) %>
             <%= link gettext("Pieceless Tactics"), to: Routes.pieceless_tactic_path(@conn, :random, @assigns.locale) %>
             <%= link gettext("Endgames"), to: Routes.endgame_path(@conn, :index, @assigns.locale) %>

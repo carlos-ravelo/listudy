@@ -220,7 +220,7 @@ export function setupStudySettingsTabs() {
     const dialog = document.getElementById('study_settings_dialog');
     if (!dialog || dialog.dataset.tabsInitialized) return;
     dialog.dataset.tabsInitialized = 'true';
-    const tabs = [...dialog.querySelectorAll('[data-settings-tab]')];
+    const tabs = [...dialog.querySelectorAll('[data-settings-tab]:not([hidden])')];
     const panels = [...dialog.querySelectorAll('[data-settings-panel]')];
     function select(tab, focus = false) {
         for (const item of tabs) {

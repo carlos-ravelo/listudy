@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '../../..');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'listudy-sparring-'));
 const render = source => source.replace(/<%=\s*dgettext[^%]*%>/g,
-    expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
+    expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1)).replace(/<%[\s\S]*?%>/g, '');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const infoBoxes = read('lib/listudy_web/templates/component/infoboxes.html.eex').replace(/<%[\s\S]*?%>/g, '');
 const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

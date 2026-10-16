@@ -84,7 +84,7 @@
     <section class="home-card home-daily" aria-labelledby="home-daily-title">
       <div class="home-daily-heading">
         <h2 id="home-daily-title"><%= dgettext "index", "Daily Puzzle" %></h2>
-        <%= link (dgettext "index", "More tactics"), to: Routes.tactic_path(@conn, :random, @locale), class: "home-text-link" %>
+        <%= link (dgettext "index", "More tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale), class: "home-text-link" %>
       </div>
       <% next_url = Routes.tactic_path(@conn, :random, @locale) %>
       <%= render ListudyWeb.TacticView, "tactic.html", conn: @conn, tactic: @tactic, next: next_url %>

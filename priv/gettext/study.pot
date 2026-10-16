@@ -1143,3 +1143,72 @@ msgstr[1] ""
 #, elixir-autogen, elixir-format
 msgid "Both colors"
 msgstr ""
+
+msgid "Your tactics"
+msgstr ""
+
+msgid "All collections"
+msgstr ""
+
+msgid "Import tactics PGN"
+msgstr ""
+
+msgid "Your tactics library"
+msgstr ""
+
+msgid "Import a tactics PGN to practice its exercises, variations and explanations."
+msgstr ""
+
+msgid "Practice public puzzles"
+msgstr ""
+
+msgid "Saved collections"
+msgstr ""
+
+msgid "Show all collections"
+msgstr ""
+
+msgid "Keep the collections you practice regularly here."
+msgstr ""
+
+msgid "Other collections stay available here whenever you need them."
+msgstr ""
+
+msgid "All your tactics collections."
+msgstr ""
+
+msgid "Your daily list is empty. Open Library or All collections to bring a collection back."
+msgstr ""
+
+msgid "No collections in Library yet. Move collections here using Organize."
+msgstr ""
+
+msgid "No collections match these filters."
+msgstr ""
+
+msgid "Remove this group? Its collections will be kept in their current lists."
+msgstr ""
+
+msgid "Group collections by book, theme or purpose. Groups work across Daily and Library."
+msgstr ""
+
+msgid "Practice type"
+msgstr ""
+
+msgid "Repertoire"
+msgstr ""
+
+msgid "Tactics collection"
+msgstr ""
+
+msgid "Manage collection"
+msgstr ""
+
+msgid "Back to collection"
+msgstr ""
+
+msgid "Tactics from my book"
+msgstr ""
+
+msgid "Exercises and explanations to practice…"
+msgstr ""

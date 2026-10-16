@@ -6,7 +6,7 @@
   <div class="study-settings-tabs" role="tablist" aria-label="<%= dgettext("study", "Settings sections") %>">
     <button type="button" id="settings_tab_general" role="tab" aria-controls="settings_panel_general" aria-selected="true" tabindex="0" data-settings-tab="general"><%= dgettext("study", "General") %></button>
     <button type="button" id="settings_tab_practice" role="tab" aria-controls="settings_panel_practice" aria-selected="false" tabindex="-1" data-settings-tab="practice"><%= dgettext("study", "Practice") %></button>
-    <button type="button" id="settings_tab_sparring" role="tab" aria-controls="settings_panel_sparring" aria-selected="false" tabindex="-1" data-settings-tab="sparring"><%= dgettext("study", "Sparring") %></button>
+    <button type="button" id="settings_tab_sparring" <%= if @study.training_kind == "tactics", do: "hidden" %> role="tab" aria-controls="settings_panel_sparring" aria-selected="false" tabindex="-1" data-settings-tab="sparring"><%= dgettext("study", "Sparring") %></button>
   </div>
   <div id="settings_panel_general" class="study-settings-grid" role="tabpanel" aria-labelledby="settings_tab_general" data-settings-panel="general">
 <fieldset class="study-setting-group"><legend><%= dgettext("study", "Hints and explanations") %></legend>

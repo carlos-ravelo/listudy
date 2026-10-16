@@ -1345,3 +1345,72 @@ msgstr[1] "%{count} favoritos"
 #, elixir-autogen, elixir-format
 msgid "Both colors"
 msgstr "Ambos colores"
+
+msgid "Your tactics"
+msgstr "Tus tácticas"
+
+msgid "All collections"
+msgstr "Todas las colecciones"
+
+msgid "Import tactics PGN"
+msgstr "Importar PGN de tácticas"
+
+msgid "Your tactics library"
+msgstr "Tu biblioteca de tácticas"
+
+msgid "Import a tactics PGN to practice its exercises, variations and explanations."
+msgstr "Importa un PGN de tácticas para practicar sus ejercicios, variantes y explicaciones."
+
+msgid "Practice public puzzles"
+msgstr "Resolver problemas públicos"
+
+msgid "Saved collections"
+msgstr "Colecciones guardadas"
+
+msgid "Show all collections"
+msgstr "Mostrar todas las colecciones"
+
+msgid "Keep the collections you practice regularly here."
+msgstr "Mantén aquí las colecciones que practicas habitualmente."
+
+msgid "Other collections stay available here whenever you need them."
+msgstr "Las otras colecciones siguen disponibles aquí cuando las necesites."
+
+msgid "All your tactics collections."
+msgstr "Todas tus colecciones de tácticas."
+
+msgid "Your daily list is empty. Open Library or All collections to bring a collection back."
+msgstr "Tu lista diaria está vacía. Abre Biblioteca o Todas las colecciones para recuperar una colección."
+
+msgid "No collections in Library yet. Move collections here using Organize."
+msgstr "Todavía no hay colecciones en Biblioteca. Muévelas aquí con Organizar."
+
+msgid "No collections match these filters."
+msgstr "Ninguna colección coincide con estos filtros."
+
+msgid "Remove this group? Its collections will be kept in their current lists."
+msgstr "¿Eliminar este grupo? Sus colecciones se conservarán en sus listas actuales."
+
+msgid "Group collections by book, theme or purpose. Groups work across Daily and Library."
+msgstr "Agrupa las colecciones por libro, tema u objetivo. Los grupos funcionan en Diario y Biblioteca."
+
+msgid "Practice type"
+msgstr "Tipo de práctica"
+
+msgid "Repertoire"
+msgstr "Repertorio"
+
+msgid "Tactics collection"
+msgstr "Colección de tácticas"
+
+msgid "Manage collection"
+msgstr "Gestionar colección"
+
+msgid "Back to collection"
+msgstr "Volver a la colección"
+
+msgid "Tactics from my book"
+msgstr "Tácticas de mi libro"
+
+msgid "Exercises and explanations to practice…"
+msgstr "Ejercicios y explicaciones para practicar…"

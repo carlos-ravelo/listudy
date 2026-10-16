@@ -1,7 +1,7 @@
-<div class="study-management-page">
+<div class="study-management-page" data-training-kind="<%= @study.training_kind %>">
 <div class="study-heading study-management-heading">
-  <h1><%= dgettext("study", "Manage study") %></h1>
-  <%= link dgettext("study", "Back to study"), to: Routes.study_path(@conn, :show, @locale, @study), class: "study-edit-link" %>
+  <h1><%= if @study.training_kind == "tactics", do: dgettext("study", "Manage collection"), else: dgettext("study", "Manage study") %></h1>
+  <%= link (if @study.training_kind == "tactics", do: dgettext("study", "Back to collection"), else: dgettext("study", "Back to study")), to: training_path(@conn, @locale, @study), class: "study-edit-link" %>
 </div>
 
 <%= render "form.html", assigns: assigns, action: Routes.study_path(@conn, :update, @locale, @study) %>

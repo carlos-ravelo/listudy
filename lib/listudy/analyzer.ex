@@ -277,7 +277,9 @@ defmodule Listudy.Games.Analyzer do
   defp payload(studies), do: Enum.map(studies, &%{id: &1.study.id, pgn: &1.pgn})
 
   defp load_studies(user_id, selected_study_id \\ nil) do
-    query = from s in Listudy.Studies.Study, where: s.user_id == ^user_id
+    query =
+      from s in Listudy.Studies.Study,
+        where: s.user_id == ^user_id and s.training_kind == "repertoire"
 
     query =
       if selected_study_id do

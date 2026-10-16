@@ -155,6 +155,7 @@ defmodule Listudy.Studies do
       Study
       |> by_title(word)
       |> not_private
+      |> where([s], s.training_kind == "repertoire")
       |> by_color(color)
       |> title_limit
       |> order_by_favorites
@@ -167,6 +168,7 @@ defmodule Listudy.Studies do
       Study
       |> by_title(word)
       |> not_private
+      |> where([s], s.training_kind == "repertoire")
       |> by_color(color)
       |> title_limit
       |> order_by_newest
@@ -200,7 +202,7 @@ defmodule Listudy.Studies do
     path = Path.join("priv/static/study_pgn", file_id <> ".pgn")
     source_path = Path.join("priv/static/study_pgn", source_id <> ".pgn")
 
-    attrs = source |> Map.take([:description, :color, :opening_id])
+    attrs = source |> Map.take([:description, :color, :opening_id, :training_kind])
 
     attrs =
       Map.merge(attrs, %{
