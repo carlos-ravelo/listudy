@@ -1097,3 +1097,35 @@ msgstr ""
 
 msgid "Progress is saved on this device. Cloud sync will retry when a connection is available."
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Import repertoire"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Your first training session"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Import a PGN or a Lichess study, or explore a public study to start practicing."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Import my repertoire"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Find a study to practice"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Import a repertoire to compare your games and practice where you left your preparation."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "No studies found. Try another opening or import your repertoire."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Import your repertoire"
+msgstr ""

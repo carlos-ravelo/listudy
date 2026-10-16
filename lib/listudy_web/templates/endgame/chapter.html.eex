@@ -6,6 +6,10 @@
 <h1><%= @chapter.name %></h1>
 <p><%= @chapter.description %></p>
 
+<% games = practice_games(@conn, @locale, [{@slug, @chapter}]) %>
+<%= link dgettext("endgame", "Start practicing"), to: hd(games).url, class: "button practice-start",
+      data: [endgame_start: true, endgame_games: Jason.encode!(games), continue_label: dgettext("endgame", "Continue practicing")] %>
+
 <%= for {slug, type} <- @chapter.endgames do %>
   <h2 class="endgame_fix"><%= type.name %></h2>
 

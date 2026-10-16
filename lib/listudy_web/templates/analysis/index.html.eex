@@ -134,7 +134,8 @@
         <% end %>
       </ul>
       <%= if @studies_stats == [] do %>
-        <p>No repertoires to show.</p>
+        <p><%= dgettext("study", "Import a repertoire to compare your games and practice where you left your preparation.") %></p>
+        <%= link dgettext("study", "Import my repertoire"), to: Routes.study_path(@conn, :new, @locale), class: "button" %>
       <% end %>
       <p data-repertoire-empty hidden>No repertoires match these filters.</p>
       <div class="analysis-repertoire-pagination" data-repertoire-pagination hidden>

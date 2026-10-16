@@ -1299,3 +1299,35 @@ msgstr "Cada 15 jugadas mías"
 
 msgid "Every 20 of my moves"
 msgstr "Cada 20 jugadas mías"
+
+#, elixir-autogen, elixir-format
+msgid "Import repertoire"
+msgstr "Importar repertorio"
+
+#, elixir-autogen, elixir-format
+msgid "Your first training session"
+msgstr "Tu primer entrenamiento"
+
+#, elixir-autogen, elixir-format
+msgid "Import a PGN or a Lichess study, or explore a public study to start practicing."
+msgstr "Importa un PGN o un estudio de Lichess, o busca un estudio público para empezar a practicar."
+
+#, elixir-autogen, elixir-format
+msgid "Import my repertoire"
+msgstr "Importar mi repertorio"
+
+#, elixir-autogen, elixir-format
+msgid "Find a study to practice"
+msgstr "Buscar un estudio para practicar"
+
+#, elixir-autogen, elixir-format
+msgid "Import a repertoire to compare your games and practice where you left your preparation."
+msgstr "Importa un repertorio para comparar tus partidas y practicar donde te saliste de tu preparación."
+
+#, elixir-autogen, elixir-format
+msgid "No studies found. Try another opening or import your repertoire."
+msgstr "No se encontraron estudios. Prueba con otra apertura o importa tu repertorio."
+
+#, elixir-autogen, elixir-format
+msgid "Import your repertoire"
+msgstr "Importa tu repertorio"

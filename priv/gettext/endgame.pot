@@ -332,3 +332,15 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Two minor pieces against one minor piece, with and without pawns."
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Start practicing"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Continue practicing"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Explore exercises"
+msgstr ""

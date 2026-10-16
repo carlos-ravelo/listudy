@@ -1,0 +1,14 @@
+  <div class="study-management-import-card pgn_choice">
+    <h3 ><%= dgettext("study", "Import PGN or Lichess Study") %></h3>
+    <div class="study-management-import-grid">
+      <div>
+        <%= label @f, :pgn, dgettext("study", "Select a PGN to upload") %>
+        <%= file_input @f, :pgn %>
+      </div>
+      <div>
+        <%= label @f, :lichess_study, dgettext("study", "Lichess Study") %>
+        <%= text_input @f, :lichess_study, placeholder: "https://lichess.org/study/ZWHbJIPd", class: "big_input" %>
+        <%= error_tag @f, :lichess_study %>
+      </div>
+    </div>
+  </div>
