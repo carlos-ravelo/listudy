@@ -113,10 +113,8 @@ function animate_progress_bar(movetime, reason="") {
 
 function ai_move() {
     let movetime = 1000
-    let threads = window.navigator.hardwareConcurrency || 1;
     sf.postMessage('uci');
     sf.postMessage('ucinewgame');
-    sf.postMessage(`setoption name Threads value ${threads}`);
     sf.postMessage(`position fen ${chess.fen()}`);
     sf.postMessage(`go movetime ${movetime}`);
 }
@@ -158,7 +156,7 @@ function main() {
     setup_target();
 
     animate_progress_bar(2000, "Loading Stockfish...")
-    load_stockfish(stockfish_listener);
+    load_stockfish(stockfish_listener).catch(() => set_text(error_div, 'Stockfish could not load. Reload the page to retry.'));
     document.getElementById("reset").addEventListener("click", main);
     document.getElementById("error").classList.add("hidden");
     document.getElementById("todo").classList.remove("hidden");

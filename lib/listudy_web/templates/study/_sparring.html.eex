@@ -1,17 +1,17 @@
 <section id="study_sparring" class="study-sparring" aria-label="<%= dgettext("study", "Sparring controls and results") %>" hidden>
-  <label class="sparring-strength-control"><%= dgettext("study", "Opponent strength") %>
+  <label class="sparring-strength-control"><%= dgettext("study", "Opponent strength (engine Elo target)") %>
     <select data-sparring="strength" name="sparring_strength" aria-describedby="sparring_strength_help">
-      <option value="1"><%= dgettext("study", "Level 1 — Easiest") %></option>
-      <option value="2"><%= dgettext("study", "Level 2 — Easy") %></option>
-      <option value="3"><%= dgettext("study", "Level 3") %></option>
-      <option value="4"><%= dgettext("study", "Level 4") %></option>
-      <option value="5"><%= dgettext("study", "Level 5") %></option>
-      <option value="6"><%= dgettext("study", "Level 6") %></option>
-      <option value="7"><%= dgettext("study", "Level 7") %></option>
-      <option value="8"><%= dgettext("study", "Level 8 — Full strength") %></option>
+      <option value="1"><%= dgettext("study", "≈ 1320") %></option>
+      <option value="2"><%= dgettext("study", "≈ 1500") %></option>
+      <option value="3"><%= dgettext("study", "≈ 1700") %></option>
+      <option value="4"><%= dgettext("study", "≈ 1900") %></option>
+      <option value="5"><%= dgettext("study", "≈ 2100") %></option>
+      <option value="6"><%= dgettext("study", "≈ 2400") %></option>
+      <option value="7"><%= dgettext("study", "≈ 2700") %></option>
+      <option value="8"><%= dgettext("study", "Full strength") %></option>
     </select>
   </label>
-  <p id="sparring_strength_help" class="sparring-note"><%= dgettext("study", "The level changes your opponent, not the analysis. Levels are practice settings, not Elo ratings.") %></p>
+  <p id="sparring_strength_help" class="sparring-note"><%= dgettext("study", "Approximate engine Elo, not a Chess.com, Lichess or FIDE rating. Actual strength depends on your device and search time. Analysis always uses full strength.") %></p>
   <label data-sparring="start-control" hidden><%= dgettext("study", "Starting position") %>
     <select data-sparring="start" name="sparring_start_position"
             data-standard="<%= dgettext("study", "Initial position") %>"

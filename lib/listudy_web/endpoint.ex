@@ -44,7 +44,7 @@ defmodule ListudyWeb.Endpoint do
     cache_control_for_etags: "public, max-age=31536000",
     only: ~w(stockfish),
     headers: %{"cross-origin-embedder-policy" => "require-corp"},
-    content_types: %{"stockfish.wasm" => "application/wasm"}
+    content_types: %{"stockfish-19-lite-single.wasm" => "application/wasm"}
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

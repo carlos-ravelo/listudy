@@ -42,11 +42,9 @@ function animate_progress_bar(movetime, reason="") {
 
 function ai_move() {
     let movetime = 1000
-    let threads = window.navigator.hardwareConcurrency || 1;
     animate_progress_bar(movetime, "Calculating Move...");
     sf.postMessage('uci');
     sf.postMessage('ucinewgame');
-    sf.postMessage(`setoption name Threads value ${threads}`);
     sf.postMessage(`position fen ${chess.fen()}`);
     sf.postMessage(`go movetime ${movetime}`);
 }
@@ -126,7 +124,7 @@ function main(hash) {
         if (first_move == "sf") {
             ai_move();
         }
-    });
+    }).catch(() => set_text(error_div, 'Stockfish could not load. Reload the page to retry.'));
     setup_options();
 }
 
