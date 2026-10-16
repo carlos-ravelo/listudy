@@ -1,31 +1,30 @@
-// Practice levels deliberately have no claimed Elo calibration.
-const practiceLevels = [
-    { skill: 0, depth: 1, movetime: 100 },
-    { skill: 1, depth: 2, movetime: 150 },
-    { skill: 3, depth: 4, movetime: 200 },
-    { skill: 6, depth: 6, movetime: 350 },
-    { skill: 10, depth: 8, movetime: 500 },
-    { skill: 14, depth: 12, movetime: 700 },
-    { skill: 18, depth: 16, movetime: 700 },
-    { skill: 20, movetime: 700 }
-];
+import { createStockfishWorker, stockfishVersion } from '../stockfish.js';
+
+// Native engine Elo targets. These are not human or website ratings.
+const practiceLevels = [1320, 1500, 1700, 1900, 2100, 2400, 2700, null];
+
+export function sparringRating(level) {
+    return practiceLevels[sparringStrength(level) - 1];
+}
 
 export function sparringStrength(value) {
     const number = Number(value);
     return Number.isInteger(number) && number >= 1 && number <= 8 ? number : 2;
 }
 
-function createUciEngine({ createWorker = () => new Worker('/stockfish/js/stockfish.wasm.js'),
+function createUciEngine({ createWorker = createStockfishWorker,
     timeoutMs = 20000, movetime = 700 } = {}) {
     let worker;
     let pending;
     let ready;
     let disposed = false;
+    let eloRange = null;
     function fail(reason) {
         if (pending) { clearTimeout(pending.timer); pending.reject(reason); pending = null; }
         if (worker) worker.terminate();
         worker = null;
         ready = null;
+        eloRange = null;
     }
     function waitFor(kind, send) {
         return new Promise((resolve, reject) => {
@@ -39,6 +38,10 @@ function createUciEngine({ createWorker = () => new Worker('/stockfish/js/stockf
         worker.onmessage = event => {
             if (worker !== current) return;
             const line = String(event.data).trim();
+            if (line.startsWith('option name UCI_Elo type spin')) {
+                const range = line.match(/min (\d+) max (\d+)/);
+                if (range) eloRange = { min: Number(range[1]), max: Number(range[2]) };
+            }
             if (pending?.kind === 'bestmove ' && line.startsWith('info ') && !/lowerbound|upperbound/.test(line) &&
                 !/\bmultipv (?:[2-9]|\d{2,})\b/.test(line)) {
                 const score = line.match(/\bscore (cp|mate) (-?\d+)/);
@@ -67,7 +70,14 @@ function createUciEngine({ createWorker = () => new Worker('/stockfish/js/stockf
             if (disposed) throw new Error('Engine disposed');
             if (pending) throw new Error('Engine busy');
             const result = await waitFor('bestmove ', () => {
-                worker.postMessage(`setoption name Skill Level value ${options.skill ?? 20}`);
+                if (options.elo != null) {
+                    if (!eloRange || options.elo < eloRange.min || options.elo > eloRange.max) throw new Error('Unsupported engine Elo');
+                    worker.postMessage('setoption name UCI_LimitStrength value true');
+                    worker.postMessage(`setoption name UCI_Elo value ${options.elo}`);
+                } else {
+                    worker.postMessage('setoption name UCI_LimitStrength value false');
+                    worker.postMessage('setoption name Skill Level value 20');
+                }
                 worker.postMessage(`position fen ${initialFen}${moves.length ? ' moves ' + moves.join(' ') : ''}`);
                 worker.postMessage(`go${options.depth ? ' depth ' + options.depth : ''} movetime ${options.movetime || movetime}`);
             });
@@ -88,8 +98,9 @@ export function createSparringEngine({ strength = 2, ...options } = {}) {
     const analyst = createUciEngine(options);
     const opponent = createUciEngine(options);
     return {
-        async bestMove(state) { return (await opponent.search(state, practiceLevels[level - 1])).uci; },
-        analyze(state, searchOptions) { return analyst.search(state, { ...searchOptions, skill: 20 }); },
+        metadata: () => ({ distribution: 'stockfish', version: stockfishVersion, build: 'lite-single', eloTarget: sparringRating(level) }),
+        async bestMove(state) { return (await opponent.search(state, { elo: sparringRating(level) })).uci; },
+        analyze(state, searchOptions) { return analyst.search(state, { ...searchOptions, elo: null }); },
         canReuseAnalysisMove: () => level === 8,
         setStrength(value) {
             const next = sparringStrength(value);

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const context = vm.createContext({ require, setTimeout, clearTimeout });
+const context = vm.createContext({ require, setTimeout, clearTimeout, stockfishVersion: require('../../stockfish.config.js').version });
 for (const file of ['evaluation', 'session', 'chess_adapter', 'uci_engine']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, `../../js/modules/sparring/${file}.js`), 'utf8')
         .replace(/^import .*\n/gm, '').replace(/^export /gm, ''), context);
@@ -98,6 +98,7 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
             messages.push(message);
             const reply = message === 'uci' ? 'uciok' : message === 'isready' ? 'readyok'
                 : message.startsWith('go ') ? 'bestmove e7e5 ponder g1f3' : null;
+            if (message === 'uci') queueMicrotask(() => worker.onmessage({data:'option name UCI_Elo type spin default 1320 min 1320 max 3190'}));
             if (reply) queueMicrotask(() => worker.onmessage({ data: reply }));
         } };
         return worker;
@@ -144,31 +145,37 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert.equal(sparringStrength('1'), 1);
     assert.equal(sparringStrength(8), 8);
     assert.equal(sparringStrength(99), 2);
+    assert.equal(context.sparringRating(1),1320);
+    assert.equal(context.sparringRating(2),1500);
+    assert.equal(context.sparringRating(8),null);
 
     const workers = [];
     const separated = createSparringEngine({ createWorker() {
-        const fake = { messages: [], skill: 20, stopped: false,
+        const fake = { messages: [], limited: false, stopped: false,
             terminate() { this.stopped = true; }, postMessage(message) {
                 this.messages.push(message);
-                if (message.startsWith('setoption name Skill Level')) this.skill = Number(message.split(' ').pop());
+                if (message.startsWith('setoption name UCI_LimitStrength')) this.limited = message.endsWith('true');
                 const reply = message === 'uci' ? 'uciok' : message === 'isready' ? 'readyok' : null;
+                if (message === 'uci') queueMicrotask(() => this.onmessage({data:'option name UCI_Elo type spin default 1320 min 1320 max 3190'}));
                 if (reply) queueMicrotask(() => this.onmessage({data:reply}));
                 if (message.startsWith('go ')) queueMicrotask(() => {
                     this.onmessage({data:'info depth 4 multipv 1 score cp 20 pv e7e5 g1f3'});
                     this.onmessage({data:'info depth 4 multipv 2 score cp 999 pv c7c5'});
-                    this.onmessage({data:`bestmove ${this.skill === 20 ? 'e7e5' : 'c7c5'}`});
+                    this.onmessage({data:`bestmove ${!this.limited ? 'e7e5' : 'c7c5'}`});
                 });
             } };
         workers.push(fake); return fake;
     } });
     const enginePosition = { initialFen: initial, moves: ['e2e4'] };
     assert.equal(await separated.bestMove(enginePosition), 'c7c5');
-    assert(workers[0].messages.includes('setoption name Skill Level value 1'));
-    assert(workers[0].messages.includes('go depth 2 movetime 150'));
+    assert(workers[0].messages.includes('setoption name UCI_Elo value 1500'));
+    assert(workers[0].messages.includes('go movetime 700'));
     const evaluated = await separated.analyze(enginePosition);
     assert.equal(evaluated.score.value, 20);
     assert.equal(evaluated.uci, 'e7e5');
     assert(workers[1].messages.includes('setoption name Skill Level value 20'));
+    assert(workers[1].messages.includes('setoption name UCI_LimitStrength value false'));
+    assert(!workers[1].messages.some(message=>message.startsWith('setoption name UCI_Elo')));
     assert(workers[1].messages.includes('go movetime 700'));
     assert.equal(separated.canReuseAnalysisMove(), false);
     separated.setStrength(8);

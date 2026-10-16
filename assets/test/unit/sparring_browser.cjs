@@ -27,9 +27,9 @@ ${render(read('lib/listudy_web/templates/study/_sparring.html.eex'))}</div>
 <script>window.sound_enabled=true;window.sound_volume=0.5;window.playedSounds=[];
 window.Audio=class {constructor(src){this.src=src}load(){}cloneNode(){return this}play(){playedSounds.push(this.src);return Promise.resolve()}};</script>
 <script src="/bundle.js"></script><script>
-window.engineTrace = []; window.workerCommands = [];
+window.engineTrace = []; window.workerCommands = []; window.workerUrls = [];
 window.Worker = class extends Worker {
-  constructor(url) { super(url); this.commands = []; workerCommands.push(this.commands); this.addEventListener('message', event => engineTrace.push(String(event.data))); }
+  constructor(url) { super(url); workerUrls.push(url); this.commands = []; workerCommands.push(this.commands); this.addEventListener('message', event => engineTrace.push(String(event.data))); }
   postMessage(message) { this.commands.push(message); engineTrace.push('> ' + message); super.postMessage(message); }
 };
 window.chapter = {headers: {Event:'Test chapter'},root:[{move:'e4',children:[{move:'e5',children:[{move:'Nf3',children:[]}]}]}]};
@@ -45,7 +45,7 @@ document.getElementById('reset_line').onclick=()=>controller.start();
 document.getElementById('practice_lines').onclick=()=>{controller.stop();stops++};
 </script></body></html>`;
 const fixtureEntry = path.join(temp, 'fixture.cjs');
-fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/study_adapter.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/uci_engine.js'))}),Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground}`);
+fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/study_adapter.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/uci_engine.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/stockfish.js'))}),Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground}`);
 
 (async () => {
     await new Promise((resolve, reject) => webpack({ mode: 'development',
@@ -56,7 +56,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         const pathname = new URL(request.url, 'http://localhost').pathname;
         if (pathname === '/') { response.setHeader('Content-Type', 'text/html'); response.end(html); return; }
         const file = pathname === '/bundle.js' ? path.join(temp, 'bundle.js')
-            : pathname.startsWith('/stockfish/') ? path.join(root, 'assets/static', pathname)
+            : pathname.startsWith('/stockfish/') ? path.join(root, 'assets/node_modules/stockfish/bin', path.basename(pathname))
             : path.join(root, pathname);
         if (!file.startsWith(root + path.sep) && !file.startsWith(temp + path.sep) || !fs.existsSync(file)) {
             response.statusCode = 404; response.end(); return;
@@ -145,7 +145,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.textContent('[data-sparring="phase"]'), 'Against Stockfish', await page.evaluate(() => engineTrace.slice(-12).join('; ')));
         assert((await page.evaluate(() => playedSounds.length)) >= 4);
         assert(await page.evaluate(() => workerCommands.some(commands =>
-            commands.includes('setoption name Skill Level value 0') && commands.includes('go depth 1 movetime 100'))));
+            commands.includes('setoption name UCI_LimitStrength value true') && commands.includes('setoption name UCI_Elo value 1320'))));
         // Make a legal engine-phase decision, then review before the checkpoint.
         const next = await page.evaluate(() => {
             const [from, tos] = [...board.state.movable.dests][0]; return [from, tos[0]];
@@ -155,7 +155,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
             !document.querySelector('[data-sparring="summary"]').hidden, null, { timeout: 30000 });
         assert(await page.evaluate(() => workerCommands.some(commands =>
             commands.includes('setoption name Skill Level value 20') &&
-            !commands.includes('setoption name Skill Level value 0'))));
+            commands.includes('setoption name UCI_LimitStrength value false') && !commands.some(command=>command.startsWith('setoption name UCI_Elo')))));
         assert.equal(await page.locator('#error_text, #success_text, #info_text').evaluateAll(elements =>
             elements.some(element => /percentage|winning chances|pp|3\.0/.test(element.textContent))), false);
         if (await page.locator('[data-sparring="summary"]').isHidden()) await page.click('[data-sparring="analyze"]');
@@ -301,6 +301,45 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await move('h7','h8');
         await page.click('[data-promotion="n"]');
         await page.waitForFunction(() => document.querySelector('[data-sparring="phase"]').textContent === 'Session finished');
+        assert.equal(await page.evaluate(() => crossOriginIsolated), false);
+        assert.equal(await page.evaluate(() => workerUrls.every(url=>url==='/stockfish/19.0.1/stockfish-19-lite-single.js')), true);
+        assert((await page.evaluate(() => engineTrace.find(line=>line.startsWith('id name ')))).includes('Stockfish 19 Lite WASM'));
+        // The shared loader also serves Play Stockfish and Endgames, without global script tags.
+        const shared = await page.evaluate(async()=>{
+            const first=[],second=[];
+            let callback=false;
+            const worker=await Sparring.load_stockfish(line=>first.push(line),()=>callback=true);
+            await Sparring.load_stockfish(line=>second.push(line));
+            await new Promise((resolve,reject)=>{
+                const timer=setTimeout(()=>reject(new Error('Shared engine timeout')),15000);
+                const handler=event=>{if(event.data.startsWith('bestmove ')){clearTimeout(timer);worker.removeEventListener('message',handler);resolve()}};
+                worker.addEventListener('message',handler);
+                worker.postMessage('position startpos moves e2e4');worker.postMessage('go depth 3');
+            });
+            worker.terminate();
+            return {callback,first:first.length,second:second.some(line=>line.startsWith('bestmove '))};
+        });
+        assert.deepEqual(shared,{callback:true,first:0,second:true});
+        const fallback=await page.evaluate(()=>new Promise((resolve,reject)=>{
+            const worker=Sparring.createStockfishWorker({forceFallback:true});
+            const timer=setTimeout(()=>{worker.terminate();reject(new Error('Fallback timeout'))},20000);
+            const lines=[];
+            worker.onmessage=event=>{
+                lines.push(String(event.data));
+                if(event.data==='uciok'){
+                    worker.postMessage('setoption name UCI_LimitStrength value true');
+                    worker.postMessage('setoption name UCI_Elo value 1320');
+                    worker.postMessage('position startpos moves e2e4');worker.postMessage('go depth 2');
+                }
+                if(event.data.startsWith('bestmove ')){clearTimeout(timer);worker.terminate();resolve(lines)}
+            };
+            worker.onerror=()=>{clearTimeout(timer);worker.terminate();reject(new Error('Fallback unavailable'))};
+            worker.postMessage('uci');
+        }));
+        assert(fallback.some(line=>line.startsWith('id name Stockfish 19')));
+        assert(fallback.some(line=>line.startsWith('option name UCI_Elo')));
+        assert(fallback.some(line=>/^bestmove [a-h][1-8][a-h][1-8]/.test(line)));
+        console.log('Shared loader, native Elo, independent full-strength analysis and same-release JS fallback passed');
         console.log('Bundled engine:', await page.evaluate(() => engineTrace.find(line => line.startsWith('id name '))));
         assert.deepEqual(errors, []);
         console.log('All Sparring buttons: labels, keyboard focus, touch targets, continue, retry, downloads, history, resignation and promotion passed');

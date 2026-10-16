@@ -1,6 +1,6 @@
 import { createSparringSession } from './session.js';
 import { createStudySparring, sparringStartPositions } from './chess_adapter.js';
-import { createSparringEngine, sparringStrength } from './uci_engine.js';
+import { createSparringEngine, sparringStrength, sparringRating } from './uci_engine.js';
 import { createPromotionPicker } from '../promotion_picker.js';
 import { setupStudyMoveTree } from '../study/study_move_tree.js';
 import { sounds, playMoveSound } from '../sounds.js';
@@ -50,7 +50,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             'Black', state.player === 'b' ? 'You' : 'Stockfish / repertoire');
         return { id: sessionId, startedAt, updatedAt: Date.now(), status: state.phase, reason: state.reason,
             scope: 'study', startFen: state.initialFen, sources: ports.repertoire.sources(),
-            gradingVersion: 'lichess-style-v1', opponentLevels: strengthChanges.map(change => ({ ...change })),
+            gradingVersion: 'lichess-style-v1', engine: engine?.metadata?.() || null, opponentLevels: strengthChanges.map(change => ({ ...change })),
             attempts: state.attempts, correct: state.correct, firstDeviation: state.firstDeviation,
             freeCount: state.freeCount, result: outcome, pgn: game.pgn(),
             reviews: state.reviews.map(row => ({ ...row, line: continuation(row.ply, row.pv) })) };
@@ -256,7 +256,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         const current = generation;
         sessionId = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
         startedAt = Date.now(); soundCount = 0; heardReviews = 0; readIndex = null; lineLength = -1; previousPhase = null; savedSignature = ''; inspectedRow = null;
-        strengthChanges = [{ ply: 0, level: strength }];
+        strengthChanges = [{ ply: 0, level: strength, eloTarget: sparringRating(strength) }];
         panel.hidden = false; workspace?.classList.add('study-sparring-active');
         if (boardStatus) boardStatus.hidden = false;
         opener.setAttribute('aria-pressed', 'true');
@@ -306,7 +306,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     find('strength').addEventListener('change', () => {
         strength = sparringStrength(find('strength').value);
         engine?.setStrength?.(strength);
-        strengthChanges.push({ ply: session?.snapshot().moves.length || 0, level: strength });
+        strengthChanges.push({ ply: session?.snapshot().moves.length || 0, level: strength, eloTarget: sparringRating(strength) });
         writeStrength(strength);
     });
     find('continue').addEventListener('click', () => {

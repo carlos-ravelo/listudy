@@ -4,6 +4,10 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('css-minimizer-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const stockfish = require('./stockfish.config.js');
+if (require('stockfish/package.json').version !== stockfish.version) {
+  throw new Error('Stockfish package version must match stockfish.config.js');
+}
 
 module.exports = (env, options) => {
   const devMode = options.mode !== 'production';
@@ -85,7 +89,11 @@ module.exports = (env, options) => {
       new CopyWebpackPlugin(
           {
               patterns: [
-                  { from: 'static/', to: '../' }
+                  { from: 'static/', to: '../' },
+                  ...[stockfish.engine + '.js', stockfish.engine + '.wasm', stockfish.fallback + '.js'].map(file => ({
+                    from: 'node_modules/stockfish/bin/' + file, to: '../stockfish/' + stockfish.version + '/' + file
+                  })),
+                  { from: 'node_modules/stockfish/Copying.txt', to: '../stockfish/' + stockfish.version + '/Copying.txt' }
               ]
           }
       )

@@ -1197,3 +1197,33 @@ msgstr "Has perdido"
 
 msgid "Draw"
 msgstr "Tablas"
+
+msgid "Opponent strength (engine Elo target)"
+msgstr "Fuerza del rival (Elo objetivo del motor)"
+
+msgid "Approximate engine Elo, not a Chess.com, Lichess or FIDE rating. Actual strength depends on your device and search time. Analysis always uses full strength."
+msgstr "Elo aproximado del motor; no equivale al rating de Chess.com, Lichess o FIDE. La fuerza real depende de tu dispositivo y del tiempo de cálculo. El análisis siempre usa la máxima fuerza."
+
+msgid "Full strength"
+msgstr "Máxima fuerza"
+
+msgid "≈ 1320"
+msgstr "≈ 1320"
+
+msgid "≈ 1500"
+msgstr "≈ 1500"
+
+msgid "≈ 1700"
+msgstr "≈ 1700"
+
+msgid "≈ 1900"
+msgstr "≈ 1900"
+
+msgid "≈ 2100"
+msgstr "≈ 2100"
+
+msgid "≈ 2400"
+msgstr "≈ 2400"
+
+msgid "≈ 2700"
+msgstr "≈ 2700"
