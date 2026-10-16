@@ -33,6 +33,7 @@ import { StorageAdapter } from './storageAdapter.js';
 import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
+import { readStudyActivity, requestedStudyActivity, trackStudyActivity } from './modules/study_activity.js';
 import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder, beginChapterPractice, finishChapterPractice, recentPracticePerformance, chapterProgressState, bindChapterIdentities } from './modules/study/chapter_stats.js';
 import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus } from './modules/study/chapter_review.js';
 import { setupStudyMoveTree, readChapterPosition } from './modules/study/study_move_tree.js';
@@ -1832,8 +1833,11 @@ async function main() {
     const gamePractice = new URLSearchParams(window.location.search);
     const hasGamePosition = gamePractice.has('practice_fen') && gamePractice.has('practice_expected');
     const linkedChapter = chapterFromUrl(window.location.search, trees.map((_, index) => tree_chapter_name(index)));
+    const directedPractice = gamePractice.has('practice_fen') || gamePractice.has('practice');
+    const activity = directedPractice ? null : requestedStudyActivity(window.location.search) || readStudyActivity(study_id);
     const puzzleRun = setupPuzzleRun(i18n, {
-        initialMode: hasGamePosition || gamePractice.get('practice') === 'chapter' && linkedChapter !== null ? 'off' : undefined
+        initialMode: hasGamePosition || gamePractice.get('practice') === 'chapter' && linkedChapter !== null ? 'off'
+            : activity === 'smart' ? 'smart' : activity ? localStorage.getItem('fullLineRunMode') || 'off' : undefined
     });
     studySessions = setupStudySessions({ getStats: () => chapterStats,
         persist: () => StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats)),
@@ -1868,7 +1872,7 @@ async function main() {
         } else {
             set_text(info_div, 'This position is outside the current practice scope. Check Max depth or sync your games after editing the study.');
         }
-    } else if ((window.studyPuzzleRunMode ?? localStorage.getItem('puzzleRunMode')) === 'smart') updateSmartRun();
+    } else if (!['read', 'sparring'].includes(activity) && (window.studyPuzzleRunMode ?? localStorage.getItem('puzzleRunMode')) === 'smart') updateSmartRun();
     setup_configs();
     studyMoveTree = setupStudyMoveTree({
         element: document.getElementById('study_read_moves'),
@@ -1890,6 +1894,15 @@ async function main() {
     update_progress();
     setup_progress_modal();
     setup_progress_reset();
+    const saveActivity = trackStudyActivity(study_id);
+    if (activity === 'read') set_read_mode(true);
+    else if (activity === 'sparring') document.getElementById('practice_sparring')?.click();
+    else if (!directedPractice) saveActivity(window.studyPuzzleRunMode === 'smart' ? 'smart' : 'lines');
+    if (requestedStudyActivity(window.location.search)) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('mode');
+        window.history.replaceState(window.history.state, '', url);
+    }
     void refreshGameEvidence(gamePositionsRequest);
 }
 

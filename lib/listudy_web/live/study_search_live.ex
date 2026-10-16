@@ -9,13 +9,17 @@ defmodule ListudyWeb.StudySearchLive do
     ~L"""
     <h1><%= dgettext("study", "Search for studies") %></h1>
     <form phx-change="suggest" phx-submit="search">
-      <input class="big_search" type="text" name="q" value="<%= @query %>" list="matches" placeholder="<%= dgettext("study", "Search") %>..." autocomplete="off"/>
+      <input class="big_search" type="search" aria-label="<%= dgettext("study", "Search for studies") %>" name="q" value="<%= @query %>" list="matches" placeholder="<%= dgettext("study", "Search") %>..." autocomplete="off"/>
       <select name="ordering" id="ordering">
         <option value="favorites" <%= if @ordering == "favorites" do %>selected<%end%>><%= dgettext("study", "Favorites")%></option>
         <option value="newest" <%= if @ordering == "newest" do %>selected<%end%>><%= dgettext("study", "Newest")%></option>
       </select>
       <br>
       <div class="study_search_results">
+        <%= if @matches == [] do %>
+          <p role="status"><%= dgettext("study", "No studies found. Try another opening or import your repertoire.") %></p>
+          <a href="<%= Routes.study_path(@socket, :new, @locale) %>"><%= dgettext("study", "Import my repertoire") %></a>
+        <% end %>
         <%= for match <- @matches do %>
           <div class="study_search_result">
             <a href="<%= Routes.study_path(@socket, :show, @locale, match) %>">

@@ -70,12 +70,19 @@
 .study-management-settings-row .study-management-private label,
 .study-management-settings-row .study-management-private input { margin: 0; }
 .study-management-import-card.pgn_choice { padding: 10px 12px; background: var(--bg-highlight-color); border-radius: 8px; margin: 0 0 12px; }
-.study-management-import-card h3 { margin-bottom: 6px; line-height: 1.3; }
+.study-management-import-card h3 { margin-top: 0; font-size: 14px; margin-bottom: 6px; line-height: 1.3; }
 .study-management-import-card label { margin: 0 0 4px; font-size: .8rem; }
 .study-management-import-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: flex-end; }
 .study-management-import-grid > div { min-width: 0; }
 .study-management-form .study-management-import-grid input { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; margin: 0; }
 .study-management-import-grid .big_input { height: 32px; padding: 4px 8px; font-size: .85rem; }
+.study-create h1 { font-size: 28px; font-weight: 600; line-height: 1.25; }
+.study-create .study-form .study-management-import-card h3 { font-size: 16px; font-weight: 600; }
+.study-create .study-management-import-card label { font-size: 13px; }
+.study-create .study-management-import-grid input { width: 100%; min-height: 44px; height: auto; font-size: 14px; box-sizing: border-box; }
+.study-create .study-form textarea { height: 96px; resize: vertical; }
+.study-create .study-form input:invalid, .study-create .study-form textarea:invalid { border: 1px solid #bbb; }
+.study-create .study-form input:user-invalid, .study-create .study-form textarea:user-invalid { border-color: var(--error-color); }
 .study-management-status { margin: 0 0 1rem; }
 .study-management-danger { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: 2rem 0; padding-top: 1rem; border-top: 1px solid var(--bg-highlight-color); font-size: .85em; }
 .study-management-danger > span { opacity: .65; }

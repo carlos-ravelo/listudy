@@ -323,3 +323,15 @@ msgstr "Piezas menores contra Torre"
 #: lib/listudy_web/controllers/endgame_controller.ex:256
 msgid "Two minor pieces against one minor piece, with and without pawns."
 msgstr "Dos piezas menores contra una pieza menor, con y sin peones."
+
+#, elixir-autogen, elixir-format
+msgid "Start practicing"
+msgstr "Empezar a practicar"
+
+#, elixir-autogen, elixir-format
+msgid "Continue practicing"
+msgstr "Continuar practicando"
+
+#, elixir-autogen, elixir-format
+msgid "Explore exercises"
+msgstr "Explorar ejercicios"

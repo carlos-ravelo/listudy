@@ -19,7 +19,9 @@
      }) %>">
   <div class="study-library-heading">
     <h1><%= dgettext("study", "Your Studies") %></h1>
-    <%= link dgettext("study", "New Study"), to: Routes.study_path(@conn, :new, @locale), class: "button study-library-create" %>
+    <%= if @studies != [] or @favorites != [] do %>
+      <%= link dgettext("study", "Import repertoire"), to: Routes.study_path(@conn, :new, @locale), class: "button study-library-create" %>
+    <% end %>
   </div>
   <%= if @studies != [] or @favorites != [] do %>
     <nav class="study-library-views" data-library-controls hidden aria-label="<%= dgettext("study", "Study lists") %>">
@@ -51,8 +53,12 @@
   <% end %>
   <%= if @studies == [] and @favorites == [] do %>
     <div class="study-library-empty">
-      <p><%= dgettext("study", "Create a new study and start learning.") %></p>
-      <%= link dgettext("study", "Search for Studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale) %>
+      <h2><%= dgettext("study", "Your first training session") %></h2>
+      <p><%= dgettext("study", "Import a PGN or a Lichess study, or explore a public study to start practicing.") %></p>
+      <div class="study-library-start-actions">
+        <%= link dgettext("study", "Import my repertoire"), to: Routes.study_path(@conn, :new, @locale), class: "button study-library-create" %>
+        <%= link dgettext("study", "Find a study to practice"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale) %>
+      </div>
     </div>
   <% else %>
     <section data-library-section aria-label="<%= dgettext("study", "Your Studies") %>">

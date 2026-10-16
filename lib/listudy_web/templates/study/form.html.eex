@@ -5,9 +5,13 @@
     </div>
   <% end %>
 
+  <%= unless Map.get(@assigns, :maintenance, false) do %>
+    <%= render "_import.html", f: f, conn: @assigns.conn %>
+  <% end %>
+
   <div class="study-metadata-title">
   <%= label f, :title, dgettext("study", "Title") %>
-  <%= text_input f, :title, class: "big_input", minlength: 3, maxlength: 60, placeholder: dgettext("study", "Caro-Kann Defense"), required: true, autofocus: not Map.get(@assigns, :maintenance, false) %>
+  <%= text_input f, :title, class: "big_input", minlength: 3, maxlength: 60, placeholder: dgettext("study", "Caro-Kann Defense"), required: true %>
   <%= error_tag f, :title %>
   </div>
 
@@ -37,20 +41,9 @@
     </div>
   </div>
 
-  <div class="study-management-import-card pgn_choice">
-    <h3 style="margin-top:0; font-size: 14px;"><%= dgettext("study", "Import PGN or Lichess Study") %></h3>
-    <div class="study-management-import-grid">
-      <div>
-        <%= label f, :pgn, dgettext("study", "Select a PGN to upload") %>
-        <%= file_input f, :pgn %>
-      </div>
-      <div>
-        <%= label f, :lichess_study, dgettext("study", "Lichess Study") %>
-        <%= text_input f, :lichess_study, placeholder: "https://lichess.org/study/ZWHbJIPd", class: "big_input" %>
-        <%= error_tag f, :lichess_study %>
-      </div>
-    </div>
-  </div>
+  <%= if Map.get(@assigns, :maintenance, false) do %>
+    <%= render "_import.html", f: f, conn: @assigns.conn %>
+  <% end %>
   <%= if Map.get(@assigns, :maintenance, false) do %>
     <p class="study-management-status" role="status" x-text="status"></p>
   <% end %>

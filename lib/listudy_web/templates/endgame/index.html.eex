@@ -1,11 +1,15 @@
 <h1><%= dgettext("endgame", "Endgames") %></h1>
 <p><%= dgettext("endgame", "No idea what to do in the endgame? Learn endgames by playing against stockfish.") %></p>
 
+<% games = practice_games(@conn, @locale, @endgame) %>
+<%= link dgettext("endgame", "Start practicing"), to: hd(games).url, class: "button practice-start",
+      data: [endgame_start: true, endgame_games: Jason.encode!(games), continue_label: dgettext("endgame", "Continue practicing")] %>
+
 <%= for {slug, type} <- @endgame do %>
   <div class="highlight">
     <h2><%= type.name %></h2>
     <p><%= type.description %></p>
-    <a href="<%= Routes.endgame_path(@conn, :chapter, @locale, slug) %>"><button class="secondary"><%= dgettext("endgame", "Learn") %></button></a>
+    <%= link dgettext("endgame", "Explore exercises"), to: Routes.endgame_path(@conn, :chapter, @locale, slug), class: "button secondary" %>
   </div>
 <% end %>
 
