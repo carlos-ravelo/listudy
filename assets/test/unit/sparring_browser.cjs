@@ -17,7 +17,7 @@ const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="w
 <link rel="stylesheet" href="/assets/css/features/chapter_editor.css">
 <link rel="stylesheet" href="/assets/css/features/study_presentation.css">
 <link rel="stylesheet" href="/assets/css/features/sparring.css">
-<style>:root{--study-divider:#bbb}.study-board-frame{width:min(500px,90vw)}#chessground{width:100%;height:auto;aspect-ratio:1}.hidden{display:none}</style></head><body>
+<style>:root{--study-divider:#bbb}.study-board-frame{width:min(500px,90vw)}#chessground{width:100%;height:auto;aspect-ratio:1}#study_sparring{max-width:360px}.success{background:var(--success-bg);color:var(--success-color)}.error{background:var(--error-bg);color:var(--error-color)}.info{background:var(--info-bg);color:var(--info-color)}.hidden{display:none}</style></head><body>
 <div class="study-workspace">
 <button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog">Settings</button>
 <details id="study_more_actions" class="study-tools-menu"><summary>More</summary><button type="button" data-study-dialog="study_sparring_history_dialog">Sparring history</button></details>
@@ -47,10 +47,12 @@ window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapter
  onPosition(){moveNavigation.update()},
  createEngine:options=>window.fakeEngine || Sparring.createSparringEngine(options),
  readStrength:()=>localStorage.getItem('test_strength'),writeStrength:level=>localStorage.setItem('test_strength',level),
+ readPreferences:()=>JSON.parse(localStorage.getItem('test_sparring_preferences')||'{}'),writePreferences:value=>localStorage.setItem('test_sparring_preferences',JSON.stringify(value)),
  showHints(routes){window.hintRoutes=routes;board.setShapes([{orig:'e2',dest:'e4',brush:'green'}])},
  onDecision(record){decisions.push(record)},saveResult(record){savedResults[record.id]=record},getHistory:()=>Object.values(savedResults)});
 moveNavigation=Sparring.setupStudyMoveNavigation({goBack:()=>controller.back(),goForward:()=>controller.forward(),getState:()=>controller.navigation()});
 Sparring.setupStudyToolsMenu();Sparring.setupStudyDialogs();
+for (const [id,text] of Object.entries({arrows_toggle:'New moves (2 times)',comments_toggle:'When hints are visible',arrow_type:'Moves and annotations',move_delay:'Instant',line_review:'Fast review'})) document.getElementById(id).textContent=text;
 document.getElementById('hints').onclick=()=>controller.hint();
 document.getElementById('reset_line').onclick=()=>controller.start();
 document.getElementById('practice_lines').onclick=()=>{controller.stop();stops++};
@@ -114,6 +116,13 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await page.screenshot({path:'/tmp/listudy-settings-practice-desktop.png'});
         await page.keyboard.press('Home');
         assert.equal(await page.getAttribute('#settings_tab_general','aria-selected'),'true');
+        await page.screenshot({path:'/tmp/listudy-general-settings-desktop.png'});
+        await page.setViewportSize({width:320,height:844});
+        await auditButtons();
+        assert(await page.locator('#settings_panel_general').evaluate(panel=>panel.scrollWidth<=panel.clientWidth+1));
+        await page.screenshot({path:'/tmp/listudy-general-settings-mobile.png'});
+        await page.setViewportSize({width:1280,height:900});
+        await page.locator('#settings_tab_general').focus();
         await page.keyboard.press('End');
         assert.equal(await page.getAttribute('#settings_tab_sparring','aria-selected'),'true');
         await page.setViewportSize({width:320,height:844});
@@ -126,6 +135,14 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.locator('.sparring-help > p').first().isVisible(),false);
         await auditButtons();
         await page.selectOption('[data-sparring="strength"]', '1');
+        assert.equal(await page.inputValue('[data-sparring="review-every"]'),'0');
+        assert.equal(await page.locator('[data-sparring="pause-blunder"]').isChecked(),false);
+        await page.selectOption('[data-sparring="review-every"]','10');
+        await page.check('[data-sparring="pause-blunder"]');
+        assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('test_sparring_preferences'))),{reviewEvery:10,pauseOnBlunder:true,live:true});
+        await page.selectOption('[data-sparring="review-every"]','0');
+        await page.uncheck('[data-sparring="pause-blunder"]');
+        await page.screenshot({path:'/tmp/listudy-sparring-review-settings.png'});
         await page.locator('#study_settings_dialog button').filter({hasText:'Close'}).click();
         assert.equal(await page.evaluate(()=>document.activeElement.id),'open_study_settings');
         assert.equal(await page.evaluate(() => localStorage.getItem('test_strength')), '1');
@@ -274,6 +291,8 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         const gradedMove = page.locator('[data-sparring="moves"] button[data-grade]:not([data-grade=""]):not([data-grade="theory"])').first();
         assert.equal(await gradedMove.count(), 1);
         assert.equal(await page.locator('[data-sparring="grade-counts"] [role="listitem"]').count(), 5);
+        assert.equal(await page.locator('[data-sparring="grade-counts"] strong').count(),5);
+        await page.locator('[data-sparring="summary"]').screenshot({path:'/tmp/listudy-sparring-results-colour.png'});
         assert.equal(await page.evaluate(() => Object.keys(savedResults).length), 1);
         assert.equal(await page.evaluate(() => Object.values(savedResults)[0].gradingVersion), 'lichess-style-v1');
         assert.equal(await page.evaluate(() => Object.values(savedResults)[0].opponentLevels.at(-1).level), 1);

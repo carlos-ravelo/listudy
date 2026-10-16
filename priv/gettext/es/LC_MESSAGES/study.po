@@ -1263,3 +1263,39 @@ msgstr "Comentarios sobre la jugada"
 
 msgid "Dismiss notification"
 msgstr "Cerrar aviso"
+
+msgid "Pause for review"
+msgstr "Pausar para revisar"
+
+msgid "Only when I ask"
+msgstr "Solo cuando lo solicite"
+
+msgid "Pause after a blunder"
+msgstr "Pausar tras un error grave"
+
+msgid "Move arrows"
+msgstr "Flechas de jugadas"
+
+msgid "Move comments"
+msgstr "Comentarios de jugadas"
+
+msgid "Hint content"
+msgstr "Contenido de las pistas"
+
+msgid "Opponent move delay"
+msgstr "Espera del rival"
+
+msgid "End-of-line review"
+msgstr "Revisión al terminar la línea"
+
+msgid "Every 5 of my moves"
+msgstr "Cada 5 jugadas mías"
+
+msgid "Every 10 of my moves"
+msgstr "Cada 10 jugadas mías"
+
+msgid "Every 15 of my moves"
+msgstr "Cada 15 jugadas mías"
+
+msgid "Every 20 of my moves"
+msgstr "Cada 20 jugadas mías"

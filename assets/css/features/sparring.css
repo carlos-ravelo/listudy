@@ -61,3 +61,16 @@
 .study-sparring .sparring-actions [data-sparring="analyze"][data-primary="true"] { color: var(--font-color); background: color-mix(in srgb, var(--primary-color, #0034ff) 12%, var(--bg-color)); border-color: color-mix(in srgb, var(--primary-color, #0034ff) 32%, var(--bg-color)); }
 .study-sparring .sparring-actions [data-sparring="analyze"][data-primary="true"]:hover:not(:disabled) { opacity: 1; background: color-mix(in srgb, var(--primary-color, #0034ff) 18%, var(--bg-color)); }
 .study-sparring [data-sparring="moves"] > .study-tree-move { display: block; width: 100%; padding: 8px; border: 0; border-bottom: 1px solid var(--study-divider); border-radius: 0; color: var(--study-muted); font-size: 12px; text-align: left; }
+
+/* Grade colours reinforce the existing symbols, without turning the report into alerts. */
+.study-sparring [data-grade="best"], .study-sparring [data-grade="acceptable"] { --grade-tint: #287950; }
+.study-sparring [data-grade="inaccuracy"] { --grade-tint: #a37b16; }
+.study-sparring [data-grade="mistake"] { --grade-tint: #b4652c; }
+.study-sparring [data-grade="blunder"] { --grade-tint: #b64653; }
+.sparring-grade-counts > span { display: flex; flex-direction: column; gap: 4px; background: color-mix(in srgb, var(--grade-tint) 9%, var(--bg-color)); border-color: color-mix(in srgb, var(--grade-tint) 28%, var(--bg-color)); }
+.sparring-grade-counts > span > strong { font-size: 22px; line-height: 1.15; font-weight: 600; }
+.sparring-grade-counts > span > span { font-size: 12px; color: var(--study-muted); }
+.sparring-grade-counts > span[data-empty="true"] { background: transparent; border-color: var(--study-divider); }
+.study-sparring [data-grade] .sparring-move-sticker { color: color-mix(in srgb, var(--grade-tint, var(--font-color)) 72%, var(--font-color)); }
+.study-sparring [data-sparring="summary"] { padding-block: 12px; }
+.study-sparring [data-sparring="summary"] > .sparring-metrics { padding: 10px 12px; background: color-mix(in srgb, var(--primary-color) 5%, var(--bg-color)); border-radius: 6px; font-size: 14px; }

@@ -19,6 +19,16 @@
             data-black="<%= dgettext("study", "Black to move") %>"></select>
   </label>
 
+  <label class="sparring-strength-control"><%= dgettext("study", "Pause for review") %>
+    <select data-sparring="review-every" name="sparring_review_every">
+      <option value="0"><%= dgettext("study", "Only when I ask") %></option>
+      <option value="5"><%= dgettext("study", "Every 5 of my moves") %></option>
+      <option value="10"><%= dgettext("study", "Every 10 of my moves") %></option>
+      <option value="15"><%= dgettext("study", "Every 15 of my moves") %></option>
+      <option value="20"><%= dgettext("study", "Every 20 of my moves") %></option>
+    </select>
+  </label>
+  <label><input type="checkbox" name="sparring_pause_blunder" data-sparring="pause-blunder"> <%= dgettext("study", "Pause after a blunder") %></label>
   <label><input type="checkbox" name="sparring_live_feedback" data-sparring="live" checked> <%= dgettext("study", "Show feedback while playing") %></label>
   <details class="sparring-help">
     <summary><%= dgettext("study", "About sparring") %></summary>

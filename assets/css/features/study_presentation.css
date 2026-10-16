@@ -251,3 +251,11 @@
 .study-workspace .study-feedback .close_button { position: absolute; inset-block-start: 0; inset-inline-end: 0; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-height: 44px; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-size: 22px; cursor: pointer; }
 .study-workspace .study-feedback .close_button:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
 .study-workspace:has(dialog[open]) .study-feedback { visibility: hidden; }
+
+/* Stable labels and quieter cycling values make General settings easier to scan. */
+.study-workspace #settings_panel_general .study-setting-group legend { padding-inline-start: 10px; border-inline-start: 3px solid color-mix(in srgb, var(--primary-color) 45%, var(--font-color)); }
+.study-workspace #settings_panel_general .study-setting-row { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(0, 1.35fr); align-items: center; gap: 12px; padding-block: 6px; }
+.study-workspace .study-setting-label { font-size: 13px; color: var(--study-muted); line-height: 1.5; }
+.study-workspace #settings_panel_general .study-setting-row button { box-sizing: border-box; min-height: 44px; padding: 10px 12px; border: 1px solid var(--study-divider); border-radius: 6px; background: color-mix(in srgb, var(--primary-color) 5%, var(--bg-color)); text-align: start; font-size: 13px; line-height: 1.5; }
+.study-workspace #settings_panel_general .study-setting-row button:hover { border-color: color-mix(in srgb, var(--primary-color) 35%, var(--font-color)); background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-color)); }
+.study-workspace #settings_panel_general .study-setting-row button:focus-visible { outline: 2px solid var(--font-color); outline-offset: 2px; }

@@ -1759,6 +1759,12 @@ async function main() {
     sparring = setupStudySparring({ getChapters: () => trees, getTitle: () => document.querySelector('h1').textContent.trim(), getPlayer: () => studyColor,
         readStrength: () => StorageAdapter.getItem('sparring_strength'),
         writeStrength: level => StorageAdapter.setItem('sparring_strength', String(level)),
+        readPreferences: () => ({ reviewEvery: StorageAdapter.getItem('sparring_review_every'), pauseOnBlunder: StorageAdapter.getItem('sparring_pause_blunder'), live: StorageAdapter.getItem('sparring_live_feedback') }),
+        writePreferences: preferences => {
+            StorageAdapter.setItem('sparring_review_every', String(preferences.reviewEvery));
+            StorageAdapter.setItem('sparring_pause_blunder', String(preferences.pauseOnBlunder));
+            StorageAdapter.setItem('sparring_live_feedback', String(preferences.live));
+        },
         getBoard: () => ground,
         onBegin() {
             trainingSessionId += 1;
