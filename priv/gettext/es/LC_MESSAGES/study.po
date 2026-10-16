@@ -326,7 +326,7 @@ msgstr "Favoritos"
 #: lib/listudy_web/live/study_search_live.ex:15
 #, elixir-autogen, elixir-format
 msgid "Newest"
-msgstr "Más Nuevo"
+msgstr "Más recientes"
 
 #: lib/listudy_web/live/study_search_live.ex:24
 #: lib/listudy_web/templates/study/list.html.eex:96
@@ -664,7 +664,7 @@ msgstr ""
 #: lib/listudy_web/templates/study/show.html.eex:37
 #, elixir-autogen, elixir-format
 msgid "Black"
-msgstr ""
+msgstr "Negras"
 
 #: lib/listudy_web/templates/study/show.html.eex:287
 #, elixir-autogen, elixir-format
@@ -958,7 +958,7 @@ msgstr ""
 #: lib/listudy_web/templates/study/show.html.eex:37
 #, elixir-autogen, elixir-format
 msgid "White"
-msgstr ""
+msgstr "Blancas"
 
 #: lib/listudy_web/templates/study/show.html.eex:255
 #, elixir-autogen, elixir-format
@@ -1331,3 +1331,17 @@ msgstr "No se encontraron estudios. Prueba con otra apertura o importa tu repert
 #, elixir-autogen, elixir-format
 msgid "Import your repertoire"
 msgstr "Importa tu repertorio"
+
+#, elixir-autogen, elixir-format
+msgid "Sort studies"
+msgstr "Ordenar estudios"
+
+#, elixir-autogen, elixir-format
+msgid "%{count} favorite"
+msgid_plural "%{count} favorites"
+msgstr[0] "%{count} favorito"
+msgstr[1] "%{count} favoritos"
+
+#, elixir-autogen, elixir-format
+msgid "Both colors"
+msgstr "Ambos colores"
