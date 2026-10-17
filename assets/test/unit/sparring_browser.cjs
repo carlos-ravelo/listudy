@@ -479,6 +479,16 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert(fallback.some(line=>line.startsWith('id name Stockfish 19')));
         assert(fallback.some(line=>line.startsWith('option name UCI_Elo')));
         assert(fallback.some(line=>/^bestmove [a-h][1-8][a-h][1-8]/.test(line)));
+        await page.evaluate(async () => {
+            const engine = Sparring.createSparringEngine({strength: 8, deviceMemory: 1});
+            try {
+                const result = await engine.analyze({initialFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', moves: []}, {movetime: 150});
+                if (!result.score) throw Error('No analysis with reduced Hash');
+            } finally {engine.dispose();}
+        });
+        assert(await page.evaluate(() => workerCommands.some(commands =>
+            commands.includes('setoption name Hash value 4') &&
+            commands.indexOf('setoption name Hash value 4') < commands.indexOf('isready'))));
         console.log('Shared loader, native Elo, independent full-strength analysis and same-release JS fallback passed');
         console.log('Bundled engine:', await page.evaluate(() => engineTrace.find(line => line.startsWith('id name '))));
         assert.deepEqual(errors, []);
