@@ -16,9 +16,12 @@
   coverage: dgettext("endgame", "%{done} / %{total} decisions analysed", done: "{done}", total: "{total}"),
   moments: dgettext("endgame", "%{count} key moments", count: "{count}"), start: dgettext("endgame", "Starting position")
 }) %>">
-  <nav class="endgame-back" aria-label="<%= dgettext("endgame", "Endgames") %>">
-    <a href="<%= Routes.endgame_path(@conn, :chapter, @locale, @chapter_slug) %>">‹ <%= @chapter.name %></a>
-  </nav>
+  <%= render "_breadcrumbs.html", items: [
+    %{label: dgettext("endgame", "Endgames"), to: Routes.endgame_path(@conn, :index, @locale)},
+    %{label: @chapter.name, to: Routes.endgame_path(@conn, :chapter, @locale, @chapter_slug)},
+    %{label: @subchapter.name, to: Routes.endgame_path(@conn, :chapter, @locale, @chapter_slug) <> "#endgame_group_" <> @subchapter_slug},
+    %{label: dgettext("endgame", "Exercise %{number}", number: @index), to: nil}
+  ] %>
   <h1 class="endgame-play-title"><%= @subchapter.name %> · <%= @index %></h1>
   <div class="with_sidebar">
     <div id="game_container" class="sidebar_main">

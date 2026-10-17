@@ -461,3 +461,6 @@ msgstr ""
 
 msgid "Take back your last move and the engine reply."
 msgstr ""
+
+msgid "Breadcrumb"
+msgstr ""

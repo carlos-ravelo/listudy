@@ -24,6 +24,14 @@
 .endgame-back { margin-bottom: 12px; }
 .endgame-back a { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; color: var(--endgame-muted); font-size: 13px; font-variant: normal; letter-spacing: normal; text-transform: none; text-decoration: none; }
 .endgame-back a:hover { color: var(--font-color); text-decoration: underline; text-underline-offset: 3px; }
+.endgame-breadcrumbs { margin-bottom: 8px; font-size: 12px; font-variant: normal; line-height: 1.4; }
+.endgame-breadcrumbs ol { display: flex; flex-wrap: wrap; gap: 0 8px; list-style: none; padding: 0; margin: 0; }
+.endgame-breadcrumbs li { display: inline-flex; align-items: center; gap: 8px; margin: 0; min-width: 0; }
+.endgame-breadcrumbs a { display: inline-flex; align-items: center; min-height: 32px; color: var(--font-color); opacity: .75; text-decoration: none; }
+.endgame-breadcrumbs a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+.endgame-breadcrumbs [aria-current="page"] { color: var(--font-color); overflow-wrap: anywhere; }
+.endgame-breadcrumb-separator { opacity: .45; }
+@media (max-width: 650px) { .endgame-workspace > .endgame-breadcrumbs { padding-inline: 12px; } }
 .endgame-exercise-groups { border-top: 1px solid var(--endgame-divider); }
 .endgame-exercise-group { padding: 20px 0; border-bottom: 1px solid var(--endgame-divider); }
 .endgame-exercise-group > header { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; padding: 0; border: 0; background: transparent; }
