@@ -32,6 +32,11 @@ export function assessMove(before, after, player, playedMove) {
         error = last.type === 'cp' && last.value > 999 ? 'inaccuracy'
             : last.type === 'cp' && last.value > 700 ? 'mistake' : 'blunder';
     }
+    // UCI reports +N before the mating side moves and -(N-1) afterwards.
+    // https://github.com/official-stockfish/Stockfish/blob/master/src/uci.cpp
+    const deliversMate = last.winningMate && after.score.value === 0 && before.turn === player && after.turn !== player;
+    const equallyFastMate = first.winningMate && last.winningMate && before.turn === player && after.turn !== player &&
+        Math.abs(after.score.value) < Math.abs(before.score.value);
     return { loss, before: from, after: to,
-        grade: error || (playedMove && before.uci === playedMove ? 'best' : 'acceptable') };
+        grade: error || (deliversMate || equallyFastMate || playedMove && before.uci === playedMove ? 'best' : 'acceptable') };
 }

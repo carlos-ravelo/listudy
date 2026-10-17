@@ -61,10 +61,21 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         const move = async (from, to) => page.evaluate(([from, to]) => { ground.selectSquare(from); ground.selectSquare(to); }, [from, to]);
         await visit();
         assert.equal(await page.locator('#endgame_live_feedback').isChecked(), false);
+        assert(await page.locator('#endgame_eval_bar').isHidden());
+        assert(await page.locator('#endgame_undo').isDisabled());
+        await page.locator('#endgame_eval_toggle').check();
+        await page.waitForFunction(() => document.querySelector('#endgame_eval_bar span').textContent === '+5.0');
+        assert.equal(await page.locator('#endgame_eval_bar span').textContent(), '+5.0');
+        assert.equal(await page.locator('#endgame_live_feedback').isChecked(), false, 'Evaluation bar is independent of move feedback');
+        await page.reload();
+        await page.waitForFunction(() => window.chess && window.ground);
+        assert(await page.locator('#endgame_eval_toggle').isChecked(), 'Evaluation preference persists');
+        await page.locator('#endgame_eval_toggle').uncheck();
         assert(await page.locator('#endgame_finish').isDisabled());
+        const initialSearches = await page.evaluate(() => engineTest.commands.filter(command => command.includes(' depth ')).length);
         await move('d6', 'c6');
         await page.waitForFunction(() => chess.history().length === 2).catch(async error => { console.error(await page.evaluate(() => ({history: chess.history(), fen: chess.fen(), color, turn: ground.state.turnColor, movable: ground.state.movable.color, commands: engineTest.commands, error: document.getElementById('error_text').textContent}))); throw error; });
-        assert.equal(await page.evaluate(() => engineTest.commands.filter(command => command.includes(' depth ')).length), 0);
+        assert.equal(await page.evaluate(() => engineTest.commands.filter(command => command.includes(' depth ')).length), initialSearches);
         await page.locator('#endgame_finish').click();
         await page.waitForFunction(() => document.getElementById('endgame_review_status').textContent.startsWith('1 / 1'));
         assert.equal(await page.locator('#endgame_review_moves .study-tree-move').count(), 3);
@@ -82,8 +93,9 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.locator('#endgame_live_feedback').check();
         const top = (await page.locator('#chessground').boundingBox()).y;
         await move('d6', 'c6');
-        await page.waitForFunction(() => chess.history().length === 2 && document.getElementById('info_text').textContent.includes('advantage'));
+        await page.waitForFunction(() => chess.history().length === 2 && document.getElementById('endgame_live_comment').textContent.includes('advantage'));
         assert(await page.locator('#endgame_review').isHidden());
+        assert(await page.locator('#info').isHidden(), 'Outcome feedback does not repeat in a native alert');
         assert.equal((await page.locator('#chessground').boundingBox()).y, top);
         const assessment = page.locator('#endgame_live_assessment');
         assert(await assessment.isVisible());
@@ -91,6 +103,14 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.waitForTimeout(4300);
         assert(await assessment.isVisible(), 'Feedback survives the quick engine reply and toast expiry');
         assert.equal(await assessment.textContent(), assessmentText);
+        await page.locator('#endgame_hint').click();
+        await page.waitForFunction(() => !document.getElementById('info').classList.contains('hidden') && ground.state.drawable.autoShapes.length > 0);
+        await page.waitForTimeout(100);
+        const notice = await page.locator('#info').boundingBox();
+        for (const selector of ['#endgame_live_assessment', '#endgame_live_comment', '.endgame-goal-heading']) {
+            const box = await page.locator(selector).boundingBox();
+            assert(!box || notice.x + notice.width <= box.x || box.x + box.width <= notice.x || notice.y + notice.height <= box.y || box.y + box.height <= notice.y, `Hint alert overlaps ${selector}`);
+        }
         await assessment.click();
         assert(await page.locator('#endgame_review').isVisible());
         await page.locator('#endgame_resume').click();
@@ -98,6 +118,28 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.waitForFunction(() => window.chess && window.ground);
         assert(await page.locator('#endgame_live_feedback').isChecked());
 
+        await move('d6', 'c6');
+        await page.waitForFunction(() => chess.history().length === 2);
+        await page.waitForFunction(() => !document.getElementById('endgame_live_assessment').hidden);
+        const previousAssessment = await page.locator('#endgame_live_assessment').textContent();
+        const previousFen = await page.evaluate(() => chess.fen());
+        const secondMove = await page.evaluate(() => { const move = chess.moves({verbose: true})[0]; return [move.from, move.to]; });
+        await move(...secondMove);
+        await page.waitForFunction(() => chess.history().length === 4);
+        await page.locator('#endgame_undo').click();
+        assert.equal(await page.evaluate(() => chess.history().length), 2, 'Undo preserves earlier decisions');
+        assert.equal(await page.evaluate(() => chess.fen()), previousFen);
+        assert(await page.locator('#endgame_live_assessment').isVisible(), 'Rollback preserves completed feedback immediately');
+        assert.equal(await page.locator('#endgame_live_assessment').textContent(), previousAssessment);
+        await page.locator('#endgame_undo').click();
+        assert.equal(await page.evaluate(() => chess.history().length), 0, 'Undo removes player move and engine reply');
+        assert(await page.locator('#endgame_undo').isDisabled());
+        await page.evaluate(() => { engineTest.bestDelay = 300; main(); });
+        await move('d6', 'c6');
+        await page.waitForFunction(() => chess.history().length === 1);
+        await page.locator('#endgame_undo').click();
+        await page.waitForTimeout(400);
+        assert.equal(await page.evaluate(() => chess.history().length), 0, 'Undo cancels a pending opponent reply');
         await page.evaluate(() => { engineTest.bestDelay = 300; main(); });
         await move('d6', 'c6');
         await page.locator('#endgame_finish').click();
@@ -110,6 +152,14 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.waitForTimeout(400);
         assert.equal(await page.evaluate(() => chess.history().length), 0, 'Stale engine reply must not enter a reset game');
 
+        await page.locator('#endgame_eval_toggle').check();
+        await page.evaluate(() => { main(); engineTest.analysisDelay = 250; });
+        await page.waitForFunction(() => document.querySelector('#endgame_eval_bar span').textContent === '+5.0');
+        await move('d6', 'c6');
+        await page.waitForFunction(() => chess.history().length >= 1);
+        assert.equal(await page.locator('#endgame_eval_bar span').textContent(), '+5.0', 'The previous evaluation remains while the engine thinks');
+        assert.equal(await page.locator('#endgame_eval_bar').getAttribute('aria-busy'), 'true');
+        await page.evaluate(() => { engineTest.analysisDelay = 5; });
         await page.evaluate(() => { engineTest.mateScore = -6; main(); });
         await page.waitForFunction(() => !document.getElementById('endgame_mate_cue').hidden);
         assert.equal(await page.evaluate(() => chess.history().length), 0, 'Mate is shown before the first player move');
@@ -121,6 +171,11 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.waitForFunction(() => chess.history().length === 2);
         await page.waitForTimeout(4300);
         assert(await page.locator('#endgame_mate_cue').isVisible(), 'Mate indicator stays in its fixed place after the engine reply and toast expiry');
+        await page.locator('#endgame_eval_toggle').check();
+        await page.waitForFunction(() => document.querySelector('#endgame_eval_bar span').textContent === 'M6');
+        const rail = await page.locator('#endgame_eval_bar').boundingBox();
+        const board = await page.locator('cg-board').boundingBox();
+        assert(Math.abs(rail.height - board.height) < 1, 'Evaluation rail matches the rendered board height');
         await page.screenshot({path: '/tmp/listudy-endgame-live-mate.png', fullPage: true});
         await page.evaluate(() => { main(); engineTest.mateScore = 6; });
         await move('d6', 'c6');
@@ -128,6 +183,7 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         assert.equal(await page.locator('.endgame-mate-cue').getAttribute('data-winning'), 'false');
         await page.evaluate(() => { engineTest.mateScore = null; });
         await page.locator('#endgame_live_feedback').uncheck();
+        await page.locator('#endgame_eval_toggle').uncheck();
         assert(await page.locator('#endgame_live_assessment').isHidden());
         await page.evaluate(() => { target_result = 'p'; main('7k/P7/6K1/8/8/8/8/8 w - - 0 1'); });
         await move('a7', 'a8');
@@ -163,10 +219,13 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
             await page.evaluate(() => main());
             await move('d6', 'c6');
             await page.waitForFunction(() => chess.history().length === 2);
+            await page.locator('#endgame_eval_toggle').check();
             await page.locator('#endgame_finish').click();
             await page.waitForFunction(() => document.getElementById('endgame_review_status').textContent.startsWith('1 / 1'));
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Review overflows at ${width}`);
             await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+            const popup = page.locator('.popup:visible').first();
+            if (await popup.count()) assert.equal(await popup.evaluate(element => getComputedStyle(element).position), 'static', 'Native achievements do not float over training controls');
             await page.screenshot({path: `/tmp/listudy-endgame-review-${width}-dark.png`, fullPage: true});
         }
         await page.setViewportSize({width: 1366, height: 900});
@@ -175,6 +234,7 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.locator('#endgame_live_feedback').uncheck();
         await move('d6', 'c6');
         await page.waitForFunction(() => chess.history().length === 2, {timeout: 30000});
+        await page.locator('#endgame_eval_toggle').check();
         await page.locator('#endgame_hint').click();
         await page.waitForFunction(() => ground.state.drawable.autoShapes.length === 1, {timeout: 30000});
         await page.locator('#endgame_finish').click();

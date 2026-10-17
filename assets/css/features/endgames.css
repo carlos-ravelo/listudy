@@ -93,3 +93,15 @@
 .endgame-goal-heading .endgame-goal { margin: 0; }
 .endgame-mate-cue { padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--success-color) 12%, transparent); font-size: 12px; font-weight: 600; color: var(--font-color); }
 .endgame-mate-cue[data-winning="false"] { background: color-mix(in srgb, var(--error-color) 12%, transparent); }
+
+.endgame-board-layout.has-evaluation { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.endgame-board-layout .study-board-frame { min-width: 0; }
+.endgame-eval-bar { position: relative; overflow: hidden; align-self: start; box-sizing: border-box; border: 1px solid #8c9298; border-radius: 3px; background: #30343b; --white-share: 50%; }
+.endgame-eval-bar::before { content: ''; position: absolute; inset: auto 0 0; height: var(--white-share); background: #f4f4f0; }
+.endgame-eval-bar[data-orientation="black"]::before { top: 0; bottom: auto; }
+.endgame-eval-bar span { position: absolute; top: calc(50% - 10px); left: 0; right: 0; padding: 3px 0; text-align: center; color: #30343b; background: #f4f4f0; font-size: 10px; font-weight: 600; line-height: 14px; }
+.endgame-live-comment { margin: 6px 0; font-size: 13px; line-height: 1.4; color: var(--font-color); }
+.endgame-workspace .endgame-achievements .popup { position: static; box-sizing: border-box; width: 100%; max-width: none; margin: 12px 0 0; padding: 12px; box-shadow: none; }
+.endgame-achievements .popup h2 { margin: 0 0 6px; font-size: 16px; }
+.endgame-achievements .popup p { margin: 0; font-size: 13px; }
+.endgame-achievements .popup > span { font-size: 20px; }

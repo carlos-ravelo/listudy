@@ -9,6 +9,7 @@
   best: dgettext("study", "Best move"), acceptable: dgettext("study", "Good move"),
   inaccuracy: dgettext("study", "Inaccuracy"), mistake: dgettext("study", "Mistake"), blunder: dgettext("study", "Blunder"),
   uncertain: dgettext("endgame", "Analysis inconclusive"),
+  evaluation: dgettext("endgame", "Evaluation"),
   mate: dgettext("endgame", "Mate in %{moves}", moves: "{moves}"), mateAgainst: dgettext("endgame", "Opponent has mate in %{moves}", moves: "{moves}"),
   unavailable: dgettext("endgame", "Some analysis is unavailable. Open the review again to retry."), analysing: dgettext("endgame", "Analysing…"),
   select: dgettext("endgame", "Select a move to review its position."), suggestion: dgettext("endgame", "Suggested continuation:"),
@@ -21,12 +22,16 @@
   <h1 class="endgame-play-title"><%= @subchapter.name %> · <%= @index %></h1>
   <div class="with_sidebar">
     <div id="game_container" class="sidebar_main">
-      <div class="study-board-frame">
-        <%= render ListudyWeb.ComponentView, "chessground.html" %>
-        <%= render ListudyWeb.ComponentView, "promotion_picker.html" %>
+      <div class="endgame-board-layout">
+        <div id="endgame_eval_bar" class="endgame-eval-bar" role="meter" aria-label="<%= dgettext("endgame", "Evaluation") %>" aria-valuemin="0" aria-valuemax="100" hidden><span>…</span></div>
+        <div class="study-board-frame">
+          <%= render ListudyWeb.ComponentView, "chessground.html" %>
+          <%= render ListudyWeb.ComponentView, "promotion_picker.html" %>
+        </div>
       </div>
       <div id="endgame_actions" class="endgame-play-actions">
         <button type="button" id="reset"><%= dgettext("endgame", "Reset") %></button>
+        <button type="button" id="endgame_undo" disabled title="<%= dgettext("endgame", "Take back your last move and the engine reply.") %>"><%= dgettext("endgame", "Undo last move") %></button>
         <button type="button" id="endgame_hint"><%= dgettext("study", "Hint") %></button>
         <button type="button" id="endgame_finish" disabled><%= dgettext("endgame", "Finish and review") %></button>
         <% next_url = if @next == "back", do: Routes.endgame_path(@conn, :chapter, @locale, @chapter_slug), else: Routes.endgame_path(@conn, :game, @locale, @chapter_slug, @subchapter_slug, @next) %>
@@ -45,7 +50,9 @@
         <span id="endgame_mate_cue" class="endgame-mate-cue" role="status" aria-live="polite" hidden></span>
       </div>
       <label class="endgame-feedback-toggle"><input type="checkbox" id="endgame_live_feedback"> <%= dgettext("endgame", "Live feedback") %></label>
+      <label class="endgame-feedback-toggle"><input type="checkbox" id="endgame_eval_toggle"> <%= dgettext("endgame", "Evaluation bar") %></label>
       <button type="button" id="endgame_live_assessment" class="endgame-live-assessment" hidden></button>
+      <p id="endgame_live_comment" class="endgame-live-comment" hidden></p>
       <p id="endgame_engine_status" role="status" aria-live="polite"></p>
       <section id="endgame_review" class="endgame-review" hidden aria-labelledby="endgame_review_title">
         <h2 id="endgame_review_title"><%= dgettext("endgame", "Exercise review") %></h2>
@@ -59,6 +66,7 @@
         </div>
         <p class="endgame-analysis-note"><%= dgettext("endgame", "Engine estimates from limited searches, not exact win or draw guarantees. Highlighted moves show possible changes in the outcome.") %></p>
       </section>
+      <div class="endgame-achievements"></div>
     </div>
   </div>
   <div class="study-feedback" role="status" aria-live="polite" data-dismiss="<%= gettext("Close") %>">

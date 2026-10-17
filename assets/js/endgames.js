@@ -3,19 +3,21 @@ const Chess = require('chess.js');
 import { turn_color, setup_chess } from './modules/chess_utils.js';
 import { createSparringEngine } from './modules/sparring/uci_engine.js';
 import { createEndgameFeedback, endgameMateCue } from './modules/endgame_feedback.js';
+import { renderEvaluationBar } from './modules/evaluation_bar.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { createPromotionPicker } from './modules/promotion_picker.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
 import { onresize, resize_ground, setup_ground, ground_init_state, ground_set_moves, setup_move_handler, ground_move } from './modules/ground.js';
-import { set_text, clear_all_text, success_div, error_div, info_div } from './modules/info_boxes.js';
+import { set_text, clear_all_text, error_div, info_div } from './modules/info_boxes.js';
 
 const workspace = document.querySelector('.endgame-workspace');
 const labels = JSON.parse(workspace.dataset.feedbackLabels);
 const panel = document.getElementById('endgame_review');
 const toggle = document.getElementById('endgame_live_feedback');
+const evaluationToggle = document.getElementById('endgame_eval_toggle');
 const finishButton = document.getElementById('endgame_finish');
 let engine, feedback, picker, generation = 0, ended = false, reviewing = false, busy = false;
-let startFen, moves = [], pendingReply, pendingPromotion, selectedRow, reviewRoot;
+let startFen, moves = [], pendingReply, pendingPromotion, selectedRow, reviewRoot, reviewState, reviewAnalysis;
 const uci = move => move.from + move.to + (move.promotion || '');
 const state = () => ({ initialFen: startFen, moves: moves.map(uci), fen: chess.fen(), turn: chess.turn() });
 
@@ -24,6 +26,7 @@ function updateFen(value = chess.fen()) {
     document.getElementById('lichess_analysis').href = 'https://lichess.org/analysis/' + value;
 }
 function boardReady() {
+    document.getElementById('endgame_undo').disabled = !feedback?.rows.length;
     document.getElementById('endgame_hint').disabled = ended || reviewing || busy || pendingPromotion !== null;
     ground_set_moves();
     ground.set({ turnColor: turn_color(chess), check: chess.in_check(), movable: {
@@ -34,7 +37,6 @@ function boardReady() {
 function finish(success) {
     if (ended) return;
     ended = true;
-    set_text(success ? success_div : error_div, success ? i18n.success : i18n.error, { transient: true });
     document.getElementById('todo').hidden = false;
     document.getElementById('todo').textContent = success ? i18n.success : i18n.error;
     document.getElementById('todo').dataset.result = success ? 'success' : 'retry';
@@ -134,6 +136,9 @@ function selectReview(path) {
     ground.set({ fen: position.fen(), turnColor: turn_color(position), check: position.in_check(), lastMove: undefined, movable: { color: undefined, dests: new Map() } });
     ground.setAutoShapes(suggestion && /^[a-h][1-8][a-h][1-8]/.test(suggestion) ? [{ orig: suggestion.slice(0, 2), dest: suggestion.slice(2, 4), brush: 'pgn_green' }] : []);
     updateFen(position.fen());
+    reviewState = { initialFen: startFen, moves: moves.slice(0, selectedRow ? ply - 1 : ply).map(uci), fen: position.fen(), turn: position.turn() };
+    reviewAnalysis = selectedRow?.beforeAnalysis || null;
+    refreshReviewEvaluation();
     moveTree.update({ root: reviewRoot, fen: startFen, chapter: generation, path, reading: true });
     renderComment();
 }
@@ -145,12 +150,42 @@ function renderComment() {
     const line = continuation(row);
     document.getElementById('endgame_review_line').textContent = line ? labels.suggestion + ' ' + line : '';
     document.getElementById('endgame_retry').disabled = !row;
+    renderEvaluation();
+}
+function renderEvaluation() {
+    const bar = document.getElementById('endgame_eval_bar');
+    bar.hidden = !evaluationToggle.checked;
+    const layout = document.querySelector('.endgame-board-layout');
+    const changed = layout.classList.contains('has-evaluation') !== evaluationToggle.checked;
+    layout.classList.toggle('has-evaluation', evaluationToggle.checked);
+    if (changed && window.ground) resize_ground();
+    let analysis = reviewing ? reviewAnalysis || selectedRow?.beforeAnalysis : feedback?.currentAnalysis;
+    if ((!reviewing || reviewState?.fen === chess.fen()) && chess.game_over()) analysis = { turn: chess.turn(), score: { type: chess.in_checkmate() ? 'mate' : 'cp', value: 0 } };
+    renderEvaluationBar(bar, analysis, color, labels);
+    requestAnimationFrame(sizeEvaluationBar);
+}
+function sizeEvaluationBar() {
+    const board = document.querySelector('#chessground cg-board');
+    if (board) document.getElementById('endgame_eval_bar').style.height = board.getBoundingClientRect().height + 'px';
+}
+async function refreshReviewEvaluation() {
+    if (!reviewing || !evaluationToggle.checked || !reviewState) return;
+    const expected = reviewState, ticket = generation;
+    try {
+        const result = await feedback.hint(expected);
+        if (ticket !== generation || !reviewing || reviewState !== expected) return;
+        reviewAnalysis = result;
+        renderEvaluation();
+    } catch (_) {}
 }
 const gradeSymbols = { best: '★', acceptable: '✓', inaccuracy: '?!', mistake: '?', blunder: '??' };
 function renderLiveAssessment() {
     const button = document.getElementById('endgame_live_assessment');
     const row = [...(feedback?.rows || [])].reverse().find(row => row.status === 'done');
     button.hidden = !toggle.checked || reviewing || !row;
+    const comment = document.getElementById('endgame_live_comment');
+    comment.hidden = button.hidden || !row?.moment;
+    comment.textContent = !comment.hidden ? labels[row.moment] : '';
     const cue = document.getElementById('endgame_mate_cue');
     const mate = endgameMateCue(feedback?.currentAnalysis, color === 'white' ? 'w' : 'b');
     cue.hidden = !toggle.checked || reviewing || !mate;
@@ -165,7 +200,7 @@ function renderLiveAssessment() {
     button.title = row.moment ? labels[row.moment] : labels.review;
     button.onclick = () => { openReview(); selectReview(Array(row.ply).fill(0)); };
 }
-function updateFeedback() { renderLiveAssessment(); renderReview(); }
+function updateFeedback() { renderLiveAssessment(); renderReview(); renderEvaluation(); }
 function renderReview() {
     if (!reviewing) return;
     const summary = feedback.summary();
@@ -197,6 +232,7 @@ function openReview({ keepFinalPosition = false } = {}) {
     feedback.review();
     if (keepFinalPosition) {
         selectedRow = null;
+        reviewState = state(); reviewAnalysis = feedback.currentAnalysis;
         ground.set({ fen: chess.fen(), check: chess.in_check(), movable: { color: undefined, dests: new Map() } });
         ground.setAutoShapes([]);
         moveTree.update({ root: reviewRoot, fen: startFen, chapter: generation, path: Array(moves.length).fill(0), reading: true });
@@ -206,31 +242,36 @@ function openReview({ keepFinalPosition = false } = {}) {
         selectReview(Array(key?.ply || 0).fill(0));
     }
     renderLiveAssessment();
+    renderEvaluation();
 }
 function resume() {
-    reviewing = false; feedback.close(); selectedRow = null;
+    reviewing = false; feedback.close(); selectedRow = null; reviewState = null; reviewAnalysis = null;
     finishButton.disabled = false;
     finishButton.textContent = ended ? labels.review : labels.finish;
     renderLiveAssessment();
     ground.set({ fen: chess.fen(), lastMove: moves.length ? [moves[moves.length - 1].from, moves[moves.length - 1].to] : undefined });
     ground.setAutoShapes([]); updateFen(); boardReady();
+    feedback.observe(state());
     if (pendingReply) applyReply(pendingReply);
     else opponentMove();
 }
-function main(position = fen) {
+function main(position = fen, restored = null) {
     generation++; engine?.dispose(); feedback?.destroy(); picker?.destroy();
-    startFen = position; moves = []; pendingReply = null; pendingPromotion = null; selectedRow = null;
+    startFen = position; moves = restored?.moves || []; pendingReply = null; pendingPromotion = null; selectedRow = null; reviewState = null; reviewAnalysis = null;
     ended = false; reviewing = false; busy = false; panel.hidden = true;
     document.getElementById('endgame_live_assessment').hidden = true;
     document.getElementById('endgame_mate_cue').hidden = true;
     clear_all_text();
+    document.getElementById('endgame_eval_bar').dataset.hasEvaluation = 'false';
     setup_chess(startFen); window.color = turn_color(chess);
-    if (!window.ground) setup_ground(startFen); else ground_init_state(startFen, color);
+    for (const move of moves) chess.move(move);
+    if (!window.ground) setup_ground(chess.fen()); else ground_init_state(chess.fen(), color);
     ground.setAutoShapes([]);
     resize_ground(); setup_move_handler(handleMove);
     engine = createSparringEngine({ strength: 8, movetime: 1000 });
-    feedback = createEndgameFeedback({ engine, player: chess.turn(), target: target_result, toggle, panel, labels, onUpdate: updateFeedback,
-        onNotice: message => set_text(info_div, message, { transient: true }) });
+    feedback = createEndgameFeedback({ engine, player: chess.turn(), target: target_result, toggle, evaluationToggle, panel, labels, onUpdate: updateFeedback, saved: restored?.feedback });
+    const evaluationChange = evaluationToggle.onchange;
+    evaluationToggle.onchange = () => { evaluationChange(); refreshReviewEvaluation(); };
     picker = createPromotionPicker({ element: document.querySelector('[data-promotion-picker]'),
         onChoose: promotion => { const move = pendingPromotion; pendingPromotion = null; if (move) { boardReady(); playUserMove(move.from, move.to, promotion); } },
         onCancel: () => { pendingPromotion = null; ground.set({ fen: chess.fen() }); boardReady(); } });
@@ -240,12 +281,23 @@ function main(position = fen) {
     document.getElementById('next').classList.add('hidden');
     document.getElementById('endgame_engine_status').textContent = '';
     finishButton.textContent = labels.finish;
-    finishButton.disabled = true;
+    finishButton.disabled = !moves.length;
     boardReady(); updateFen();
     feedback.observe(state());
 }
 setupStudyFeedback();
 document.getElementById('reset').onclick = () => main();
+document.getElementById('endgame_undo').onclick = () => {
+    const lastDecision = feedback.rows[feedback.rows.length - 1];
+    if (!lastDecision) return;
+    const retained = moves.slice(0, lastDecision.ply - 1);
+    const saved = feedback.snapshot(retained.length);
+    main(startFen, { moves: retained, feedback: saved });
+    const last = retained[retained.length - 1];
+    ground.set({ fen: chess.fen(), lastMove: last ? [last.from, last.to] : undefined });
+    finishButton.disabled = !moves.length;
+    updateFen(); boardReady(); feedback.observe(state());
+};
 finishButton.onclick = openReview;
 document.getElementById('endgame_hint').onclick = async () => {
     const ticket = generation, before = state();
@@ -262,6 +314,8 @@ document.getElementById('endgame_retry').onclick = () => { if (selectedRow) main
 document.getElementById('display_fen').onclick = event => event.target.select();
 document.getElementById('copy_fen').onclick = async () => { const input = document.getElementById('display_fen'); input.select(); try { await navigator.clipboard.writeText(input.value); } catch (_) { document.execCommand('copy'); } };
 window.addEventListener('resize', onresize);
+const evaluationResize = new ResizeObserver(() => requestAnimationFrame(sizeEvaluationBar));
+evaluationResize.observe(document.querySelector('.study-board-frame'));
 window.addEventListener('pagehide', () => { engine?.dispose(); feedback?.destroy(); });
 window.addEventListener('pageshow', event => { if (event.persisted) main(); });
 window.main = main;

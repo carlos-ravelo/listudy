@@ -47,7 +47,8 @@ class Achievement {
         container.appendChild(help);
         container.appendChild(headline);
         container.appendChild(text);
-        document.body.appendChild(container);
+        const host = document.querySelector('.endgame-achievements') || document.body;
+        host.appendChild(container);
         window.setTimeout(function() {
             container.classList.add("hidden");
         }, 15000);

@@ -20,15 +20,30 @@ export function endgameTurningPoint(before, after, player, target = 'w') {
     return null;
 }
 
-export function createEndgameFeedback({ engine, player, target, toggle, panel, labels, onUpdate, onNotice }) {
-    const rows = [];
+export function createEndgameFeedback({ engine, player, target, toggle, evaluationToggle, panel, labels, onUpdate, saved }) {
+    const rows = (saved?.rows || []).map(row => ({ ...row, status: row.status === 'done' ? 'done' : 'unanalysed' }));
+    const completed = new Map(saved?.analyses || []);
     const cache = new Map();
+    for (const [key, value] of completed) cache.set(key, Promise.resolve(value));
+    const positionKey = state => state.initialFen + '|' + state.moves.join(' ');
     let queue = Promise.resolve(), disposed = false, reviewing = false, currentState, currentAnalysis = null, positionVersion = 0;
     try { toggle.checked = localStorage.getItem('endgame_live_feedback') === 'true'; } catch (_) { toggle.checked = false; }
+    if (evaluationToggle) {
+        try { evaluationToggle.checked = localStorage.getItem('endgame_eval_bar') === 'true'; } catch (_) { evaluationToggle.checked = false; }
+        evaluationToggle.onchange = () => {
+            try { localStorage.setItem('endgame_eval_bar', String(evaluationToggle.checked)); } catch (_) {}
+            if (currentState) observe(currentState);
+            onUpdate();
+        };
+    }
 
     function analysis(state) {
-        const key = state.initialFen + '|' + state.moves.join(' ');
-        if (!cache.has(key)) cache.set(key, engine.analyze(state, { movetime: 900, depth: 18 }).then(result => ({ ...result, turn: state.turn })).catch(error => { cache.delete(key); throw error; }));
+        const key = positionKey(state);
+        if (!cache.has(key)) cache.set(key, engine.analyze(state, { movetime: 900, depth: 18 }).then(result => {
+            const value = { ...result, turn: state.turn };
+            if (!disposed) completed.set(key, value);
+            return value;
+        }).catch(error => { cache.delete(key); throw error; }));
         return cache.get(key);
     }
     function enqueue(row) {
@@ -45,22 +60,21 @@ export function createEndgameFeedback({ engine, player, target, toggle, panel, l
                 row.assessment = assessMove(row.beforeAnalysis, row.afterAnalysis, player, row.uci);
                 row.moment = row.goalReached ? null : endgameTurningPoint(row.beforeAnalysis, row.afterAnalysis, player, target);
                 row.status = 'done';
-                if (toggle.checked && !reviewing && row === rows[rows.length - 1] && row.moment) onNotice(row.san + ' · ' + labels[row.moment]);
             } catch (_) { if (!disposed) row.status = 'error'; }
             if (!disposed) onUpdate();
         });
     }
     function observe(state) {
         currentState = state;
-        currentAnalysis = null;
+        currentAnalysis = completed.get(positionKey(state)) || null;
         const version = ++positionVersion;
         onUpdate();
-        if (!toggle.checked || reviewing) return;
+        if ((!toggle.checked && !evaluationToggle?.checked) || reviewing) return;
         queue = queue.then(async () => {
-            if (disposed || version !== positionVersion || !toggle.checked || reviewing) return;
+            if (disposed || version !== positionVersion || (!toggle.checked && !evaluationToggle?.checked) || reviewing) return;
             try {
                 const result = await analysis(state);
-                if (disposed || version !== positionVersion || !toggle.checked || reviewing) return;
+                if (disposed || version !== positionVersion || (!toggle.checked && !evaluationToggle?.checked) || reviewing) return;
                 currentAnalysis = result;
                 onUpdate();
             } catch (_) {}
@@ -74,6 +88,7 @@ export function createEndgameFeedback({ engine, player, target, toggle, panel, l
     };
     return {
         rows,
+        snapshot(ply) { return { rows: rows.filter(row => row.ply <= ply).map(row => ({ ...row })), analyses: new Map(completed) }; },
         observe,
         get currentAnalysis() { return currentAnalysis; },
         record(row) { rows.push({ ...row, status: 'unanalysed' }); if (toggle.checked) enqueue(rows[rows.length - 1]); },
@@ -89,6 +104,6 @@ export function createEndgameFeedback({ engine, player, target, toggle, panel, l
             const moments = rows.filter(row => row.moment).length;
             return { done, moments, pending: rows.some(row => row.status === 'pending'), failed: rows.some(row => row.status === 'error') };
         },
-        destroy() { disposed = true; toggle.onchange = null; }
+        destroy() { disposed = true; toggle.onchange = null; if (evaluationToggle) evaluationToggle.onchange = null; }
     };
 }
