@@ -350,3 +350,87 @@ msgstr "Resuelto"
 
 msgid "About this category"
 msgstr "Acerca de esta categoría"
+
+msgid "Review exercise"
+msgstr "Revisar ejercicio"
+
+msgid "Finish and review"
+msgstr "Terminar y revisar"
+
+msgid "Stockfish is thinking…"
+msgstr "Stockfish está pensando…"
+
+msgid "Stockfish is unavailable. Reset the exercise to retry."
+msgstr "Stockfish no está disponible. Reinicia el ejercicio para reintentar."
+
+msgid "White to play"
+msgstr "Juegan blancas"
+
+msgid "Black to play"
+msgstr "Juegan negras"
+
+msgid "Win"
+msgstr "Ganar"
+
+msgid "Draw"
+msgstr "Tablas"
+
+msgid "Promote a pawn"
+msgstr "Coronar un peón"
+
+msgid "Position before %{move}."
+msgstr "Posición antes de %{move}."
+
+msgid "Estimated winning advantage reduced"
+msgstr "La ventaja ganadora estimada se redujo"
+
+msgid "Position became difficult to hold"
+msgstr "La posición se volvió difícil de defender"
+
+msgid "No clear change in the estimated outcome"
+msgstr "Sin cambios claros en el resultado estimado"
+
+msgid "Analysis inconclusive"
+msgstr "Análisis no concluyente"
+
+msgid "Some analysis is unavailable. Open the review again to retry."
+msgstr "Parte del análisis no está disponible. Vuelve a abrir la revisión para reintentar."
+
+msgid "Analysing…"
+msgstr "Analizando…"
+
+msgid "Select a move to review its position."
+msgstr "Selecciona una jugada para revisar su posición."
+
+msgid "Suggested continuation:"
+msgstr "Continuación sugerida:"
+
+msgid "%{done} / %{total} decisions analysed"
+msgstr "%{done} / %{total} decisiones analizadas"
+
+msgid "%{count} key moments"
+msgstr "%{count} momentos clave"
+
+msgid "Starting position"
+msgstr "Posición inicial"
+
+msgid "Position details"
+msgstr "Detalles de la posición"
+
+msgid "Lichess analysis"
+msgstr "Analizar en Lichess"
+
+msgid "Live feedback"
+msgstr "Feedback en vivo"
+
+msgid "Exercise review"
+msgstr "Revisión del ejercicio"
+
+msgid "Retry this position"
+msgstr "Reintentar esta posición"
+
+msgid "Continue playing"
+msgstr "Seguir jugando"
+
+msgid "Engine estimates from limited searches, not exact win or draw guarantees. Highlighted moves show possible changes in the outcome."
+msgstr "Estimaciones del motor con análisis limitado, sin garantías exactas de victoria o tablas. Las jugadas destacadas indican posibles cambios en el resultado."

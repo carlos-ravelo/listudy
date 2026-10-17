@@ -359,3 +359,87 @@ msgstr ""
 
 msgid "About this category"
 msgstr ""
+
+msgid "Review exercise"
+msgstr ""
+
+msgid "Finish and review"
+msgstr ""
+
+msgid "Stockfish is thinking…"
+msgstr ""
+
+msgid "Stockfish is unavailable. Reset the exercise to retry."
+msgstr ""
+
+msgid "White to play"
+msgstr ""
+
+msgid "Black to play"
+msgstr ""
+
+msgid "Win"
+msgstr ""
+
+msgid "Draw"
+msgstr ""
+
+msgid "Promote a pawn"
+msgstr ""
+
+msgid "Position before %{move}."
+msgstr ""
+
+msgid "Estimated winning advantage reduced"
+msgstr ""
+
+msgid "Position became difficult to hold"
+msgstr ""
+
+msgid "No clear change in the estimated outcome"
+msgstr ""
+
+msgid "Analysis inconclusive"
+msgstr ""
+
+msgid "Some analysis is unavailable. Open the review again to retry."
+msgstr ""
+
+msgid "Analysing…"
+msgstr ""
+
+msgid "Select a move to review its position."
+msgstr ""
+
+msgid "Suggested continuation:"
+msgstr ""
+
+msgid "%{done} / %{total} decisions analysed"
+msgstr ""
+
+msgid "%{count} key moments"
+msgstr ""
+
+msgid "Starting position"
+msgstr ""
+
+msgid "Position details"
+msgstr ""
+
+msgid "Lichess analysis"
+msgstr ""
+
+msgid "Live feedback"
+msgstr ""
+
+msgid "Exercise review"
+msgstr ""
+
+msgid "Retry this position"
+msgstr ""
+
+msgid "Continue playing"
+msgstr ""
+
+msgid "Engine estimates from limited searches, not exact win or draw guarantees. Highlighted moves show possible changes in the outcome."
+msgstr ""

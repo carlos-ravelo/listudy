@@ -185,6 +185,10 @@ defmodule ListudyWeb.PlayerJourneyTest do
     assert chapter =~ "data-endgame-start"
     assert chapter =~ "basic_rook_1"
     preview("endgame-chapter", chapter)
+    exercise = build_conn() |> get("/en/endgames/basic/queen/1") |> html_response(200)
+    assert exercise =~ "endgame_live_feedback"
+    assert exercise =~ "endgame_review_moves"
+    preview("endgame-play", exercise)
   end
 
   test "new players can import or explore and see import controls first", %{conn: conn} do

@@ -48,3 +48,39 @@
   .endgame-category { padding-inline: 4px; }
   .endgame-exercises { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
 }
+
+.endgame-workspace [hidden], .endgame-workspace .hidden { display: none !important; }
+.endgame-play-title { margin: 0 0 16px; font-size: 20px; font-weight: 600; }
+.endgame-workspace .study-board-frame { position: relative; }
+.endgame-workspace .endgame-back { margin-bottom: 4px; }
+.endgame-workspace .endgame-back a { color: var(--font-color); }
+.endgame-play-actions, .endgame-review-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 8px; }
+.endgame-workspace :is(button, .endgame-next) { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; height: auto; margin: 0; padding: 8px 10px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--font-color); font: inherit; font-size: 13px; line-height: 1.4; text-transform: none; letter-spacing: normal; text-decoration: none; }
+.endgame-workspace button:hover:not(:disabled), .endgame-workspace .endgame-next:hover { background: var(--bg-highlight-color); }
+.endgame-workspace button:disabled { opacity: .45; cursor: default; }
+.endgame-workspace :is(button, a, input, summary):focus-visible { outline: 2px solid var(--font-color); outline-offset: 2px; }
+.endgame-workspace .endgame-next { margin-left: auto; font-weight: 600; color: #206a9d; }
+[data-theme="dark"] .endgame-workspace .endgame-next { color: #6ab2e1; }
+.endgame-feedback-toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; font-weight: 400; margin: 0; }
+.endgame-feedback-toggle input { margin: 0; }
+.endgame-goal { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+#endgame_engine_status { min-height: 20px; margin: 0; font-size: 13px; }
+.endgame-review { border-top: 1px solid color-mix(in srgb, var(--font-color) 15%, transparent); padding-top: 16px; margin-top: 12px; }
+.endgame-review h2 { font-size: 18px; margin: 0 0 8px; }
+.endgame-review p { margin: 8px 0; font-size: 13px; line-height: 1.5; }
+#endgame_review_moves { max-height: 240px; overflow-y: auto; margin: 12px 0; }
+.endgame-review .endgame-key-move { box-shadow: inset 3px 0 var(--error-color); background: color-mix(in srgb, var(--error-color) 8%, transparent); }
+.endgame-review .study-tree-move[data-grade-symbol]:not([data-grade-symbol=""])::after { content: attr(data-grade-symbol); margin-left: 6px; padding: 1px 4px; border-radius: 3px; background: var(--bg-highlight-color); font-size: 12px; font-weight: 600; }
+.endgame-review .study-tree-move[data-grade="best"]::after { color: var(--success-color); }
+.endgame-review .study-tree-move:is([data-grade="inaccuracy"], [data-grade="mistake"], [data-grade="blunder"])::after { color: var(--error-color); }
+.endgame-review .endgame-analysis-note { opacity: .8; font-size: 12px; line-height: 1.45; }
+.endgame-position-details { margin-top: 12px; }
+.endgame-position-details summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; font-size: 13px; }
+.endgame-position-details input { width: 100%; font-size: 12px; box-sizing: border-box; }
+/* Keep the shared promotion picker above the endgame board. */
+.endgame-workspace .chapter-editor-promotion-choices button { padding: 0; border-radius: 0; background: #f0d9b5; aspect-ratio: 1; }
+.endgame-workspace .chapter-editor-promotion-cancel { position: absolute; background: var(--bg-color); font-size: 24px; }
+@media (max-width: 650px) { .endgame-workspace > :is(.endgame-back, .endgame-play-title), .endgame-workspace .sidebar { padding-inline: 12px; box-sizing: border-box; } }
+
+.endgame-goal[data-result="success"] { color: var(--success-color); }
+.endgame-goal[data-result="retry"] { color: var(--error-color); }
