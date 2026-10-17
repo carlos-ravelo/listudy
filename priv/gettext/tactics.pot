@@ -561,3 +561,9 @@ msgid "%{count} piece hidden"
 msgid_plural "%{count} pieces hidden"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "Checking alternative…"
+msgstr ""
+
+msgid "Could not verify this alternative. Try the suggested line or retry."
+msgstr ""

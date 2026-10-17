@@ -6,6 +6,15 @@ export function endgameMateCue(analysis, player) {
     return { moves: Math.abs(score.value), winning: (score.value > 0) === (analysis.turn === player) };
 }
 
+export function endgameAssessmentCertain(row) {
+    return row.assessment?.source === 'tablebase' || row.beforeAnalysis?.depth >= 12 && row.afterAnalysis?.depth >= 12;
+}
+
+export function endgameMateSlower(before, after, player) {
+    const first = endgameMateCue(before, player), last = endgameMateCue(after, player);
+    return first?.winning && last?.winning && before.turn === player && after.turn !== player && last.moves >= first.moves;
+}
+
 // Conservative changes in the player's estimated outcome, never exact W/D/L claims.
 export function endgameTurningPoint(before, after, player, target = 'w') {
     if (!before?.score || !after?.score || before.depth < 12 || after.depth < 12) return null;
@@ -57,8 +66,12 @@ export function createEndgameFeedback({ engine, player, target, toggle, evaluati
                 if (disposed) return;
                 row.afterAnalysis = row.terminal || await analysis(row.after);
                 if (disposed) return;
-                row.assessment = assessMove(row.beforeAnalysis, row.afterAnalysis, player, row.uci);
-                row.moment = row.goalReached ? null : endgameTurningPoint(row.beforeAnalysis, row.afterAnalysis, player, target);
+                const exact = engine.assess ? await engine.assess(row.before, row.uci) : null;
+                if (disposed) return;
+                const estimated = assessMove(row.beforeAnalysis, row.afterAnalysis, player, row.uci);
+                row.assessment = exact ? {...exact, grade: exact.grade === 'acceptable' && estimated?.grade === 'best' ? 'best' : exact.grade} : estimated;
+                row.moment = row.goalReached ? null : exact ? exact.moment : endgameTurningPoint(row.beforeAnalysis, row.afterAnalysis, player, target);
+                if (!row.moment && endgameMateSlower(row.beforeAnalysis, row.afterAnalysis, player)) row.moment = 'slowerMate';
                 row.status = 'done';
             } catch (_) { if (!disposed) row.status = 'error'; }
             if (!disposed) onUpdate();

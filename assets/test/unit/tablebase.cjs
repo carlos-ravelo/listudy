@@ -9,7 +9,7 @@ for (const name of ['tablebase', 'endgame_engine', 'engine_position']) {
     const source = fs.readFileSync(path.join(__dirname, '../../js/modules', name + '.js'), 'utf8');
     vm.runInContext(source.replace(/^import .*\n/gm, '').replace(/^export /gm, ''), context);
 }
-const {createTablebaseClient, tablebaseMove, createEndgameEngine, enginePosition} = context;
+const {createTablebaseClient, tablebaseMove, tablebaseAssessment, createEndgameEngine, enginePosition} = context;
 const fen = '7k/8/8/8/8/5Q2/5K2/8 b - - 0 1';
 const board = new Chess(fen);
 const state = {initialFen: fen, fen, moves: []};
@@ -28,6 +28,17 @@ const ok = data => ({ok: true, status: 200, json: async () => data});
     assert.equal(tablebaseMove(state, invalid), null);
     const rounded = response(); rounded.moves[0].dtm = null;
     assert.equal(tablebaseMove(state, rounded), rounded.moves[0].uci, 'Missing DTM retains the service ordering');
+    const promotion = new Chess('7k/P7/6K1/8/8/8/8/8 w - - 0 1');
+    const promotionState = enginePosition(promotion.fen(), promotion);
+    const promotionData = {category: 'win', moves: promotion.moves({verbose: true}).map(move => ({uci: move.from + move.to + (move.promotion || ''), category: move.promotion === 'q' || move.promotion === 'r' ? 'loss' : 'draw'}))};
+    assert.equal(tablebaseAssessment(promotionState, promotionData, 'a7a8q').grade, 'acceptable', 'A winning promotion cannot be penalised by a transient engine score');
+    assert.equal(tablebaseAssessment(promotionState, promotionData, 'a7a8r').grade, 'acceptable', 'Equivalent winning underpromotion is valid');
+    assert.equal(tablebaseAssessment(promotionState, promotionData, 'a7a8n').moment, 'winToDraw');
+    assert.equal(tablebaseAssessment(promotionState, promotionData, 'a7a8n').grade, 'mistake');
+    const losingPromotion = {...promotionData, moves: promotionData.moves.map(move => ({...move, category: move.uci === 'a7a8r' ? 'win' : move.category}))};
+    assert.equal(tablebaseAssessment(promotionState, losingPromotion, 'a7a8r').moment, 'winToLoss');
+    assert.equal(tablebaseAssessment(promotionState, losingPromotion, 'a7a8r').grade, 'blunder');
+    assert.equal(tablebaseAssessment(promotionState, {...promotionData, moves: []}, 'a7a8q'), null);
     let count = 0, clock = 1000;
     const client = createTablebaseClient({now: () => clock, fetcher: async () => {count++; return ok(data);}});
     const [first, second] = await Promise.all([client.lookup(fen), client.lookup(fen)]);

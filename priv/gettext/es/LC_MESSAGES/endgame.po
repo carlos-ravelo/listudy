@@ -455,3 +455,15 @@ msgstr "Retira tu última jugada y la respuesta del motor."
 
 msgid "Breadcrumb"
 msgstr "Ruta de navegación"
+
+msgid "The win became a draw"
+msgstr "La victoria se convirtió en tablas"
+
+msgid "The winning position became lost"
+msgstr "La posición ganadora pasó a estar perdida"
+
+msgid "The draw became a loss"
+msgstr "Las tablas se convirtieron en derrota"
+
+msgid "There was a faster mate"
+msgstr "Había un mate más rápido"

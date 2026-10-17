@@ -2,7 +2,7 @@ const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const outcomes = {win: 1, loss: -1, draw: 0, 'cursed-win': 0, 'blessed-loss': 0};
 
-export function tablebaseMove(state, data) {
+export function tablebasePosition(state, data) {
     if (!data || !Object.prototype.hasOwnProperty.call(outcomes, data.category) || !Array.isArray(data.moves)) return null;
     const board = new Chess(state.initialFen);
     for (const uci of state.moves) {
@@ -21,11 +21,29 @@ export function tablebaseMove(state, data) {
     }
     const best = Math.max(...candidates.map(move => move.outcome));
     if (best !== outcomes[data.category] && !(outcomes[data.category] < 0 && best === 0)) return null;
-    const choices = candidates.filter(move => move.outcome === best);
+    return {outcome: best, moves: candidates};
+}
+
+export function tablebaseMove(state, data) {
+    const position = tablebasePosition(state, data);
+    if (!position) return null;
+    const best = position.outcome;
+    const choices = position.moves.filter(move => move.outcome === best);
     // API order is DTZ-aware. DTM, when present for every defence, permits
     // prolonging forced mate without mistaking DTZ for a mate distance.
     if (best < 0 && choices.every(move => Number.isInteger(move.dtm) && move.dtm > 0)) choices.sort((a, b) => b.dtm - a.dtm);
     return choices[0]?.uci || null;
+}
+
+export function tablebaseAssessment(state, data, uci) {
+    const position = tablebasePosition(state, data);
+    const move = position?.moves.find(move => move.uci === uci);
+    if (!move) return null;
+    const loss = position.outcome - move.outcome;
+    return {source: 'tablebase', loss: Math.max(0, loss) * 50,
+        before: (position.outcome + 1) * 50, after: (move.outcome + 1) * 50,
+        grade: loss >= 2 ? 'blunder' : loss === 1 ? 'mistake' : 'acceptable',
+        moment: loss > 0 ? position.outcome === 1 ? move.outcome === 0 ? 'winToDraw' : 'winToLoss' : 'drawToLoss' : null};
 }
 
 export function createTablebaseClient({ fetcher = (...args) => fetch(...args), timeoutMs = 1200, now = Date.now } = {}) {

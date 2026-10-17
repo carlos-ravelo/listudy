@@ -6,7 +6,7 @@ const uri = source => 'data:text/javascript;base64,' + Buffer.from(source).toStr
 (async () => {
     const evaluation = uri(fs.readFileSync(path.join(root, 'assets/js/modules/sparring/evaluation.js'), 'utf8'));
     const source = fs.readFileSync(path.join(root, 'assets/js/modules/endgame_feedback.js'), 'utf8').replace("'./sparring/evaluation.js'", JSON.stringify(evaluation));
-    const {endgameTurningPoint, endgameMateCue, createEndgameFeedback} = await import(uri(source));
+    const {endgameTurningPoint, endgameMateCue, endgameMateSlower, endgameAssessmentCertain, createEndgameFeedback} = await import(uri(source));
     const barSource = fs.readFileSync(path.join(root, 'assets/js/modules/evaluation_bar.js'), 'utf8').replace("'./sparring/evaluation.js'", JSON.stringify(evaluation));
     const {evaluationBarValue, renderEvaluationBar} = await import(uri(barSource));
     assert.equal(evaluationBarValue(null), null);
@@ -38,6 +38,9 @@ const uri = source => 'data:text/javascript;base64,' + Buffer.from(source).toStr
     assert.equal(endgameMateCue(position(600), 'w'), null);
     assert.equal(endgameMateCue({score: {type: 'mate', value: 0}, turn: 'b'}, 'w'), null);
     assert.equal(endgameMateCue(null, 'w'), null);
+    assert(endgameMateSlower({score: {type: 'mate', value: 3}, turn: 'w'}, {score: {type: 'mate', value: -3}, turn: 'b'}, 'w'));
+    assert(!endgameMateSlower({score: {type: 'mate', value: 3}, turn: 'w'}, {score: {type: 'mate', value: -2}, turn: 'b'}, 'w'));
+    assert(endgameAssessmentCertain({assessment: {source: 'tablebase'}}), 'Exact grades do not require a Stockfish depth threshold');
     const values = new Map();
     global.localStorage = {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value)};
     const flush = () => new Promise(resolve => setImmediate(resolve));
@@ -92,5 +95,10 @@ const uri = source => 'data:text/javascript;base64,' + Buffer.from(source).toStr
     stale.record(row()); await flush();
     stale.destroy(); release({...position(500), uci: 'a1a2'}); await flush();
     assert.equal(updated, 0, 'Disposed sessions must not update a new exercise');
+    const exact = createEndgameFeedback({engine: {...engine, assess: async () => ({source: 'tablebase', grade: 'acceptable', moment: null})}, player: 'w', target: 'w', toggle: {}, panel: {}, onUpdate() {}});
+    exact.record(row()); exact.review(); await flush(); await flush();
+    assert(['best', 'acceptable'].includes(exact.rows[0].assessment.grade), 'An exact preserved win overrides an estimated blunder');
+    assert.equal(exact.rows[0].moment, null);
+    exact.destroy();
     console.log('Endgame outcome estimates, confidence, default-off analysis, retry after failure, goals and stale sessions passed');
 })().catch(error => {console.error(error); process.exitCode = 1;});

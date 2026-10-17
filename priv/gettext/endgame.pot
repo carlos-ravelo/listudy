@@ -464,3 +464,15 @@ msgstr ""
 
 msgid "Breadcrumb"
 msgstr ""
+
+msgid "The win became a draw"
+msgstr ""
+
+msgid "The winning position became lost"
+msgstr ""
+
+msgid "The draw became a loss"
+msgstr ""
+
+msgid "There was a faster mate"
+msgstr ""

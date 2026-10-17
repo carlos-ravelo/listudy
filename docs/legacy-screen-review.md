@@ -56,7 +56,7 @@ No se observó desbordamiento horizontal en esas dos resoluciones en el inventar
 |---|---|---|
 | Implementado | Visualización y colecciones | Full lines ofrece visualización con piezas ocultas, dificultad gradual y registro de ayudas, reutilizando el tablero, las posiciones y el progreso de Studies. |
 | Implementado | Blind/Pieceless | Progreso local por modalidad: intentos, errores, ayudas, soluciones mostradas y cantidad real de jugadas o piezas ocultas. Dificultad adaptativa tras tres resoluciones completas sin errores ni ayuda; destinos legales opcionales y desactivados por defecto. Los reintentos inmediatos cuentan como repaso. Pieceless conserva la opción de ocultar todas las piezas. |
-| Alta | Puzzles nativos | Actualmente se exige la continuación almacenada: no se han validado respuestas equivalentes con motor. Compartir criterios de evaluación donde sea apropiado sin aceptar automáticamente cualquier jugada que parezca ganadora. |
+| Implementado | Puzzles nativos | Alternativas legales verificadas con tablebases o análisis local suficiente; continuación regenerada y fallback a la solución guardada si el análisis no concluye. |
 | Media | Menú Practice | Blind y Pieceless son modos de Tácticas; unificar su descubrimiento y señalar la familia Tácticas sin crear otro destino de primer nivel. |
 | Media | Guías de Blind y Pieceless | Reducir cabeceras enormes, ilustraciones sin dimensiones y enlaces con botones anidados. Mantener las explicaciones extensas como ayuda secundaria. |
 | Media | Openings / Players / Motifs / Events | Los buscadores y detalles llevan al catálogo nativo, no a colecciones PGN. Decidir si se presentan como exploración de puzzles públicos o se ocultan del recorrido principal. |
