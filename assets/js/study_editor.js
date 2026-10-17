@@ -5,6 +5,7 @@ import { ground_legal_moves } from './modules/chess_utils.js';
 import { createPromotionPicker } from './modules/promotion_picker.js';
 import { setupPositionFen } from './modules/study/position_setup.js';
 import { createSparringEngine } from './modules/sparring/uci_engine.js';
+import { enginePosition } from './modules/engine_position.js';
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 
@@ -102,7 +103,7 @@ Alpine.data('chapterEditor', () => {
             this.analysisText = config.analysing;
             try {
                 engine ||= createSparringEngine();
-                const result = await engine.analyze({initialFen: position.fen(), moves: []}, {movetime: 800});
+                const result = await engine.analyze(enginePosition(chapters[this.chapter].fen, position), {movetime: 800});
                 if (id !== analysisId || !this.analysisEnabled) return;
                 const score = result.score;
                 const white = score?.value * (position.turn() === 'w' ? 1 : -1);
