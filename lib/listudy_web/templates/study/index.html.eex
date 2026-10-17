@@ -25,8 +25,8 @@
       <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, if(tactics, do: [kind: "tactics"], else: [])), class: "button study-library-create" %>
     <% end %>
   </div>
-  <%= if tactics and (@studies != [] or @favorites != []) do %>
-    <p class="study-library-help"><%= link dgettext("study", "Practice public puzzles"), to: Routes.tactic_path(@conn, :random, @locale) %></p>
+  <%= if tactics do %>
+    <%= render ListudyWeb.ComponentView, "tactics_modes.html", conn: @conn, locale: @locale %>
   <% end %>
   <%= if @studies != [] or @favorites != [] do %>
     <nav class="study-library-views" data-library-controls hidden aria-label="<%= dgettext("study", "Study lists") %>">
@@ -62,7 +62,9 @@
       <p><%= copy.empty_help %></p>
       <div class="study-library-start-actions">
         <%= link copy.import_empty, to: Routes.study_path(@conn, :new, @locale, if(tactics, do: [kind: "tactics"], else: [])), class: "button study-library-create" %>
-        <%= link copy.explore, to: if(tactics, do: Routes.tactic_path(@conn, :random, @locale), else: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale)) %>
+        <%= unless tactics do %>
+          <%= link copy.explore, to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale) %>
+        <% end %>
       </div>
     </div>
   <% else %>

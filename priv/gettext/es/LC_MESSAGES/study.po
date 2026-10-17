@@ -1528,3 +1528,6 @@ msgstr "Juega tus movimientos o configura una posición. No necesitas ningún ar
 
 msgid "Already have a file or Lichess study? Import it"
 msgstr "¿Ya tienes un archivo o un estudio de Lichess? Impórtalo"
+
+msgid "Import PGN"
+msgstr "Importar PGN"

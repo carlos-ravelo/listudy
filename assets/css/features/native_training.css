@@ -42,3 +42,50 @@
   .training-workspace .study-board-frame { width: 100%; }
   .training-workspace > .training-header, .training-workspace .sidebar { padding-inline: 12px; }
 }
+
+/* Tactics owns both collection practice and visualization discovery. */
+.tactics-modes { font-variant: normal; margin: 0 0 20px; font-size: 13px; }
+.tactics-public-link { display: inline-flex; align-items: center; min-height: 44px; }
+.tactics-visualization-links { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px; padding: 10px 14px; border-inline-start: 3px solid #377a96; background: color-mix(in srgb, #377a96 6%, var(--bg-color)); border-radius: 0 6px 6px 0; }
+.tactics-modes-label { font-size: 12px; color: var(--secondary-color); }
+.tactics-visualization-links a { display: flex; flex-direction: column; justify-content: center; min-height: 44px; color: var(--font-color); text-decoration: none; }
+.tactics-visualization-links a:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.tactics-visualization-links strong { font-size: 13px; font-weight: 600; }
+.tactics-visualization-links a span { font-size: 12px; color: var(--secondary-color); }
+.tactics-modes a:focus-visible { outline: 2px solid var(--font-color); outline-offset: 3px; }
+.training-guide, .training-tool-page { max-width: 1000px; margin: 0 auto; }
+.training-guide .training-guide-intro { max-width: 64ch; font-size: 16px; }
+.training-guide-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 340px); gap: 40px; align-items: start; margin-top: 24px; }
+.training-guide h2, .training-tool-page h2 { margin: 0 0 12px; font-size: 18px; font-weight: 600; }
+.training-guide-steps { list-style-position: outside; margin: 0; padding-inline-start: 24px; }
+.training-guide-steps li { padding-inline-start: 6px; margin-bottom: 20px; }
+.training-guide-steps li::marker { color: #377a96; font-weight: 600; }
+.training-guide-steps h3 { margin: 0 0 5px; font-size: 15px; font-weight: 600; }
+.training-guide figure { margin: 0; }
+.training-guide img { display: block; width: 100%; height: auto; border-radius: 6px; }
+.training-guide figcaption { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--secondary-color); }
+.training-tool-intro { max-width: 68ch; margin-bottom: 20px; }
+.training-tool-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; margin-top: 20px; }
+.training-tool-page :is(input[type="text"], textarea) { width: 100%; max-width: 100%; box-sizing: border-box; font-size: 14px; }
+.training-tool-page textarea { min-height: 110px; resize: vertical; }
+.training-tool-page label { margin: 12px 0 4px; font-size: 13px; }
+.training-tool-page iframe { display: block; width: 100%; max-width: 400px; border: 0; border-radius: 6px; }
+.training-tool-page code { display: block; overflow-wrap: anywhere; white-space: pre-wrap; }
+.training-tool-page .custom-tactic-preview[hidden] { display: none; }
+.training-tool-page .training-help { margin: 20px 0; }
+.training-tool-page .training-help > summary { margin-bottom: 10px; font-weight: 600; }
+@media (max-width: 650px) {
+  .training-guide, .training-tool-page { padding-inline: 12px; box-sizing: border-box; }
+  .training-guide > .training-header, .training-tool-page > .training-header { padding-inline: 0; }
+  .training-guide-layout, .training-tool-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .training-guide figure { max-width: 320px; }
+  .tactics-modes-label { flex-basis: 100%; }
+  .tactics-visualization-links { gap: 8px 20px; }
+}
+.training-guide summary, .training-tool-page summary { display: list-item; min-height: 44px; padding: 10px 0; box-sizing: border-box; }
+.training-tool-page [hidden] { display: none !important; }
+
+.training-guide .training-actions, .training-tool-page .training-actions { justify-content: flex-start; gap: 8px 16px; }
+.training-guide .training-actions .continue_button, .training-tool-page .training-actions .continue_button { width: auto; }
+.training-tool-page input:invalid { border: 1px solid color-mix(in srgb, var(--font-color) 25%, var(--bg-color)); }
+.training-tool-page input:user-invalid { border-color: var(--error-color, #b42318); }

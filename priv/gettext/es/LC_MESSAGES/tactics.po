@@ -553,3 +553,90 @@ msgstr "Comprobando alternativa…"
 
 msgid "Could not verify this alternative. Try the suggested line or retry."
 msgstr "No se pudo verificar esta alternativa. Prueba la línea sugerida o vuelve a intentarlo."
+
+msgid "Visualization"
+msgstr "Visualización"
+
+msgid "Follow moves on a frozen board"
+msgstr "Sigue las jugadas con el tablero congelado"
+
+msgid "Solve with hidden pieces"
+msgstr "Resuelve con piezas ocultas"
+
+msgid "Start training"
+msgstr "Empezar a entrenar"
+
+msgid "Difficulty and hints"
+msgstr "Dificultad y pistas"
+
+msgid "Start with a few hidden moves or pieces. Automatic difficulty adapts after clean solves. Legal destinations are hidden by default; you can enable them in settings as a hint."
+msgstr "Empieza con pocas jugadas o piezas ocultas. La dificultad automática se adapta tras resolver sin errores ni ayudas. Los destinos legales están ocultos; puedes activarlos como pista en los ajustes."
+
+msgid "Show solution reveals the final position. Retry lets you rehearse without counting it as a new clean solve."
+msgstr "Mostrar solución revela la posición final. Reintentar permite repasar sin contarlo como una nueva resolución sin ayuda."
+
+msgid "Read the moves, picture the current position, then solve while the board stays frozen."
+msgstr "Lee las jugadas, imagina la posición actual y resuelve con el tablero congelado."
+
+msgid "Read the sequence"
+msgstr "Lee la secuencia"
+
+msgid "The diagram shows an earlier position. Play the listed moves in your mind to reach the position to solve."
+msgstr "El diagrama muestra una posición anterior. Reproduce mentalmente las jugadas de la lista hasta llegar a la posición que debes resolver."
+
+msgid "Play from memory"
+msgstr "Juega de memoria"
+
+msgid "Click the square where your piece is now, then its destination. The displayed pieces stay in their original places."
+msgstr "Pulsa la casilla donde está ahora tu pieza y después su destino. Las piezas visibles permanecen en sus casillas originales."
+
+msgid "Track the reply"
+msgstr "Sigue la respuesta"
+
+msgid "Opponent replies appear in the move list. Keep updating your mental board until you solve the puzzle."
+msgstr "Las respuestas del rival aparecen en la lista de jugadas. Actualiza tu tablero mental hasta resolver el ejercicio."
+
+msgid "Frozen board and the position imagined after the listed moves"
+msgstr "Tablero congelado y posición imaginada tras las jugadas indicadas"
+
+msgid "The board stays frozen; follow the move list to track the current position."
+msgstr "El tablero permanece congelado; sigue la lista de jugadas para conocer la posición actual."
+
+msgid "Picture the hidden pieces using the piece list, then play the solution on the board."
+msgstr "Imagina las piezas ocultas usando la lista y juega la solución en el tablero."
+
+msgid "Build the position"
+msgstr "Reconstruye la posición"
+
+msgid "The piece list gives each piece and its starting square. Some or all pieces are hidden, depending on your settings."
+msgstr "La lista indica cada pieza y su casilla inicial. Según tus ajustes, se ocultan algunas piezas o todas."
+
+msgid "Select the square of a hidden piece and its destination, just as you would on a visible board."
+msgstr "Selecciona la casilla de una pieza oculta y su destino, como en un tablero visible."
+
+msgid "Use the move history to follow captures and replies. The piece list describes the starting position, not the current one."
+msgstr "Usa el historial para seguir capturas y respuestas. La lista de piezas describe la posición inicial, no la actual."
+
+msgid "Board used to play moves with hidden pieces"
+msgstr "Tablero para jugar con piezas ocultas"
+
+msgid "Legal destination hints are optional. Enable them in settings when you need help."
+msgstr "Las pistas de destinos legales son opcionales. Actívalas en los ajustes cuando necesites ayuda."
+
+msgid "For your own practice, create a tactics collection on the board or import a PGN. Use the sharing tool below to embed a single puzzle on another website."
+msgstr "Para practicar, crea una colección de tácticas en el tablero o importa un PGN. Usa la herramienta de abajo para insertar un solo ejercicio en otra web."
+
+msgid "Solution"
+msgstr "Solución"
+
+msgid "Share a single puzzle"
+msgstr "Comparte un ejercicio"
+
+msgid "Enter a position and its solution to create a playable link."
+msgstr "Introduce una posición y su solución para crear un enlace que permita resolverla."
+
+msgid "For books and personal practice, use a tactics collection instead."
+msgstr "Para libros y práctica personal, utiliza una colección de tácticas."
+
+msgid "Example puzzle"
+msgstr "Ejercicio de ejemplo"

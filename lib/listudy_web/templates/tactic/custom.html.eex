@@ -1,17 +1,23 @@
-<div class="with_sidebar">
+<div data-training-kind="tactics" class="training-workspace training-tool-page">
+<%= render ListudyWeb.ComponentView, "training_header.html", conn: @conn, locale: @locale, title: dgettext("tactics", "Custom Tactic") %>
+<div class="training-tool-intro">
+  <p><%= dgettext("tactics", "For your own practice, create a tactics collection on the board or import a PGN. Use the sharing tool below to embed a single puzzle on another website.") %></p>
+  <div class="training-actions">
+    <%= link dgettext("study", "Start on the board"), to: Routes.study_path(@conn, :new, @locale, source: "blank", kind: "tactics"), class: "button continue_button" %>
+    <%= link dgettext("study", "Import PGN"), to: Routes.study_path(@conn, :new, @locale, kind: "tactics") %>
+  </div>
+</div>
+<div class="with_sidebar custom-tactic-preview">
   <div id="game_container" class="sidebar_main">
-    <%= render ListudyWeb.ComponentView, "chessground.html" %>
+    <div class="study-board-frame"><%= render ListudyWeb.ComponentView, "chessground.html" %></div>
   </div>
   <div class="sidebar">
-    <h1><%= dgettext "tactics", "Custom Tactic"%></h1>
 
     <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
 
-    <a href="<%= Routes.tactic_path(@conn, :random, @locale) %>">
-      <button id="next" class="hidden continue_button"><%= dgettext "tactics", "More Tactics" %></button>
-    </a>
+    <%= link dgettext("tactics", "Practice your tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale), id: "next", class: "hidden button continue_button" %>
     <details class="hidden" id="solution">
-        <summary>Solution</summary>
+        <summary><%= dgettext("tactics", "Solution") %></summary>
         <span id="solution_moves"></span>
     </details>
   </div>
@@ -54,6 +60,8 @@ let last_move = clean_input(t[2]) || "";
 document.getElementById("fen").value = fen;
 document.getElementById("color").value = color;
 document.getElementById("moves").value = moves;
+document.getElementById("last_move").value = last_move;
+document.querySelector(".custom-tactic-preview").hidden = !fen;
 document.getElementById("solution_moves").innerText = moves;
 
 <%= render ListudyWeb.TacticView, "translations.html" %>
@@ -73,45 +81,43 @@ function create_tactic() {
   location.reload();
 }
 document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('create_button')
-          .addEventListener('click', create_tactic);
+  document.getElementById('custom_tactic_form').addEventListener('submit', event => { event.preventDefault(); create_tactic(); });
+  document.getElementById('fen_input').value = fen;
+  document.getElementById('moves_input').value = moves;
+  document.getElementById('last_move_input').value = last_move;
   let iframe_path = "<%= Routes.iframe_path(@conn, :custom_tactic, @locale) %>";
   let iframe_url = `${document.location.origin}${iframe_path}${document.location.hash}`;
-  let iframe_code = `<iframe width="400" height="480" frameborder="0" src="${iframe_url}"></iframe>`;
-  document.getElementById("iframe_code").value = iframe_code;
+  let iframe_code = `<iframe title="Chess puzzle" width="400" height="480" style="max-width:100%;border:0" src="${iframe_url}"></iframe>`;
+  document.getElementById("iframe_code").value = fen ? iframe_code : "";
+  document.querySelector("#custom_embed_tools .training-help").hidden = !fen;
 });
 
 </script>
-<hr>
-<div class="row">
-  <div class="one-half column">
-    <h2 id="own"><%= dgettext "tactics", "Make your own Tactic" %></h2>
+<section class="training-tool-grid">
+  <form id="custom_tactic_form">
+    <h2 id="own"><%= dgettext("tactics", "Share a single puzzle") %></h2>
+    <p><%= dgettext("tactics", "Enter a position and its solution to create a playable link.") %></p>
 
-    <label for="fen"><%= dgettext "tactics", "FEN" %>:</label>
+    <label for="fen_input"><%= dgettext "tactics", "FEN" %>:</label>
     <input type="text" id="fen_input" name="fen" required placeholder="r3k3/pppb4/6N1/3Pp3/N3n2b/8/PP1P2PP/R1B2K1R b q - 0 17">
 
-    <label for="moves"><%= dgettext "tactics", "Moves" %>:</label>
+    <label for="moves_input"><%= dgettext "tactics", "Moves" %>:</label>
     <input type="text" id="moves_input" name="moves" required placeholder="Bb5+ d3 Bxd3+ Kg1 Bf2#">
 
-    <label for="last_move"><%= dgettext "tactics", "Last Move" %>:</label>
-    <input type="text" id="last_move_input" name="last_move" required placeholder="h8g6">
+    <label for="last_move_input"><%= dgettext "tactics", "Last Move" %>:</label>
+    <input type="text" id="last_move_input" name="last_move" placeholder="h8g6">
 
-    <br>
-    <button id="create_button"><%= dgettext "tactics", "Create" %></button>
-  </div>
-  <div class="one-half column">
+    <button type="submit" id="create_button"><%= dgettext "tactics", "Create" %></button>
+  </form>
+  <section id="custom_embed_tools">
     <h2><%= dgettext "tactics", "Embed this Tactic" %></h2>
     <p><%= dgettext "tactics", "Use this tactic on your website. Creates an iframe that you can use on you website to share this tactic." %></p>
     <p><%= link (dgettext "tactics", "Learn more"), to: Routes.webmaster_path(@conn, :show, @locale, "custom-tactics") %></p>
-    <button class="secondary modal_open" id="embed"><%= dgettext "tactics", "Embed" %></button>
-  </div>
-</div>
-
-<div id="embed_modal" class="modal">
-  <div class="modal-content">
-    <span class="modal_close">&times;</span>
-    <h3><%= dgettext("tactics", "Embed")%></h3>
+    <details class="training-help">
+      <summary><%= dgettext("tactics", "Embed") %></summary>
     <label for="iframe_code"><%= dgettext("tactics", "iframe code") %></label>
-    <input type="text" name="iframe_code" id="iframe_code" class="big_input">
-  </div>
+    <textarea name="iframe_code" id="iframe_code" readonly spellcheck="false"></textarea>
+    </details>
+  </section>
+</section>
 </div>

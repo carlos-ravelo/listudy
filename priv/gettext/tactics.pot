@@ -567,3 +567,90 @@ msgstr ""
 
 msgid "Could not verify this alternative. Try the suggested line or retry."
 msgstr ""
+
+msgid "Visualization"
+msgstr ""
+
+msgid "Follow moves on a frozen board"
+msgstr ""
+
+msgid "Solve with hidden pieces"
+msgstr ""
+
+msgid "Start training"
+msgstr ""
+
+msgid "Difficulty and hints"
+msgstr ""
+
+msgid "Start with a few hidden moves or pieces. Automatic difficulty adapts after clean solves. Legal destinations are hidden by default; you can enable them in settings as a hint."
+msgstr ""
+
+msgid "Show solution reveals the final position. Retry lets you rehearse without counting it as a new clean solve."
+msgstr ""
+
+msgid "Read the moves, picture the current position, then solve while the board stays frozen."
+msgstr ""
+
+msgid "Read the sequence"
+msgstr ""
+
+msgid "The diagram shows an earlier position. Play the listed moves in your mind to reach the position to solve."
+msgstr ""
+
+msgid "Play from memory"
+msgstr ""
+
+msgid "Click the square where your piece is now, then its destination. The displayed pieces stay in their original places."
+msgstr ""
+
+msgid "Track the reply"
+msgstr ""
+
+msgid "Opponent replies appear in the move list. Keep updating your mental board until you solve the puzzle."
+msgstr ""
+
+msgid "Frozen board and the position imagined after the listed moves"
+msgstr ""
+
+msgid "The board stays frozen; follow the move list to track the current position."
+msgstr ""
+
+msgid "Picture the hidden pieces using the piece list, then play the solution on the board."
+msgstr ""
+
+msgid "Build the position"
+msgstr ""
+
+msgid "The piece list gives each piece and its starting square. Some or all pieces are hidden, depending on your settings."
+msgstr ""
+
+msgid "Select the square of a hidden piece and its destination, just as you would on a visible board."
+msgstr ""
+
+msgid "Use the move history to follow captures and replies. The piece list describes the starting position, not the current one."
+msgstr ""
+
+msgid "Board used to play moves with hidden pieces"
+msgstr ""
+
+msgid "Legal destination hints are optional. Enable them in settings when you need help."
+msgstr ""
+
+msgid "For your own practice, create a tactics collection on the board or import a PGN. Use the sharing tool below to embed a single puzzle on another website."
+msgstr ""
+
+msgid "Solution"
+msgstr ""
+
+msgid "Share a single puzzle"
+msgstr ""
+
+msgid "Enter a position and its solution to create a playable link."
+msgstr ""
+
+msgid "For books and personal practice, use a tactics collection instead."
+msgstr ""
+
+msgid "Example puzzle"
+msgstr ""

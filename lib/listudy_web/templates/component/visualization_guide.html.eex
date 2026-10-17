@@ -1,0 +1,27 @@
+<div data-training-kind="tactics" class="training-workspace training-guide">
+  <%= render "training_header.html", conn: @conn, locale: @locale, title: @title %>
+  <p class="training-guide-intro"><%= @intro %></p>
+  <div class="training-actions">
+    <%= link dgettext("tactics", "Start training"), to: @play, class: "button continue_button" %>
+    <%= link dgettext("tactics", "Practice your tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale) %>
+  </div>
+  <div class="training-guide-layout">
+    <section aria-labelledby="help">
+      <h2 id="help"><%= dgettext("tactics", "How it works") %></h2>
+      <ol class="training-guide-steps">
+        <%= for {heading, text} <- @steps do %>
+          <li><h3><%= heading %></h3><p><%= text %></p></li>
+        <% end %>
+      </ol>
+      <details class="training-help">
+        <summary><%= dgettext("tactics", "Difficulty and hints") %></summary>
+        <p><%= dgettext("tactics", "Start with a few hidden moves or pieces. Automatic difficulty adapts after clean solves. Legal destinations are hidden by default; you can enable them in settings as a hint.") %></p>
+        <p><%= dgettext("tactics", "Show solution reveals the final position. Retry lets you rehearse without counting it as a new clean solve.") %></p>
+      </details>
+    </section>
+    <figure>
+      <img src="<%= Routes.static_path(@conn, @image) %>" alt="<%= @image_alt %>" width="552" height="552">
+      <figcaption><%= @caption %></figcaption>
+    </figure>
+  </div>
+</div>
