@@ -12,19 +12,31 @@ export function sparringStrength(value) {
     return Number.isInteger(number) && number >= 1 && number <= 8 ? number : 2;
 }
 
+export function engineHashMb(memory) {
+    if (typeof memory !== 'number' || !Number.isFinite(memory) || memory <= 0) return 16;
+    return memory <= 1 ? 4 : memory <= 2 ? 8 : 16;
+}
+
+function deviceMemoryHint() {
+    try { return typeof navigator === 'undefined' ? undefined : navigator.deviceMemory; }
+    catch (_) { return undefined; }
+}
+
 function createUciEngine({ createWorker = createStockfishWorker,
-    timeoutMs = 20000, movetime = 700 } = {}) {
+    timeoutMs = 20000, movetime = 700, deviceMemory = deviceMemoryHint() } = {}) {
     let worker;
     let pending;
     let ready;
     let disposed = false;
     let eloRange = null;
+    let hashRange = null;
     function fail(reason) {
         if (pending) { clearTimeout(pending.timer); pending.reject(reason); pending = null; }
         if (worker) worker.terminate();
         worker = null;
         ready = null;
         eloRange = null;
+        hashRange = null;
     }
     function waitFor(kind, send) {
         return new Promise((resolve, reject) => {
@@ -38,6 +50,13 @@ function createUciEngine({ createWorker = createStockfishWorker,
         worker.onmessage = event => {
             if (worker !== current) return;
             const line = String(event.data).trim();
+            if (line.startsWith('option name Hash type spin')) {
+                const range = line.match(/default (\d+) min (\d+) max (\d+)/);
+                if (range) {
+                    const [initial, min, max] = range.slice(1).map(Number);
+                    if (min > 0 && min <= initial && initial <= max && Number.isSafeInteger(max)) hashRange = {initial, min, max};
+                }
+            }
             if (line.startsWith('option name UCI_Elo type spin')) {
                 const range = line.match(/min (\d+) max (\d+)/);
                 if (range) eloRange = { min: Number(range[1]), max: Number(range[2]) };
@@ -56,6 +75,10 @@ function createUciEngine({ createWorker = createStockfishWorker,
         };
         await waitFor('uciok', () => worker.postMessage('uci'));
         if (worker !== current) throw new Error('Engine cancelled');
+        if (hashRange) {
+            const size = Math.max(hashRange.min, Math.min(hashRange.initial, hashRange.max, engineHashMb(deviceMemory)));
+            if (size !== hashRange.initial) worker.postMessage(`setoption name Hash value ${size}`);
+        }
         // This private, single-thread build already starts with a fresh game.
         await waitFor('readyok', () => worker.postMessage('isready'));
     }
