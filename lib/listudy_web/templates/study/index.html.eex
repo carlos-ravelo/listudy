@@ -1,5 +1,6 @@
 <% tactics = Map.get(assigns, :tactics, false) %>
 <% copy = library_copy(tactics) %>
+<% collections = @conn.params["source"] == "collections" %>
 <div class="study-library" data-study-library data-library-state="<%= Jason.encode!(@library_data) %>"
      data-library-endpoint="/api/study-library"
      data-library-labels="<%= Jason.encode!(%{
@@ -20,23 +21,37 @@
        emptySearch: copy.empty_search
      }) %>">
   <div class="study-library-heading">
-    <h1><%= copy.title %></h1>
-    <%= if @studies != [] or @favorites != [] do %>
+    <h1><%= if tactics, do: gettext("Tactics"), else: copy.title %></h1>
+    <%= if !tactics and (@studies != [] or @favorites != []) do %>
       <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, if(tactics, do: [kind: "tactics"], else: [])), class: "button study-library-create" %>
     <% end %>
   </div>
   <%= if tactics do %>
-    <section class="puzzle-launcher" aria-labelledby="puzzle-launcher-title">
+    <nav class="tactics-sources" aria-label="<%= gettext("Puzzle source") %>">
+      <%= link gettext("Included puzzles"), to: Routes.tactics_library_path(@conn, :tactics, @locale),
+            aria_current: if(!collections, do: "page", else: "false") %>
+      <%= link gettext("Your collections"), to: Routes.tactics_library_path(@conn, :tactics, @locale, source: "collections"),
+            aria_current: if(collections, do: "page", else: "false") %>
+    </nav>
+    <section class="puzzle-launcher tactics-source-panel" aria-labelledby="puzzle-launcher-title" <%= if collections, do: "hidden" %>>
       <div class="puzzle-launcher-heading">
-        <h2 id="puzzle-launcher-title"><%= gettext("Practice puzzles") %></h2>
-        <p><%= gettext("Choose a theme and difficulty, then solve on the board.") %></p>
+        <h2 id="puzzle-launcher-title"><%= gettext("Included puzzles") %></h2>
+        <p><%= gettext("Lichess puzzles, ready to play. Choose your theme and rating.") %></p>
       </div>
       <%= render ListudyWeb.ComponentView, "puzzle_filters.html", conn: @conn, locale: @locale,
             id: "library-puzzles", filters: @puzzle_filters, themes: @puzzle_themes,
             count: @puzzle_count, live: false, error: nil %>
     </section>
-    <%= render ListudyWeb.ComponentView, "tactics_modes.html", conn: @conn, locale: @locale %>
-    <h2 class="tactics-collections-heading"><%= gettext("Your collections") %></h2>
+    <section class="tactics-source-panel tactics-collections" aria-labelledby="tactics-collections-title" <%= unless collections, do: "hidden" %>>
+      <header class="tactics-collections-header">
+        <div>
+          <h2 id="tactics-collections-title"><%= gettext("Your collections") %></h2>
+          <p><%= gettext("Puzzles you create, import or save.") %></p>
+        </div>
+        <%= if @studies != [] or @favorites != [] do %>
+          <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, kind: "tactics"), class: "button study-library-create" %>
+        <% end %>
+      </header>
   <% end %>
   <%= if @studies != [] or @favorites != [] do %>
     <nav class="study-library-views" data-library-controls hidden aria-label="<%= dgettext("study", "Study lists") %>">
@@ -92,6 +107,10 @@
     <p data-library-empty-message></p>
     <button type="button" data-library-show-all><%= copy.show_all %></button>
   </div>
+  <%= if tactics do %>
+    </section>
+    <%= render ListudyWeb.ComponentView, "tactics_modes.html", conn: @conn, locale: @locale %>
+  <% end %>
   <dialog class="study-library-dialog" data-library-groups-dialog aria-labelledby="library_groups_title">
     <header><h2 id="library_groups_title"><%= dgettext("study", "Study groups") %></h2><form method="dialog"><button><%= dgettext("study", "Close") %></button></form></header>
     <p><%= copy.groups_help %></p>

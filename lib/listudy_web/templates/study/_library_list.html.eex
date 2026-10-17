@@ -6,6 +6,9 @@
         <span class="study-library-title"><%= study.title %></span>
         <span class="study-library-description"><%= study.description %></span>
         <span class="study-library-group-label" data-library-row-group hidden></span>
+        <%= if study.training_kind == "tactics" do %>
+          <span class="tactics-collection-practice"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M5 3l8 5-8 5z"/></svg><%= gettext("Practice") %></span>
+        <% end %>
       </a>
       <%= if Map.get(assigns, :show_color, true) and study.color in ["white", "black"] do %>
         <span class="study-library-color" title="<%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %>">

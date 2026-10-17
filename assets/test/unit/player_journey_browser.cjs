@@ -31,7 +31,8 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         }
         if (pages[url.pathname]) {
             response.setHeader('Content-Type', 'text/html; charset=utf-8');
-            response.end(read(pages[url.pathname])); return;
+            response.end(read(url.pathname === '/en/tactics' && url.searchParams.get('source') === 'collections'
+                ? path.join(tacticsPreviews, 'library-collections.html') : pages[url.pathname])); return;
         }
         const file = path.resolve(root, 'priv/static', '.' + url.pathname);
         if (!file.startsWith(root + '/priv/static/') || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
@@ -186,8 +187,18 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         await page.setViewportSize({width: 1366, height: 768});
         await page.goto(base + '/en/tactics');
         await page.waitForSelector('[data-study-library][data-initialized]');
-        assert.equal(await page.locator('main h1').textContent(), 'Your tactics');
+        assert.equal(await page.locator('main h1').textContent(), 'Tactics');
+        await page.locator('.tactics-sources a').nth(1).click();
+        await page.waitForSelector('.tactics-collections:visible');
         assert.equal(await page.locator('.site-menu[data-nav-section="practice"] a[href="/en/tactics"]').count(), 0);
+        for (const width of [320, 1366]) {
+            await page.setViewportSize({width, height: 900});
+            for (const theme of ['light', 'dark']) {
+                await page.evaluate(theme => document.documentElement.setAttribute('data-theme', theme), theme);
+                await page.screenshot({path: `/tmp/listudy-collections-actions-${width}-${theme}.png`, fullPage: true});
+            }
+        }
+        await page.setViewportSize({width: 1366, height: 768});
         const collectionLink = page.locator('.study-library-content').filter({hasText: 'Book exercises'});
         assert.equal(await collectionLink.getAttribute('href'), tacticsRoute);
         await page.locator('.study-library-create').click();

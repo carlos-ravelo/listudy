@@ -10,7 +10,7 @@ const fixtures = process.env.LISTUDY_DISCOVERY_PREVIEW || '/tmp/listudy-discover
     const server = http.createServer((request, response) => {
         const url = new URL(request.url, 'http://localhost');
         const native = {'/en/blind-tactics': 'blind', '/en/pieceless-tactics': 'pieceless-mate'}[url.pathname];
-        const file = native ? `/tmp/listudy-native-preview/${native}.html` : pages[url.pathname] ? path.join(fixtures, pages[url.pathname] + '.html') : path.resolve(root, 'priv/static', '.' + url.pathname);
+        const file = native ? `/tmp/listudy-native-preview/${native}.html` : pages[url.pathname] ? path.join(fixtures, (url.pathname === '/en/tactics' && url.searchParams.get('source') === 'collections' ? 'library-collections' : pages[url.pathname]) + '.html') : path.resolve(root, 'priv/static', '.' + url.pathname);
         if ((!native && !pages[url.pathname] && !file.startsWith(root + '/priv/static/')) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {response.statusCode = 404; response.end(); return;}
         response.setHeader('Content-Type', file.endsWith('.html') ? 'text/html; charset=utf-8' : file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream');
         response.end(fs.readFileSync(file));
@@ -26,6 +26,15 @@ const fixtures = process.env.LISTUDY_DISCOVERY_PREVIEW || '/tmp/listudy-discover
         await page.goto(base + '/en/tactics');
         assert.equal(await page.locator('[data-nav-section=practice]').count(), 0);
         assert.equal(await page.locator('.tactics-modes').evaluate(el => getComputedStyle(el).fontVariant), 'normal', 'Mode links retain readable text rather than inherited small caps');
+        assert(await page.locator('.puzzle-launcher').isVisible());
+        assert(await page.locator('.tactics-collections').isHidden());
+        await page.locator('.tactics-sources a').nth(1).focus();
+        await Promise.all([page.waitForNavigation(), page.keyboard.press('Enter')]);
+        assert(new URL(page.url()).searchParams.get('source') === 'collections');
+        assert(await page.locator('.tactics-collections').isVisible());
+        assert(await page.locator('.puzzle-launcher').isHidden());
+        await page.goBack();
+        assert(await page.locator('.puzzle-launcher').isVisible());
         for (const mode of ['blind-tactics', 'pieceless-tactics']) {
             await page.locator(`.tactics-modes a[href='/en/${mode}']`).click();
             await page.waitForFunction(() => window.ground && window.chess);
@@ -66,6 +75,21 @@ const fixtures = process.env.LISTUDY_DISCOVERY_PREVIEW || '/tmp/listudy-discover
                 for (const theme of ['light', 'dark']) {
                     await page.evaluate(theme => document.documentElement.setAttribute('data-theme', theme), theme);
                     await page.screenshot({path: `/tmp/listudy-discovery-${name}-${width}-${theme}.png`, fullPage: true});
+                }
+            }
+        }
+        for (const width of [320, 768, 1366]) {
+            await page.setViewportSize({width, height: 900});
+            for (const source of ['', '?source=collections']) {
+                await page.goto(base + '/en/tactics' + source);
+                assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+                const panels = page.locator('.tactics-source-panel:visible');
+                assert.equal(await panels.count(), 1);
+                const panel = await panels.boundingBox(), modes = await page.locator('.tactics-modes').boundingBox();
+                assert(modes.y >= panel.y + panel.height, 'Visualization follows the selected source');
+                for (const theme of ['light', 'dark']) {
+                    await page.evaluate(theme => document.documentElement.setAttribute('data-theme', theme), theme);
+                    await page.screenshot({path: `/tmp/listudy-tactics-hierarchy-${source ? 'collections' : 'included'}-${width}-${theme}.png`, fullPage: true});
                 }
             }
         }

@@ -17,7 +17,20 @@ defmodule ListudyWeb.TacticsDiscoveryTest do
     assert [_] = Floki.find(html, "form#library-puzzles[action='/en/tactics/puzzles/start']")
     assert [] = Floki.find(html, "[data-nav-section=practice]")
     assert [_] = Floki.find(html, "a[data-nav-section=tactics]")
+    assert [_] = Floki.find(html, ".tactics-sources a[aria-current=page][href='/en/tactics']")
+    assert [_] = Floki.find(html, ".tactics-collections[hidden]")
     preview("library", html)
+    collections = build_conn() |> get("/en/tactics?source=collections") |> html_response(200)
+
+    assert [_] =
+             Floki.find(
+               collections,
+               ".tactics-sources a[aria-current=page][href='/en/tactics?source=collections']"
+             )
+
+    assert [_] = Floki.find(collections, ".puzzle-launcher[hidden]")
+    assert [] = Floki.find(collections, ".tactics-collections[hidden]")
+    preview("library-collections", collections)
   end
 
   test "visualization guides share compact help and accessible training actions", %{conn: conn} do
