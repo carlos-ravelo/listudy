@@ -19,7 +19,7 @@ const references = ['Queen’s Gambit Declined', 'Slav Defense', 'Semi-Slav', 'C
 const extra = references.map((name, i) => rows[2].replace(/data-study-id="\d+"/, `data-study-id="${2000+i}"`)
     .replace(/Repertoire \d+/g, name).replace(/Keep this source/g, 'Reference lines and annotated ideas'));
 html = html.replace(/<ul class="study-library-list">[\s\S]*?<\/ul>/, `<ul class="study-library-list">${first.join('')}${extra.join('')}</ul>`);
-html = html.replace('</head>', `<style>${fs.readFileSync(path.join(root, 'assets/css/features/study_library.css'), 'utf8')}</style></head>`)
+html = html.replace('</head>', `<style>${fs.readFileSync(path.join(root, 'assets/css/features/study_library.css'), 'utf8')}${fs.readFileSync(path.join(root, 'assets/css/features/practice_theme.css'), 'utf8')}</style></head>`)
     .replace('</body>', '<script type="module" src="/assets/js/components/site_navigation.js"></script><script type="module" src="/assets/js/components/study_library.js"></script></body>');
 let state = { version: 1, groups: { white: 'White repertoire', black: 'Black repertoire', endgames: 'Endgames' }, studies: {} };
 ids.forEach((id, i) => state.studies[id] = { location: 'daily', group: ['white', 'black', 'endgames'][i] });

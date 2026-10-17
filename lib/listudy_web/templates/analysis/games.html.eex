@@ -1,9 +1,9 @@
-<div class="analysis-games-page analysis-workspace">
+<div class="analysis-games-page analysis-workspace practice-page">
   <%= link "← Analysis overview", to: Routes.analysis_path(@conn, :index) %>
   <h1>Imported games</h1>
   <p class="analysis-games-intro">Your games, compared with your repertoire at the last sync.</p>
 
-  <%= form_for @conn, Routes.analysis_path(@conn, :games), [method: :get, class: "analysis-games-filters"], fn _f -> %>
+  <%= form_for @conn, Routes.analysis_path(@conn, :games), [method: :get, class: "analysis-games-filters practice-panel"], fn _f -> %>
     <label>Period
       <select name="period" aria-label="Period">
         <option value="all" <%= if @library.period == "all", do: "selected" %>>All dates</option>
@@ -39,7 +39,7 @@
         </label>
       </div>
     </details>
-    <button type="submit">Filter games</button>
+    <button type="submit" class="practice-primary">Filter games</button>
   <% end %>
   <div class="analysis-games-active-filters">
     <%= if @library.platform do %>
@@ -55,14 +55,14 @@
   </div>
 
   <%= if @library.total == 0 do %>
-    <div class="analysis-games-empty">
+    <div class="analysis-games-empty practice-panel">
       <%= if @library.has_games do %>
         <h2>No games match these filters</h2>
-        <%= link "Reset filters", to: Routes.analysis_path(@conn, :games), class: "button" %>
+        <%= link "Reset filters", to: Routes.analysis_path(@conn, :games), class: "button practice-primary" %>
       <% else %>
         <h2>No imported games yet</h2>
         <p>Connect an account or sync games to start comparing them with your repertoire.</p>
-        <%= link "Connect or sync games", to: Routes.analysis_path(@conn, :index), class: "button" %>
+        <%= link "Connect or sync games", to: Routes.analysis_path(@conn, :index), class: "button practice-primary" %>
       <% end %>
     </div>
   <% else %>
@@ -108,7 +108,7 @@
                   <span class="analysis-game-warning">Some studies unavailable</span>
                 <% end %>
               </span>
-              <span class="analysis-game-open">View comparison →</span>
+              <span class="analysis-game-open practice-secondary">View comparison</span>
             </a>
           </li>
         <% end %>

@@ -1,7 +1,7 @@
 <% tactics = Map.get(assigns, :tactics, false) %>
 <% copy = library_copy(tactics) %>
 <% collections = @conn.params["source"] == "collections" %>
-<div class="study-library" data-study-library data-library-state="<%= Jason.encode!(@library_data) %>"
+<div class="study-library<%= unless tactics, do: " repertoire-library practice-page" %>" data-study-library data-library-state="<%= Jason.encode!(@library_data) %>"
      data-library-endpoint="/api/study-library"
      data-library-labels="<%= Jason.encode!(%{
        daily: dgettext("study", "Daily"), library: dgettext("study", "Library"), all: copy.all,

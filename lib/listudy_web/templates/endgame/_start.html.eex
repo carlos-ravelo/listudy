@@ -1,2 +1,2 @@
-<%= link dgettext("endgame", "Start practicing"), to: hd(@games).url, class: "button endgame-start",
+<%= link dgettext("endgame", "Start practicing"), to: hd(@games).url, class: "button endgame-start practice-primary",
       data: [endgame_start: true, endgame_games: Jason.encode!(@games), continue_label: dgettext("endgame", "Continue practicing")] %>

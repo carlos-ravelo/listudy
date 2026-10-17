@@ -56,7 +56,7 @@ let testRun = 0;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         const raw = url.pathname === '/analysis' ? overview : url.pathname === '/analysis/games' ? (url.search ? filteredGames : games)
             : url.pathname === '/train' ? (multiple ? multiplePositionTrain() : train) : directedStudy ? twoChapterStudy : study;
-        const body = raw.replace('</head>', '<style>' + fs.readFileSync(path.join(root, 'assets/css/features/analysis_presentation.css'), 'utf8') + '</style></head>');
+        const body = raw.replace('</head>', '<style>' + fs.readFileSync(path.join(root, 'assets/css/features/analysis_presentation.css'), 'utf8') + fs.readFileSync(path.join(root, 'assets/css/features/practice_theme.css'), 'utf8') + '</style></head>');
         res.end(stale && url.pathname === '/train' ? body.replace(/&quot;expected&quot;:&quot;Nf3&quot;/g, '&quot;expected&quot;:&quot;d4&quot;') : body);
         return;
     }

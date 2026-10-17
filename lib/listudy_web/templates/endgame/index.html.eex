@@ -1,4 +1,4 @@
-<div class="endgame-library">
+<div class="endgame-library practice-page">
   <% games = practice_games(@conn, @locale, @endgame) %>
   <header class="endgame-library-heading">
     <div>

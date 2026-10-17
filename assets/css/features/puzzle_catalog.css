@@ -44,26 +44,6 @@
 [data-theme="dark"] .study-library .puzzle-launcher .puzzle-filters { border-inline-start-color: #8ec9f2; background: color-mix(in srgb, #8ec9f2 4%, var(--bg-color)); }
 .tactics-collections-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
 .tactics-collections-header p { margin: 0; color: var(--secondary-color); font-size: 13px; line-height: 1.5; }
-.tactics-collections { --tactics-action: #206a9d; }
-[data-theme="dark"] .tactics-collections { --tactics-action: #8ec9f2; }
-.tactics-collections .study-library-views { gap: 8px; padding: 4px; border: 1px solid var(--library-divider); border-radius: 6px; background: color-mix(in srgb, var(--bg-highlight-color) 55%, var(--bg-color)); }
-.tactics-collections .study-library-views button { margin: 0; padding-inline: 14px; border: 1px solid transparent; border-radius: 4px; }
-.tactics-collections .study-library-views button[aria-pressed="true"] { border-color: var(--library-divider); background: var(--bg-color); color: var(--tactics-action); }
-.tactics-collections .study-library-toolbar { padding: 12px; border: 1px solid var(--library-divider); border-radius: 6px; background: color-mix(in srgb, var(--bg-highlight-color) 35%, var(--bg-color)); }
-.tactics-collections .study-library-list { display: grid; gap: 10px; }
-.tactics-collections .study-library-row { gap: 12px; padding: 10px 12px 10px 16px; border: 1px solid var(--library-divider); border-radius: 6px; background: color-mix(in srgb, var(--tactics-action) 4%, var(--bg-color)); }
-.tactics-collections .study-library-row:is(:hover, :focus-within) { border-color: var(--tactics-action); background: color-mix(in srgb, var(--tactics-action) 8%, var(--bg-color)); }
-.tactics-collections .study-library-content { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 20px; align-items: center; min-height: 56px; }
-.tactics-collections :is(.study-library-title, .study-library-description, .study-library-group-label) { grid-column: 1; }
-.tactics-collections .study-library-title { color: var(--tactics-action); font-size: 16px; font-weight: 600; }
-.tactics-collections .study-library-description { opacity: 1; color: var(--secondary-color); }
-.tactics-collection-practice { display: inline-flex; grid-column: 2; grid-row: 1 / span 3; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding-inline: 12px; border: 1px solid var(--tactics-action); border-radius: 5px; color: var(--tactics-action); font-size: 13px; font-weight: 600; }
-.tactics-collections .study-library-content:is(:hover, :focus-visible) .tactics-collection-practice { background: var(--tactics-action); color: var(--bg-color); }
-.tactics-collections .study-library-menu > summary { border: 1px solid var(--library-divider); box-sizing: border-box; background: var(--bg-color); }
-.tactics-collections .study-library-empty { padding: 24px; border: 1px solid var(--library-divider); border-inline-start: 3px solid var(--tactics-action); border-radius: 6px; background: color-mix(in srgb, var(--tactics-action) 4%, var(--bg-color)); }
-.tactics-collections .study-library-empty p { max-width: 60ch; margin: 0 0 20px; }
-.tactics-collections .study-library-create { background: #206a9d; border-color: #206a9d; color: #fff; min-height: 44px; }
-.tactics-collections .study-library-create:hover { background: #18527a; border-color: #18527a; }
 .study-library .tactics-modes { margin: 32px 0 0; padding-top: 24px; border-top: 1px solid var(--library-divider); }
 .tactics-modes h2 { margin: 0 0 16px; font-size: 16px; line-height: 1.4; font-weight: 600; text-wrap: balance; }
 .tactics-modes .tactics-visualization-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px; padding: 0; border: 0; border-radius: 0; background: transparent; }
@@ -115,11 +95,5 @@
   .tactics-sources a { padding-inline: 8px; font-size: 14px; }
   .tactics-modes .tactics-visualization-links { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .tactics-collections-header { align-items: flex-start; flex-direction: column; }
-  .tactics-collections .study-library-row { padding: 10px 12px; }
-  .tactics-collections .study-library-content { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-  .tactics-collection-practice { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 4px; }
-  .tactics-collections .study-library-empty { padding: 20px; }
-  .tactics-collections .study-library-views { gap: 4px; }
-  .tactics-collections .study-library-views button { padding-inline: 8px; }
 }
 

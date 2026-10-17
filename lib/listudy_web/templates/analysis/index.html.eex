@@ -1,7 +1,7 @@
-<div class="whole analysis-workspace analysis-overview-page" data-progress-user="<%= @current_user.id %>">
+<div class="whole analysis-workspace analysis-overview-page practice-page" data-progress-user="<%= @current_user.id %>">
   <div class="analysis-page-heading">
     <h1>Analyze Games</h1>
-    <button type="button" class="analysis-pgn-launch" data-open-pgn>Analyze a PGN</button>
+    <button type="button" class="analysis-pgn-launch practice-primary" data-open-pgn>Analyze a PGN</button>
   </div>
 
   <%
@@ -18,7 +18,7 @@
     <div class="analysis-account-grid">
       <%= for account <- accounts do %>
         <% sync = @syncs[account.key] %>
-        <article class="analysis-account-card" data-sync-platform="<%= account.key %>" data-sync-state="<%= if sync, do: sync.status, else: "idle" %>"
+        <article class="analysis-account-card practice-panel" data-sync-platform="<%= account.key %>" data-sync-state="<%= if sync, do: sync.status, else: "idle" %>"
           data-new-games-url="<%= if account.username, do: Routes.analysis_path(@conn, :new_games, account.key) %>">
           <div class="analysis-account-heading">
             <h3><%= account.name %></h3>
@@ -63,11 +63,11 @@
           <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [class: "analysis-account-actions"], fn f -> %>
             <%= hidden_input f, :platform, value: account.key %>
             <%= if account.username do %>
-              <%= submit "Sync games", class: "button button-outline", disabled: sync && sync.status == "running" %>
+              <%= submit "Sync games", class: "button button-outline practice-secondary", disabled: sync && sync.status == "running" %>
 
             <% else %>
               <%= text_input f, :username, placeholder: "#{account.name} username", required: true, "aria-label": "#{account.name} username" %>
-              <%= submit "Connect", class: "button button-primary" %>
+              <%= submit "Connect", class: "button button-primary practice-primary" %>
             <% end %>
           <% end %>
         </article>
@@ -75,12 +75,12 @@
     </div>
   </section>
 
-  <section class="analysis-library" aria-label="Imported games">
+  <section class="analysis-library practice-panel" aria-label="Imported games">
     <div>
       <h2>Game library</h2>
       <p><strong><%= @lichess_count + @chesscom_count %></strong> imported games</p>
     </div>
-    <%= link "Browse games →", to: Routes.analysis_path(@conn, :games), class: "analysis-library-link" %>
+    <%= link "Browse games", to: Routes.analysis_path(@conn, :games), class: "analysis-library-link practice-secondary" %>
   </section>
 
 
@@ -127,15 +127,17 @@
             </span>
             <span class="analysis-repertoire-action">
               <%= if stat.positions != [] do %>
-                <%= link "Train", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), aria: [label: "Train: " <> stat.study.title] %>
+                <%= link "Train", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), class: "practice-secondary", aria: [label: "Train: " <> stat.study.title] %>
               <% end %>
             </span>
           </li>
         <% end %>
       </ul>
       <%= if @studies_stats == [] do %>
-        <p><%= dgettext("study", "Import a repertoire to compare your games and practice where you left your preparation.") %></p>
-        <%= link dgettext("study", "Import my repertoire"), to: Routes.study_path(@conn, :new, @locale), class: "button" %>
+        <div class="analysis-targets-empty practice-panel">
+          <p><%= dgettext("study", "Import a repertoire to compare your games and practice where you left your preparation.") %></p>
+          <%= link dgettext("study", "Import my repertoire"), to: Routes.study_path(@conn, :new, @locale), class: "button practice-primary" %>
+        </div>
       <% end %>
       <p data-repertoire-empty hidden>No repertoires match these filters.</p>
       <div class="analysis-repertoire-pagination" data-repertoire-pagination hidden>

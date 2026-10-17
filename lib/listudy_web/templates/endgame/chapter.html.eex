@@ -1,4 +1,4 @@
-<div class="endgame-library">
+<div class="endgame-library practice-page">
   <%= render "_breadcrumbs.html", items: [
     %{label: dgettext("endgame", "Endgames"), to: Routes.endgame_path(@conn, :index, @locale)},
     %{label: @chapter.name, to: nil}

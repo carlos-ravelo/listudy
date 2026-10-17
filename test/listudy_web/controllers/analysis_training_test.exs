@@ -235,7 +235,7 @@ defmodule ListudyWeb.AnalysisTrainingTest do
     library = conn_for(user) |> get("/analysis/games") |> html_response(200)
     [row] = Floki.find(library, ".analysis-game-row")
     assert Floki.find(row, ".analysis-status-ambiguous") |> Floki.text() == "Matching line found"
-    assert Floki.find(row, ".analysis-game-open") |> Floki.text() == "View comparison →"
+    assert Floki.find(row, ".analysis-game-open") |> Floki.text() == "View comparison"
 
     assert Floki.find(row, ".analysis-game-study-name") |> Enum.map(&Floki.text/1) == [
              valid.title
