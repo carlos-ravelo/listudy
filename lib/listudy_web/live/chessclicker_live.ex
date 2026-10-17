@@ -4,7 +4,15 @@ defmodule ListudyWeb.ChessClickerLive do
   alias Listudy.Tactics
 
   def render(assigns) do
-    Phoenix.View.render(ListudyWeb.LiveView, "chessclicker.html", assigns)
+    if assigns.tactic do
+      Phoenix.View.render(ListudyWeb.LiveView, "chessclicker.html", assigns)
+    else
+      Phoenix.View.render(
+        ListudyWeb.LiveView,
+        "training_empty.html",
+        Map.merge(assigns, %{conn: assigns.socket, title: "Chessclicker"})
+      )
+    end
   end
 
   def mount(%{"locale" => locale}, _session, socket) do

@@ -6,7 +6,10 @@ import { onresize, resize_ground, setup_ground, ground_set_moves,
          ground_undo_last_move, setup_move_handler, ground_move } from './modules/ground.js';
 import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
-import { sleep } from './modules/sleep.js';
+import { createPromotionPicker } from './modules/promotion_picker.js';
+let finished = false, picker;
+const sourceSolution = solution;
+let pendingPromotion;
 
 function show_history(chess) {
     // unhide the container
@@ -18,51 +21,48 @@ function show_history(chess) {
     d.innerText = history;
 }
 
-function handle_move(orig, dest, extraInfo) {
-    clear_all_text();
-    let expected = solution[0];
-    if (expected.startsWith(orig+dest)) {
-        // we need more than three for this to continue so less means solved
-        // [0] current (correct) move
-        // [1] ai reply
-        // [2] expected human move
-        if (solution.length <= 2) {
-            // play the move so show_history will be correct after the if else
-            let played = uci_to_san(chess, orig, dest);
-            chess.move(played);
-
-            document.getElementById("next").classList.remove("hidden");
-            set_text(success_div, i18n.solved);
-        } else {
-            // at least one more move is needed to solve this
-
-            // play the human move
-            let played = uci_to_san(chess, orig, dest);
-            chess.move(played);
-            solution = solution.slice(1); // remove the human move from the solution
-
-            // make the ai move
-            let ai_move = solution[0].match(/.{1,2}/g); // split "a2a4" into ["a2", "a4"]
-
-            let move = {from: ai_move[0], to: ai_move[1]};
-            if (ai_move.length == 3) {
-                move.promotion = ai_move[2];
-
-            }
-
-            chess.move(move);
-            solution = solution.slice(1); // remove the ai move from the solution
-
-            // let me player know there are move moves needed
-            set_text(success_div, i18n.right_move);
-            ground_set_moves();
-        }
-        show_history(chess);
-    } else {
-        set_text(error_div, i18n.wrong_move);
-        ground_undo_last_move(); 
-        ground_set_moves();
+function finish(reveal = false) {
+    finished = true;
+    document.getElementById('next').classList.remove('hidden');
+    if (reveal) {
+        for (const move of solution) chess.move({from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4]});
+        document.querySelector('.pieceless-workspace').classList.add('training-revealed');
     }
+    ground.set({fen: chess.fen(), check: reveal && chess.in_check(), movable: {color: undefined, dests: new Map()}});
+    show_history(chess);
+}
+function play_move(orig, dest, promotion) {
+    const expected = solution[0];
+    const played = orig + dest + (promotion || '');
+    if (played !== expected) {
+        ground.set({fen: chess.fen()}); ground_set_moves();
+        set_text(error_div, i18n.wrong_move);
+        return;
+    }
+    const move = chess.move({from: orig, to: dest, promotion});
+    ground_move(move, chess);
+    solution.shift();
+    if (solution.length > 1) {
+        const reply = solution.shift();
+        const move = chess.move({from: reply.slice(0, 2), to: reply.slice(2, 4), promotion: reply[4]});
+        ground_move(move, chess);
+        ground.set({fen: chess.fen(), check: false}); ground_set_moves();
+        set_text(success_div, i18n.right_move);
+    } else {
+        set_text(success_div, i18n.solved);
+        finish(true);
+    }
+    show_history(chess);
+}
+function handle_move(orig, dest) {
+    if (finished || pendingPromotion) return;
+    clear_all_text();
+    const promotions = chess.moves({verbose: true}).filter(move => move.from === orig && move.to === dest && move.promotion);
+    if (promotions.length) {
+        pendingPromotion = {orig, dest};
+        ground.set({fen: chess.fen(), movable: {color: undefined, dests: new Map()}});
+        picker.open({color: window.color, to: dest, orientation: ground.state.orientation});
+    } else play_move(orig, dest);
 }
 
 function num_to_file(num) {
@@ -141,31 +141,33 @@ function setup_to_play(chess) {
     document.getElementById("pieceless_to_play").innerText = to_play;
 }
 
-function setup_give_up() {
-    let e = document.getElementById("give-up");
-    e.onclick = function() {
-        document.getElementById("next").classList.remove("hidden");
-    };
-}
-
 function main() {
-    window.chess = new Chess(fen);
-    setup_pieces(chess);
-    setup_to_play(chess);
-    window.color = chess.turn() == "w" ? "white" : "black";
-    setup_ground(fen);
-
-    ground_set_moves();
-
-    window.highlighted_squares = [];
-
+    finished = false; pendingPromotion = null;
+    picker?.destroy();
+    clear_all_text();
+    document.getElementById('next').classList.add('hidden');
+    document.getElementById('history_container').classList.add('hidden');
+    document.getElementById('pieceless_pieces').replaceChildren();
+    document.querySelector('.pieceless-workspace').classList.remove('training-revealed');
+    setup_chess(fen);
+    const parser = new Chess(fen);
+    const format = document.querySelector('.pieceless-workspace').dataset.solutionFormat;
+    solution = sourceSolution.trim().split(/\s+/).filter(Boolean).map(token => {
+        const move = format === 'san' ? parser.move(token) : parser.move({from: token.slice(0, 2), to: token.slice(2, 4), promotion: token[4]});
+        if (!move) throw new Error('Invalid puzzle move');
+        return move.from + move.to + (move.promotion || '');
+    });
+    setup_pieces(chess); setup_to_play(chess);
+    window.color = chess.turn() === 'w' ? 'white' : 'black';
+    window.ground?.destroy(); setup_ground(fen); ground_set_moves();
+    ground.set({animation: {enabled: false}, check: false});
     setup_move_handler(handle_move);
-    solution = solution.split(" ");
-
+    picker = createPromotionPicker({element: document.querySelector('[data-promotion-picker]'),
+        onChoose(promotion) { const move = pendingPromotion; pendingPromotion = null; if (move) play_move(move.orig, move.dest, promotion); },
+        onCancel() { pendingPromotion = null; ground.set({fen: chess.fen()}); ground_set_moves(); }});
     resize_ground();
-    window.setTimeout(ground.redrawAll, 10);
-    window.setTimeout(ground.redrawAll, 100);
-    setup_give_up();
+    document.getElementById('give-up').onclick = () => { if (!finished) finish(true); };
+    document.getElementById('training_restart').onclick = main;
 }
 
 window.onresize = onresize;

@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggle = header.querySelector('.site-menu-toggle');
     const menus = [...header.querySelectorAll('.site-menu')];
     const path = window.location.pathname;
-    const section = document.querySelector('[data-training-kind="tactics"]') || /\/tactics(?:\/|$)/.test(path) ? 'tactics' : /\/analysis(?:\/|$)/.test(path) ? 'analysis'
+    const section = document.querySelector('[data-training-kind="tactics"]') || /\/(?:tactics|blind-tactics|pieceless-tactics)(?:\/|$)/.test(path) ? 'tactics' : /\/analysis(?:\/|$)/.test(path) ? 'analysis'
         : /\/studies(?:\/|$)/.test(path) ? 'studies'
         : /\/endgames(?:\/|$)/.test(path) ? 'endgames'
         : /\/(?:blind-tactics|pieceless-tactics)(?:\/|$)/.test(path) ? 'practice' : null;

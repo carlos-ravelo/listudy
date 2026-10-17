@@ -1,49 +1,61 @@
+<div class="training-workspace training-blind">
+<%= render ListudyWeb.ComponentView, "training_header.html", conn: @socket, locale: @locale, title: gettext("Blind Tactics") %>
 <div class="with_sidebar">
   <div id="game_container" class="sidebar_main">
-    <%= render ListudyWeb.ComponentView, "chessground.html" %>
+    <div id="blind_board_frame" class="study-board-frame" phx-update="ignore"><%= render ListudyWeb.ComponentView, "chessground.html" %></div>
   </div>
   <div class="sidebar">
-    <h2><%= dgettext "tactics", "Blind Tactic"%> <%= @tactic.id %></h2>
+    <p class="training-instruction"><%= dgettext("tactics", "Visualise the listed moves, then solve from the position in your mind. The board stays frozen.") %></p>
 
     <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
     
-    <div>
+    <div id="blind_move_sequence">
       <p><%= dgettext "tactics", "In this position the following moves were played:" %> <b id="moves"></b></p>
       <p><%= if @tactic.color == "white" do %><%= dgettext "tactics", "White" %><% else %><%= dgettext "tactics", "Black" %><% end %>
         <%= dgettext "tactics", "to play and win." %>
       </p>
     </div>
 
-    <button id="next" class="hidden continue_button" phx-click="next"><%= dgettext "tactics", "Continue" %></button>
+    <div class="training-actions">
+    <button id="next" class="hidden continue_button" phx-click="next"><%= dgettext "tactics", "Next puzzle" %></button>
 
-    <a class="icon" data-icon="," id="toggle-orientation"><%= dgettext("tactics", "Flip board") %></a><br>
-    <a class="icon" data-icon="-" id="give-up"><%= dgettext("tactics", "Give up") %></a>
-    <div>
-      <hr>
-      <p><%= @tactic.description %></p>
+    <button type="button" id="give-up"><%= dgettext("tactics", "Show solution") %></button>
+    <button type="button" id="training_restart"><%= dgettext("tactics", "Retry") %></button>
+    <button type="button" id="toggle-orientation"><%= dgettext("tactics", "Flip board") %></button>
     </div>
-    <label for="ply_select"><%= dgettext "tactics", "How many plies should be hidden? (Updates next Tactic)" %></label>
-
-    <input type="number" value=4 min=0 id="ply_select">
-
-    <p><a href="<%= Routes.page_path(@socket, :features, @locale, "blind-tactics") %>#help">[Help] How blind tactics work.</a></p>
+    <%= if @tactic.description not in [nil, ""] do %>
+    <details class="training-help"><summary><%= dgettext("tactics", "About this position") %></summary>
+      <p><%= @tactic.description %></p>
+    </details>
+    <% end %>
+    <details class="training-settings"><summary><%= gettext("Settings") %></summary>
+      <label for="ply_select"><%= dgettext("tactics", "Moves to visualise") %></label>
+      <input type="number" value="4" min="0" max="20" inputmode="numeric" name="hidden_moves" id="ply_select">
+      <p><%= dgettext("tactics", "Each move is one player's turn. Changes apply to the next puzzle.") %></p>
+    </details>
+    <details class="training-help"><summary><%= dgettext("tactics", "How to play") %></summary>
+      <p><%= dgettext("tactics", "Follow the moves above without moving the displayed pieces. Click the imagined starting square, then its destination.") %></p>
+    </details>
   </div>
+</div>
 </div>
 
 <link rel="stylesheet" href="<%= Routes.static_path(@socket, "/css/chessground.css") %>"/>
 <script defer type="text/javascript" src="<%= Routes.static_path(@socket, "/js/blind_tactics.js") %>"></script>
 <form class="hidden">
-  <input type="text" id="pgn" value="<%= @tactic.pgn %>">
+  <input type="hidden" id="puzzle_key" value="<%= @tactic.id %>-<%= @attempt %>">
+  <textarea id="pgn"><%= @tactic.pgn %></textarea>
   <input type="text" id="color" value="<%= @tactic.color %>">
   <input type="text" id="ply" value="<%= @tactic.ply %>">
 </form>
 <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@socket) %>>
-let pgn = "<%= @tactic.pgn %>";
-let color = "<%= @tactic.color %>";
-let ply = "<%= @tactic.ply %>";
+let pgn;
+let color;
+let ply;
 
 let i18n = {};
 i18n.success = "<%= dgettext "tactics", "Tactic solved!"%>";
+i18n.direct = "<%= dgettext "tactics", "Find the winning move from the displayed position." %>";
 i18n.wrong_move = "<%= dgettext "tactics", "Wrong Move"%>";
 i18n.right_move = "<%= dgettext "tactics", "Correct move, there are still more moves. They replied with" %> ";
 </script>

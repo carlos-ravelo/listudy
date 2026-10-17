@@ -33,22 +33,43 @@ defmodule ListudyWeb.PiecelessTacticController do
 
   def public(conn, %{"id" => id}) do
     pieceless_tactic = PiecelessTactics.get_pieceless_tactic!(id)
-    render(conn, "public.html", pieceless_tactic: pieceless_tactic, noindex: true)
+
+    render(conn, "public.html",
+      pieceless_tactic: pieceless_tactic,
+      solution_format: "uci",
+      next_url: Routes.pieceless_tactic_path(conn, :random, conn.assigns.locale, id),
+      noindex: true
+    )
+  end
+
+  def puzzle(conn, %{"id" => id}) do
+    tactic = Listudy.Tactics.get_tactic!(id)
+
+    render(conn, "public.html",
+      pieceless_tactic: %{id: tactic.id, fen: tactic.fen, solution: tactic.moves},
+      solution_format: "san",
+      next_url: Routes.pieceless_tactic_path(conn, :random, conn.assigns.locale),
+      noindex: true
+    )
   end
 
   def random(conn, params) do
-    tactic = get_random_tactic(params)
+    tactic = get_random_tactic(params) || PiecelessTactics.get_random_tactic()
 
-    url =
-      Routes.pieceless_tactic_path(
-        conn,
-        :public,
-        conn.private.plug_session["locale"],
-        tactic
-      )
+    cond do
+      tactic ->
+        redirect(conn,
+          to: Routes.pieceless_tactic_path(conn, :public, conn.assigns.locale, tactic)
+        )
 
-    conn
-    |> redirect(to: url)
+      tactic = Listudy.Tactics.get_random_tactic() ->
+        redirect(conn,
+          to: Routes.pieceless_tactic_path(conn, :puzzle, conn.assigns.locale, tactic)
+        )
+
+      true ->
+        render(conn, "empty.html")
+    end
   end
 
   # exlude the id from the pool of possible randoms

@@ -80,7 +80,16 @@ function show_which_side() {
 }
 
 function main() {
+    if (!document.getElementById('fen')) return;
     load_data();
+    if (!fen) {
+        clear_all_text();
+        window.ground?.destroy();
+        setup_ground();
+        ground.set({viewOnly: true, movable: {color: undefined, dests: new Map()}});
+        resize_ground();
+        return;
+    }
     show_which_side();
     window.to_play = moves.split(" ");
     if (fen != old_fen) {
