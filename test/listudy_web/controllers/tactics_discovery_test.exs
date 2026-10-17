@@ -8,11 +8,13 @@ defmodule ListudyWeb.TacticsDiscoveryTest do
     end
   end
 
-  test "tactics includes visualization for an empty library without a separate practice menu", %{conn: conn} do
+  test "tactics includes visualization for an empty library without a separate practice menu", %{
+    conn: conn
+  } do
     html = conn |> get("/en/tactics") |> html_response(200)
     assert [_] = Floki.find(html, ".tactics-modes a[href='/en/blind-tactics']")
     assert [_] = Floki.find(html, ".tactics-modes a[href='/en/pieceless-tactics']")
-    assert [_] = Floki.find(html, ".tactics-modes a[href='/en/tactics/random']")
+    assert [_] = Floki.find(html, "form#library-puzzles[action='/en/tactics/puzzles/start']")
     assert [] = Floki.find(html, "[data-nav-section=practice]")
     assert [_] = Floki.find(html, "a[data-nav-section=tactics]")
     preview("library", html)

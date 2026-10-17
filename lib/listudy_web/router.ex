@@ -77,6 +77,8 @@ defmodule ListudyWeb.Router do
     resources "/openings", OpeningController
     resources "/players", PlayerController
     resources "/events", EventController
+    get "/puzzle-imports", PuzzleCatalogController, :imports
+    post "/puzzle-imports", PuzzleCatalogController, :create
     resources "/tactics", TacticController
     resources "/piecelesstactic", PiecelessTacticController
 
@@ -162,6 +164,13 @@ defmodule ListudyWeb.Router do
 
     get "/tactics", StudyController, :tactics, as: :tactics_library
     get "/tactics/collections/:id", StudyController, :tactics_collection, as: :tactics_collection
+    get "/tactics/puzzles", PuzzleCatalogController, :index
+    get "/tactics/puzzles/start", PuzzleCatalogController, :start
+
+    live "/tactics/puzzles/:id", TacticsLive,
+      layout: {ListudyWeb.LayoutView, :live},
+      as: :catalog_tactics
+
     get "/tactics/random", TacticController, :random
     get "/tactics/daily-puzzle", TacticController, :daily
     get "/tactics/custom", TacticController, :custom

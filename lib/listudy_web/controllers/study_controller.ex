@@ -7,7 +7,16 @@ defmodule ListudyWeb.StudyController do
   alias Listudy.StudyFavorites
 
   def index(conn, _params), do: library(conn, "repertoire")
-  def tactics(conn, _params), do: library(conn, "tactics")
+
+  def tactics(conn, params) do
+    filters = Listudy.PuzzleCatalog.filters(params)
+
+    conn
+    |> assign(:puzzle_filters, filters)
+    |> assign(:puzzle_themes, Listudy.PuzzleCatalog.themes())
+    |> assign(:puzzle_count, Listudy.PuzzleCatalog.count(filters))
+    |> library("tactics")
+  end
 
   def tactics_collection(conn, %{"id" => id}) do
     case Studies.get_study_by_slug!(id) do
@@ -70,11 +79,22 @@ defmodule ListudyWeb.StudyController do
         openings = Listudy.Openings.list_openings_study_form()
         kind = if params["kind"] == "tactics", do: "tactics", else: "repertoire"
         changeset = Studies.change_study(%Study{training_kind: kind})
+
         if params["source"] == "blank" do
-          title = if kind == "tactics", do: dgettext("study", "New exercise"), else: dgettext("study", "New repertoire")
-          {:ok, %{"editor" => editor}} = Listudy.Games.ChessEngine.editor("[Event \"#{title}\"]\n\n*")
-          render(conn, "editor.html", study: %Study{title: title, color: "white", training_kind: kind, private: true},
-            draft: true, editor_json: Jason.encode!(editor), revision: "")
+          title =
+            if kind == "tactics",
+              do: dgettext("study", "New exercise"),
+              else: dgettext("study", "New repertoire")
+
+          {:ok, %{"editor" => editor}} =
+            Listudy.Games.ChessEngine.editor("[Event \"#{title}\"]\n\n*")
+
+          render(conn, "editor.html",
+            study: %Study{title: title, color: "white", training_kind: kind, private: true},
+            draft: true,
+            editor_json: Jason.encode!(editor),
+            revision: ""
+          )
         else
           render(conn, "new.html", changeset: changeset, openings: openings)
         end
@@ -89,31 +109,68 @@ defmodule ListudyWeb.StudyController do
   def create(conn, %{"draft" => draft}) when is_map(draft) do
     id = Listudy.Slug.random_alnum()
     path = get_path(id <> ".pgn")
-    attrs = draft |> Map.take(["title", "training_kind", "color", "private"]) |> Map.put_new("private", true) |> Map.put_new("color", "white")
+
+    attrs =
+      draft
+      |> Map.take(["title", "training_kind", "color", "private"])
+      |> Map.put_new("private", true)
+      |> Map.put_new("color", "white")
+
     with {:ok, user} <- get_user(conn),
          pgn when is_binary(pgn) and byte_size(pgn) <= 500_000 <- draft["pgn"],
-         {:ok, %{"editor" => %{"chapters" => [%{"root" => [_ | _]}]}}} <- Listudy.Games.ChessEngine.editor(pgn),
+         {:ok, %{"editor" => %{"chapters" => [%{"root" => [_ | _]}]}}} <-
+           Listudy.Games.ChessEngine.editor(pgn),
          true <- attrs["color"] in ["white", "black"],
-         {:ok, %{"pgn" => pgn}} <- Listudy.Games.ChessEngine.collection_study([%{pgn: pgn, study: draft["title"] || ""}]) do
-      attrs = Map.merge(attrs, %{"user_id" => user.id, "slug" => create_slug(id, Listudy.Slug.slugify(draft["title"] || ""))})
-      result = Listudy.Repo.transaction(fn ->
-        case Studies.create_study(attrs) do
-          {:ok, study} ->
-            case Listudy.StudyPgn.replace(path, pgn) do
-              :ok -> study
-              error -> Listudy.Repo.rollback(error)
-            end
-          error -> Listudy.Repo.rollback(error)
-        end
-      end)
+         {:ok, %{"pgn" => pgn}} <-
+           Listudy.Games.ChessEngine.collection_study([%{pgn: pgn, study: draft["title"] || ""}]) do
+      attrs =
+        Map.merge(attrs, %{
+          "user_id" => user.id,
+          "slug" => create_slug(id, Listudy.Slug.slugify(draft["title"] || ""))
+        })
+
+      result =
+        Listudy.Repo.transaction(fn ->
+          case Studies.create_study(attrs) do
+            {:ok, study} ->
+              case Listudy.StudyPgn.replace(path, pgn) do
+                :ok -> study
+                error -> Listudy.Repo.rollback(error)
+              end
+
+            error ->
+              Listudy.Repo.rollback(error)
+          end
+        end)
+
       case result do
-        {:ok, study} -> json(conn, %{url: Routes.study_path(conn, :editor, conn.assigns.locale, study)})
+        {:ok, study} ->
+          json(conn, %{url: Routes.study_path(conn, :editor, conn.assigns.locale, study)})
+
         _ ->
           File.rm(path)
-          conn |> put_status(:unprocessable_entity) |> json(%{error: dgettext("study", "Check the title and practice type. Your moves are still in the editor.")})
+
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "Check the title and practice type. Your moves are still in the editor."
+              )
+          })
       end
     else
-      _ -> conn |> put_status(:unprocessable_entity) |> json(%{error: dgettext("study", "Set up a valid position and add at least one legal move before saving.")})
+      _ ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error:
+            dgettext(
+              "study",
+              "Set up a valid position and add at least one legal move before saving."
+            )
+        })
     end
   end
 

@@ -1,11 +1,22 @@
-<div class="training-workspace">
-<%= render ListudyWeb.ComponentView, "training_header.html", conn: @socket, locale: @locale, title: dgettext("tactics", "Tactic") %>
+<div class="training-workspace<%= if @tactic.source == "lichess", do: " puzzle-workspace" %>">
+<%= render ListudyWeb.ComponentView, "training_header.html", conn: @socket, locale: @locale, title: if(@tactic.source == "lichess", do: gettext("Practice puzzles"), else: dgettext("tactics", "Tactic")) %>
 <div class="with_sidebar">
+  <%= if @tactic.source == "lichess" do %>
+    <section class="puzzle-settings" aria-labelledby="puzzle-settings-title">
+      <h2 id="puzzle-settings-title"><%= gettext("Practice settings") %></h2>
+      <%= render ListudyWeb.ComponentView, "puzzle_filters.html", conn: @socket, locale: @locale,
+            id: "practice-puzzles", filters: @filter_draft, themes: @puzzle_themes,
+            count: @filter_count, live: true, error: @filter_error %>
+    </section>
+  <% end %>
   <div id="game_container" class="sidebar_main">
-    <div id="tactic_board_frame" class="study-board-frame" phx-update="ignore"><%= render ListudyWeb.ComponentView, "chessground.html" %></div>
+    <div id="tactic_board_frame" class="study-board-frame" phx-update="ignore"><%= render ListudyWeb.ComponentView, "chessground.html" %><%= render ListudyWeb.ComponentView, "promotion_picker.html" %></div>
   </div>
   <div class="sidebar">
-    <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
+    <%= if @tactic.source == "lichess" do %>
+      <div class="puzzle-current-rating"><span><%= gettext("Puzzle rating") %></span><strong><%= @tactic.rating %></strong></div>
+    <% end %>
+    <div id="tactic_feedback" phx-update="ignore"><%= render ListudyWeb.ComponentView, "infoboxes.html" %></div>
 
     <button id="next" class="hidden continue_button" phx-click="next"><%= dgettext "tactics", "Continue"%></button>
     <details class="hidden" id="solution">
@@ -26,6 +37,14 @@
       <p><%= dgettext("endgame", "Currently playing tactics by:") <> " " <> @player.name %></p>
     <% end %>
 
+    <%= if @tactic.source == "lichess" do %>
+      <details class="puzzle-about">
+        <summary><%= gettext("About this puzzle") %></summary>
+        <p><a href="<%= @tactic.link || "https://lichess.org/training/" <> @tactic.source_id %>" translate="no">Lichess #<%= @tactic.source_id %></a></p>
+        <p><%= gettext("Puzzle data from Lichess (CC0). Progress is saved on this device.") %></p>
+      </details>
+    <% end %>
+
   </div>
 </div>
 </div>
@@ -33,6 +52,8 @@
 <link rel="stylesheet" href="<%= Routes.static_path(@socket, "/css/chessground.css") %>"/>
 <script defer type="text/javascript" src="<%= Routes.static_path(@socket, "/js/tactics.js") %>"></script>
 <form class="hidden">
+  <input type="hidden" id="puzzle_attempt" value="<%= @puzzle_attempt %>">
+  <input type="hidden" id="puzzle_identity" value="<%= @tactic.source %>:<%= @tactic.source_id || @tactic.id %>">
   <input type="text" id="fen" value="<%= @tactic.fen %>">
   <input type="text" id="color" value="<%= @tactic.color %>">
   <input type="text" id="moves" value="<%= @tactic.moves %>">

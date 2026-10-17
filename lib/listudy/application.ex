@@ -9,6 +9,7 @@ defmodule Listudy.Application do
     children = [
       # Start the Ecto repository
       Listudy.Repo,
+      Listudy.PuzzleCatalog.Worker,
       # Start the Telemetry supervisor
       ListudyWeb.Telemetry,
       # Start the PubSub system

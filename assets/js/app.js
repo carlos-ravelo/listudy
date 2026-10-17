@@ -23,6 +23,7 @@ import "./components/hamburger.js"
 import "./components/site_navigation.js"
 import "./components/player_journey.js"
 import "./components/study_library.js"
+import "./components/puzzle_filters.js"
 import "./components/chessboard_settings.js"
 import "./components/support.js"
 

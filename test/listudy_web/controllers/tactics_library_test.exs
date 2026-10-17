@@ -76,7 +76,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
     refute html =~ "Opening repertoire"
     assert html =~ "/en/tactics/collections/#{own.slug}"
     assert html =~ "kind=tactics"
-    assert html =~ "/en/tactics/random"
+    assert html =~ "/en/tactics/puzzles/start"
     preview("library", html)
     studies = auth |> get("/en/studies") |> html_response(200)
     assert studies =~ repertoire.title
@@ -108,8 +108,8 @@ defmodule ListudyWeb.TacticsLibraryTest do
     conn: conn
   } do
     html = conn |> get("/en/tactics") |> html_response(200)
-    assert html =~ "Your tactics library"
-    assert html =~ "/en/tactics/random"
+    assert html =~ "Your collections"
+    assert html =~ "/en/tactics/puzzles/start"
     preview("empty", html)
     auth = Pow.Plug.assign_current_user(conn, user(), [])
     html = auth |> get("/en/studies/new?kind=tactics") |> html_response(200)
