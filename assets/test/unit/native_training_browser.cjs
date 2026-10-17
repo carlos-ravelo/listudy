@@ -20,7 +20,7 @@ const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-prev
         browser = await chromium.launch({executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox']});
         const page = await browser.newPage({viewport: {width: 1366, height: 768}});
         const errors = [];
-        page.on('pageerror', error => {errors.push(error.message); console.error(error.message);});
+        page.on('pageerror', error => {errors.push(error.message); console.error(error.stack);});
         const visit = async route => {await page.goto(`http://127.0.0.1:${server.address().port}${route}`); await page.waitForFunction(() => window.ground && window.chess);};
         const move = async (from, to) => page.evaluate(([from, to]) => {ground.selectSquare(from); ground.selectSquare(to);}, [from, to]);
         const records = mode => page.evaluate(mode => Object.values(JSON.parse(localStorage.getItem(`native_visualization_v1:${mode}`)).runs), mode);
@@ -61,6 +61,7 @@ const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-prev
         assert.equal(await page.evaluate(() => ground.state.drawable.shapes.length), 0, 'Strict training does not reveal legal destinations');
         await page.evaluate(() => ground.selectSquare('g3'));
         blindRuns = await records('blind');
+        if (blindRuns.at(-1).errors !== 1) console.error(await page.evaluate(() => ({clicked: window.clicked_piece, current_move, history: current_chess.history(), legal: [...legal_moves], info: document.getElementById('info').textContent, error: document.getElementById('error').textContent})));
         assert.equal(blindRuns.at(-1).errors, 1, 'Wrong imagined destinations count as errors even when illegal');
         await page.locator('[data-visualization-destinations]').check();
         await page.evaluate(() => ground.selectSquare('g1'));
@@ -113,12 +114,60 @@ const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-prev
         assert(await page.locator('#next').isVisible());
         await page.locator('.training-settings summary').click();
         await page.locator('[data-visualization-difficulty]').selectOption('auto');
+        // Alternate checkmates solve the exercise in all three native modes.
+        await visit('/daily');
+        await page.evaluate(() => {
+            document.getElementById('fen').value = '7k/5K2/6Q1/8/8/8/8/8 w - - 0 1';
+            document.getElementById('moves').value = 'Qg7#';
+            document.getElementById('color').value = 'white';
+            document.getElementById('last_move').value = '';
+            document.dispatchEvent(new Event('phx:update'));
+        });
+        await move('g6', 'h6');
+        await page.waitForFunction(() => chess.in_checkmate());
+        assert(await page.locator('#next').isVisible());
+        for (const route of ['/blind', '/pieceless']) {
+            await visit(route);
+            await move('g6', 'h6');
+            await page.waitForFunction(() => !document.getElementById('next').classList.contains('hidden'));
+            assert(await page.evaluate(() => (typeof current_chess === 'undefined' ? chess : current_chess).in_checkmate()), route + ' accepts another mate');
+        }
+        await visit('/daily');
+        await page.evaluate(() => {
+            window.Worker = class {
+                postMessage(command) {
+                    if (command === 'uci') setTimeout(() => this.onmessage?.({data: 'uciok'}), 0);
+                    if (command === 'isready') setTimeout(() => this.onmessage?.({data: 'readyok'}), 0);
+                    if (command.startsWith('go')) setTimeout(() => {
+                        this.onmessage?.({data: 'info depth 4 score cp 0 pv e7e5'});
+                        this.onmessage?.({data: 'bestmove e7e5'});
+                    }, 20);
+                }
+                terminate() { this.onmessage = null; }
+            };
+            document.getElementById('fen').value = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+            document.getElementById('moves').value = 'e4 e5 Nf3';
+            document.getElementById('color').value = 'white';
+            document.getElementById('last_move').value = '';
+            document.dispatchEvent(new Event('phx:update'));
+        });
+        await move('d2', 'd4');
+        await page.waitForFunction(() => document.getElementById('info').textContent.includes('Could not verify'));
+        assert.equal(await page.evaluate(() => chess.history().length), 0, 'Uncertain alternative restores the original position');
+        assert(await page.locator('#error').isHidden(), 'Insufficient search is not labelled a wrong move');
+        await move('e2', 'e4');
+        await page.waitForFunction(() => chess.history().length === 2);
+        assert.equal(await page.evaluate(() => chess.history().join(' ')), 'e4 e5', 'Authored continuation remains usable after inconclusive validation');
         for (const width of [320, 390, 1366]) {
             await page.setViewportSize({width, height: 844});
             for (const route of ['/daily', '/blind', '/pieceless']) {
                 await visit(route);
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${route} overflows at ${width}`);
-                const box = await page.locator('cg-board').boundingBox();
+                const dimensions = await page.waitForFunction(() => {
+                    const rect = document.querySelector('cg-board')?.getBoundingClientRect();
+                    return rect?.width > 0 ? {width: rect.width, height: rect.height} : null;
+                });
+                const box = await dimensions.jsonValue();
                 assert(Math.abs(box.width - box.height) < 1);
                 await page.waitForTimeout(250);
                 for (const theme of ['light', 'dark']) {

@@ -1,5 +1,5 @@
 import { createSparringEngine } from './sparring/uci_engine.js';
-import { createTablebaseClient, tablebaseMove } from './tablebase.js';
+import { createTablebaseClient, tablebaseMove, tablebaseAssessment } from './tablebase.js';
 
 const tablebases = createTablebaseClient();
 
@@ -12,6 +12,13 @@ export function createEndgameEngine({ local = createSparringEngine({strength: 8,
             try { selected = tablebaseMove(state, await tables.lookup(state.fen)); } catch (_) {}
             if (disposed || ticket !== generation) throw Error('Engine cancelled');
             return selected || local.bestMove(state);
+        },
+        async assess(state, uci) {
+            const ticket = generation;
+            let result = null;
+            try { result = tablebaseAssessment(state, await tables.lookup(state.fen), uci); } catch (_) {}
+            if (disposed || ticket !== generation) throw Error('Engine cancelled');
+            return result;
         },
         analyze(state, options) { return local.analyze(state, options); },
         cancel() { generation++; local.cancel(); },

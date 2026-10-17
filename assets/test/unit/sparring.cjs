@@ -138,8 +138,8 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert.equal(assessMove(beforeMove, { score: {type:'mate',value:2}, turn:'b' }, 'w', 'e2e4').grade, 'blunder');
     assert.equal(assessMove({ ...beforeMove, score: {type:'cp',value:-800} }, { score:{type:'mate',value:2},turn:'b' }, 'w').grade, 'mistake');
     assert.equal(assessMove({ ...beforeMove, score: {type:'cp',value:-1000} }, { score:{type:'mate',value:2},turn:'b' }, 'w').grade, 'inaccuracy');
-    assert.equal(assessMove({ score:{type:'mate',value:3},turn:'w' }, { score:{type:'cp',value:-800},turn:'b' }, 'w').grade, 'mistake');
-    assert.equal(assessMove({ score:{type:'mate',value:3},turn:'w' }, { score:{type:'cp',value:-1000},turn:'b' }, 'w').grade, 'inaccuracy');
+    assert.equal(assessMove({ score:{type:'mate',value:3},turn:'w' }, { score:{type:'cp',value:-800},turn:'b' }, 'w').grade, 'acceptable');
+    assert.equal(assessMove({ score:{type:'mate',value:3},turn:'w' }, { score:{type:'cp',value:-1000},turn:'b' }, 'w').grade, 'acceptable');
     assert.equal(assessMove({ score:{type:'mate',value:-3},turn:'w' }, { score:{type:'mate',value:0},turn:'w' }, 'w').grade, 'acceptable');
     for (const player of ['w', 'b']) {
         const opponent = player === 'w' ? 'b' : 'w';

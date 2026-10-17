@@ -5,6 +5,10 @@ import { onresize, resize_ground, setup_ground, ground_set_moves,
 import { setup_chess, uci_to_san } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { sleep } from './modules/sleep.js';
+import { createTacticAlternatives } from './modules/tactic_alternatives.js';
+import { enginePosition } from './modules/engine_position.js';
+const alternatives = createTacticAlternatives();
+let busy = false, generation = 0, finished = false;
 
 function show_div(id) {
     let div = document.getElementById(id);
@@ -15,18 +19,47 @@ function show_div(id) {
 }
 
 async function handle_move(orig, dest, extraInfo) {
-    let played = uci_to_san(chess, orig, dest);
-    let target = to_play.shift();
+    if (busy || finished) return;
+    const ticket = generation, board = chess;
+    let played = uci_to_san(board, orig, dest);
+    const target = to_play[0];
     clear_all_text();
-    set_text("to_win", " "); // remove the iframe text
+    set_text("to_win", " ");
     set_text("bold_span", " ");
-
-    if (played == target) {
+    let accepted = played === target;
+    let uncertain = false;
+    if (!accepted) {
+        const expected = board.move(target);
+        if (!expected) return;
+        board.undo();
+        busy = true;
+        ground.set({movable: {dests: new Map()}});
+        set_text(info_div, i18n.checking);
+        const attempted = board.move(played);
+        board.undo();
+        const result = await alternatives.validate(enginePosition(fen, board), expected.from + expected.to + (expected.promotion || ''), attempted.from + attempted.to + (attempted.promotion || ''), to_play.length);
+        if (ticket !== generation) return;
+        busy = false;
+        clear_all_text();
+        accepted = result.status === 'accepted';
+        uncertain = result.status === 'unknown';
+        if (accepted) {
+            const ChessModule = require('chess.js');
+            const parser = new (ChessModule.Chess || ChessModule)(board.fen());
+            window.to_play = result.line.map(uci => parser.move({from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4]}).san);
+            played = to_play[0];
+        }
+    }
+    busy = true;
+    ground.set({movable: {dests: new Map()}});
+    if (accepted) {
+        to_play.shift();
         let m = chess.move(played);
         ground_move(m, chess);
         if (to_play.length >= 2) {
             // theres another move the player has to get correct
             await sleep(100); // instant play by the ai feels weird
+            if (ticket !== generation) return;
             set_text(info_div, i18n.keep_going, {symbol:"★", bold: i18n.best_move} );
             let ai_move = to_play.shift();
             let m = chess.move(ai_move);
@@ -34,6 +67,7 @@ async function handle_move(orig, dest, extraInfo) {
             ground_move(m, chess);
         } else {
             // player got the puzzle correct
+            finished = true; alternatives.reset();
             let solves = localStorage.getItem("achievements_tactics_solved") || 0;
             localStorage.setItem("achievements_tactics_solved", Number(solves) + 1);
             set_text(success_div, " ", {bold: i18n.success});
@@ -42,13 +76,14 @@ async function handle_move(orig, dest, extraInfo) {
     } else {
         // player failed the puzzle
         await sleep(300); // instant play by the ai feels weird
-        to_play.unshift(target);
+        if (ticket !== generation) return;
         ground_undo_last_move(); 
         ground_set_moves();
-        set_text(error_div, i18n.keep_trying, {bold: i18n.wrong_move});
+        set_text(uncertain ? info_div : error_div, uncertain ? i18n.unconfirmed : i18n.keep_trying, uncertain ? {} : {bold: i18n.wrong_move});
         show_div("next");
         show_div("solution");
     }
+    busy = false;
 }
 
 function setup_last_move() {
@@ -81,6 +116,10 @@ function show_which_side() {
 
 function main() {
     if (!document.getElementById('fen')) return;
+    const key = ['fen', 'moves', 'last_move'].map(id => document.getElementById(id)?.value).join('|');
+    if (main.loadedKey === key && window.ground?.state.dom.elements.board.isConnected) return;
+    main.loadedKey = key;
+    generation++; busy = false; finished = false; alternatives.reset();
     load_data();
     if (!fen) {
         clear_all_text();

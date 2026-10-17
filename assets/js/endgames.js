@@ -2,7 +2,7 @@ require('regenerator-runtime/runtime');
 const Chess = require('chess.js');
 import { turn_color, setup_chess } from './modules/chess_utils.js';
 import { createEndgameEngine } from './modules/endgame_engine.js';
-import { createEndgameFeedback, endgameMateCue } from './modules/endgame_feedback.js';
+import { createEndgameFeedback, endgameMateCue, endgameAssessmentCertain } from './modules/endgame_feedback.js';
 import { renderEvaluationBar } from './modules/evaluation_bar.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { createPromotionPicker } from './modules/promotion_picker.js';
@@ -144,7 +144,7 @@ function selectReview(path) {
 }
 function renderComment() {
     const row = selectedRow;
-    document.getElementById('endgame_review_comment').textContent = row ? labels.before.replace('{move}', row.san) + (row.status === 'done' ? row.moment ? ' ' + labels[row.moment] : row.beforeAnalysis.depth < 12 || row.afterAnalysis.depth < 12 ? ' ' + labels.uncertain : '' : ' ' + labels[row.status === 'error' ? 'unavailable' : 'analysing']) : labels.select;
+    document.getElementById('endgame_review_comment').textContent = row ? labels.before.replace('{move}', row.san) + (row.status === 'done' ? row.moment ? ' ' + labels[row.moment] : !endgameAssessmentCertain(row) ? ' ' + labels.uncertain : '' : ' ' + labels[row.status === 'error' ? 'unavailable' : 'analysing']) : labels.select;
     const suggestion = row?.beforeAnalysis?.uci;
     if (reviewing && suggestion && /^[a-h][1-8][a-h][1-8]/.test(suggestion)) ground.setAutoShapes([{ orig: suggestion.slice(0, 2), dest: suggestion.slice(2, 4), brush: 'pgn_green' }]);
     const line = continuation(row);
@@ -194,7 +194,7 @@ function renderLiveAssessment() {
         cue.textContent = labels[mate.winning ? 'mate' : 'mateAgainst'].replace('{moves}', mate.moves);
     }
     if (button.hidden) return;
-    const grade = row.beforeAnalysis.depth >= 12 && row.afterAnalysis.depth >= 12 ? row.assessment?.grade : null;
+    const grade = endgameAssessmentCertain(row) ? row.assessment?.grade : null;
     button.textContent = (gradeSymbols[grade] || '…') + ' ' + row.san + ' · ' + labels[grade || 'uncertain'];
     button.dataset.grade = grade || '';
     button.title = row.moment ? labels[row.moment] : labels.review;
@@ -209,7 +209,7 @@ function renderReview() {
     feedback.rows.forEach(row => {
         const button = buttons[row.ply];
         if (!button) return;
-        const grade = row.status === 'done' && row.beforeAnalysis.depth >= 12 && row.afterAnalysis.depth >= 12 ? row.assessment?.grade : null;
+        const grade = row.status === 'done' && endgameAssessmentCertain(row) ? row.assessment?.grade : null;
         button.classList.toggle('endgame-key-move', Boolean(row.moment));
         button.dataset.grade = grade || '';
         button.dataset.gradeSymbol = gradeSymbols[grade] || '';

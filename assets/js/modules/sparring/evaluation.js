@@ -29,8 +29,9 @@ export function assessMove(before, after, player, playedMove) {
     else if (first.type === 'cp' && last.type === 'mate' && !last.winningMate) {
         error = first.value < -999 ? 'inaccuracy' : first.value < -700 ? 'mistake' : 'blunder';
     } else if (first.winningMate && !last.winningMate) {
-        error = last.type === 'cp' && last.value > 999 ? 'inaccuracy'
-            : last.type === 'cp' && last.value > 700 ? 'mistake' : 'blunder';
+        // A limited search may stop reporting mate after a conversion or promotion.
+        // A still decisive score is not evidence that the forced win was lost.
+        error = last.type === 'cp' && last.value > 700 ? null : 'blunder';
     }
     // UCI reports +N before the mating side moves and -(N-1) afterwards.
     // https://github.com/official-stockfish/Stockfish/blob/master/src/uci.cpp

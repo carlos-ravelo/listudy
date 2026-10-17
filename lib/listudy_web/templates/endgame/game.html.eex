@@ -6,6 +6,8 @@
   win: dgettext("endgame", "Win"), draw: dgettext("endgame", "Draw"), promote: dgettext("endgame", "Promote a pawn"),
   before: dgettext("endgame", "Position before %{move}.", move: "{move}"),
   advantage: dgettext("endgame", "Estimated winning advantage reduced"), danger: dgettext("endgame", "Position became difficult to hold"),
+  winToDraw: dgettext("endgame", "The win became a draw"), winToLoss: dgettext("endgame", "The winning position became lost"),
+  drawToLoss: dgettext("endgame", "The draw became a loss"), slowerMate: dgettext("endgame", "There was a faster mate"),
   best: dgettext("study", "Best move"), acceptable: dgettext("study", "Good move"),
   inaccuracy: dgettext("study", "Inaccuracy"), mistake: dgettext("study", "Mistake"), blunder: dgettext("study", "Blunder"),
   uncertain: dgettext("endgame", "Analysis inconclusive"),

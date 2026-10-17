@@ -27,10 +27,11 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
             const ChessModule = require(path.join(root, 'assets/node_modules/chess.js'));
             const Position = ChessModule.Chess || ChessModule;
             const position = new Position(new URL(route.request().url()).searchParams.get('fen'));
-            const moves = position.moves({verbose: true}).map((move, index) => ({uci: move.from + move.to + (move.promotion || ''), category: 'win', dtm: index + 2}));
+            const preserving = tablebaseMode === 'preserved' && position.turn() === 'w';
+            const moves = position.moves({verbose: true}).map((move, index) => ({uci: move.from + move.to + (move.promotion || ''), category: preserving ? 'loss' : 'win', dtm: index + 2}));
             suppliedMove = moves[moves.length - 1].uci;
             if (tablebaseMode === 'delayed') await new Promise(resolve => setTimeout(resolve, 150));
-            return route.fulfill({status: 200, contentType: 'application/json', headers: {'Access-Control-Allow-Origin': '*'}, body: JSON.stringify({category: 'loss', moves})});
+            return route.fulfill({status: 200, contentType: 'application/json', headers: {'Access-Control-Allow-Origin': '*'}, body: JSON.stringify({category: preserving ? 'win' : 'loss', moves})});
         });
         page.on('pageerror', error => { errors.push(error.message); console.error('Page error:', error.message); });
         await page.exposeFunction('testEndgamePosition', value => {
@@ -272,6 +273,17 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.locator('#endgame_undo').click();
         await page.waitForTimeout(300);
         assert.equal(await page.evaluate(() => chess.history().length), 0, 'A late tablebase reply cannot move after undo');
+        tablebaseMode = 'preserved';
+        await visit('/');
+        await page.evaluate(() => main('7k/8/8/8/8/5Q2/5K2/8 w - - 0 1'));
+        await page.locator('#endgame_live_feedback').check();
+        await move('f3', 'f4');
+        await page.waitForFunction(() => !document.getElementById('endgame_live_assessment').hidden);
+        assert.equal(await page.locator('#endgame_live_assessment').getAttribute('data-grade'), 'acceptable', 'An exact preserved win overrides the mock Stockfish evaluation drop');
+        assert(await page.locator('#endgame_live_comment').isHidden());
+        await page.locator('#endgame_finish').click();
+        await page.waitForFunction(() => document.getElementById('endgame_review_status').textContent.startsWith('1 / 1'));
+        assert.equal(await page.locator('.endgame-key-move').count(), 0, 'A preserved win does not become a false key mistake in review');
         assert.deepEqual(errors, []);
         console.log('Optional endgame feedback, shared move grades, review/retry/resume, promotion, goals, stale replies, engine failure, responsive layouts and real Stockfish passed');
     } finally {

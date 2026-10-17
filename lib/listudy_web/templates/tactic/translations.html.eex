@@ -1,4 +1,6 @@
 let i18n = {};
+i18n.checking = "<%= dgettext "tactics", "Checking alternative…" %>";
+i18n.unconfirmed = "<%= dgettext "tactics", "Could not verify this alternative. Try the suggested line or retry." %>";
 i18n.success = "<%= dgettext "tactics", "Tactic solved!" %>";
 i18n.wrong_move = "<%= dgettext "tactics", "Wrong Move." %>";
 i18n.keep_trying = "<%= dgettext "tactics", "Keep trying!" %>";
