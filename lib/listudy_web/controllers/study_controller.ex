@@ -9,7 +9,7 @@ defmodule ListudyWeb.StudyController do
   def index(conn, _params), do: library(conn, "repertoire")
 
   def tactics(conn, params) do
-    filters = Listudy.PuzzleCatalog.filters(params)
+    filters = ListudyWeb.PuzzlePreferences.filters(conn, params)
 
     conn
     |> assign(:puzzle_filters, filters)

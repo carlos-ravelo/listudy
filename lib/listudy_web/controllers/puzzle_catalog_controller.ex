@@ -5,7 +5,7 @@ defmodule ListudyWeb.PuzzleCatalogController do
   def index(conn, params), do: start(conn, params)
 
   def start(conn, params) do
-    filters = PuzzleCatalog.filters(params)
+    filters = ListudyWeb.PuzzlePreferences.filters(conn, params)
 
     case PuzzleCatalog.select(filters) do
       nil ->

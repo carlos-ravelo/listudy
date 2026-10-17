@@ -109,6 +109,26 @@ defmodule ListudyWeb.PuzzleCatalogControllerTest do
     assert empty =~ "lichess:inline-two"
   end
 
+  test "saved rating is restored without overriding explicit filters", %{conn: conn} do
+    saved = put_req_cookie(conn, "puzzle_rating", "1000:1400")
+    html = saved |> get("/en/tactics") |> html_response(200)
+    assert ["1000"] == html |> Floki.find("#library-puzzles-min") |> Floki.attribute("value")
+    assert ["1400"] == html |> Floki.find("#library-puzzles-max") |> Floki.attribute("value")
+
+    html = saved |> get("/en/tactics?min_rating=1600&max_rating=1900") |> html_response(200)
+    assert ["1600"] == html |> Floki.find("#library-puzzles-min") |> Floki.attribute("value")
+    assert ["1900"] == html |> Floki.find("#library-puzzles-max") |> Floki.attribute("value")
+
+    html =
+      conn
+      |> put_req_cookie("puzzle_rating", "2000:1000")
+      |> get("/en/tactics")
+      |> html_response(200)
+
+    assert ["0"] == html |> Floki.find("#library-puzzles-min") |> Floki.attribute("value")
+    assert ["4000"] == html |> Floki.find("#library-puzzles-max") |> Floki.attribute("value")
+  end
+
   test "the catalog opens practice immediately and the tactics hub offers filters", %{conn: conn} do
     puzzle =
       Repo.insert!(%Tactic{source: "lichess", source_id: "direct", rating: 1000, themes: ["fork"]})
