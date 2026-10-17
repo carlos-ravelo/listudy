@@ -14,13 +14,6 @@
           <%= link gettext("Analysis"), to: Routes.analysis_path(@conn, :index), data: [nav_section: "analysis"] %>
         <% end %>
         <%= link gettext("Endgames"), to: Routes.endgame_path(@conn, :index, @assigns.locale), data: [nav_section: "endgames"] %>
-        <details class="site-menu" data-nav-section="practice">
-          <summary><%= gettext("Practice") %></summary>
-          <div class="site-menu-panel">
-            <%= link gettext("Blind Tactics"), to: Routes.blind_tactic_path(@conn, :random, @assigns.locale) %>
-            <%= link gettext("Pieceless Tactics"), to: Routes.pieceless_tactic_path(@conn, :random, @assigns.locale) %>
-          </div>
-        </details>
         <%= if Pow.Plug.current_user(@conn) do %>
           <details class="site-menu">
             <summary><%= gettext("Explore") %></summary>

@@ -1,0 +1,8 @@
+<nav class="tactics-modes" aria-label="<%= gettext("Tactics") %>">
+  <%= link dgettext("study", "Practice public puzzles"), to: Routes.tactic_path(@conn, :random, @locale), class: "tactics-public-link" %>
+  <div class="tactics-visualization-links">
+    <span class="tactics-modes-label"><%= dgettext("tactics", "Visualization") %></span>
+    <a href="<%= Routes.blind_tactic_path(@conn, :random, @locale) %>"><strong><%= gettext("Blind Tactics") %></strong><span><%= dgettext("tactics", "Follow moves on a frozen board") %></span></a>
+    <a href="<%= Routes.pieceless_tactic_path(@conn, :random, @locale) %>"><strong><%= gettext("Pieceless Tactics") %></strong><span><%= dgettext("tactics", "Solve with hidden pieces") %></span></a>
+  </div>
+</nav>

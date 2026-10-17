@@ -1,57 +1,11 @@
-
-<div class="features-header">
-  <h1><%= dgettext("blind-tactics", "Blind Tactics") %></h1>
-  <b><%= dgettext("blind-tactics", "Improve your chess visualization skills") %></b>
-</div>
-
-
-<p><%= dgettext("blind-tactics", "Use blind tactics to improve your chess visualisation skills. Solve tactics while seeing the board state of several moves from the past. You are given the representation of the board and the moves that have been made since then, and then you then have to solve the tactical problem by imagining the board and the moves played in your head.") %></p>
-
-<a href="<%= Routes.blind_tactic_path(@conn, :random, @locale) %>">
-  <button class="highlight-button"><%= dgettext("blind-tactics", "Play Now!") %></button>
-</a>
-
-<h2 id="help"><%= dgettext("blind-tactics", "How it works") %></h2>
-<p><%= dgettext("blind-tactics", "Using the blind tactics takes getting used to. Here I try to explain it as simple and as clear as possible.") %></p>
-
-<div class="row">
-  <div class="one-half column">
-    <h3><%= dgettext("blind-tactics", "Frozen Board") %></h3>
-    <p><%= dgettext("blind-tactics", "The board is frozen and does not show the current state of the game. This means you do not see the latest state of the board. The pieces are not animated during the tactics. You have to keep the positions of the pieces in your head!") %></p>
-    <p><%= dgettext("blind-tactics", "If you click on the position where a piece is positioned you will be shown the possible legal moves. If you then click again on the correct square, the move will be executed and the exercise will continue.") %></p>
-  </div>
-
-  <div class="one-half column">
-    <img alt="<%= dgettext("blind-tactics", "different board state") %>" src="<%= Routes.static_path(@conn, "/images/features/blind/board-state.png") %>"></img>
-  </div>
-</div>
-
-
-<div class="row">
-  <div class="one-half column">
-    <img alt="<%= dgettext("blind-tactics", "move list") %>" src="<%= Routes.static_path(@conn, "/images/features/blind/move-list.png") %>"></img>
-  </div>
-  <div class="one-half column">
-    <h3><%= dgettext("blind-tactics", "The move list") %></h3>
-    <p><%= dgettext("blind-tactics", "Next to the board you will see the list of moves that have been played since the board was frozen. This list shows the current state of the game and the moves the opponent played.") %></p>
-    <p><%= dgettext("blind-tactics", "The moves the opponent plays during tactics are added to this list!") %></p>
-  </div>
-</div>
-
-<div class="row">
-  <div class="one-half column">
-    <h3><%= dgettext("blind-tactics", "Tactics") %></h3>
-    <p><%= dgettext("blind-tactics", "Your task is to solve the exercise like with normal tactics. There is only one continuation that is correct.") %></p>
-    <p><%= dgettext("blind-tactics", "As soon as you have solved the tactic, the final position is displayed. Did you have the same position in your head?") %></p>
-  </div>
-
-  <div class="one-half column">
-    <img alt="<%= dgettext("blind-tactics", "solved tactic") %>" src="<%= Routes.static_path(@conn, "/images/features/blind/solved.png") %>"></img>
-  </div>
-</div>
-
-<a href="<%= Routes.blind_tactic_path(@conn, :random, @locale) %>">
-  <button class="highlight-button">Play Now!</button>
-</a>
-
-
+<%= render ListudyWeb.ComponentView, "visualization_guide.html", conn: @conn, locale: @locale,
+  title: gettext("Blind Tactics"),
+  intro: dgettext("tactics", "Read the moves, picture the current position, then solve while the board stays frozen."),
+  play: Routes.blind_tactic_path(@conn, :random, @locale),
+  steps: [
+    {dgettext("tactics", "Read the sequence"), dgettext("tactics", "The diagram shows an earlier position. Play the listed moves in your mind to reach the position to solve.")},
+    {dgettext("tactics", "Play from memory"), dgettext("tactics", "Click the square where your piece is now, then its destination. The displayed pieces stay in their original places.")},
+    {dgettext("tactics", "Track the reply"), dgettext("tactics", "Opponent replies appear in the move list. Keep updating your mental board until you solve the puzzle.")}
+  ], image: "/images/features/blind/board-state.png",
+  image_alt: dgettext("tactics", "Frozen board and the position imagined after the listed moves"),
+  caption: dgettext("tactics", "The board stays frozen; follow the move list to track the current position.") %>

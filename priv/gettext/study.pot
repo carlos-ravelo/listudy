@@ -1326,3 +1326,6 @@ msgstr ""
 
 msgid "Already have a file or Lichess study? Import it"
 msgstr ""
+
+msgid "Import PGN"
+msgstr ""
