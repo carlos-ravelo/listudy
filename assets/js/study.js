@@ -5,6 +5,7 @@ import { setupStudyFeedback } from './modules/study_feedback.js';
 import { setupStudySessions } from './modules/study_sessions.js';
 import { setupStudySparring } from './modules/sparring/study_adapter.js';
 import { replayPositionContext } from './modules/study/position_context.js';
+import { setupStudyVisualization } from './modules/study/visualization.js';
 import { applyGameEvidence, gameLineTarget } from './modules/analysis/game_progress.js';
 import { positionReviews, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, reviewExposureKey, continuationKey, nextSmartPosition } from './modules/study/position_review.js';
 import { cachedPositionCatalog } from './modules/study/position_catalog_cache.js';
@@ -69,6 +70,7 @@ let smartCatalog = [];
 let positionAttempts = new Set();
 let assistedPositions = new Set();
 let contextReplayActive = false;
+let visualization = null;
 let gameLineQueue = null;
 let studySessions = { begin() {}, decision() {}, end() {}, refresh() {}, clear() {}, boundary() { return false; } };
 
@@ -384,6 +386,7 @@ async function handle_move(orig, dest) {
     }
 
     const wasCorrect = possible_moves.indexOf(san) != -1;
+    visualization?.decision(wasCorrect, assistedPositions.has(currentPositionId()) || positionAttempts.has(currentPositionId()));
     if (wasCorrect && smartTarget && (smartTarget.route || smartTarget.expectedMove)) {
         const nextIndex = smartTarget.route?.[curr_move.length - 1];
         const intended = smartTarget.expectedMove || tree_children(curr_move)[nextIndex]?.move;
@@ -512,6 +515,7 @@ async function handle_move(orig, dest) {
             // console.log('CURR_DEPTH', end_of_line, curr_node.move, curr_node.move_index, curr_depth);
         }
         store_trees();
+        if (visualization?.active) ground.set({ movable: { dests: new Map() } });
         await sleep(get_move_delay()); // instant play by the ai feels weird
         if (sessionId !== trainingSessionId) return;
         if (end_of_line) {
@@ -519,6 +523,14 @@ async function handle_move(orig, dest) {
             if (naturalEnd && !lineReviewRecorded && lineEligibleForReview) record_line_review(true);
             achievement_end_of_line();
             set_text(success_div, right_move_text() + "\n" + (smartTarget?.type === 'line' ? i18n.smart_chain_complete : i18n.success_end_of_line));
+
+            if (visualization?.active) {
+                visualization.settle(true);
+                store_trees();
+                setup_move();
+                update_progress();
+                return;
+            }
 
             // Auto-advance to the specific chapter type if Puzzle Run is active
             const currentRunMode = window.studyPuzzleRunMode ?? localStorage.getItem("puzzleRunMode");
@@ -551,6 +563,8 @@ async function handle_move(orig, dest) {
             }
         } else {
             play_move(reply);
+            visualization?.reply(reply);
+            visualization?.settle(false);
         }
     } else {
         // wrong move at the current position
@@ -766,6 +780,7 @@ function give_hints(once) {
  * @param  once  Pass true to override any value of variable show_arrows and display hints temporarily.
  */
 function display_arrows(once) {
+    if (visualization?.hidden) { ground.setShapes([]); overlay_manager.clear_overlays(); return; }
     if (contextReplayActive) { ground.setShapes([]); return; }
     let shapes = [];
     let all_moves = tree_possible_moves(curr_move);
@@ -878,6 +893,7 @@ function create_comment_list(container_id, current_move, response_moves) {
  * if that option is turned on.
  */
 function display_comments(once) {
+    if (visualization?.hidden) { document.getElementById(comments_div).innerHTML = ''; return; }
     const introduction = smartIntroductionMove();
     if (contextReplayActive || smartSession && !once && !introduction) { document.getElementById(comments_div).innerHTML = ""; return; }
     let cm = tree_get_node(curr_move);
@@ -937,6 +953,7 @@ function change_analysis_board() {
 
 function setup_move() {
     if (sparring?.active) { sparring.render(); return; }
+    visualization?.block(contextReplayActive || !!failedPositionRun || spacedReviewRunActive || weakChapterRunActive || !!smartSession);
     updateContextReplayUi();
     if (contextReplayActive) {
         const last = chess.history({ verbose: true }).slice(-1)[0];
@@ -975,6 +992,7 @@ function setup_move() {
     }
     studyMoveNavigation.update();
     update_read_mode_ui();
+    visualization?.render();
 }
 
 /*
@@ -1018,6 +1036,7 @@ function play_move(san) {
 }
 
 function start_training() {
+    visualization?.reset();
     if (sparring?.active) { sparring.stop(); studySessions.end(); }
     if (!readMode) studySessions.begin(smartSession ? 'smart' : 'lines');
     contextReplayActive = false;
@@ -1229,6 +1248,7 @@ function show_neglected_move_hints() {
  * Show suggestions based on the move number
  */
 function show_suggestions() {
+    if (visualization?.hidden) return;
     let suggestions = [
         {expr: function(){ return show_pgn_arrow_hints() },           text: i18n.suggestion_first_pgn_arrow, once: false, key: TextOverlayId.FIRST_PGN_ARROW},
         {expr: function(){ return show_neglected_move_hints() },      text: i18n.suggestion_first_neglected_move, once: false, key: TextOverlayId.FIRST_NEGLECTED_MOVE},
@@ -1264,6 +1284,7 @@ function setup_intro() {
 function turn_on_hints_for_current_move() {
     if (sparring?.active) { sparring.hint(); return; }
     if (readMode || contextReplayActive) return;
+    visualization?.reveal();
     assistedPositions.add(currentPositionId());
     display_arrows(true);
     display_comments(true);
@@ -1853,6 +1874,12 @@ async function main() {
     setup_move_handler(handle_move);
     setup_click_handler(handle_click);
 
+    visualization = setupStudyVisualization({
+        storage: StorageAdapter, getStats: () => chapterStats,
+        persist: () => StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats)),
+        assist: () => assistedPositions.add(currentPositionId()), refresh: setup_move
+    });
+
     window.total_moves = 0;
 
     resize_ground();
@@ -1953,6 +1980,7 @@ function seek_read_move(path) {
 }
 
 function refresh_manual_navigation() {
+    visualization?.reveal();
     finish_chapter_practice(false);
     trainingSessionId += 1;
     lineEligibleForReview = false;

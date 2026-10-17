@@ -1417,3 +1417,45 @@ msgstr "Ejercicios y explicaciones para practicar…"
 
 msgid "Description (optional)"
 msgstr "Descripción (opcional)"
+
+msgid "Visualization training"
+msgstr "Entrenamiento de visualización"
+
+msgid "Hide pieces"
+msgstr "Ocultar piezas"
+
+msgid "Show pieces (help)"
+msgstr "Mostrar piezas (ayuda)"
+
+msgid "Memorize the position, then play %count% of your moves with the pieces hidden."
+msgstr "Memoriza la posición y juega %count% de tus jugadas con las piezas ocultas."
+
+msgid "Pieces hidden · Your moves: %count%"
+msgstr "Piezas ocultas · Tus jugadas: %count%"
+
+msgid "Line complete. Reset or choose another exercise."
+msgstr "Línea completada. Reinicia o elige otro ejercicio."
+
+msgid "Opponent played"
+msgstr "El rival jugó"
+
+msgid "Without help: %clean%/%total% runs"
+msgstr "Sin ayuda: %clean%/%total% intentos"
+
+msgid "Visualization"
+msgstr "Visualización"
+
+msgid "Moves with hidden pieces"
+msgstr "Jugadas con piezas ocultas"
+
+msgid "Adaptive difficulty"
+msgstr "Dificultad adaptativa"
+
+msgid "1 move"
+msgstr "1 jugada"
+
+msgid "2 moves"
+msgstr "2 jugadas"
+
+msgid "4 moves"
+msgstr "4 jugadas"
