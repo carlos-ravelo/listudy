@@ -79,6 +79,17 @@
 .puzzle-workspace .sidebar { grid-area: feedback; padding-top: 16px; border-top: 1px solid var(--bg-highlight-color); }
 .puzzle-settings h2 { margin-bottom: 16px; }
 .puzzle-settings .puzzle-filters { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.puzzle-autoplay { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--bg-highlight-color); }
+.puzzle-autoplay label { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; margin: 0; cursor: pointer; font-variant: normal; }
+.puzzle-autoplay label > span { display: flex; flex-direction: column; gap: 4px; }
+.puzzle-autoplay strong { font-size: 13px; font-weight: 600; line-height: 1.4; }
+.puzzle-autoplay label > span > span { font-size: 12px; line-height: 1.5; color: var(--secondary-color); }
+.puzzle-autoplay input[type="checkbox"] { appearance: none; flex: 0 0 38px; width: 38px; height: 24px; margin: 0; padding: 3px; box-sizing: border-box; border: 1px solid var(--secondary-color); border-radius: 14px; background: var(--bg-highlight-color); cursor: pointer; }
+.puzzle-autoplay input::before { content: ""; display: block; width: 16px; height: 16px; border-radius: 50%; background: var(--secondary-color); }
+.puzzle-autoplay input:checked { border-color: #206a9d; background: #206a9d; }
+.puzzle-autoplay input:checked::before { transform: translateX(14px); background: #fff; }
+.puzzle-autoplay input:hover { border-color: var(--font-color); }
+.puzzle-autoplay input:focus-visible { outline: 2px solid var(--font-color); outline-offset: 4px; }
 .puzzle-current-rating { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; font-size: 12px; color: var(--secondary-color); }
 .puzzle-current-rating strong { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--font-color); }
 .puzzle-workspace .puzzle-about { margin-top: 20px; }

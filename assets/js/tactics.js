@@ -9,12 +9,14 @@ import { createTacticAlternatives } from './modules/tactic_alternatives.js';
 import { createEndgameEngine } from './modules/endgame_engine.js';
 import { createPromotionPicker } from './modules/promotion_picker.js';
 import { createPuzzleProgress } from './modules/puzzle_progress.js';
+import { createPuzzleAutoplay } from './modules/puzzle_autoplay.js';
 import { enginePosition } from './modules/engine_position.js';
 const alternatives = createTacticAlternatives({
     createEngine: () => createEndgameEngine({tables: {lookup: async () => null}})
 });
 let progress, picker, pendingPromotion;
 let busy = false, generation = 0, finished = false;
+const autoplay = createPuzzleAutoplay({isFinished: () => finished, next: () => document.getElementById('next')?.click()});
 
 function show_div(id) {
     let div = document.getElementById(id);
@@ -92,6 +94,7 @@ async function play_move(orig, dest, promotion) {
             localStorage.setItem("achievements_tactics_solved", Number(solves) + 1);
             set_text(success_div, " ", {bold: i18n.success});
             show_div("next");
+            autoplay.completed();
         }
     } else {
         // player failed the puzzle
@@ -138,10 +141,12 @@ function show_which_side() {
 }
 
 function main() {
+    autoplay.refresh();
     if (!document.getElementById('fen')) return;
     const key = ['fen', 'moves', 'last_move', 'puzzle_identity', 'puzzle_attempt'].map(id => document.getElementById(id)?.value).join('|');
     if (main.loadedKey === key && window.ground?.state.dom.elements.board.isConnected) return;
     main.loadedKey = key;
+    autoplay.reset();
     clear_all_text();
     document.getElementById('next')?.classList.add('hidden');
     const solution = document.getElementById('solution');
@@ -195,6 +200,9 @@ function main() {
 }
 
 document.addEventListener("phx:update", main);
+document.addEventListener("click", event => {
+    if (event.target.closest('#next')) autoplay.cancel();
+}, true);
 window.onresize = onresize;
 window.old_fen = "abc";
 main();
