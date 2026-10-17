@@ -1,6 +1,11 @@
 <div class="study-create" data-training-kind="<%= Ecto.Changeset.get_field(@changeset, :training_kind) %>">
-<h1><%= if Ecto.Changeset.get_field(@changeset, :training_kind) == "tactics", do: dgettext("study", "Import tactics PGN"), else: dgettext("study", "Import your repertoire") %></h1>
+<h1><%= if Ecto.Changeset.get_field(@changeset, :training_kind) == "tactics", do: dgettext("study", "Create tactics"), else: dgettext("study", "Create repertoire") %></h1>
 
+<div class="study-create-entry">
+  <%= link dgettext("study", "Start on the board"), to: Routes.study_path(@conn, :new, @locale, source: "blank", kind: Ecto.Changeset.get_field(@changeset, :training_kind)), class: "button button-primary" %>
+  <p><%= dgettext("study", "Play your moves or set up a position. No file needed.") %></p>
+</div>
+<details class="study-create-import"><summary><%= dgettext("study", "Already have a file or Lichess study? Import it") %></summary>
 <div class="row">
   <div class="two-thirds column">
     <%= render "form.html", assigns: assigns, action: Routes.study_path(@conn, :create, @locale) %>
@@ -10,5 +15,6 @@
 <%= link dgettext("study", "For more information read the Copyright Policy"), to: Routes.page_path(@conn, :show, "en", "copyright") %>
   </div>
 </div>
+</details>
 </div>
 <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_maintenance.js") %>"></script>

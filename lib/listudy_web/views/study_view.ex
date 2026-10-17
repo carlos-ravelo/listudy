@@ -31,14 +31,14 @@ defmodule ListudyWeb.StudyView do
           ),
         empty_search: dgettext("study", "No collections match these filters."),
         title: dgettext("study", "Your tactics"),
-        import_label: dgettext("study", "Import tactics PGN"),
+        import_label: dgettext("study", "Create tactics"),
         empty_title: dgettext("study", "Your tactics library"),
         empty_help:
           dgettext(
             "study",
             "Import a tactics PGN to practice its exercises, variations and explanations."
           ),
-        import_empty: dgettext("study", "Import tactics PGN"),
+        import_empty: dgettext("study", "Create tactics"),
         explore: dgettext("study", "Practice public puzzles"),
         favorites: dgettext("study", "Saved collections"),
         show_all: dgettext("study", "Show all collections"),
@@ -70,14 +70,14 @@ defmodule ListudyWeb.StudyView do
           ),
         empty_search: dgettext("study", "No studies match these filters."),
         title: dgettext("study", "Your Studies"),
-        import_label: dgettext("study", "Import repertoire"),
+        import_label: dgettext("study", "Create repertoire"),
         empty_title: dgettext("study", "Your first training session"),
         empty_help:
           dgettext(
             "study",
             "Import a PGN or a Lichess study, or explore a public study to start practicing."
           ),
-        import_empty: dgettext("study", "Import my repertoire"),
+        import_empty: dgettext("study", "Create repertoire"),
         explore: dgettext("study", "Find a study to practice"),
         favorites: dgettext("study", "Favored Studies"),
         show_all: dgettext("study", "Show all studies"),

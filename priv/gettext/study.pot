@@ -1257,3 +1257,72 @@ msgstr ""
 
 msgid "4 moves"
 msgstr ""
+
+msgid "New exercise"
+msgstr ""
+
+msgid "New repertoire"
+msgstr ""
+
+msgid "Create on the board"
+msgstr ""
+
+msgid "Create study"
+msgstr ""
+
+msgid "Create tactics"
+msgstr ""
+
+msgid "Create repertoire"
+msgstr ""
+
+msgid "Check the title and practice type. Your moves are still in the editor."
+msgstr ""
+
+msgid "Set up a valid position and add at least one legal move before saving."
+msgstr ""
+
+msgid "Place one king per side, keep pawns off the first and last ranks, and check whose turn it is."
+msgstr ""
+
+msgid "Analysis is unavailable. You can keep editing."
+msgstr ""
+
+msgid "Pawn,Knight,Bishop,Rook,Queen,King"
+msgstr ""
+
+msgid "Remove piece"
+msgstr ""
+
+msgid "Set up a position"
+msgstr ""
+
+msgid "Import or export PGN"
+msgstr ""
+
+msgid "Place pieces"
+msgstr ""
+
+msgid "Choose a piece"
+msgstr ""
+
+msgid "Side to move"
+msgstr ""
+
+msgid "Clear board"
+msgstr ""
+
+msgid "Use position"
+msgstr ""
+
+msgid "Engine analysis"
+msgstr ""
+
+msgid "Start on the board"
+msgstr ""
+
+msgid "Play your moves or set up a position. No file needed."
+msgstr ""
+
+msgid "Already have a file or Lichess study? Import it"
+msgstr ""

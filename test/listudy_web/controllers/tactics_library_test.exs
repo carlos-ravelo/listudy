@@ -113,7 +113,8 @@ defmodule ListudyWeb.TacticsLibraryTest do
     preview("empty", html)
     auth = Pow.Plug.assign_current_user(conn, user(), [])
     html = auth |> get("/en/studies/new?kind=tactics") |> html_response(200)
-    assert html =~ "Import tactics PGN"
+    assert html =~ "Create tactics"
+    assert html =~ "study_pgn"
     assert Floki.find(html, "#study_description[required], #study_description[minlength]") == []
     assert html =~ ~r/<option(?=[^>]*selected)(?=[^>]*value="tactics")[^>]*>/
     preview("import", html)
