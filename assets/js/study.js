@@ -514,7 +514,6 @@ async function handle_move(orig, dest) {
             }
             // console.log('CURR_DEPTH', end_of_line, curr_node.move, curr_node.move_index, curr_depth);
         }
-        store_trees();
         if (visualization?.active) ground.set({ movable: { dests: new Map() } });
         await sleep(get_move_delay()); // instant play by the ai feels weird
         if (sessionId !== trainingSessionId) return;
@@ -526,7 +525,6 @@ async function handle_move(orig, dest) {
 
             if (visualization?.active) {
                 visualization.settle(true);
-                store_trees();
                 setup_move();
                 update_progress();
                 return;
@@ -576,7 +574,6 @@ async function handle_move(orig, dest) {
         ground_undo_last_move();
         set_text(error_div, i18n.error_wrong_move);
     }
-    store_trees();
     setup_move();
     update_progress();
 }
@@ -1104,19 +1101,7 @@ function start_training() {
     studyMoveNavigation.update();
 }
 
-/*
- * Store the trees in window.trees into localStorage
- */
-function store_trees() {
-    let tree_key = study_id + "_tree";
-    try {
-        StorageAdapter.setItem(tree_key, JSON.stringify(trees));
-    } catch(caught_error) {
-        console.log("Ignored localstorage error: " + caught_error);
-    }
-}
-
-// load the trees from the localStorage or generate if they dont exist
+// Rebuild the playable trees from the source PGN.
 function setup_trees() {
     let trees = {};
     const pgnParser = require('pgn-parser'); 
@@ -1611,7 +1596,6 @@ async function setup_progress_reset() {
                 lineEligibleForReview = false;
             }
             StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
-            store_trees();
             if (!readMode) start_training();
             updateFailedPositionsUi();
             update_progress();
@@ -1727,7 +1711,8 @@ async function main() {
     window.addEventListener('study-sync-status', event => {
         const indicator = document.getElementById('study_sync_status');
         indicator.hidden = event.detail.state === 'saved';
-        indicator.textContent = i18n.progress_sync_offline;
+        indicator.textContent = event.detail.state === 'storage-error' ? i18n.progress_storage_error
+            : event.detail.state === 'sync-error' ? i18n.progress_sync_error : i18n.progress_sync_offline;
     });
     // 1. If the user is authenticated, try to fetch cloud progress/settings
     if (typeof logged_in !== 'undefined' && logged_in) {
@@ -1746,6 +1731,7 @@ async function main() {
         }
     }
 
+    if (!(typeof logged_in !== 'undefined' && logged_in)) await StorageAdapter.ready(study_id);
     setup_ground();
     setup_chess();
     setup_trees();
@@ -1762,10 +1748,10 @@ async function main() {
     if (bindChapterIdentities(chapterReviews, trees)) StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
     smartCatalog = cachedPositionCatalog(trees, studyColor, pgn);
     let previousTrees = [];
-    try { previousTrees = JSON.parse(StorageAdapter.getItem(study_id + '_tree') || '[]'); } catch (_) {}
+    try { previousTrees = JSON.parse(await StorageAdapter.legacyTree(study_id + '_tree') || '[]'); } catch (_) {}
     if (!Array.isArray(previousTrees)) previousTrees = [];
-    StorageAdapter.backup(chapter_stats_key());
     if (reconcileStudyProgress(chapterStats, trees, smartCatalog, chapterReviewSignatures, previousTrees, studyColor)) {
+        await StorageAdapter.backup(chapter_stats_key());
         StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     }
     window.addEventListener('study-progress-sync-merged', event => {
@@ -1777,6 +1763,7 @@ async function main() {
             chapterReviews = readChapterReviews(event.detail.value);
             bindChapterIdentities(chapterReviews, trees);
         } else return;
+        StorageAdapter.acceptSnapshot(event.detail.key, event.detail.value);
         studySessions.refresh();
         update_progress();
     });

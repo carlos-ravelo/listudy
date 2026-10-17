@@ -41,7 +41,8 @@ function client(localStorage = storage(), user = '1') {
         CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
         fetch: fetchMock, setTimeout: () => 1, clearTimeout() {}, console });
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/progress_merge.js'), 'utf8').replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/, ''), context);
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/storageAdapter.js'), 'utf8').replace(/^import .*\n/gm, '').replace('export const StorageAdapter', 'globalThis.StorageAdapter'), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/progress_database.js'), 'utf8').replace(/^export /gm, ''), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/storageAdapter.js'), 'utf8').replace(/^import .*\n/gm, '').replace('export const StorageAdapter', 'globalThis.StorageAdapter').replace(/^export /gm, ''), context);
     return { adapter: context.StorageAdapter, storage: localStorage };
 }
 const key = 'study_chapter_stats';
@@ -93,6 +94,7 @@ const state = (a, b) => JSON.stringify({ version: 1, chapters: { a: { attempts: 
     const unrelatedKey = 'unrelated_chapter_stats';
     const scoped = client();
     scoped.adapter.setItem(unrelatedKey, state(7));
+    await scoped.adapter.whenSaved();
     const pendingMetadata = scoped.storage.getItem('progress:user:1:' + unrelatedKey + ':sync');
     remote.move_delay = 'fast';
     await scoped.adapter.hydrate('study');
