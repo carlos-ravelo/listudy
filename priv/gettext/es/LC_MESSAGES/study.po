@@ -1459,3 +1459,72 @@ msgstr "2 jugadas"
 
 msgid "4 moves"
 msgstr "4 jugadas"
+
+msgid "New exercise"
+msgstr "Nuevo ejercicio"
+
+msgid "New repertoire"
+msgstr "Nuevo repertorio"
+
+msgid "Create on the board"
+msgstr "Crear en el tablero"
+
+msgid "Create study"
+msgstr "Crear estudio"
+
+msgid "Create tactics"
+msgstr "Crear tácticas"
+
+msgid "Create repertoire"
+msgstr "Crear repertorio"
+
+msgid "Check the title and practice type. Your moves are still in the editor."
+msgstr "Revisa el título y el tipo de práctica. Tus jugadas siguen en el editor."
+
+msgid "Set up a valid position and add at least one legal move before saving."
+msgstr "Configura una posición válida y añade al menos una jugada legal antes de guardar."
+
+msgid "Place one king per side, keep pawns off the first and last ranks, and check whose turn it is."
+msgstr "Coloca un rey por bando, evita peones en la primera y última fila y revisa a quién le toca jugar."
+
+msgid "Analysis is unavailable. You can keep editing."
+msgstr "El análisis no está disponible. Puedes seguir editando."
+
+msgid "Pawn,Knight,Bishop,Rook,Queen,King"
+msgstr "Peón,Caballo,Alfil,Torre,Dama,Rey"
+
+msgid "Remove piece"
+msgstr "Quitar pieza"
+
+msgid "Set up a position"
+msgstr "Configurar una posición"
+
+msgid "Import or export PGN"
+msgstr "Importar o exportar PGN"
+
+msgid "Place pieces"
+msgstr "Colocar piezas"
+
+msgid "Choose a piece"
+msgstr "Elegir una pieza"
+
+msgid "Side to move"
+msgstr "Turno de juego"
+
+msgid "Clear board"
+msgstr "Vaciar tablero"
+
+msgid "Use position"
+msgstr "Usar posición"
+
+msgid "Engine analysis"
+msgstr "Análisis con motor"
+
+msgid "Start on the board"
+msgstr "Empezar en el tablero"
+
+msgid "Play your moves or set up a position. No file needed."
+msgstr "Juega tus movimientos o configura una posición. No necesitas ningún archivo."
+
+msgid "Already have a file or Lichess study? Import it"
+msgstr "¿Ya tienes un archivo o un estudio de Lichess? Impórtalo"

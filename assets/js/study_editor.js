@@ -3,18 +3,31 @@ import { createChapterEditor } from './modules/study/chapter_editor.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
 import { ground_legal_moves } from './modules/chess_utils.js';
 import { createPromotionPicker } from './modules/promotion_picker.js';
+import { setupPositionFen } from './modules/study/position_setup.js';
+import { createSparringEngine } from './modules/sparring/uci_engine.js';
+const ChessModule = require('chess.js');
+const Chess = ChessModule.Chess || ChessModule;
 
 import Alpine from 'alpinejs';
 
 Alpine.data('chapterEditor', () => {
-    let chapters, editor, ground, moveTree, config, pgnSnapshot, promotionPicker;
+    let chapters, editor, ground, moveTree, config, pgnSnapshot, promotionPicker, engine, analysisId = 0;
 
     return {
         exportPgn: '', pgnEdited: false, options: [], chapter: 0, title: '', comment: '', pendingPromotion: null, analysisUrl: '',
         editingTitle: false, titleBeforeEdit: '', saving: false, dirty: false, hasPrevious: false, hasNext: false, status: '',
+        draft: false, trainingKind: 'repertoire', studyColor: 'white', privateStudy: true,
+        setupMode: false, selectedPiece: 'wP', positionTurn: 'w', setupPieces: [],
+        analysisEnabled: false, analysisText: '',
 
         init() {
             config = this.$el.dataset;
+            this.draft = config.draft === 'true';
+            this.trainingKind = config.kind || 'repertoire';
+            this.studyColor = config.color || 'white';
+            this.setupPieces = ['♙♘♗♖♕♔', '♟♞♝♜♛♚'].flatMap((symbols, i) => [...symbols].map((symbol, j) => ({
+                code: (i ? 'b' : 'w') + 'PNBRQK'[j], symbol, label: (i ? config.black : config.white) + ' ' + (config.pieceNames || 'Pawn,Knight,Bishop,Rook,Queen,King').split(',')[j]
+            }))).concat([{code: 'erase', symbol: '×', label: config.removePiece}]);
             chapters = JSON.parse(config.editor).chapters;
             this.options = chapters.map(({ title }) => ({ title }));
             const requested = new URLSearchParams(window.location.search).get('chapter_index');
@@ -27,7 +40,8 @@ Alpine.data('chapterEditor', () => {
             ground = Chessground(this.$refs.board, {
                 orientation: config.color === 'black' ? 'black' : 'white',
                 drawable: { enabled: false },
-                movable: { free: false, events: { after: (from, to) => this.play(from, to) } }
+                movable: { free: false, events: { after: (from, to) => this.play(from, to) } },
+                events: {select: square => this.placePiece(square)}
             });
             moveTree = setupStudyMoveTree({
                 element: this.$refs.moves,
@@ -38,7 +52,70 @@ Alpine.data('chapterEditor', () => {
             this.refresh();
         },
 
-        destroy() { promotionPicker?.destroy(); ground?.destroy(); },
+        destroy() { ++analysisId; engine?.dispose(); promotionPicker?.destroy(); ground?.destroy(); },
+
+        beginSetup() {
+            if ((this.dirty || this.pgnEdited) && !window.confirm(config.discardPrompt)) return;
+            ++analysisId; engine?.cancel();
+            this.analysisEnabled = false;
+            this.setupMode = true;
+            this.positionTurn = editor.position().turn();
+            ground.set({movable: {color: undefined, dests: new Map()}, draggable: {enabled: false}, lastMove: undefined, check: false});
+        },
+        placePiece(square) {
+            if (!this.setupMode || !square) return;
+            const roles = {P:'pawn', N:'knight', B:'bishop', R:'rook', Q:'queen', K:'king'};
+            ground.setPieces(new Map([[square, this.selectedPiece === 'erase' ? undefined : {
+                role: roles[this.selectedPiece[1]], color: this.selectedPiece[0] === 'w' ? 'white' : 'black'
+            }]]));
+        },
+        clearPosition() { ground.set({fen: '8/8/8/8/8/8/8/8'}); },
+        resetPosition() { ground.set({fen: new Chess().fen()}); this.positionTurn = 'w'; },
+        cancelSetup() {
+            this.setupMode = false;
+            ground.set({draggable: {enabled: true}});
+            this.status = '';
+            this.refresh();
+        },
+        finishSetup() {
+            try {
+                const fen = setupPositionFen(ground.getFen(), this.positionTurn);
+                const initial = {...chapters[this.chapter], fen, root: [], comment: '', headers: {SetUp: '1', FEN: fen, Result: '*'}};
+                chapters[this.chapter] = initial;
+                editor = createChapterEditor(initial);
+                this.setupMode = false;
+                ground.set({draggable: {enabled: true}});
+                this.status = '';
+                this.refresh();
+            } catch (_) { this.status = config.invalidPosition; }
+        },
+        toggleAnalysis() {
+            this.analysisEnabled = !this.analysisEnabled;
+            if (!this.analysisEnabled) { ++analysisId; engine?.cancel(); }
+            else this.analyzePosition();
+        },
+        async analyzePosition() {
+            const id = ++analysisId;
+            engine?.cancel();
+            if (!this.analysisEnabled || this.setupMode) return;
+            const position = editor.position();
+            this.analysisText = config.analysing;
+            try {
+                engine ||= createSparringEngine();
+                const result = await engine.analyze({initialFen: position.fen(), moves: []}, {movetime: 800});
+                if (id !== analysisId || !this.analysisEnabled) return;
+                const score = result.score;
+                const white = score?.value * (position.turn() === 'w' ? 1 : -1);
+                const value = score?.type === 'mate' ? `M${white}` : Number.isFinite(white) ? `${white >= 0 ? '+' : ''}${(white / 100).toFixed(1)}` : '';
+                const line = [];
+                for (const uci of (result.pv || []).slice(0, 6)) {
+                    const move = position.move({from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4]});
+                    if (!move) break;
+                    line.push(move.san);
+                }
+                this.analysisText = [value, line.join(' ')].filter(Boolean).join(' · ');
+            } catch (_) { if (id === analysisId) this.analysisText = config.engineError; }
+        },
 
         syncPgn(force = false) {
             const snapshot = JSON.stringify([this.chapter, editor.tree]);
@@ -71,10 +148,11 @@ Alpine.data('chapterEditor', () => {
                 : `https://lichess.org/analysis/pgn/${encodeURIComponent(position.pgn())}?color=${orientation}`;
             moveTree.update({ reading: true, chapter: this.chapter, root: editor.tree.root,
                 fen: chapters[this.chapter].fen, path: editor.path });
+            if (this.analysisEnabled) this.analyzePosition();
         },
 
         play(from, to, promotion) {
-            if (this.saving || this.pendingPromotion) return;
+            if (this.setupMode || this.saving || this.pendingPromotion) return;
             const position = editor.position();
             const choices = position.moves({ verbose: true }).filter(move => move.from === from && move.to === to && move.promotion);
             if (choices.length && !promotion) {
@@ -110,7 +188,7 @@ Alpine.data('chapterEditor', () => {
         },
 
         selectPosition(path) {
-            if (this.saving || this.pendingPromotion) return;
+            if (this.setupMode || this.saving || this.pendingPromotion) return;
             editor.select(path);
             this.refresh();
         },
@@ -178,7 +256,7 @@ Alpine.data('chapterEditor', () => {
         },
 
         applyChapterPgn() {
-            if (this.saving || this.pendingPromotion) return;
+            if (this.setupMode || this.saving || this.pendingPromotion) return;
             try {
                 editor.loadPgn(this.exportPgn);
                 this.syncPgn(true);
@@ -191,7 +269,7 @@ Alpine.data('chapterEditor', () => {
         },
 
         discard() {
-            if (this.pendingPromotion) return;
+            if (this.setupMode || this.pendingPromotion) return;
             if (!window.confirm(config.discardPrompt)) return;
             editor = createChapterEditor(chapters[this.chapter]);
             this.syncPgn(true);
@@ -200,7 +278,7 @@ Alpine.data('chapterEditor', () => {
         },
 
         changeChapter(event) {
-            if (this.pendingPromotion) {
+            if (this.setupMode || this.pendingPromotion) {
                 event.target.value = String(this.chapter);
                 return;
             }
@@ -217,13 +295,13 @@ Alpine.data('chapterEditor', () => {
         },
 
         beforeLeave(event) {
-            if (!this.dirty && !this.pgnEdited) return;
+            if (!this.dirty && !this.pgnEdited && !this.setupMode) return;
             event.preventDefault();
             event.returnValue = '';
         },
 
         async save() {
-            if (this.saving || this.pendingPromotion || !this.dirty) return;
+            if (this.setupMode || this.saving || this.pendingPromotion || !this.dirty) return;
             this.saving = true;
             this.status = config.saving;
             this.refresh();
@@ -235,10 +313,13 @@ Alpine.data('chapterEditor', () => {
                     method: 'POST', credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json',
                         'x-csrf-token': csrfToken },
-                    body: JSON.stringify({ revision: config.revision, chapter_index: this.chapter, tree: editor.tree })
+                    body: JSON.stringify(this.draft ? {draft: {title: editor.tree.title, training_kind: this.trainingKind,
+                        color: this.studyColor, private: this.privateStudy, pgn: editor.pgn()}} :
+                        { revision: config.revision, chapter_index: this.chapter, tree: editor.tree })
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || config.saveError);
+                if (this.draft) { this.dirty = false; this.pgnEdited = false; window.location.assign(result.url); return; }
                 const path = editor.path;
                 config.revision = result.revision;
                 chapters[this.chapter] = { ...chapters[this.chapter], ...editor.tree };

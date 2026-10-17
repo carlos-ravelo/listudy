@@ -192,6 +192,8 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         assert.equal(await collectionLink.getAttribute('href'), tacticsRoute);
         await page.locator('.study-library-create').click();
         async function checkTacticsMetadata() {
+            const importer = page.locator('.study-create-import');
+            if (await importer.count() && !await importer.evaluate(el => el.open)) await importer.locator(':scope > summary').click();
             assert.equal(await page.locator('#study_training_kind').inputValue(), 'tactics');
             await page.locator('.study-management-side').waitFor({state: 'hidden'});
             assert(await page.locator('.study-metadata-opening').isHidden());
