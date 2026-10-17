@@ -1,5 +1,11 @@
 import { assessMove } from './sparring/evaluation.js';
 
+export function endgameMateCue(analysis, player) {
+    const score = analysis?.score;
+    if (score?.type !== 'mate' || !Number.isInteger(score.value) || score.value === 0) return null;
+    return { moves: Math.abs(score.value), winning: (score.value > 0) === (analysis.turn === player) };
+}
+
 // Conservative changes in the player's estimated outcome, never exact W/D/L claims.
 export function endgameTurningPoint(before, after, player, target = 'w') {
     if (!before?.score || !after?.score || before.depth < 12 || after.depth < 12) return null;
@@ -17,7 +23,7 @@ export function endgameTurningPoint(before, after, player, target = 'w') {
 export function createEndgameFeedback({ engine, player, target, toggle, panel, labels, onUpdate, onNotice }) {
     const rows = [];
     const cache = new Map();
-    let queue = Promise.resolve(), disposed = false, reviewing = false;
+    let queue = Promise.resolve(), disposed = false, reviewing = false, currentState, currentAnalysis = null, positionVersion = 0;
     try { toggle.checked = localStorage.getItem('endgame_live_feedback') === 'true'; } catch (_) { toggle.checked = false; }
 
     function analysis(state) {
@@ -44,12 +50,32 @@ export function createEndgameFeedback({ engine, player, target, toggle, panel, l
             if (!disposed) onUpdate();
         });
     }
+    function observe(state) {
+        currentState = state;
+        currentAnalysis = null;
+        const version = ++positionVersion;
+        onUpdate();
+        if (!toggle.checked || reviewing) return;
+        queue = queue.then(async () => {
+            if (disposed || version !== positionVersion || !toggle.checked || reviewing) return;
+            try {
+                const result = await analysis(state);
+                if (disposed || version !== positionVersion || !toggle.checked || reviewing) return;
+                currentAnalysis = result;
+                onUpdate();
+            } catch (_) {}
+        });
+    }
     toggle.onchange = () => {
         try { localStorage.setItem('endgame_live_feedback', String(toggle.checked)); } catch (_) {}
         if (toggle.checked) rows.forEach(enqueue);
+        if (currentState) observe(currentState);
+        onUpdate();
     };
     return {
         rows,
+        observe,
+        get currentAnalysis() { return currentAnalysis; },
         record(row) { rows.push({ ...row, status: 'unanalysed' }); if (toggle.checked) enqueue(rows[rows.length - 1]); },
         review() { reviewing = true; panel.hidden = false; rows.forEach(enqueue); onUpdate(); },
         close() { reviewing = false; panel.hidden = true; },

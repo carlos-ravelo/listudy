@@ -443,3 +443,9 @@ msgstr ""
 
 msgid "Engine estimates from limited searches, not exact win or draw guarantees. Highlighted moves show possible changes in the outcome."
 msgstr ""
+
+msgid "Mate in %{moves}"
+msgstr ""
+
+msgid "Opponent has mate in %{moves}"
+msgstr ""

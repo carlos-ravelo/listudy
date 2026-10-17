@@ -29,11 +29,11 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
             const played = text ? text.split(' ') : [];
             for (const move of played) position.move({from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4]});
             const next = position.moves({verbose: true})[0];
-            return {uci: next ? next.from + next.to + (next.promotion || '') : '0000', score: played.length % 2 ? 0 : 500};
+            return {uci: next ? next.from + next.to + (next.promotion || '') : '0000', score: played.length % 2 ? 0 : 500, turn: position.turn()};
         });
         await page.addInitScript(() => {
             if (location.search.includes('real=1')) return;
-            window.engineTest = { commands: [], bestDelay: 25, analysisDelay: 5, failNext: false };
+            window.engineTest = { commands: [], bestDelay: 25, analysisDelay: 5, failNext: false, mateScore: null };
             window.Worker = class {
                 constructor() { this.dead = false; }
                 terminate() { this.dead = true; }
@@ -46,8 +46,9 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
                     if (!command.startsWith('go')) return;
                     const analysing = command.includes(' depth ');
                     if (engineTest.failNext && !analysing) { engineTest.failNext = false; return setTimeout(() => { if (!this.dead) this.onerror?.(new Error('Unavailable')); }, 5); }
-                    testEndgamePosition(this.position).then(({uci, score}) => {
-                        setTimeout(() => { this.emit(`info depth 18 score cp ${score} pv ${uci}`); this.emit(`bestmove ${uci}`); }, analysing ? engineTest.analysisDelay : engineTest.bestDelay);
+                    testEndgamePosition(this.position).then(({uci, score, turn}) => {
+                        const scoreText = analysing && engineTest.mateScore !== null ? `mate ${engineTest.mateScore * (turn === 'w' ? -1 : 1)}` : `cp ${score}`;
+                        setTimeout(() => { this.emit(`info depth 18 score ${scoreText} pv ${uci}`); this.emit(`bestmove ${uci}`); }, analysing ? engineTest.analysisDelay : engineTest.bestDelay);
                     });
                 }
             };
@@ -84,6 +85,15 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.waitForFunction(() => chess.history().length === 2 && document.getElementById('info_text').textContent.includes('advantage'));
         assert(await page.locator('#endgame_review').isHidden());
         assert.equal((await page.locator('#chessground').boundingBox()).y, top);
+        const assessment = page.locator('#endgame_live_assessment');
+        assert(await assessment.isVisible());
+        const assessmentText = await assessment.textContent();
+        await page.waitForTimeout(4300);
+        assert(await assessment.isVisible(), 'Feedback survives the quick engine reply and toast expiry');
+        assert.equal(await assessment.textContent(), assessmentText);
+        await assessment.click();
+        assert(await page.locator('#endgame_review').isVisible());
+        await page.locator('#endgame_resume').click();
         await page.reload();
         await page.waitForFunction(() => window.chess && window.ground);
         assert(await page.locator('#endgame_live_feedback').isChecked());
@@ -100,6 +110,25 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.waitForTimeout(400);
         assert.equal(await page.evaluate(() => chess.history().length), 0, 'Stale engine reply must not enter a reset game');
 
+        await page.evaluate(() => { engineTest.mateScore = -6; main(); });
+        await page.waitForFunction(() => !document.getElementById('endgame_mate_cue').hidden);
+        assert.equal(await page.evaluate(() => chess.history().length), 0, 'Mate is shown before the first player move');
+        assert.equal(await page.locator('#endgame_mate_cue').textContent(), 'Mate in 6');
+        await move('d6', 'c6');
+        await page.waitForFunction(() => document.querySelector('.endgame-mate-cue')?.textContent === 'Mate in 6');
+        assert.equal(await page.locator('.endgame-mate-cue').getAttribute('data-winning'), 'true');
+        assert.equal(await page.locator('#endgame_live_assessment .endgame-mate-cue').count(), 0);
+        await page.waitForFunction(() => chess.history().length === 2);
+        await page.waitForTimeout(4300);
+        assert(await page.locator('#endgame_mate_cue').isVisible(), 'Mate indicator stays in its fixed place after the engine reply and toast expiry');
+        await page.screenshot({path: '/tmp/listudy-endgame-live-mate.png', fullPage: true});
+        await page.evaluate(() => { main(); engineTest.mateScore = 6; });
+        await move('d6', 'c6');
+        await page.waitForFunction(() => document.querySelector('.endgame-mate-cue')?.textContent === 'Opponent has mate in 6');
+        assert.equal(await page.locator('.endgame-mate-cue').getAttribute('data-winning'), 'false');
+        await page.evaluate(() => { engineTest.mateScore = null; });
+        await page.locator('#endgame_live_feedback').uncheck();
+        assert(await page.locator('#endgame_live_assessment').isHidden());
         await page.evaluate(() => { target_result = 'p'; main('7k/P7/6K1/8/8/8/8/8 w - - 0 1'); });
         await move('a7', 'a8');
         assert(await page.locator('[data-promotion-picker]').isVisible());
@@ -107,7 +136,8 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.locator('[data-promotion="n"]').click();
         assert.equal(await page.evaluate(() => chess.history({verbose: true})[0].promotion), 'n');
         assert(await page.locator('#next').isVisible());
-        await page.locator('#endgame_finish').click();
+        assert(await page.locator('#endgame_review').isVisible());
+        assert(await page.locator('#endgame_resume').isHidden());
         await page.waitForFunction(() => document.getElementById('endgame_review_status').textContent.startsWith('1 / 1'));
         assert.equal(await page.locator('.endgame-key-move').count(), 0, 'Completing the promotion goal is not an error');
 
@@ -119,7 +149,9 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.evaluate(() => { target_result = 'd'; main('7k/8/5KQ1/8/8/8/8/8 w - - 0 1'); });
         await move('g6', 'f7');
         await page.waitForFunction(() => chess.in_draw());
-        assert((await page.locator('#success_text').textContent()).includes('Success'));
+        assert.equal(await page.locator('#todo').getAttribute('data-result'), 'success');
+        assert(await page.locator('#endgame_review').isVisible());
+        assert.equal(await page.evaluate(() => ground.getFen()), await page.evaluate(() => chess.fen().split(' ')[0]));
 
         await page.evaluate(() => { target_result = 'w'; main(); engineTest.failNext = true; });
         await move('d6', 'c6');

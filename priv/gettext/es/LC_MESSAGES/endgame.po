@@ -434,3 +434,9 @@ msgstr "Seguir jugando"
 
 msgid "Engine estimates from limited searches, not exact win or draw guarantees. Highlighted moves show possible changes in the outcome."
 msgstr "Estimaciones del motor con análisis limitado, sin garantías exactas de victoria o tablas. Las jugadas destacadas indican posibles cambios en el resultado."
+
+msgid "Mate in %{moves}"
+msgstr "Mate en %{moves}"
+
+msgid "Opponent has mate in %{moves}"
+msgstr "Te dan mate en %{moves}"

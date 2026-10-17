@@ -2,7 +2,7 @@ require('regenerator-runtime/runtime');
 const Chess = require('chess.js');
 import { turn_color, setup_chess } from './modules/chess_utils.js';
 import { createSparringEngine } from './modules/sparring/uci_engine.js';
-import { createEndgameFeedback } from './modules/endgame_feedback.js';
+import { createEndgameFeedback, endgameMateCue } from './modules/endgame_feedback.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { createPromotionPicker } from './modules/promotion_picker.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
@@ -50,6 +50,7 @@ function finish(success) {
             localStorage.setItem('achievements_endgames_solved', String(Number(localStorage.getItem('achievements_endgames_solved') || 0) + 1));
         } catch (_) {}
     }
+    openReview({ keepFinalPosition: true });
 }
 function goalReached(move) {
     return target_result === 'p' && move?.promotion && move.color === (color === 'white' ? 'w' : 'b') || target_result === 'w' && chess.in_checkmate() && chess.turn() !== (color === 'white' ? 'w' : 'b') || target_result === 'd' && chess.in_draw();
@@ -67,6 +68,7 @@ function playMove(move) {
     ground_move(played, chess);
     ground.setAutoShapes([]);
     updateFen();
+    feedback?.observe(state());
     return played;
 }
 function applyReply(reply) {
@@ -144,6 +146,26 @@ function renderComment() {
     document.getElementById('endgame_review_line').textContent = line ? labels.suggestion + ' ' + line : '';
     document.getElementById('endgame_retry').disabled = !row;
 }
+const gradeSymbols = { best: '★', acceptable: '✓', inaccuracy: '?!', mistake: '?', blunder: '??' };
+function renderLiveAssessment() {
+    const button = document.getElementById('endgame_live_assessment');
+    const row = [...(feedback?.rows || [])].reverse().find(row => row.status === 'done');
+    button.hidden = !toggle.checked || reviewing || !row;
+    const cue = document.getElementById('endgame_mate_cue');
+    const mate = endgameMateCue(feedback?.currentAnalysis, color === 'white' ? 'w' : 'b');
+    cue.hidden = !toggle.checked || reviewing || !mate;
+    if (!cue.hidden) {
+        cue.dataset.winning = String(mate.winning);
+        cue.textContent = labels[mate.winning ? 'mate' : 'mateAgainst'].replace('{moves}', mate.moves);
+    }
+    if (button.hidden) return;
+    const grade = row.beforeAnalysis.depth >= 12 && row.afterAnalysis.depth >= 12 ? row.assessment?.grade : null;
+    button.textContent = (gradeSymbols[grade] || '…') + ' ' + row.san + ' · ' + labels[grade || 'uncertain'];
+    button.dataset.grade = grade || '';
+    button.title = row.moment ? labels[row.moment] : labels.review;
+    button.onclick = () => { openReview(); selectReview(Array(row.ply).fill(0)); };
+}
+function updateFeedback() { renderLiveAssessment(); renderReview(); }
 function renderReview() {
     if (!reviewing) return;
     const summary = feedback.summary();
@@ -155,14 +177,14 @@ function renderReview() {
         const grade = row.status === 'done' && row.beforeAnalysis.depth >= 12 && row.afterAnalysis.depth >= 12 ? row.assessment?.grade : null;
         button.classList.toggle('endgame-key-move', Boolean(row.moment));
         button.dataset.grade = grade || '';
-        button.dataset.gradeSymbol = ({ best: '★', acceptable: '✓', inaccuracy: '?!', mistake: '?', blunder: '??' })[grade] || '';
+        button.dataset.gradeSymbol = gradeSymbols[grade] || '';
         button.setAttribute('title', row.moment ? labels[row.moment] : grade ? labels[grade] : labels[row.status === 'error' ? 'unavailable' : row.status === 'done' ? 'uncertain' : 'analysing']);
         button.setAttribute('aria-label', (button.dataset.movePrefix || '') + ' ' + row.san + (grade ? ' · ' + labels[grade] : ''));
     });
     renderComment();
 }
 const moveTree = setupStudyMoveTree({ element: document.getElementById('endgame_review_moves'), onSelect: selectReview, startLabel: labels.start, variationLabel: '' });
-function openReview() {
+function openReview({ keepFinalPosition = false } = {}) {
     if (!moves.length) return;
     reviewing = true; clear_all_text(); picker.close(); pendingPromotion = null; boardReady();
     finishButton.disabled = true;
@@ -173,13 +195,23 @@ function openReview() {
     reviewRoot = children;
     moveTree.update({ root: reviewRoot, fen: startFen, chapter: generation, path: [], reading: true });
     feedback.review();
-    const key = feedback.rows.find(row => row.moment) || feedback.rows[0];
-    selectReview(Array(key?.ply || 0).fill(0));
+    if (keepFinalPosition) {
+        selectedRow = null;
+        ground.set({ fen: chess.fen(), check: chess.in_check(), movable: { color: undefined, dests: new Map() } });
+        ground.setAutoShapes([]);
+        moveTree.update({ root: reviewRoot, fen: startFen, chapter: generation, path: Array(moves.length).fill(0), reading: true });
+        updateFen(); renderComment();
+    } else {
+        const key = feedback.rows.find(row => row.moment) || feedback.rows[0];
+        selectReview(Array(key?.ply || 0).fill(0));
+    }
+    renderLiveAssessment();
 }
 function resume() {
     reviewing = false; feedback.close(); selectedRow = null;
     finishButton.disabled = false;
     finishButton.textContent = ended ? labels.review : labels.finish;
+    renderLiveAssessment();
     ground.set({ fen: chess.fen(), lastMove: moves.length ? [moves[moves.length - 1].from, moves[moves.length - 1].to] : undefined });
     ground.setAutoShapes([]); updateFen(); boardReady();
     if (pendingReply) applyReply(pendingReply);
@@ -189,13 +221,15 @@ function main(position = fen) {
     generation++; engine?.dispose(); feedback?.destroy(); picker?.destroy();
     startFen = position; moves = []; pendingReply = null; pendingPromotion = null; selectedRow = null;
     ended = false; reviewing = false; busy = false; panel.hidden = true;
+    document.getElementById('endgame_live_assessment').hidden = true;
+    document.getElementById('endgame_mate_cue').hidden = true;
     clear_all_text();
     setup_chess(startFen); window.color = turn_color(chess);
     if (!window.ground) setup_ground(startFen); else ground_init_state(startFen, color);
     ground.setAutoShapes([]);
     resize_ground(); setup_move_handler(handleMove);
     engine = createSparringEngine({ strength: 8, movetime: 1000 });
-    feedback = createEndgameFeedback({ engine, player: chess.turn(), target: target_result, toggle, panel, labels, onUpdate: renderReview,
+    feedback = createEndgameFeedback({ engine, player: chess.turn(), target: target_result, toggle, panel, labels, onUpdate: updateFeedback,
         onNotice: message => set_text(info_div, message, { transient: true }) });
     picker = createPromotionPicker({ element: document.querySelector('[data-promotion-picker]'),
         onChoose: promotion => { const move = pendingPromotion; pendingPromotion = null; if (move) { boardReady(); playUserMove(move.from, move.to, promotion); } },
@@ -208,6 +242,7 @@ function main(position = fen) {
     finishButton.textContent = labels.finish;
     finishButton.disabled = true;
     boardReady(); updateFen();
+    feedback.observe(state());
 }
 setupStudyFeedback();
 document.getElementById('reset').onclick = () => main();
