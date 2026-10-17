@@ -97,7 +97,8 @@ async function play_move(orig, dest, promotion) {
         // player failed the puzzle
         await sleep(300); // instant play by the ai feels weird
         if (ticket !== generation) return;
-        ground_undo_last_move(); 
+        ground_undo_last_move();
+        ground.set({turnColor: color, movable: {color}});
         ground_set_moves();
         set_text(uncertain ? info_div : error_div, uncertain ? i18n.unconfirmed : i18n.keep_trying, uncertain ? {} : {bold: i18n.wrong_move});
         show_div("next");
