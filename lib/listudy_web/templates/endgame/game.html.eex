@@ -9,6 +9,7 @@
   best: dgettext("study", "Best move"), acceptable: dgettext("study", "Good move"),
   inaccuracy: dgettext("study", "Inaccuracy"), mistake: dgettext("study", "Mistake"), blunder: dgettext("study", "Blunder"),
   uncertain: dgettext("endgame", "Analysis inconclusive"),
+  mate: dgettext("endgame", "Mate in %{moves}", moves: "{moves}"), mateAgainst: dgettext("endgame", "Opponent has mate in %{moves}", moves: "{moves}"),
   unavailable: dgettext("endgame", "Some analysis is unavailable. Open the review again to retry."), analysing: dgettext("endgame", "Analysing…"),
   select: dgettext("endgame", "Select a move to review its position."), suggestion: dgettext("endgame", "Suggested continuation:"),
   coverage: dgettext("endgame", "%{done} / %{total} decisions analysed", done: "{done}", total: "{total}"),
@@ -39,8 +40,12 @@
       </details>
     </div>
     <div class="sidebar">
-      <p id="todo" class="endgame-goal"></p>
+      <div class="endgame-goal-heading">
+        <p id="todo" class="endgame-goal"></p>
+        <span id="endgame_mate_cue" class="endgame-mate-cue" role="status" aria-live="polite" hidden></span>
+      </div>
       <label class="endgame-feedback-toggle"><input type="checkbox" id="endgame_live_feedback"> <%= dgettext("endgame", "Live feedback") %></label>
+      <button type="button" id="endgame_live_assessment" class="endgame-live-assessment" hidden></button>
       <p id="endgame_engine_status" role="status" aria-live="polite"></p>
       <section id="endgame_review" class="endgame-review" hidden aria-labelledby="endgame_review_title">
         <h2 id="endgame_review_title"><%= dgettext("endgame", "Exercise review") %></h2>

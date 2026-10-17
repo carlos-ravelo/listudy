@@ -6,7 +6,7 @@ const uri = source => 'data:text/javascript;base64,' + Buffer.from(source).toStr
 (async () => {
     const evaluation = uri(fs.readFileSync(path.join(root, 'assets/js/modules/sparring/evaluation.js'), 'utf8'));
     const source = fs.readFileSync(path.join(root, 'assets/js/modules/endgame_feedback.js'), 'utf8').replace("'./sparring/evaluation.js'", JSON.stringify(evaluation));
-    const {endgameTurningPoint, createEndgameFeedback} = await import(uri(source));
+    const {endgameTurningPoint, endgameMateCue, createEndgameFeedback} = await import(uri(source));
     const position = (cp, turn = 'w', depth = 18) => ({score: {type: 'cp', value: cp}, turn, depth});
     assert.equal(endgameTurningPoint(position(500), position(0, 'b'), 'w'), 'advantage');
     assert.equal(endgameTurningPoint(position(-500), position(0, 'b'), 'b'), 'advantage');
@@ -15,6 +15,14 @@ const uri = source => 'data:text/javascript;base64,' + Buffer.from(source).toStr
     assert.equal(endgameTurningPoint(position(500, 'w', 9), position(0, 'b'), 'w'), null);
     assert.equal(endgameTurningPoint(position(500), position(-400, 'b'), 'w'), null);
     assert.equal(endgameTurningPoint(position(500), {score: {type: 'mate', value: 0}, turn: 'b', depth: 99}, 'w'), null);
+    for (const player of ['w', 'b']) {
+        const opponent = player === 'w' ? 'b' : 'w';
+        assert.deepEqual(endgameMateCue({score: {type: 'mate', value: -6}, turn: opponent}, player), {moves: 6, winning: true});
+        assert.deepEqual(endgameMateCue({score: {type: 'mate', value: 6}, turn: opponent}, player), {moves: 6, winning: false});
+    }
+    assert.equal(endgameMateCue(position(600), 'w'), null);
+    assert.equal(endgameMateCue({score: {type: 'mate', value: 0}, turn: 'b'}, 'w'), null);
+    assert.equal(endgameMateCue(null, 'w'), null);
     const values = new Map();
     global.localStorage = {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value)};
     const flush = () => new Promise(resolve => setImmediate(resolve));

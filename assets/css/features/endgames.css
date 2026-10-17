@@ -84,3 +84,12 @@
 
 .endgame-goal[data-result="success"] { color: var(--success-color); }
 .endgame-goal[data-result="retry"] { color: var(--error-color); }
+
+.endgame-workspace .endgame-live-assessment { justify-content: flex-start; width: 100%; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--font-color) 15%, transparent); background: var(--bg-highlight-color); text-align: left; }
+.endgame-workspace .endgame-live-assessment:is([data-grade="mistake"], [data-grade="blunder"]) { border-inline-start: 3px solid var(--error-color); }
+.endgame-workspace .endgame-live-assessment[data-grade="best"] { border-inline-start: 3px solid var(--success-color); }
+.endgame-live-assessment { flex-wrap: wrap; gap: 6px; }
+.endgame-goal-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 8px; }
+.endgame-goal-heading .endgame-goal { margin: 0; }
+.endgame-mate-cue { padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--success-color) 12%, transparent); font-size: 12px; font-weight: 600; color: var(--font-color); }
+.endgame-mate-cue[data-winning="false"] { background: color-mix(in srgb, var(--error-color) 12%, transparent); }

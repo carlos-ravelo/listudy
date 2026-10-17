@@ -67,3 +67,5 @@ The endgame catalogue uses compact category links with per-category solved count
 ### Endgame practice feedback
 
 Live feedback is optional and off by default. Finish and review opens the shared study move list with move-quality symbols and engine continuations, including when live feedback was off. Players can resume an unfinished game or retry a selected position. Only significant, sufficiently analysed outcome changes trigger live notices; they do not stop play. Evaluations remain estimates, and the promotion picker, move sounds and floating notifications are shared with study training.
+
+Endgame live assessments remain visible after the opponent replies, until replaced by the next assessment. A forced mate score adds a compact mate-distance cue, distinguishing the player’s mate from the opponent’s. Finishing an exercise automatically opens review even with live feedback disabled, retaining the final board until a move is selected.
