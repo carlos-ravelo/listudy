@@ -7,9 +7,13 @@
     width: 2em;
 }
 
-.pieceless-workspace:not(.training-revealed) cg-board > piece {
+.pieceless-workspace:not(.training-revealed):not(.training-partial) cg-board > piece {
 	background-image: none !important;
     display: none !important;
+}
+
+.pieceless-workspace:not(.training-revealed).training-partial cg-board > piece.visualization-hidden-piece {
+    visibility: hidden;
 }
 
 .pieceless-workspace:not(.training-revealed) square.last-move {
