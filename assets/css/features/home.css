@@ -250,3 +250,23 @@
   text-transform: none;
 }
 .practice-start:hover, .practice-start:focus-visible { color: var(--bg-color); border-color: var(--font-color); }
+
+/* One card per training activity; secondary choices stay within their activity. */
+.home-openings .home-daily-scroll { max-height: 156px; }
+.home-openings .home-daily-studies-list li { height: 52px; box-sizing: border-box; }
+.home-openings .home-daily-study { min-height: 0; height: 100%; }
+.home-card-description, .home-analysis > p { margin: 0 0 16px; font-size: 14px; line-height: 1.5; color: color-mix(in srgb, var(--font-color) 80%, var(--bg-color)); }
+.home-analysis .home-path-actions { margin-top: 4px; }
+.home-tactics-variants { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--bg-highlight-color); }
+.home-tactics-variants > span { display: block; margin-bottom: 2px; font-size: 12px; color: var(--font-color); opacity: .75; }
+.home-tactics-variants > div, .home-endgame-categories { display: flex; align-items: center; flex-wrap: wrap; gap: 0 20px; }
+.home-tactics-variants a, .home-endgame-categories a, .home-daily-puzzle { display: inline-flex; align-items: center; min-height: 44px; }
+.home-endgame-categories { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--bg-highlight-color); }
+.home-page .home-endgames .endgame-start { background: #206a9d; border-color: #206a9d; color: #fff; }
+.home-page .home-endgames .endgame-start:hover { background: #18547d; border-color: #18547d; }
+.home-page .home-tactics .home-tactics-link { color: #fff; }
+.home-openings .home-daily-studies-footer { padding-top: 8px; }
+.home-openings .home-daily-studies-empty .button { display: inline-flex; align-items: center; justify-content: center; height: auto; min-height: 44px; margin: 0; padding: 6px 12px; font-size: 13px; line-height: 1.4; text-transform: none; letter-spacing: normal; }
+@media (max-width: 650px) {
+  .home-openings .home-daily-scroll { max-height: 208px; overflow-y: auto; }
+}

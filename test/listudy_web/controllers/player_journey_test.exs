@@ -47,7 +47,14 @@ defmodule ListudyWeb.PlayerJourneyTest do
              )
 
     assert [] = Floki.find(html, ".site-menu-panel a[href='/en/tactics']")
-    assert [_] = Floki.find(html, ".home-path-content .home-tactics-link[href='/en/tactics']")
+    assert [_] = Floki.find(html, ".home-tactics .home-tactics-link[href='/en/tactics']")
+    assert [_] = Floki.find(html, ".home-openings .home-daily-study[data-last-study=true]")
+    assert html =~ "Continue learning"
+    assert [_] = Floki.find(html, ".home-tactics a[href='/en/tactics/daily-puzzle']")
+    assert [_] = Floki.find(html, ".home-tactics a[href='/en/blind-tactics']")
+    assert [_] = Floki.find(html, ".home-tactics a[href='/en/pieceless-tactics']")
+    assert [_] = Floki.find(html, ".home-endgames [data-endgame-start]")
+    assert [] = Floki.find(html, "#chessground")
     preview("returning-home", html)
 
     path = Application.app_dir(:listudy, "priv/static/study_pgn/journey.pgn")
@@ -69,6 +76,8 @@ defmodule ListudyWeb.PlayerJourneyTest do
     assert html =~ "/es/studies/search"
     assert html =~ "home-daily"
     preview("new-home", html)
+    puzzle = build_conn() |> get("/en/tactics/daily-puzzle") |> html_response(200)
+    preview("daily-puzzle", puzzle)
   end
 
   test "home uses daily organization, deduplicates saved studies and protects private sources", %{

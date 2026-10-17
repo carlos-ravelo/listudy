@@ -1,44 +1,14 @@
 <div class="home-page">
   <section class="home-welcome" aria-labelledby="home-title">
     <h1 id="home-title"><%= dgettext "index", "Welcome to %{name}!", name: "Listudy" %></h1>
-    <p><%= dgettext "index", "Explore chess studies, compare your games with your repertoire, and practice with daily tactics." %></p>
+    <p><%= dgettext "index", "Build your repertoire, review your games, and train tactics and endgames." %></p>
   </section>
 
   <div class="home-paths">
-    <section class="home-path" aria-labelledby="home-studies-title">
-      <h2 id="home-studies-title"><%= dgettext "index", "Study chess" %></h2>
-      <p><%= dgettext "index", "Explore opening studies and build a repertoire you can practice." %></p>
-      <div class="home-path-content">
-        <%= if @last_study do %>
-          <div class="home-quick-studies">
-            <%= link to: Routes.study_path(@conn, :show, @locale, @last_study.slug), class: "home-continue",
-                  data: [study_continue: true, study_id: String.split(@last_study.slug, "-") |> hd()] do %>
-              <span class="home-continue-label"><%= dgettext "index", "Continue learning study:" %></span>
-              <span class="home-continue-title" title="<%= @last_study.title %>"><%= @last_study.title %></span>
-            <% end %>
-          </div>
-        <% end %>
-        <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale), class: "home-text-link home-tactics-link" %>
-      </div>
-    </section>
-
-    <section class="home-path" aria-labelledby="home-analysis-title">
-      <h2 id="home-analysis-title"><%= dgettext "index", "Analyze your games" %></h2>
-      <p><%= emphasize_analysis_sources(dgettext("index", "Compare a PGN or your Chess.com and Lichess games with your studies.")) %></p>
-      <div class="home-path-actions">
-        <%= if Pow.Plug.current_user(@conn) do %>
-          <%= link (dgettext "index", "Open game analysis"), to: Routes.analysis_path(@conn, :index), class: "button button-primary" %>
-        <% else %>
-          <%= link (dgettext "index", "Sign in to analyze"), to: Routes.analysis_path(@conn, :index), class: "button button-primary" %>
-          <%= link (dgettext "index", "Create an account"), to: Routes.pow_registration_path(@conn, :new), class: "home-text-link" %>
-        <% end %>
-      </div>
-    </section>
-
-    <section class="home-card home-daily-studies" aria-labelledby="home-daily-studies-title">
-      <h2 id="home-daily-studies-title"><%= dgettext "index", "Your daily studies" %></h2>
+    <section class="home-card home-openings home-daily-studies" aria-labelledby="home-studies-title">
+      <h2 id="home-studies-title"><%= dgettext "index", "Study openings" %></h2>
       <%= if @daily_studies != [] do %>
-        <div class="home-daily-scroll" role="region" aria-labelledby="home-daily-studies-title" <%= if length(@daily_studies) > 6, do: raw("tabindex=\"0\"") %>>
+        <div class="home-daily-scroll" role="region" aria-labelledby="home-studies-title" <%= if length(@daily_studies) > 3, do: raw("tabindex=\"0\"") %>>
           <ul class="home-daily-studies-list">
             <%= for study <- @daily_studies do %>
               <% last = @last_study && study.id == @last_study.id %>
@@ -50,7 +20,7 @@
                     <%= if last || study.id == @most_used do %>
                       <span class="home-daily-study-signals">
                         <%= if last do %>
-                          <span class="home-daily-study-recent"><%= dgettext "index", "Last study" %></span>
+                          <span class="home-daily-study-recent"><%= dgettext "index", "Continue learning" %></span>
                         <% end %>
                         <%= if study.id == @most_used do %>
                           <span class="home-daily-study-most-used" title="<%= dgettext "index", "Most training time" %>"><%= dgettext "index", "Most used" %></span>
@@ -75,20 +45,53 @@
             <p><%= dgettext "index", "Choose studies for your daily practice." %></p>
             <%= link (dgettext "index", "Your Studies"), to: Routes.study_path(@conn, :index, @locale), class: "home-text-link" %>
           <% else %>
-            <p><%= dgettext "index", "Sign in to see your daily studies." %></p>
-            <%= link gettext("Sign in"), to: Routes.pow_session_path(@conn, :new, request_path: Routes.study_path(@conn, :index, @locale)), class: "home-text-link" %>
+            <p><%= dgettext "index", "Explore opening studies and build a repertoire you can practice." %></p>
+            <%= link (dgettext "index", "Explore studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale), class: "button button-primary" %>
           <% end %>
         </div>
       <% end %>
     </section>
 
-    <section class="home-card home-daily" aria-labelledby="home-daily-title">
-      <div class="home-daily-heading">
-        <h2 id="home-daily-title"><%= dgettext "index", "Daily Puzzle" %></h2>
-        <%= link (dgettext "index", "More tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale), class: "home-text-link" %>
+    <section class="home-card home-analysis" aria-labelledby="home-analysis-title">
+      <h2 id="home-analysis-title"><%= dgettext "index", "Analyze your games" %></h2>
+      <p><%= emphasize_analysis_sources(dgettext("index", "Compare a PGN or your Chess.com and Lichess games with your studies.")) %></p>
+      <div class="home-path-actions">
+        <%= if Pow.Plug.current_user(@conn) do %>
+          <%= link (dgettext "index", "Open game analysis"), to: Routes.analysis_path(@conn, :index), class: "button button-primary" %>
+        <% else %>
+          <%= link (dgettext "index", "Sign in to analyze"), to: Routes.analysis_path(@conn, :index), class: "button button-primary" %>
+          <%= link (dgettext "index", "Create an account"), to: Routes.pow_registration_path(@conn, :new), class: "home-text-link" %>
+        <% end %>
       </div>
-      <% next_url = Routes.tactic_path(@conn, :random, @locale) %>
-      <%= render ListudyWeb.TacticView, "tactic.html", conn: @conn, tactic: @tactic, next: next_url %>
+    </section>
+
+    <section class="home-card home-tactics" aria-labelledby="home-tactics-title">
+      <h2 id="home-tactics-title"><%= gettext("Tactics") %></h2>
+      <p class="home-card-description"><%= dgettext "index", "Solve positions from your PGN collections." %></p>
+      <div class="home-path-actions">
+        <%= link (dgettext "index", "Practice tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale), class: "button button-primary home-tactics-link" %>
+        <%= link (dgettext "index", "Daily Puzzle"), to: Routes.tactic_path(@conn, :daily, @locale), class: "home-text-link home-daily-puzzle" %>
+      </div>
+      <div class="home-tactics-variants">
+        <span><%= dgettext "index", "Train your visualisation" %></span>
+        <div>
+          <%= link gettext("Blind Tactics"), to: Routes.blind_tactic_path(@conn, :random, @locale), class: "home-text-link" %>
+          <%= link gettext("Pieceless Tactics"), to: Routes.pieceless_tactic_path(@conn, :random, @locale), class: "home-text-link" %>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-card home-endgames" aria-labelledby="home-endgames-title">
+      <h2 id="home-endgames-title"><%= gettext("Endgames") %></h2>
+      <p class="home-card-description"><%= dgettext("endgame", "Practice endgames against Stockfish.") %></p>
+      <div class="home-path-actions">
+        <%= render ListudyWeb.EndgameView, "_start.html", conn: @conn, games: @endgame_games %>
+        <%= link (dgettext "index", "Browse endgames"), to: Routes.endgame_path(@conn, :index, @locale), class: "home-text-link" %>
+      </div>
+      <div class="home-endgame-categories">
+        <%= link dgettext("endgame", "Checkmating"), to: Routes.endgame_path(@conn, :chapter, @locale, "basic"), class: "home-text-link" %>
+        <%= link dgettext("endgame", "King and Pawn Endgames"), to: Routes.endgame_path(@conn, :chapter, @locale, "king-and-pawn"), class: "home-text-link" %>
+      </div>
     </section>
   </div>
 </div>

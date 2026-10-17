@@ -19,7 +19,6 @@ defmodule ListudyWeb.PageController do
   def index(conn, %{"locale" => locale}) do
     case locale in @languages do
       true ->
-        tactic = ListudyWeb.TacticController.daily_tactic()
         user = Pow.Plug.current_user(conn)
         user_id = if user, do: user.id, else: nil
         last_slug = get_session(conn, :last_study_slug)
@@ -31,11 +30,17 @@ defmodule ListudyWeb.PageController do
           end
 
         last_study =
-          if last_study && (!last_study.private || last_study.user_id == user_id),
-            do: last_study,
-            else: nil
+          if last_study && last_study.training_kind == "repertoire" &&
+               (!last_study.private || last_study.user_id == user_id),
+             do: last_study,
+             else: nil
 
         daily_studies = Listudy.StudyLibrary.daily_studies(user_id)
+
+        daily_studies =
+          if last_study && !Enum.any?(daily_studies, &(&1.id == last_study.id)),
+            do: [last_study | daily_studies],
+            else: daily_studies
 
         most_used = Listudy.StudyLibrary.most_used(user_id, daily_studies)
 
@@ -49,7 +54,12 @@ defmodule ListudyWeb.PageController do
           end)
 
         render(conn, "index.html",
-          tactic: tactic,
+          endgame_games:
+            ListudyWeb.EndgameView.practice_games(
+              conn,
+              locale,
+              ListudyWeb.EndgameCatalogue.chapters()
+            ),
           last_study: last_study,
           most_used: most_used,
           daily_studies: daily_studies

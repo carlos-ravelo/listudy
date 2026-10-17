@@ -126,3 +126,24 @@ msgstr "Más usado"
 msgid "Most training time"
 msgstr "Mayor tiempo de entrenamiento"
 
+
+msgid "Build your repertoire, review your games, and train tactics and endgames."
+msgstr "Construye tu repertorio, revisa tus partidas y entrena táctica y finales."
+
+msgid "Study openings"
+msgstr "Estudiar aperturas"
+
+msgid "Continue learning"
+msgstr "Continuar aprendiendo"
+
+msgid "Solve positions from your PGN collections."
+msgstr "Resuelve posiciones de tus colecciones PGN."
+
+msgid "Practice tactics"
+msgstr "Practicar táctica"
+
+msgid "Train your visualisation"
+msgstr "Entrena tu visualización"
+
+msgid "Browse endgames"
+msgstr "Explorar finales"

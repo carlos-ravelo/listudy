@@ -13,7 +13,7 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
     const pages = {
         '/en': 'returning-home', '/daily-home': 'daily-home', '/es': 'new-home', '/en/studies': 'empty-library',
         '/en/studies/new': 'import', '/en/endgames': 'endgames', '/en/endgames/basic': 'endgame-chapter',
-        '/en/studies/journey-repertoire': 'study'
+        '/en/tactics/daily-puzzle': 'daily-puzzle', '/en/studies/journey-repertoire': 'study'
     };
     pages['/tactics-edit-preview'] = path.join(tacticsPreviews, 'edit.html');
     pages['/en/tactics'] = path.join(tacticsPreviews, 'library.html');
@@ -51,7 +51,7 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         await page.goto(base + '/en');
         await page.evaluate(() => localStorage.setItem('studyActivity:journey', 'sparring'));
         await page.reload();
-        const resume = page.locator('.home-continue[data-study-continue]');
+        const resume = page.locator('.home-daily-study[data-last-study="true"]');
         await page.waitForFunction(() => document.querySelector('[data-study-continue]').href.endsWith('?mode=sparring'));
         assert.equal(await page.locator('.home-practice-links').count(), 0);
         assert.equal(await page.locator('.home-random-study').count(), 0);
@@ -64,7 +64,7 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         await page.waitForFunction(() => localStorage.getItem('studyActivity:journey') === 'read');
         await page.goto(base + '/en');
         await page.waitForFunction(() => document.querySelector('[data-study-continue]').href.endsWith('?mode=read'));
-        await page.locator('.home-continue[data-study-continue]').click();
+        await page.locator('.home-daily-study[data-last-study="true"]').click();
         await page.waitForSelector('#study_read_moves:not([hidden])');
         await page.reload();
         await page.waitForSelector('#study_read_moves:not([hidden])');
@@ -136,8 +136,8 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         }
         await page.setViewportSize({ width: 1280, height: 960 });
         await page.goto(base + '/daily-home');
-        assert.equal(await page.locator('[aria-labelledby="home-studies-title"] .home-tactics-link').getAttribute('href'), '/en/tactics');
-        await page.waitForSelector('cg-board');
+        assert.equal(await page.locator('.home-tactics .home-tactics-link').getAttribute('href'), '/en/tactics');
+        assert.equal(await page.locator('cg-board').count(), 0);
         assert.equal(await page.locator('.home-paths > section').count(), 4);
         assert.equal(await page.locator('.home-daily-study').count(), 9);
         assert.equal(await page.locator('.home-daily-study[data-last-study="true"]').count(), 1);
@@ -155,15 +155,20 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
             await page.waitForTimeout(100);
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Home grid overflows at ${width}px`);
             assert.equal(await page.locator('.home-daily-study:visible').count(), width < 650 ? 4 : 9);
-            const board = await page.locator('cg-board').boundingBox();
-            assert(board.width >= 250 && Math.abs(board.width - board.height) < 2);
-            const card = await page.locator('.home-daily').boundingBox();
-            assert(board.x >= card.x && board.x + board.width <= card.x + card.width);
+            assert.equal(await page.locator('.home-tactics a[href="/en/blind-tactics"]').count(), 1);
+            assert.equal(await page.locator('.home-tactics a[href="/en/pieceless-tactics"]').count(), 1);
             for (const theme of ['light', 'dark']) {
                 await page.evaluate(value => document.documentElement.setAttribute('data-theme', value), theme);
                 await page.screenshot({path: `/tmp/listudy-home-grid-${width}-${theme}.png`, fullPage: true});
             }
         }
+        await page.setViewportSize({width: 1366, height: 768});
+        await page.goto(base + '/daily-home');
+        const activities = await page.locator('.home-paths').boundingBox();
+        assert(activities.y + activities.height <= 768, 'All four activities fit on a desktop screen');
+        await page.screenshot({path: '/tmp/listudy-home-activities-768.png', fullPage: true});
+        await page.locator('.home-daily-puzzle').click();
+        await page.waitForSelector('cg-board');
         await page.locator('cg-board').scrollIntoViewIfNeeded();
         const move = await page.evaluate(() => {
             const [from, targets] = [...ground.state.movable.dests.entries()][0];
