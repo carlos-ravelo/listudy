@@ -1,9 +1,10 @@
+<div class="training-workspace">
+<%= render ListudyWeb.ComponentView, "training_header.html", conn: @socket, locale: @locale, title: dgettext("tactics", "Tactic") %>
 <div class="with_sidebar">
   <div id="game_container" class="sidebar_main">
-    <%= render ListudyWeb.ComponentView, "chessground.html" %>
+    <div id="tactic_board_frame" class="study-board-frame" phx-update="ignore"><%= render ListudyWeb.ComponentView, "chessground.html" %></div>
   </div>
   <div class="sidebar">
-    <h1><%= dgettext "tactics", "Tactic"%> <%= @tactic.id %></h1>
     <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
 
     <button id="next" class="hidden continue_button" phx-click="next"><%= dgettext "tactics", "Continue"%></button>
@@ -26,6 +27,7 @@
     <% end %>
 
   </div>
+</div>
 </div>
 
 <link rel="stylesheet" href="<%= Routes.static_path(@socket, "/css/chessground.css") %>"/>

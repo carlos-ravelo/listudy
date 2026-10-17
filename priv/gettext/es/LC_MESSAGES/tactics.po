@@ -443,3 +443,45 @@ msgstr ""
 #: tactics.html.eex:48
 msgid "move history showing the moves played"
 msgstr ""
+
+msgid "No exercises are available yet. You can train with your tactics collections instead."
+msgstr "Todavía no hay ejercicios disponibles. Puedes entrenar con tus colecciones de táctica."
+
+msgid "Practice your tactics"
+msgstr "Practica tus tácticas"
+
+msgid "Visualise the listed moves, then solve from the position in your mind. The board stays frozen."
+msgstr "Visualiza las jugadas indicadas y resuelve desde la posición que imaginas. El tablero permanece congelado."
+
+msgid "Next puzzle"
+msgstr "Siguiente ejercicio"
+
+msgid "Show solution"
+msgstr "Ver solución"
+
+msgid "Retry"
+msgstr "Reintentar"
+
+msgid "About this position"
+msgstr "Sobre esta posición"
+
+msgid "Moves to visualise"
+msgstr "Jugadas para visualizar"
+
+msgid "Each move is one player's turn. Changes apply to the next puzzle."
+msgstr "Cada jugada es el turno de un jugador. Los cambios se aplican al siguiente ejercicio."
+
+msgid "How to play"
+msgstr "Cómo jugar"
+
+msgid "Follow the moves above without moving the displayed pieces. Click the imagined starting square, then its destination."
+msgstr "Sigue las jugadas anteriores sin mover las piezas visibles. Pulsa la casilla de origen que imaginas y después el destino."
+
+msgid "Picture the listed pieces on the empty board, then play the winning moves."
+msgstr "Imagina las piezas indicadas en el tablero vacío y juega la continuación ganadora."
+
+msgid "The list shows the starting position. Track each move in your mind. Use Show solution to see the pieces and the continuation."
+msgstr "La lista muestra la posición inicial. Sigue cada jugada mentalmente. Usa Ver solución para mostrar las piezas y la continuación."
+
+msgid "Find the winning move from the displayed position."
+msgstr "Encuentra la jugada ganadora en la posición mostrada."

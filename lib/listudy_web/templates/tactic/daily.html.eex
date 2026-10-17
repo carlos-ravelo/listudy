@@ -1,12 +1,5 @@
-<h1><%= dgettext "tactics", "Daily Chess Puzzle" %></h1>
-
-<% next_url = Routes.tactic_path(@conn, :random, @locale) %>
-<%= render ListudyWeb.TacticView, "tactic.html", conn: @conn, tactic: @tactic, next: next_url %>
-
-<p><%= dgettext "tactics", "Solve the daily chess puzzle. Improve your chess skills every day one tactic at a time." %></p>
-
-<p><%= dgettext "tactics", "Solve more tactics:" %>
-  <a href="<%= Routes.tactic_path(@conn, :random, @locale) %>">
-    <button class="highlight-button"><%= dgettext "tactics", "Random Tactic" %></button>
-  </a>
-</p>
+<div class="training-workspace training-daily">
+  <%= render ListudyWeb.ComponentView, "training_header.html", conn: @conn, locale: @locale, title: dgettext("tactics", "Daily Chess Puzzle") %>
+  <%= render ListudyWeb.TacticView, "tactic.html", conn: @conn, tactic: @tactic,
+        next: Routes.tactics_library_path(@conn, :tactics, @locale), next_label: dgettext("tactics", "Practice your tactics") %>
+</div>

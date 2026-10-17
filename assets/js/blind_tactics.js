@@ -8,15 +8,19 @@ import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } f
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { sleep } from './modules/sleep.js';
 
+let finished = false;
+let loadedKey;
+const originalInstruction = document.querySelector('.training-instruction').textContent;
+
 function show_div(id) {
     document.getElementById(id).classList.remove("hidden");
 }
 
 function get_current_chess() {
-    let tc = (typeof current_chess == 'undefined') ? new Chess() : current_chess;
+    let tc = (typeof current_chess == 'undefined') ? new Chess(window.initial_fen) : current_chess;
     let moves_played = tc.history().length
     let history = chess.history();
-    for (let i = moves_played; i < current_move; ++i) {
+    for (let i = moves_played; i < Math.min(current_move, history.length); ++i) {
         let m = history[i];
         tc.move(m);
     }
@@ -54,25 +58,23 @@ function set_div_text(id, text) {
 }
 
 function reveal_solution() {
+    finished = true;
     document.getElementById("next").classList.remove("hidden");
-    setup_ground(chess.fen());    
-    let t = chess.turn() == "w" ? "white" : "black";
-    // "check: true" would sometimes result in the wrong king being shown in check
-    ground.set({check: t});
-
-    // this is needed if the solution is revealed after giving up to show the move text
-    current_move = chess.history().length
+    current_move = chess.history().length;
     current_chess = get_current_chess();
+    ground.set({fen: chess.fen(), turnColor: turn_color(current_chess), check: current_chess.in_check(), movable: {color: undefined, dests: new Map()}});
+    ground.setShapes([]);
     setup_move_text();
 }
 
 
 function handle_click(square) {
+    if (finished) return;
     ground.selectSquare(null);
     if (square == target() && clicked_piece == piece_pos()) {
         // has to be manually reset because highlight_moves is not called in this branch
         highlighted_squares = []; 
-        current_move += 2;
+        current_move = Math.min(current_move + 2, chess.history().length);
         current_chess = get_current_chess();
         if (current_move >= chess.history().length) {
             let total = localStorage.getItem("achievements_blind_tactics_solved");
@@ -108,6 +110,10 @@ function load_data() {
     const chess = new Chess();
     window.chess = chess;
     chess.load_pgn(pgn);
+    const initial = new Chess();
+    initial.load_pgn(pgn);
+    while (initial.undo()) {}
+    window.initial_fen = initial.fen();
 
     // we cant hide more moves than there were. If chess.history().length is smaller
     // then the position starts with the starting position
@@ -116,15 +122,19 @@ function load_data() {
 
 function ply_change() {
     let p = document.getElementById("ply_select").value;
-    window.hidden_moves = p;
-    localStorage.setItem("blind_tactics_hidden", p);
+    const value = Math.max(0, Math.min(20, Math.floor(Number(p) || 0)));
+    document.getElementById("ply_select").value = value;
+    try { localStorage.setItem("blind_tactics_hidden", value); } catch (_) {}
 }
 
 function setup_ply() {
-    let p = localStorage.getItem("blind_tactics_hidden") || 4;
+    let stored;
+    try { stored = localStorage.getItem("blind_tactics_hidden"); } catch (_) {}
+    const value = stored == null ? 4 : Number(stored);
+    const p = Number.isFinite(value) ? Math.max(0, Math.min(20, Math.floor(value))) : 4;
     window.hidden_moves = p;
     document.getElementById("ply_select").value = p;
-    document.getElementById("ply_select").addEventListener("change", ply_change);
+    document.getElementById("ply_select").onchange = ply_change;
 }
 
 // the moves that were played from the base position to the current ply
@@ -134,7 +144,7 @@ function played_from_base() {
 
 // generates the fen of the position that is initially shown on the board
 function generate_base_fen() {
-    let tc = new Chess();
+    let tc = new Chess(window.initial_fen);
     for (let m of chess.history().slice(0, ply - hidden_moves)) {
         tc.move(m);
     }
@@ -155,6 +165,8 @@ function setup_move_text() {
     pgn = pgn[pgn.length-1];
 
     document.getElementById("moves").innerText = pgn;
+    document.getElementById('blind_move_sequence').hidden = !moves.length;
+    document.querySelector('.training-instruction').textContent = hidden_moves === 0 ? i18n.direct : originalInstruction;
 }
 
 function setup_give_up() {
@@ -168,17 +180,29 @@ function setup_flip_board() {
 }
 
 
-function main() {
+function main(force = false) {
+    const input = document.getElementById('pgn');
+    if (!input) return;
+    const key = document.getElementById('puzzle_key').value;
+    if (force !== true && key === loadedKey && window.ground?.state.dom.elements.board.isConnected) {
+        setup_move_text();
+        if (finished) show_div('next');
+        return;
+    }
+    loadedKey = key;
+    finished = false;
+    clear_all_text();
+    document.getElementById('next').classList.add('hidden');
     setup_ply();
     // generates the window.chess object
     load_data();
+    window.hidden_moves = Math.min(hidden_moves, Number(ply));
 
     window.base_fen = undefined; 
     generate_base_fen();
-    if (pgn != old_pgn) {
-        setup_ground(base_fen);
-        old_pgn = pgn;
-    }
+    window.ground?.destroy();
+    setup_ground(base_fen);
+    ground.set({animation: {enabled: false}, movable: {color: undefined, dests: new Map()}});
     window.current_move = Number(ply);
     // get_current_chess() assumes that current_chess is undefined on first load
     // since the page can get reloaded by live_view the current_chess could still be
@@ -190,6 +214,7 @@ function main() {
     setup_move_text(); // display the hidden moves in text form
 
     window.highlighted_squares = [];
+    window.clicked_piece = null;
 
     setup_click_handler(handle_click);
 
@@ -201,6 +226,7 @@ function main() {
     window.setTimeout(ground.redrawAll, 100);
     setup_give_up();
     setup_flip_board();
+    document.getElementById("training_restart").onclick = () => main(true);
 }
 
 document.addEventListener("phx:update", main);

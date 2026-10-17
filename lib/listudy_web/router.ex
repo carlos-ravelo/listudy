@@ -180,6 +180,7 @@ defmodule ListudyWeb.Router do
       as: :blind_tactics
 
     get "/pieceless-tactics", PiecelessTacticController, :random
+    get "/pieceless-tactics/puzzle/:id", PiecelessTacticController, :puzzle
     get "/pieceless-tactics-random/:id", PiecelessTacticController, :random
     get "/pieceless-tactics/:id", PiecelessTacticController, :public
 

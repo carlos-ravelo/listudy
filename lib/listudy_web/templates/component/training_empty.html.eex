@@ -1,0 +1,5 @@
+<section class="training-workspace">
+  <%= render "training_header.html", conn: @conn, locale: @locale, title: @title %>
+  <p><%= dgettext("tactics", "No exercises are available yet. You can train with your tactics collections instead.") %></p>
+  <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale), class: "button" %>
+</section>

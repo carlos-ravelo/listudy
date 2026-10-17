@@ -9,11 +9,13 @@ defmodule ListudyWeb.BlindTacticsLive do
     Phoenix.View.render(ListudyWeb.LiveView, "blind_tactics.html", assigns)
   end
 
-  def mount(%{"locale" => locale, "id" => id}, _session, socket) do
+  def mount(%{"locale" => locale, "id" => id} = params, _session, socket) do
     Gettext.put_locale(ListudyWeb.Gettext, locale)
     tactic = BlindTactics.get_blind_tactic!(id)
     socket = assign(socket, :noindex, true)
-    {:ok, assign(socket, locale: locale, tactic: tactic)}
+
+    {:ok,
+     assign(socket, locale: locale, tactic: tactic, attempt: Map.get(params, "attempt", "0"))}
   end
 
   def handle_event("next", _value, socket) do
@@ -29,10 +31,12 @@ defmodule ListudyWeb.BlindTacticsLive do
   end
 
   defp get_next_tactic(socket) do
-    BlindTactics.get_random_tactic(socket.assigns.tactic.id)
+    BlindTactics.get_random_tactic(socket.assigns.tactic.id) || socket.assigns.tactic
   end
 
   defp get_next_url(socket, tactic) do
-    Routes.blind_tactics_path(socket, ListudyWeb.BlindTacticsLive, socket.assigns.locale, tactic)
+    Routes.blind_tactics_path(socket, ListudyWeb.BlindTacticsLive, socket.assigns.locale, tactic,
+      attempt: System.unique_integer([:positive])
+    )
   end
 end
