@@ -53,3 +53,6 @@ __pycache__/
 *.pyc
 docs/project-context/*
 docs/architecture.md
+
+# Private puzzle import files (never served or committed)
+/var/puzzle_imports/

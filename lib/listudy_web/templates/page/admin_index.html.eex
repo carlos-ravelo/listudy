@@ -24,6 +24,7 @@
     <section class="admin-dashboard-card">
       <h2><%= gettext("Practice") %></h2>
       <ul>
+        <li><%= link gettext("Puzzle imports"), to: Routes.puzzle_catalog_path(@conn, :imports) %></li>
         <li><%= link gettext("Tactics"), to: Routes.tactic_path(@conn, :index) %></li>
         <li><%= link gettext("Blind Tactics"), to: Routes.blind_tactic_path(@conn, :index) %></li>
         <li><%= link gettext("Pieceless Tactics"), to: Routes.pieceless_tactic_path(@conn, :index) %></li>

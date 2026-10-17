@@ -26,7 +26,17 @@
     <% end %>
   </div>
   <%= if tactics do %>
+    <section class="puzzle-launcher" aria-labelledby="puzzle-launcher-title">
+      <div class="puzzle-launcher-heading">
+        <h2 id="puzzle-launcher-title"><%= gettext("Practice puzzles") %></h2>
+        <p><%= gettext("Choose a theme and difficulty, then solve on the board.") %></p>
+      </div>
+      <%= render ListudyWeb.ComponentView, "puzzle_filters.html", conn: @conn, locale: @locale,
+            id: "library-puzzles", filters: @puzzle_filters, themes: @puzzle_themes,
+            count: @puzzle_count, live: false, error: nil %>
+    </section>
     <%= render ListudyWeb.ComponentView, "tactics_modes.html", conn: @conn, locale: @locale %>
+    <h2 class="tactics-collections-heading"><%= gettext("Your collections") %></h2>
   <% end %>
   <%= if @studies != [] or @favorites != [] do %>
     <nav class="study-library-views" data-library-controls hidden aria-label="<%= dgettext("study", "Study lists") %>">
@@ -58,7 +68,7 @@
   <% end %>
   <%= if @studies == [] and @favorites == [] do %>
     <div class="study-library-empty">
-      <h2><%= copy.empty_title %></h2>
+      <%= unless tactics do %><h2><%= copy.empty_title %></h2><% end %>
       <p><%= copy.empty_help %></p>
       <div class="study-library-start-actions">
         <%= link copy.import_empty, to: Routes.study_path(@conn, :new, @locale, if(tactics, do: [kind: "tactics"], else: [])), class: "button study-library-create" %>

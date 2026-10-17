@@ -2,12 +2,18 @@ require("regenerator-runtime/runtime"); // required for sleep (https://github.co
 
 import { onresize, resize_ground, setup_ground, ground_set_moves,
          ground_undo_last_move, setup_move_handler, ground_move } from './modules/ground.js';
-import { setup_chess, uci_to_san } from './modules/chess_utils.js';
+import { setup_chess } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { sleep } from './modules/sleep.js';
 import { createTacticAlternatives } from './modules/tactic_alternatives.js';
+import { createEndgameEngine } from './modules/endgame_engine.js';
+import { createPromotionPicker } from './modules/promotion_picker.js';
+import { createPuzzleProgress } from './modules/puzzle_progress.js';
 import { enginePosition } from './modules/engine_position.js';
-const alternatives = createTacticAlternatives();
+const alternatives = createTacticAlternatives({
+    createEngine: () => createEndgameEngine({tables: {lookup: async () => null}})
+});
+let progress, picker, pendingPromotion;
 let busy = false, generation = 0, finished = false;
 
 function show_div(id) {
@@ -18,10 +24,23 @@ function show_div(id) {
     div.classList.remove("hidden");
 }
 
-async function handle_move(orig, dest, extraInfo) {
+function handle_move(orig, dest) {
+    if (busy || finished || pendingPromotion) return;
+    const promotions = chess.moves({verbose: true}).filter(move => move.from === orig && move.to === dest && move.promotion);
+    if (promotions.length && document.querySelector('[data-promotion-picker]')) {
+        pendingPromotion = {orig, dest};
+        ground.set({fen: chess.fen(), movable: {color: undefined, dests: new Map()}});
+        picker.open({color, to: dest, orientation: ground.state.orientation});
+    } else play_move(orig, dest, 'q');
+}
+
+async function play_move(orig, dest, promotion) {
     if (busy || finished) return;
     const ticket = generation, board = chess;
-    let played = uci_to_san(board, orig, dest);
+    const candidate = board.move({from: orig, to: dest, promotion});
+    if (!candidate) return;
+    board.undo();
+    let played = candidate.san;
     const target = to_play[0];
     clear_all_text();
     set_text("to_win", " ");
@@ -68,6 +87,7 @@ async function handle_move(orig, dest, extraInfo) {
         } else {
             // player got the puzzle correct
             finished = true; alternatives.reset();
+            progress?.finish();
             let solves = localStorage.getItem("achievements_tactics_solved") || 0;
             localStorage.setItem("achievements_tactics_solved", Number(solves) + 1);
             set_text(success_div, " ", {bold: i18n.success});
@@ -81,6 +101,8 @@ async function handle_move(orig, dest, extraInfo) {
         ground_set_moves();
         set_text(uncertain ? info_div : error_div, uncertain ? i18n.unconfirmed : i18n.keep_trying, uncertain ? {} : {bold: i18n.wrong_move});
         show_div("next");
+        progress?.assist();
+        if (!uncertain) progress?.mistake();
         show_div("solution");
     }
     busy = false;
@@ -116,11 +138,33 @@ function show_which_side() {
 
 function main() {
     if (!document.getElementById('fen')) return;
-    const key = ['fen', 'moves', 'last_move'].map(id => document.getElementById(id)?.value).join('|');
+    const key = ['fen', 'moves', 'last_move', 'puzzle_identity', 'puzzle_attempt'].map(id => document.getElementById(id)?.value).join('|');
     if (main.loadedKey === key && window.ground?.state.dom.elements.board.isConnected) return;
     main.loadedKey = key;
+    clear_all_text();
+    document.getElementById('next')?.classList.add('hidden');
+    const solution = document.getElementById('solution');
+    solution?.classList.add('hidden');
+    solution?.removeAttribute('open');
     generation++; busy = false; finished = false; alternatives.reset();
+    pendingPromotion = null;
+    picker?.destroy();
+    picker = createPromotionPicker({element: document.querySelector('[data-promotion-picker]'),
+        onChoose(promotion) {
+            const move = pendingPromotion; pendingPromotion = null;
+            ground.set({movable: {color}});
+            if (move) play_move(move.orig, move.dest, promotion);
+        },
+        onCancel() {
+            pendingPromotion = null;
+            ground.set({fen: chess.fen(), turnColor: color, movable: {color}});
+            ground_set_moves();
+        }
+    });
     load_data();
+    let storage;
+    try { storage = window.localStorage; } catch (_) {}
+    progress = createPuzzleProgress(document.getElementById('puzzle_identity')?.value, {storage});
     if (!fen) {
         clear_all_text();
         window.ground?.destroy();
@@ -141,6 +185,7 @@ function main() {
         setup_ground(fen);    
         old_fen = fen;
     }
+    ground.set({fen, turnColor: color, movable: {color}});
     setup_last_move(); 
     setup_chess(fen);
     ground_set_moves();

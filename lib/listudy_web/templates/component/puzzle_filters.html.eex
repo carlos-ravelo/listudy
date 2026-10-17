@@ -1,0 +1,32 @@
+<form id="<%= @id %>" class="puzzle-filters" action="<%= Routes.puzzle_catalog_path(@conn, :start, @locale) %>" method="get" <%= if @live do %>phx-change="preview_filters" phx-submit="apply_filters"<% end %>>
+  <div class="puzzle-theme-field">
+    <label for="<%= @id %>-theme"><%= gettext("Theme") %></label>
+    <select id="<%= @id %>-theme" name="theme" autocomplete="off">
+      <%= options_for_select([{gettext("All themes"), ""} | Enum.map(@themes, fn [theme, _count] -> {ListudyWeb.PuzzleCatalogView.theme_name(theme), theme} end)], @filters["theme"]) %>
+    </select>
+  </div>
+  <fieldset class="puzzle-rating">
+    <legend><%= gettext("Puzzle rating") %></legend>
+    <div class="puzzle-rating-fields">
+      <div>
+        <label for="<%= @id %>-min"><%= gettext("Minimum") %></label>
+        <input id="<%= @id %>-min" name="min_rating" type="number" inputmode="numeric" autocomplete="off" min="0" max="4000" step="1" value="<%= @filters["min_rating"] %>" phx-debounce="300" aria-describedby="<%= @id %>-status" <%= if @error && @filters["min_rating"] > @filters["max_rating"], do: raw("aria-invalid=\"true\"") %>>
+      </div>
+      <span class="puzzle-rating-separator" aria-hidden="true">–</span>
+      <div>
+        <label for="<%= @id %>-max"><%= gettext("Maximum") %></label>
+        <input id="<%= @id %>-max" name="max_rating" type="number" inputmode="numeric" autocomplete="off" min="0" max="4000" step="1" value="<%= @filters["max_rating"] %>" phx-debounce="300" aria-describedby="<%= @id %>-status" <%= if @error && @filters["min_rating"] > @filters["max_rating"], do: raw("aria-invalid=\"true\"") %>>
+      </div>
+    </div>
+  </fieldset>
+  <div class="puzzle-filter-action">
+    <button type="submit" class="puzzle-practice-button" phx-disable-with="<%= gettext("Loading…") %>"><%= if @live, do: gettext("Apply and practice"), else: gettext("Practice puzzles") %></button>
+  </div>
+  <p id="<%= @id %>-status" class="puzzle-filter-status" role="status" aria-live="polite" aria-atomic="true" <%= if @error, do: raw("data-filter-error=\"true\"") %>>
+    <%= cond do %>
+      <% @error -> %><%= @error %>
+      <% @count == 0 -> %><%= gettext("No puzzles match. Try another theme or a wider rating range.") %>
+      <% true -> %><span data-puzzle-count="<%= @count %>" data-count-label="<%= gettext("%{count} puzzles available", count: "{count}") %>"><%= gettext("%{count} puzzles available", count: @count) %></span>
+    <% end %>
+  </p>
+</form>

@@ -1,0 +1,8 @@
+<section class="training-workspace puzzle-empty-workspace">
+  <%= render ListudyWeb.ComponentView, "training_header.html", conn: @conn, locale: @locale, title: gettext("Practice puzzles") %>
+  <div class="puzzle-launcher">
+    <%= render ListudyWeb.ComponentView, "puzzle_filters.html", conn: @conn, locale: @locale,
+          id: "catalog-puzzles", filters: @filters, themes: @themes, count: @count, live: false, error: nil %>
+  </div>
+  <p><%= link gettext("Your tactics collections"), to: Routes.tactics_library_path(@conn, :tactics, @locale) %></p>
+</section>

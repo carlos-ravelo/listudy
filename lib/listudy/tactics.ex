@@ -102,61 +102,64 @@ defmodule Listudy.Tactics do
   def get_random_tactic(id) do
     query =
       from t in Tactic,
-        where: t.id != ^id,
-        order_by: fragment("RANDOM()"),
-        limit: 1
+        where: t.id != ^id
 
-    Repo.all(query) |> List.first()
+    sample(query)
   end
 
   def get_random_easy_tactic() do
     query =
       from t in Tactic,
-        where: t.rating < 1300,
-        order_by: fragment("RANDOM()"),
-        limit: 1
+        where: t.rating < 1300
 
-    Repo.one(query)
+    sample(query)
   end
 
   def get_random_event_tactic(id, event) do
     query =
       from t in Tactic,
-        where: t.id != ^id and t.event == ^event,
-        order_by: fragment("RANDOM()"),
-        limit: 1
+        where: t.id != ^id and t.event == ^event
 
-    Repo.all(query) |> List.first()
+    sample(query)
   end
 
   def get_random_opening_tactic(id, opening) do
     query =
       from t in Tactic,
-        where: t.id != ^id and t.opening == ^opening,
-        order_by: fragment("RANDOM()"),
-        limit: 1
+        where: t.id != ^id and t.opening == ^opening
 
-    Repo.all(query) |> List.first()
+    sample(query)
   end
 
   def get_random_player_tactic(id, player) do
     query =
       from t in Tactic,
-        where: t.id != ^id and (t.white == ^player or t.black == ^player),
-        order_by: fragment("RANDOM()"),
-        limit: 1
+        where: t.id != ^id and (t.white == ^player or t.black == ^player)
 
-    Repo.all(query) |> List.first()
+    sample(query)
   end
 
   def get_random_motif_tactic(id, motif) do
     query =
       from t in Tactic,
-        where: t.id != ^id and t.motif == ^motif,
-        order_by: fragment("RANDOM()"),
-        limit: 1
+        where: t.id != ^id and t.motif == ^motif
 
-    Repo.all(query) |> List.first()
+    sample(query)
+  end
+
+  # Uniform ordinal sampling over real rows; holes in sequences are harmless.
+  def sample(query) do
+    count = Repo.aggregate(query, :count, :id)
+    if count > 0, do: at_offset(query, :rand.uniform(count) - 1)
+  end
+
+  defp at_offset(query, ordinal) do
+    Repo.one(from t in query, order_by: t.id, offset: ^ordinal, limit: 1)
+  end
+
+  def daily_tactic(date \\ Date.utc_today()) do
+    count = tactics_count()
+    if count > 0, do: at_offset(Tactic, rem(Date.to_gregorian_days(date), count))
   end
 
   def increase_played(id) do
