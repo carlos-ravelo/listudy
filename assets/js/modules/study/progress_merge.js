@@ -51,7 +51,7 @@ function mergeReview(base, local, remote, kind) {
     return result;
 }
 
-function mergeNode(base, local, remote, field, kind) {
+function mergeNode(base, local, remote, field, kind, concurrent = false) {
     if (field === 'studySessions' || field === 'sparringSessions') {
         const sessions = {};
         for (const id of new Set([...Object.keys(local || {}), ...Object.keys(remote || {})])) {
@@ -66,7 +66,9 @@ function mergeNode(base, local, remote, field, kind) {
     if (counters.has(field) && typeof local === 'number' && typeof remote === 'number') {
         return (base || 0) + Math.max(0, local - (base || 0)) + Math.max(0, remote - (base || 0));
     }
-    if (same(local, remote)) return clone(local);
+    // Distinct IndexedDB transactions represent distinct local decisions, even
+    // when two tabs produced identical counter snapshots. Server retries do not.
+    if (same(local, remote) && (!concurrent || !local || typeof local !== 'object' || Array.isArray(local) || local.card)) return clone(local);
     if (same(local, base)) return clone(remote);
     if (same(remote, base)) return clone(local);
     if (local === undefined) return clone(remote);
@@ -85,7 +87,7 @@ function mergeNode(base, local, remote, field, kind) {
         if (local.card && remote.card) return mergeReview(base, local, remote, kind);
         const result = {};
         for (const key of new Set([...Object.keys(local), ...Object.keys(remote)])) {
-            result[key] = mergeNode(base?.[key], local[key], remote[key], key, kind);
+            result[key] = mergeNode(base?.[key], local[key], remote[key], key, kind, concurrent);
         }
         if (local.signature !== remote.signature && (local.reconciledAt || remote.reconciledAt)) {
             result.signature = (local.reconciledAt || 0) >= (remote.reconciledAt || 0) ? local.signature : remote.signature;
@@ -98,7 +100,7 @@ function mergeNode(base, local, remote, field, kind) {
     return clone(local);
 }
 
-function mergeProgress(base, local, remote, key = '') {
+function mergeProgress(base, local, remote, key = '', concurrent = false) {
     const decode = value => typeof value === 'string' ? JSON.parse(value) : value;
     base = base ? decode(base) : null;
     local = local ? decode(local) : null;
@@ -111,6 +113,6 @@ function mergeProgress(base, local, remote, key = '') {
             return result;
         }
     }
-    return mergeNode(base, local, remote, '', key.endsWith('_chapter_reviews') ? 'chapter' : 'position');
+    return mergeNode(base, local, remote, '', key.endsWith('_chapter_reviews') ? 'chapter' : 'position', concurrent);
 }
 export { mergeProgress };

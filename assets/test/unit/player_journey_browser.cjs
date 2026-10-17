@@ -274,10 +274,19 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         assert(await page.locator('.study-visualization-hidden').count());
         await page.locator('#hints').click();
         assert.equal(await page.locator('.study-visualization-hidden').count(), 0);
-        const visualRuns = () => page.evaluate(() => {
-            const key = Object.keys(localStorage).find(key => key.endsWith(':' + study_id + '_chapter_stats')) || study_id + '_chapter_stats';
-            return Object.values(JSON.parse(localStorage.getItem(key)).visualizationRuns || {});
-        });
+        const visualRuns = () => page.evaluate(() => new Promise((resolve, reject) => {
+            const open = indexedDB.open('listudy-progress', 1);
+            open.onerror = () => reject(open.error);
+            open.onsuccess = () => {
+                const db = open.result, transaction = db.transaction('progress', 'readonly');
+                const read = transaction.objectStore('progress').getAll();
+                transaction.oncomplete = () => {
+                    const record = read.result.find(record => record.key === study_id + '_chapter_stats' || record.key.endsWith(':' + study_id + '_chapter_stats'));
+                    db.close(); resolve(Object.values(JSON.parse(record.value).visualizationRuns || {}));
+                };
+                transaction.onabort = () => { db.close(); reject(transaction.error); };
+            };
+        }));
         let attempts = await visualRuns();
         assert(attempts.some(run => run.errors === 1 && run.assisted && !run.completed));
         await page.locator('#reset_line').click();

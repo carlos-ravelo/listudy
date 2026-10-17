@@ -240,6 +240,8 @@
   i18n.smart_introduction_retry = "<%= dgettext "study", "Follow the highlighted move to learn this continuation. No mistake recorded." %>";
   i18n.smart_other_continuation = "<%= dgettext "study", "That move is in your repertoire. Try another continuation for this chain." %>";
   i18n.smart_chain_complete = "<%= dgettext "study", "Practice chain complete!" %>";
+  i18n.progress_storage_error = "<%= dgettext "study", "Progress could not be saved on this device. Keep this page open and connect to synchronize your progress." %>";
+  i18n.progress_sync_error = "<%= dgettext "study", "Progress could not be synchronized. Your local copy is retained; check that you are signed in to the correct account." %>";
   i18n.progress_sync_offline = "<%= dgettext "study", "Progress is saved on this device. Cloud sync will retry when a connection is available." %>";
   i18n.smart_review = "<%= dgettext "study", "Smart: reviewing a due position" %>";
   i18n.smart_review_chain = "<%= dgettext "study", "Smart: reviewing a line" %>";

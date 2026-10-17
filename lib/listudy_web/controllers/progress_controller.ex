@@ -27,24 +27,39 @@ defmodule ListudyWeb.ProgressController do
       when is_binary(key) and is_binary(value) do
     user = Pow.Plug.current_user(conn) || conn.assigns[:current_user]
 
-    if managed?(key) do
-      case save_progress(user.id, key, value, params["revision"]) do
-        {:ok, result} ->
-          json(conn, result)
-
-        {:error, {:conflict, current}} ->
-          conn |> put_status(:conflict) |> json(current)
-
-        {:error, :invalid} ->
-          conn |> put_status(:unprocessable_entity) |> json(%{error: "Invalid progress data."})
-      end
+    if params["user_id"] && params["user_id"] not in [user.id, to_string(user.id)] do
+      conn |> put_status(:forbidden) |> json(%{error: "The signed-in account changed."})
     else
-      with {:ok, _} <- upsert_setting(user, key, value), do: json(conn, %{status: "ok"})
+      sync_value(conn, user, key, value, params)
     end
   end
 
   def sync(conn, _),
     do: conn |> put_status(:unprocessable_entity) |> json(%{error: "Invalid progress data."})
+
+  defp sync_value(conn, user, key, value, params) do
+    cond do
+      String.ends_with?(key, "_tree") ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "PGN trees are reconstructed locally."})
+
+      managed?(key) ->
+        case save_progress(user.id, key, value, params["revision"]) do
+          {:ok, result} ->
+            json(conn, result)
+
+          {:error, {:conflict, current}} ->
+            conn |> put_status(:conflict) |> json(current)
+
+          {:error, :invalid} ->
+            conn |> put_status(:unprocessable_entity) |> json(%{error: "Invalid progress data."})
+        end
+
+      true ->
+        with {:ok, _} <- upsert_setting(user, key, value), do: json(conn, %{status: "ok"})
+    end
+  end
 
   defp managed?(key), do: String.ends_with?(key, ["_chapter_stats", "_chapter_reviews"])
   defp revision(nil), do: ""
@@ -113,7 +128,12 @@ defmodule ListudyWeb.ProgressController do
       |> Enum.filter(fn {key, _} -> managed?(key) end)
       |> Map.new(fn {key, value} -> {key, revision(value)} end)
 
-    json(conn, Map.put(settings, "_progress_revisions", revisions))
+    json(
+      conn,
+      settings
+      |> Map.put("_progress_revisions", revisions)
+      |> Map.put("_progress_user_id", user.id)
+    )
   end
 
   defp upsert_setting(user, key, value) do

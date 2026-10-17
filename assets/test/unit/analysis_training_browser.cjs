@@ -33,6 +33,7 @@ function multiplePositionTrain() {
 }
 let cloud = {}, revisions = {}, stale = false, availability = 'current', syncPollState = 'running', multiple = false, directedStudy = false;
 const errors = [];
+let testRun = 0;
 (async () => {
  const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
@@ -40,6 +41,7 @@ const errors = [];
     if (url.pathname === '/api/progress') return json({ ...cloud, _progress_revisions: revisions });
     if (url.pathname === '/api/progress/sync') {
         let body = ''; for await (const chunk of req) body += chunk;
+        if (req.headers['x-test-run'] !== String(testRun)) return json({ revision: '1' });
         const data = JSON.parse(body); cloud[data.key] = data.value;
         revisions[data.key] = String(Number(revisions[data.key] || 0) + 1);
         return json({ revision: revisions[data.key] });
@@ -69,16 +71,28 @@ const errors = [];
  const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', headless: true, args: ['--no-sandbox'] });
  try {
     const start = async () => {
+        testRun++;
         cloud = {}; revisions = {}; stale = false;
-        const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+        const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, extraHTTPHeaders: {'x-test-run': String(testRun)} });
         const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
-        await page.goto(base + '/train'); await page.waitForSelector('cg-board');
+        await page.goto(base + '/train');
+        try { await page.waitForSelector('cg-board'); }
+        catch (error) { throw new Error(error.message + '\n' + await page.locator('body').innerText() + '\n' + errors.join('\n')); }
         return { context, page };
     };
-    const stats = page => page.evaluate(key => {
-        const entry = Object.keys(localStorage).find(value => value.startsWith('progress:user:') && value.endsWith(':' + key));
-        return JSON.parse(localStorage.getItem(entry));
-    }, key);
+    const stats = page => page.evaluate(key => new Promise((resolve, reject) => {
+        const open = indexedDB.open('listudy-progress', 1);
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+            const db = open.result, transaction = db.transaction('progress', 'readonly');
+            const read = transaction.objectStore('progress').getAll();
+            transaction.oncomplete = () => {
+                const record = read.result.find(record => record.key.startsWith('progress:user:') && record.key.endsWith(':' + key));
+                db.close(); resolve(record ? JSON.parse(record.value) : null);
+            };
+            transaction.onabort = () => { db.close(); reject(transaction.error); };
+        };
+    }), key);
     const entry = data => Object.values(data.chapters)[0];
     const card = data => entry(data).positionReviews.cards['e4|e5'];
     const play = async (page, from, to) => {

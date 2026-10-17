@@ -51,6 +51,38 @@ defmodule ListudyWeb.ProgressControllerTest do
            |> response(422)
   end
 
+  test "an open tab cannot save progress to a different signed-in account", %{
+    user: user,
+    other: other
+  } do
+    value = Jason.encode!(%{version: 1, chapters: %{}})
+
+    assert auth(other)
+           |> post("/api/progress/sync", %{
+             key: "study_chapter_stats",
+             value: value,
+             revision: "",
+             user_id: user.id
+           })
+           |> response(403)
+
+    refute Map.has_key?(
+             auth(other) |> get("/api/progress") |> json_response(200),
+             "study_chapter_stats"
+           )
+
+    assert (auth(user) |> get("/api/progress") |> json_response(200))["_progress_user_id"] ==
+             user.id
+  end
+
+  test "regenerable PGN trees cannot be uploaded as preferences", %{user: user} do
+    assert auth(user)
+           |> post("/api/progress/sync", %{key: "study_tree", value: "large tree"})
+           |> response(422)
+
+    refute Map.has_key?(auth(user) |> get("/api/progress") |> json_response(200), "study_tree")
+  end
+
   test "ordinary preferences retain their existing protocol", %{user: user} do
     assert auth(user)
            |> post("/api/progress/sync", %{key: "move_delay", value: "fast"})
