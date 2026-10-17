@@ -63,3 +63,7 @@ Tactics is a primary navigation destination alongside studies and analysis, with
 ### Endgame catalogue and categories
 
 The endgame catalogue uses compact category links with per-category solved counts. Category pages group exercises by technique, keep a prominent start/continue action, and mark solved exercises with both a checkmark and a subtle green state. Existing exercise routes and `solved_endgames` storage are retained. The shared journey script reads this progress for counts, exercise markers and continuation, including return navigation and changes from other tabs. Category explanations remain available in a disclosure below the exercises.
+
+### Endgame practice feedback
+
+Live feedback is optional and off by default. Finish and review opens the shared study move list with move-quality symbols and engine continuations, including when live feedback was off. Players can resume an unfinished game or retry a selected position. Only significant, sufficiently analysed outcome changes trigger live notices; they do not stop play. Evaluations remain estimates, and the promotion picker, move sounds and floating notifications are shared with study training.

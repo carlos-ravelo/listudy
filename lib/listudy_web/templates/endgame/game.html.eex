@@ -1,47 +1,69 @@
-<ul class="breadcrumb">
-  <li><a href="<%= Routes.endgame_path(@conn, :index, @locale) %>"><%= dgettext("endgame", "Endgames") %></a></li>
-  <li><a href="<%= Routes.endgame_path(@conn, :chapter, @locale, @chapter_slug) %>"><%= @chapter.name %></a></li>
-  <li><%= "#{@subchapter.name} #{@index}" %></li>
-</ul> 
-
-
-<div class="with_sidebar">
-  <div id="game_container" class="sidebar_main">
-    <%= render ListudyWeb.ComponentView, "chessground.html" %>
-  </div>
-  <div class="sidebar">
-    <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
-
-    <p id="todo"><%= dgettext("endgame", "White to play and") %> <span id="target"></span></p>
-
-    <div id="progress_container">
-      <div class="progress-bar">
-          <span id="progress" class="progress-bar-fill"></span>
+<% [fen, result] = @game %>
+<div class="endgame-workspace" data-feedback-labels="<%= Jason.encode!(%{
+  review: dgettext("endgame", "Review exercise"), finish: dgettext("endgame", "Finish and review"),
+  thinking: dgettext("endgame", "Stockfish is thinking…"), engineError: dgettext("endgame", "Stockfish is unavailable. Reset the exercise to retry."),
+  white: dgettext("endgame", "White to play"), black: dgettext("endgame", "Black to play"),
+  win: dgettext("endgame", "Win"), draw: dgettext("endgame", "Draw"), promote: dgettext("endgame", "Promote a pawn"),
+  before: dgettext("endgame", "Position before %{move}.", move: "{move}"),
+  advantage: dgettext("endgame", "Estimated winning advantage reduced"), danger: dgettext("endgame", "Position became difficult to hold"),
+  best: dgettext("study", "Best move"), acceptable: dgettext("study", "Good move"),
+  inaccuracy: dgettext("study", "Inaccuracy"), mistake: dgettext("study", "Mistake"), blunder: dgettext("study", "Blunder"),
+  uncertain: dgettext("endgame", "Analysis inconclusive"),
+  unavailable: dgettext("endgame", "Some analysis is unavailable. Open the review again to retry."), analysing: dgettext("endgame", "Analysing…"),
+  select: dgettext("endgame", "Select a move to review its position."), suggestion: dgettext("endgame", "Suggested continuation:"),
+  coverage: dgettext("endgame", "%{done} / %{total} decisions analysed", done: "{done}", total: "{total}"),
+  moments: dgettext("endgame", "%{count} key moments", count: "{count}"), start: dgettext("endgame", "Starting position")
+}) %>">
+  <nav class="endgame-back" aria-label="<%= dgettext("endgame", "Endgames") %>">
+    <a href="<%= Routes.endgame_path(@conn, :chapter, @locale, @chapter_slug) %>">‹ <%= @chapter.name %></a>
+  </nav>
+  <h1 class="endgame-play-title"><%= @subchapter.name %> · <%= @index %></h1>
+  <div class="with_sidebar">
+    <div id="game_container" class="sidebar_main">
+      <div class="study-board-frame">
+        <%= render ListudyWeb.ComponentView, "chessground.html" %>
+        <%= render ListudyWeb.ComponentView, "promotion_picker.html" %>
       </div>
-      <span id="progress_reason"></span>
-      <br>
+      <div id="endgame_actions" class="endgame-play-actions">
+        <button type="button" id="reset"><%= dgettext("endgame", "Reset") %></button>
+        <button type="button" id="endgame_hint"><%= dgettext("study", "Hint") %></button>
+        <button type="button" id="endgame_finish" disabled><%= dgettext("endgame", "Finish and review") %></button>
+        <% next_url = if @next == "back", do: Routes.endgame_path(@conn, :chapter, @locale, @chapter_slug), else: Routes.endgame_path(@conn, :game, @locale, @chapter_slug, @subchapter_slug, @next) %>
+        <%= link dgettext("endgame", "Next"), to: next_url, id: "next", class: "hidden endgame-next" %>
+      </div>
+      <details class="endgame-position-details">
+        <summary><%= dgettext("endgame", "Position details") %></summary>
+        <label for="display_fen">FEN</label><input id="display_fen" readonly>
+        <button type="button" id="copy_fen"><%= gettext("Copy") %></button>
+        <a id="lichess_analysis" target="_blank" rel="noopener"><%= dgettext("endgame", "Lichess analysis") %></a>
+      </details>
     </div>
-
-    <a class="icon" data-icon="." id="reset"><%= dgettext("endgame", "Reset") %></a>
-
-    <%= if @next == "back" do %>
-      <%= raw next_button(Routes.endgame_path(@conn, :chapter, @locale, @chapter_slug)) %>
-    <% else %>
-      <%= raw next_button(Routes.endgame_path(@conn, :game, @locale, @chapter_slug, @subchapter_slug, @next)) %>
-    <% end %>
-
+    <div class="sidebar">
+      <p id="todo" class="endgame-goal"></p>
+      <label class="endgame-feedback-toggle"><input type="checkbox" id="endgame_live_feedback"> <%= dgettext("endgame", "Live feedback") %></label>
+      <p id="endgame_engine_status" role="status" aria-live="polite"></p>
+      <section id="endgame_review" class="endgame-review" hidden aria-labelledby="endgame_review_title">
+        <h2 id="endgame_review_title"><%= dgettext("endgame", "Exercise review") %></h2>
+        <p id="endgame_review_status" role="status" aria-live="polite"></p>
+        <div id="endgame_review_moves" class="study-read-moves"></div>
+        <p id="endgame_review_comment"></p>
+        <p id="endgame_review_line"></p>
+        <div class="endgame-review-actions">
+          <button type="button" id="endgame_retry" disabled><%= dgettext("endgame", "Retry this position") %></button>
+          <button type="button" id="endgame_resume"><%= dgettext("endgame", "Continue playing") %></button>
+        </div>
+        <p class="endgame-analysis-note"><%= dgettext("endgame", "Engine estimates from limited searches, not exact win or draw guarantees. Highlighted moves show possible changes in the outcome.") %></p>
+      </section>
+    </div>
+  </div>
+  <div class="study-feedback" role="status" aria-live="polite" data-dismiss="<%= gettext("Close") %>">
+    <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
   </div>
 </div>
-
-<p>Fen: <input id="display_fen"></input> <a id="copy_fen">Copy</a> <a id="lichess_analysis">Lichess Analysis</p></p>
-
-<% [fen,result] = @game %>
-
 <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
   let fen = "<%= fen %>";
   let target_result = "<%= result %>";
   let id = "<%= @chapter_slug %>_<%= @subchapter_slug %>_<%= @index %>";
-
   let i18n = {};
   i18n.success = "<%= dgettext("endgame", "Success!") %>";
   i18n.error = "<%= dgettext("endgame", "Try again!") %>";
