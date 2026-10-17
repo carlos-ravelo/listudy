@@ -7,6 +7,12 @@
       <%= render ListudyWeb.ComponentView, "puzzle_filters.html", conn: @socket, locale: @locale,
             id: "practice-puzzles", filters: @filter_draft, themes: @puzzle_themes,
             count: @filter_count, live: true, error: @filter_error %>
+      <div id="puzzle_autoplay_setting" class="puzzle-autoplay" phx-update="ignore">
+        <label for="puzzle_autoplay">
+          <span><strong><%= gettext("Next puzzle automatically") %></strong><span><%= gettext("After solving a puzzle") %></span></span>
+          <input id="puzzle_autoplay" type="checkbox" role="switch">
+        </label>
+      </div>
     </section>
   <% end %>
   <div id="game_container" class="sidebar_main">
