@@ -523,7 +523,10 @@ defmodule ListudyWeb.StudyController do
       |> redirect(
         to:
           if(study.training_kind == "tactics",
-            do: Routes.tactics_library_path(conn, :tactics, conn.assigns.locale),
+            do:
+              Routes.tactics_library_path(conn, :tactics, conn.assigns.locale,
+                source: "collections"
+              ),
             else: Routes.study_path(conn, :index, conn.assigns.locale)
           )
       )
@@ -535,7 +538,10 @@ defmodule ListudyWeb.StudyController do
       |> redirect(
         to:
           if(study.training_kind == "tactics",
-            do: Routes.tactics_library_path(conn, :tactics, conn.assigns.locale),
+            do:
+              Routes.tactics_library_path(conn, :tactics, conn.assigns.locale,
+                source: "collections"
+              ),
             else: Routes.study_path(conn, :index, conn.assigns.locale)
           )
       )

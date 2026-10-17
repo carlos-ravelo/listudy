@@ -68,7 +68,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
 
     auth = Pow.Plug.assign_current_user(conn, owner, [])
     html = auth |> get("/en/tactics") |> html_response(200)
-    assert html =~ "Your tactics"
+    assert html =~ "Your collections"
     assert html =~ "data-study-library"
     assert html =~ "Book exercises"
     assert html =~ "Saved tactics"
@@ -78,6 +78,8 @@ defmodule ListudyWeb.TacticsLibraryTest do
     assert html =~ "kind=tactics"
     assert html =~ "/en/tactics/puzzles/start"
     preview("library", html)
+    collections = auth |> get("/en/tactics?source=collections") |> html_response(200)
+    preview("library-collections", collections)
     studies = auth |> get("/en/studies") |> html_response(200)
     assert studies =~ repertoire.title
     refute studies =~ own.title

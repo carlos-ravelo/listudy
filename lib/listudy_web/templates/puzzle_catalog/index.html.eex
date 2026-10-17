@@ -4,5 +4,5 @@
     <%= render ListudyWeb.ComponentView, "puzzle_filters.html", conn: @conn, locale: @locale,
           id: "catalog-puzzles", filters: @filters, themes: @themes, count: @count, live: false, error: nil %>
   </div>
-  <p><%= link gettext("Your tactics collections"), to: Routes.tactics_library_path(@conn, :tactics, @locale) %></p>
+  <p><%= link gettext("Your tactics collections"), to: Routes.tactics_library_path(@conn, :tactics, @locale, source: "collections") %></p>
 </section>

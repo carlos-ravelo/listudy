@@ -10,7 +10,7 @@
         <li><%= dgettext("webmaster", "Copy the iframe code and paste it into your page.") %></li>
       </ol>
       <div class="training-actions"><%= link dgettext("webmaster", "Create your own Tactic"), to: Routes.tactic_path(@conn, :custom, @locale) <> "#own", class: "button continue_button" %></div>
-      <p><%= dgettext("tactics", "For books and personal practice, use a tactics collection instead.") %> <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale) %></p>
+      <p><%= dgettext("tactics", "For books and personal practice, use a tactics collection instead.") %> <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale, source: "collections") %></p>
       <details class="training-help">
         <summary><%= dgettext("webmaster", "Implementation details") %></summary>
         <p><%= dgettext("webmaster", "The hash is the base64 encoded string which consists of the fen, the moves and the last move.") %></p>

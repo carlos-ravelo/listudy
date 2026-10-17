@@ -3,7 +3,7 @@
   <div class="study-tools-content">
 <div class="study-feature-actions">
   <%= if @study.training_kind == "tactics" do %>
-    <%= link dgettext("study", "Your tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale), class: "button secondary" %>
+    <%= link dgettext("study", "Your tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale, source: "collections"), class: "button secondary" %>
   <% else %>
     <a href="/random_study" class="button secondary"><%= dgettext("study", "Another study") %></a>
   <% end %>
