@@ -7,6 +7,8 @@
   <div class="sidebar">
     <p class="training-instruction"><%= dgettext("tactics", "Visualise the listed moves, then solve from the position in your mind. The board stays frozen.") %></p>
 
+    <%= render ListudyWeb.ComponentView, "visualization_progress.html", mode: "blind" %>
+
     <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
     
     <div id="blind_move_sequence">
@@ -24,15 +26,10 @@
     <button type="button" id="toggle-orientation"><%= dgettext("tactics", "Flip board") %></button>
     </div>
     <%= if @tactic.description not in [nil, ""] do %>
-    <details class="training-help"><summary><%= dgettext("tactics", "About this position") %></summary>
+    <details class="training-help" data-training-help><summary><%= dgettext("tactics", "About this position") %></summary>
       <p><%= @tactic.description %></p>
     </details>
     <% end %>
-    <details class="training-settings"><summary><%= gettext("Settings") %></summary>
-      <label for="ply_select"><%= dgettext("tactics", "Moves to visualise") %></label>
-      <input type="number" value="4" min="0" max="20" inputmode="numeric" name="hidden_moves" id="ply_select">
-      <p><%= dgettext("tactics", "Each move is one player's turn. Changes apply to the next puzzle.") %></p>
-    </details>
     <details class="training-help"><summary><%= dgettext("tactics", "How to play") %></summary>
       <p><%= dgettext("tactics", "Follow the moves above without moving the displayed pieces. Click the imagined starting square, then its destination.") %></p>
     </details>

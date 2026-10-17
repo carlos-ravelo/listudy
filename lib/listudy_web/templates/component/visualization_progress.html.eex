@@ -1,0 +1,37 @@
+<section id="native_visualization_controls" class="training-visualization" data-native-visualization phx-update="ignore"
+         aria-label="<%= dgettext("tactics", "Visualization progress") %>"
+         data-summary="<%= dgettext("tactics", "Without help: %clean%/%total% attempts") %>"
+         data-amount="<%= if @mode == "blind", do: dgettext("tactics", "Hidden moves: %count%"), else: dgettext("tactics", "Hidden pieces: %count%") %>"
+         data-errors="<%= dgettext("tactics", "Mistakes: %count%") %>"
+         data-clean="<%= dgettext("tactics", "Solved without help") %>"
+         data-assisted="<%= dgettext("tactics", "Solved with help or rehearsal") %>"
+         data-retried="<%= dgettext("tactics", "Solved after mistakes") %>"
+         data-revealed="<%= dgettext("tactics", "Solution shown") %>"
+         data-playing="<%= dgettext("tactics", "In progress") %>">
+  <div class="training-progress-line">
+    <span data-visualization-amount></span>
+    <span data-visualization-result role="status" aria-live="polite"></span>
+  </div>
+  <p class="training-progress-summary" data-visualization-summary></p>
+  <details class="training-settings">
+    <summary><%= gettext("Settings") %></summary>
+    <label for="visualization_difficulty"><%= dgettext("tactics", "Difficulty") %></label>
+    <select id="visualization_difficulty" data-visualization-difficulty>
+      <option value="auto"><%= dgettext("tactics", "Adaptive difficulty") %></option>
+      <%= if @mode == "blind" do %>
+        <option value="manual"><%= dgettext("tactics", "Choose hidden moves") %></option>
+      <% else %>
+        <option value="all"><%= dgettext("tactics", "All pieces hidden") %></option>
+        <%= for count <- [1, 2, 4, 8, 16] do %><option value="<%= count %>"><%= dngettext("tactics", "%{count} piece hidden", "%{count} pieces hidden", count, count: count) %></option><% end %>
+      <% end %>
+    </select>
+    <%= if @mode == "blind" do %>
+      <label for="ply_select"><%= dgettext("tactics", "Moves to visualise") %></label>
+      <input type="number" value="4" min="0" max="20" inputmode="numeric" name="hidden_moves" id="ply_select">
+      <p><%= dgettext("tactics", "Each move is one player's turn.") %></p>
+    <% end %>
+    <label class="training-destination-option"><input type="checkbox" data-visualization-destinations> <%= dgettext("tactics", "Show legal destinations (help)") %></label>
+    <p><%= dgettext("tactics", "Difficulty changes apply to the next attempt. Three solves without mistakes or help increase adaptive difficulty.") %></p>
+    <small><%= dgettext("tactics", "Progress is saved on this device. Immediate retries count as rehearsal.") %></small>
+  </details>
+</section>

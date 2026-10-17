@@ -20,6 +20,19 @@
 .training-workspace summary { cursor: pointer; min-height: 32px; font-size: 13px; }
 .training-workspace input[type="number"] { width: 90px; margin-bottom: 8px; }
 .training-workspace .training-settings p { font-size: 12px; }
+.training-visualization { margin-bottom: 12px; }
+.training-progress-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px; }
+.training-progress-line [data-visualization-result] { padding: 3px 7px; border-radius: 4px; background: var(--bg-highlight-color); }
+.training-progress-line [data-result="clean"] { color: #26734d; background: color-mix(in srgb, #26734d 12%, var(--bg-color)); }
+.training-progress-line :is([data-result="assisted"], [data-result="retried"], [data-result="revealed"]) { color: var(--font-color); background: color-mix(in srgb, #bd872f 15%, var(--bg-color)); }
+.training-workspace .training-progress-summary { margin: 6px 0 0; font-size: 12px; opacity: .8; }
+.training-visualization .training-settings { margin-top: 6px; }
+.training-visualization select { width: 100%; max-width: 100%; min-height: 38px; font-size: 13px; }
+.training-visualization label { margin: 8px 0 4px; font-size: 13px; }
+.training-visualization .training-destination-option { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+.training-destination-option input { flex-shrink: 0; margin: 0; }
+.training-visualization small { display: block; font-size: 12px; opacity: .8; }
+[data-theme="dark"] .training-progress-line [data-result="clean"] { color: #8bceac; }
 .training-blind #moves { display: block; padding: 8px 10px; margin-top: 8px; background: var(--bg-highlight-color); border-radius: 4px; line-height: 1.7; overflow-wrap: anywhere; }
 .training-workspace #pieceless_pieces { max-height: 240px; overflow-y: auto; margin-bottom: 12px; }
 .training-workspace .pieceless_piece_container { align-items: center; padding: 2px 8px; }

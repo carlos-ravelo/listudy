@@ -1,14 +1,14 @@
 const lengths = [1, 2, 4];
 
-export function visualizationLevel(runs = {}) {
+export function visualizationLevel(runs = {}, steps = lengths) {
     let level = 0, streak = 0;
     for (const run of Object.values(runs).sort((a, b) => a.at - b.at || a.id.localeCompare(b.id))) {
         if (run.errors || run.assisted) { level = Math.max(0, level - 1); streak = 0; }
-        else if (run.completed && run.moves >= run.target && run.target === lengths[level]) {
-            if (++streak === 3) { level = Math.min(lengths.length - 1, level + 1); streak = 0; }
+        else if (run.completed && run.moves >= run.target && run.target === steps[level]) {
+            if (++streak === 3) { level = Math.min(steps.length - 1, level + 1); streak = 0; }
         }
     }
-    return lengths[level];
+    return steps[level];
 }
 
 export function setupStudyVisualization({ storage, getStats, persist, assist, refresh }) {

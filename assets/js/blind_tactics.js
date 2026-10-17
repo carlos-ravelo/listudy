@@ -7,9 +7,12 @@ import { resize_ground, onresize, setup_ground, ground_set_moves_from_instance,
 import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { sleep } from './modules/sleep.js';
+import { setupNativeVisualization } from './modules/native_visualization.js';
 
 let finished = false;
 let loadedKey;
+const visualization = setupNativeVisualization('blind');
+let requestedHidden = 0;
 const originalInstruction = document.querySelector('.training-instruction').textContent;
 
 function show_div(id) {
@@ -33,10 +36,13 @@ function highlight_moves(square) {
 
     if (highlighted_squares == undefined) {
         highlighted_squares = [];
+        ground.setShapes([]);
         return;
     }
 
     let shapes = [];
+    if (!visualization.destinations.checked) { ground.setShapes([]); return; }
+    visualization.help();
     for (let s of highlighted_squares) {
         shapes.push({orig: s, brush: "green"});
     }
@@ -57,7 +63,9 @@ function set_div_text(id, text) {
     set_text(id, text);
 }
 
-function reveal_solution() {
+function reveal_solution(help = true) {
+    if (finished) return;
+    visualization.tracker.end(!help, help);
     finished = true;
     document.getElementById("next").classList.remove("hidden");
     current_move = chess.history().length;
@@ -72,23 +80,28 @@ function handle_click(square) {
     if (finished) return;
     ground.selectSquare(null);
     if (square == target() && clicked_piece == piece_pos()) {
+        visualization.tracker.decision(true);
         // has to be manually reset because highlight_moves is not called in this branch
         highlighted_squares = []; 
+        window.clicked_piece = null;
         current_move = Math.min(current_move + 2, chess.history().length);
         current_chess = get_current_chess();
         if (current_move >= chess.history().length) {
-            let total = localStorage.getItem("achievements_blind_tactics_solved");
-            localStorage.setItem("achievements_blind_tactics_solved", Number(total) + 1);
+            if (!visualization.tracker.current.assisted && !visualization.tracker.current.errors) {
+                let total = localStorage.getItem("achievements_blind_tactics_solved");
+                localStorage.setItem("achievements_blind_tactics_solved", Number(total) + 1);
+            }
 
             set_div_text(success_div, i18n.success)
-            reveal_solution();
+            reveal_solution(false);
         } else {
             let last_move = current_chess.history().pop();
             set_div_text(info_div, i18n.right_move + last_move)
         }
         legal_moves = ground_legal_moves(current_chess);
     } else {
-        if (highlighted_squares.indexOf(square) != -1) {
+        if (legal_moves.has(clicked_piece) && square !== clicked_piece && !legal_moves.has(square)) {
+            visualization.tracker.decision(false);
             set_div_text(error_div, i18n.wrong_move)
         }
         highlight_moves(square);
@@ -125,14 +138,17 @@ function ply_change() {
     const value = Math.max(0, Math.min(20, Math.floor(Number(p) || 0)));
     document.getElementById("ply_select").value = value;
     try { localStorage.setItem("blind_tactics_hidden", value); } catch (_) {}
+    visualization.difficulty.value = 'manual';
+    visualization.tracker.configure('difficulty', 'manual');
 }
 
 function setup_ply() {
     let stored;
     try { stored = localStorage.getItem("blind_tactics_hidden"); } catch (_) {}
-    const value = stored == null ? 4 : Number(stored);
+    const value = visualization.difficulty.value === 'auto' ? visualization.tracker.level : stored == null ? 4 : Number(stored);
     const p = Number.isFinite(value) ? Math.max(0, Math.min(20, Math.floor(value))) : 4;
     window.hidden_moves = p;
+    requestedHidden = p;
     document.getElementById("ply_select").value = p;
     document.getElementById("ply_select").onchange = ply_change;
 }
@@ -171,7 +187,7 @@ function setup_move_text() {
 
 function setup_give_up() {
     let e = document.getElementById("give-up");
-    e.onclick = reveal_solution;
+    e.onclick = () => reveal_solution(true);
 }
 
 function setup_flip_board() {
@@ -197,6 +213,7 @@ function main(force = false) {
     // generates the window.chess object
     load_data();
     window.hidden_moves = Math.min(hidden_moves, Number(ply));
+    visualization.begin(String(key).split('-')[0], requestedHidden, hidden_moves);
 
     window.base_fen = undefined; 
     generate_base_fen();
@@ -226,10 +243,18 @@ function main(force = false) {
     window.setTimeout(ground.redrawAll, 100);
     setup_give_up();
     setup_flip_board();
+    const help = document.querySelector('[data-training-help]');
+    if (help) { help.ontoggle = () => { if (help.open) visualization.help(); }; if (help.open) visualization.help(); }
     document.getElementById("training_restart").onclick = () => main(true);
 }
 
 document.addEventListener("phx:update", main);
+window.addEventListener('pageshow', event => { if (event.persisted) main(true); });
+window.addEventListener('native-visualization-destinations', () => {
+    ground.setShapes([]);
+    window.clicked_piece = null;
+    window.highlighted_squares = [];
+});
 window.onresize = onresize;
 window.old_pgn = "abc";
 main();

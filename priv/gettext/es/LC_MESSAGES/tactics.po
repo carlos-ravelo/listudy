@@ -485,3 +485,65 @@ msgstr "La lista muestra la posición inicial. Sigue cada jugada mentalmente. Us
 
 msgid "Find the winning move from the displayed position."
 msgstr "Encuentra la jugada ganadora en la posición mostrada."
+
+msgid "Visualization progress"
+msgstr "Progreso de visualización"
+
+msgid "Without help: %clean%/%total% attempts"
+msgstr "Sin ayuda: %clean%/%total% intentos"
+
+msgid "Hidden moves: %count%"
+msgstr "Jugadas ocultas: %count%"
+
+msgid "Hidden pieces: %count%"
+msgstr "Piezas ocultas: %count%"
+
+msgid "Mistakes: %count%"
+msgstr "Errores: %count%"
+
+msgid "Solved without help"
+msgstr "Resuelto sin ayuda"
+
+msgid "Solved with help or rehearsal"
+msgstr "Resuelto con ayuda o repaso"
+
+msgid "Solved after mistakes"
+msgstr "Resuelto tras errores"
+
+msgid "Solution shown"
+msgstr "Solución mostrada"
+
+msgid "In progress"
+msgstr "En curso"
+
+msgid "Difficulty"
+msgstr "Dificultad"
+
+msgid "Adaptive difficulty"
+msgstr "Dificultad adaptativa"
+
+msgid "Choose hidden moves"
+msgstr "Elegir jugadas ocultas"
+
+msgid "All pieces hidden"
+msgstr "Todas las piezas ocultas"
+
+msgid "Each move is one player's turn."
+msgstr "Cada jugada corresponde al turno de un jugador."
+
+msgid "Show legal destinations (help)"
+msgstr "Mostrar destinos legales (ayuda)"
+
+msgid "Difficulty changes apply to the next attempt. Three solves without mistakes or help increase adaptive difficulty."
+msgstr "Los cambios de dificultad se aplican al próximo intento. Tres ejercicios resueltos sin errores ni ayuda aumentan la dificultad adaptativa."
+
+msgid "Progress is saved on this device. Immediate retries count as rehearsal."
+msgstr "El progreso se guarda en este dispositivo. Los reintentos inmediatos cuentan como repaso."
+
+msgid "Picture the missing pieces using the list, then play the winning moves."
+msgstr "Imagina las piezas que faltan con ayuda de la lista y encuentra las jugadas ganadoras."
+
+msgid "%{count} piece hidden"
+msgid_plural "%{count} pieces hidden"
+msgstr[0] "%{count} pieza oculta"
+msgstr[1] "%{count} piezas ocultas"

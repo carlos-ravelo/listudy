@@ -499,3 +499,65 @@ msgstr ""
 
 msgid "Find the winning move from the displayed position."
 msgstr ""
+
+msgid "Visualization progress"
+msgstr ""
+
+msgid "Without help: %clean%/%total% attempts"
+msgstr ""
+
+msgid "Hidden moves: %count%"
+msgstr ""
+
+msgid "Hidden pieces: %count%"
+msgstr ""
+
+msgid "Mistakes: %count%"
+msgstr ""
+
+msgid "Solved without help"
+msgstr ""
+
+msgid "Solved with help or rehearsal"
+msgstr ""
+
+msgid "Solved after mistakes"
+msgstr ""
+
+msgid "Solution shown"
+msgstr ""
+
+msgid "In progress"
+msgstr ""
+
+msgid "Difficulty"
+msgstr ""
+
+msgid "Adaptive difficulty"
+msgstr ""
+
+msgid "Choose hidden moves"
+msgstr ""
+
+msgid "All pieces hidden"
+msgstr ""
+
+msgid "Each move is one player's turn."
+msgstr ""
+
+msgid "Show legal destinations (help)"
+msgstr ""
+
+msgid "Difficulty changes apply to the next attempt. Three solves without mistakes or help increase adaptive difficulty."
+msgstr ""
+
+msgid "Progress is saved on this device. Immediate retries count as rehearsal."
+msgstr ""
+
+msgid "Picture the missing pieces using the list, then play the winning moves."
+msgstr ""
+
+msgid "%{count} piece hidden"
+msgid_plural "%{count} pieces hidden"
+msgstr[0] ""
+msgstr[1] ""

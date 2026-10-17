@@ -5,7 +5,9 @@
     <div class="study-board-frame"><%= render ListudyWeb.ComponentView, "chessground.html" %><%= render ListudyWeb.ComponentView, "promotion_picker.html" %></div>
   </div>
   <div class="sidebar">
-    <p class="training-instruction"><%= dgettext("tactics", "Picture the listed pieces on the empty board, then play the winning moves.") %></p>
+    <p class="training-instruction"><%= dgettext("tactics", "Picture the missing pieces using the list, then play the winning moves.") %></p>
+
+    <%= render ListudyWeb.ComponentView, "visualization_progress.html", mode: "pieceless" %>
 
     <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
     

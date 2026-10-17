@@ -54,8 +54,8 @@ No se observó desbordamiento horizontal en esas dos resoluciones en el inventar
 
 | Prioridad | Pantallas | Acción propuesta |
 |---|---|---|
-| Alta | Visualización y colecciones | Poder entrenar las propias colecciones PGN en modo visual, reutilizando el repertorio, comentarios, revisión y almacenamiento existentes. No duplicar el motor de Studies. |
-| Alta | Blind/Pieceless | Registrar intentos, errores, ayudas y cantidad de jugadas ocultas; construir una progresión de dificultad comprensible. Las ayudas no deben contar como acierto independiente. Blind muestra destinos legales al seleccionar una casilla; esa asistencia debería ser una opción explícita en un futuro modo estricto. |
+| Implementado | Visualización y colecciones | Full lines ofrece visualización con piezas ocultas, dificultad gradual y registro de ayudas, reutilizando el tablero, las posiciones y el progreso de Studies. |
+| Implementado | Blind/Pieceless | Progreso local por modalidad: intentos, errores, ayudas, soluciones mostradas y cantidad real de jugadas o piezas ocultas. Dificultad adaptativa tras tres resoluciones completas sin errores ni ayuda; destinos legales opcionales y desactivados por defecto. Los reintentos inmediatos cuentan como repaso. Pieceless conserva la opción de ocultar todas las piezas. |
 | Alta | Puzzles nativos | Actualmente se exige la continuación almacenada: no se han validado respuestas equivalentes con motor. Compartir criterios de evaluación donde sea apropiado sin aceptar automáticamente cualquier jugada que parezca ganadora. |
 | Media | Menú Practice | Blind y Pieceless son modos de Tácticas; unificar su descubrimiento y señalar la familia Tácticas sin crear otro destino de primer nivel. |
 | Media | Guías de Blind y Pieceless | Reducir cabeceras enormes, ilustraciones sin dimensiones y enlaces con botones anidados. Mantener las explicaciones extensas como ayuda secundaria. |
@@ -85,7 +85,7 @@ Fuentes primarias consultadas:
 | Historial y práctica personal | Los modos nativos tienen contadores heredados; Studies tiene progreso más completo. | Compartir el registro de sesiones, sin atribuir ratings ni precisión inventada. |
 | Colecciones propias y comentarios | Studies ya importa PGN y permite Full lines y revisión. | Priorizar un modo de visualización dentro de ese mismo flujo. |
 
-Recomendación: conservar el catálogo y las mecánicas nativas que aportan valor; consolidar la experiencia alrededor de Tácticas y del motor de sesiones de Studies. La siguiente mejora de producto sería entrenamiento visual sobre PGN propios con dificultad gradual y registro de ayudas, antes que añadir IA, voz o más pantallas.
+Recomendación: conservar el catálogo y las mecánicas nativas que aportan valor; consolidar la experiencia alrededor de Tácticas y del motor de sesiones de Studies. El entrenamiento visual sobre PGN y la progresión nativa de Blind/Pieceless ya están implementados. La siguiente prioridad alta pendiente es evaluar alternativas equivalentes en los puzzles nativos, sin aceptar automáticamente cualquier jugada ganadora.
 
 ## Verificación de esta iteración
 

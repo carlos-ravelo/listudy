@@ -27,6 +27,8 @@ defmodule ListudyWeb.NativeTrainingTest do
     assert html =~ ~s(data-solution-format="san")
     assert [_] = Floki.find(html, "#info")
     assert [_] = Floki.find(html, "#training_restart")
+    assert [_] = Floki.find(html, "[data-native-visualization]")
+    assert [_] = Floki.find(html, "[data-visualization-destinations]")
     preview("pieceless-fallback", html)
   end
 
@@ -77,6 +79,23 @@ defmodule ListudyWeb.NativeTrainingTest do
     html = conn |> get("/en/blind-tactics") |> html_response(200)
     assert html =~ "No exercises are available yet"
     assert html =~ ~s(href="/en/tactics")
+  end
+
+  test "blind progress can train a sequence with available hidden history", %{conn: conn} do
+    tactic = Listudy.Repo.insert!(%Listudy.BlindTactics.BlindTactic{
+      pgn: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6", ply: 2, color: "white"
+    })
+    html = conn |> get("/en/blind-tactics/#{tactic.id}") |> html_response(200)
+    preview("blind-sequence", html)
+  end
+
+  test "pieceless partial masking follows a moving piece through captures", %{conn: conn} do
+    tactic = Listudy.Repo.insert!(%Listudy.PiecelessTactics.PiecelessTactic{
+      fen: "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+      solution: "a1a8 e8f7 a8h8", pieces: 6
+    })
+    html = conn |> get("/en/pieceless-tactics/#{tactic.id}") |> html_response(200)
+    preview("pieceless-capture", html)
   end
 
   test "chessclicker with no easy puzzles renders a LiveView empty state", %{conn: conn} do

@@ -6,7 +6,7 @@ const {chromium} = require('playwright');
 const root = path.resolve(__dirname, '../../..');
 const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-preview';
 (async () => {
-    const pages = {'/daily': 'daily', '/blind': 'blind', '/pieceless': 'pieceless-mate', '/promotion': 'pieceless-promotion', '/fallback': 'pieceless-fallback'};
+    const pages = {'/daily': 'daily', '/blind': 'blind', '/blind-sequence': 'blind-sequence', '/pieceless': 'pieceless-mate', '/capture': 'pieceless-capture', '/promotion': 'pieceless-promotion', '/fallback': 'pieceless-fallback'};
     const server = http.createServer((request, response) => {
         const url = new URL(request.url, 'http://localhost');
         const file = pages[url.pathname] ? path.join(fixtures, pages[url.pathname] + '.html') : path.resolve(root, 'priv/static', '.' + url.pathname);
@@ -23,6 +23,7 @@ const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-prev
         page.on('pageerror', error => {errors.push(error.message); console.error(error.message);});
         const visit = async route => {await page.goto(`http://127.0.0.1:${server.address().port}${route}`); await page.waitForFunction(() => window.ground && window.chess);};
         const move = async (from, to) => page.evaluate(([from, to]) => {ground.selectSquare(from); ground.selectSquare(to);}, [from, to]);
+        const records = mode => page.evaluate(mode => Object.values(JSON.parse(localStorage.getItem(`native_visualization_v1:${mode}`)).runs), mode);
         await visit('/daily');
         assert.equal(await page.locator('#next').getAttribute('href'), '/en/tactics');
         assert.equal(await page.locator('a[href="/en/tactics/random"]').count(), 0);
@@ -48,9 +49,33 @@ const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-prev
         assert.equal(await page.evaluate(() => current_move), 0);
         await page.locator('#give-up').click();
         assert(await page.evaluate(() => current_chess.in_checkmate()));
+        let blindRuns = await records('blind');
+        assert.equal(blindRuns.filter(run => run.completed && !run.assisted && !run.errors).length, 1);
+        assert(blindRuns.some(run => run.revealed && run.assisted && run.rehearsed));
+        await visit('/blind-sequence');
+        await page.locator('.training-settings summary').click();
+        await page.locator('[data-visualization-difficulty]').selectOption('auto');
+        await page.locator('#training_restart').click();
+        assert.equal(await page.evaluate(() => hidden_moves), 1);
+        await page.evaluate(() => ground.selectSquare('g1'));
+        assert.equal(await page.evaluate(() => ground.state.drawable.shapes.length), 0, 'Strict training does not reveal legal destinations');
+        await page.evaluate(() => ground.selectSquare('g3'));
+        blindRuns = await records('blind');
+        assert.equal(blindRuns.at(-1).errors, 1, 'Wrong imagined destinations count as errors even when illegal');
+        await page.locator('[data-visualization-destinations]').check();
+        await page.evaluate(() => ground.selectSquare('g1'));
+        await page.waitForFunction(() => ground.state.drawable.shapes.length > 0);
+        await move('g1', 'f3'); await move('f1', 'b5');
+        await page.waitForFunction(() => !document.getElementById('next').classList.contains('hidden'));
+        blindRuns = await records('blind');
+        assert(blindRuns.at(-1).completed && blindRuns.at(-1).assisted && blindRuns.at(-1).errors === 1);
+        await page.reload(); await page.waitForFunction(() => window.ground && window.chess);
+        assert(await page.locator('[data-visualization-destinations]').isChecked(), 'Assistance preference persists');
         await visit('/pieceless');
         assert.equal(await page.locator('#info').count(), 1);
-        assert.equal(await page.locator('cg-board piece').first().evaluate(element => getComputedStyle(element).display), 'none');
+        await page.waitForFunction(() => document.querySelectorAll('cg-board piece.visualization-hidden-piece').length === 1);
+        assert.equal(await page.evaluate(() => ground.state.movable.showDests), false);
+        assert.equal(await page.locator('cg-board piece.visualization-hidden-piece').evaluate(element => getComputedStyle(element).visibility), 'hidden');
         await move('g6', 'g7');
         await page.waitForFunction(() => chess.in_checkmate());
         assert(await page.locator('.pieceless-workspace').evaluate(element => element.classList.contains('training-revealed')));
@@ -59,6 +84,24 @@ const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-prev
         assert.equal(await page.evaluate(() => chess.history().length), 0);
         await page.locator('#give-up').click();
         assert(await page.evaluate(() => chess.in_checkmate()));
+        let pieceRuns = await records('pieceless');
+        assert.equal(pieceRuns.filter(run => run.completed && !run.assisted && !run.errors).length, 1);
+        assert(pieceRuns.at(-1).revealed && pieceRuns.at(-1).assisted);
+        await visit('/capture');
+        await move('a1', 'a8');
+        await page.waitForFunction(() => chess.history().length === 2);
+        await page.waitForFunction(() => [...document.querySelectorAll('cg-board piece')].some(piece => piece.cgKey === 'a8' && piece.classList.contains('visualization-hidden-piece')));
+        await move('a8', 'h8');
+        assert((await records('pieceless')).at(-1).completed);
+        await page.locator('.training-settings summary').click();
+        await page.locator('[data-visualization-difficulty]').selectOption('all');
+        await page.locator('#training_restart').click();
+        assert.equal(await page.locator('cg-board piece').first().evaluate(element => getComputedStyle(element).display), 'none');
+        assert.equal((await records('pieceless')).at(-1).hiddenPieces, 6);
+        await page.locator('[data-visualization-destinations]').check();
+        assert.equal(await page.evaluate(() => ground.state.movable.showDests), true);
+        await page.locator('#give-up').click();
+        assert((await records('pieceless')).at(-1).assisted);
         await visit('/promotion');
         await move('a7', 'a8');
         await page.waitForSelector('[data-promotion-picker]:not([hidden])');
@@ -68,6 +111,8 @@ const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-prev
         assert(await page.locator('#pieceless_pieces .pieceless_piece_container').count());
         await page.locator('#give-up').click();
         assert(await page.locator('#next').isVisible());
+        await page.locator('.training-settings summary').click();
+        await page.locator('[data-visualization-difficulty]').selectOption('auto');
         for (const width of [320, 390, 1366]) {
             await page.setViewportSize({width, height: 844});
             for (const route of ['/daily', '/blind', '/pieceless']) {
@@ -83,7 +128,7 @@ const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-prev
             }
         }
         assert.deepEqual(errors, []);
-        console.log('Daily return links, blind custom FEN, stable hidden moves, retry, solved-state locks, pieceless fallback, reveal and underpromotion passed at 320/390/1366px');
+        console.log('Native visualization progress, strict play, adaptive masks, retry accounting and native training flows passed at 320/390/1366px');
     } finally {
         await browser?.close();
         await new Promise(resolve => server.close(resolve));
