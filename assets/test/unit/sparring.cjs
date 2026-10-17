@@ -141,6 +141,14 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert.equal(assessMove({ score:{type:'mate',value:3},turn:'w' }, { score:{type:'cp',value:-800},turn:'b' }, 'w').grade, 'mistake');
     assert.equal(assessMove({ score:{type:'mate',value:3},turn:'w' }, { score:{type:'cp',value:-1000},turn:'b' }, 'w').grade, 'inaccuracy');
     assert.equal(assessMove({ score:{type:'mate',value:-3},turn:'w' }, { score:{type:'mate',value:0},turn:'w' }, 'w').grade, 'acceptable');
+    for (const player of ['w', 'b']) {
+        const opponent = player === 'w' ? 'b' : 'w';
+        const mateInThree = {score: {type: 'mate', value: 3}, turn: player, uci: 'a1a2'};
+        assert.equal(assessMove(mateInThree, {score: {type: 'mate', value: -2}, turn: opponent}, player, 'h1h2').grade, 'best', 'An equally fast mating alternative is also best');
+        assert.equal(assessMove(mateInThree, {score: {type: 'mate', value: -3}, turn: opponent}, player, 'h1h2').grade, 'acceptable', 'A slower mate retains the win without being an equally fast alternative');
+        assert.equal(assessMove(mateInThree, {score: {type: 'mate', value: 0}, turn: opponent}, player, 'h1h2').grade, 'best', 'Delivering mate deserves best regardless of the principal variation');
+        assert.equal(assessMove(mateInThree, {score: {type: 'cp', value: 0}, turn: opponent}, player, 'h1h2').grade, 'blunder', 'Losing the forced mate still receives the existing error assessment');
+    }
     assert.equal(sparringStrength(null), 2);
     assert.equal(sparringStrength('1'), 1);
     assert.equal(sparringStrength(8), 8);

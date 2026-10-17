@@ -440,3 +440,15 @@ msgstr "Mate en %{moves}"
 
 msgid "Opponent has mate in %{moves}"
 msgstr "Te dan mate en %{moves}"
+
+msgid "Evaluation"
+msgstr "Evaluación"
+
+msgid "Evaluation bar"
+msgstr "Barra de evaluación"
+
+msgid "Undo last move"
+msgstr "Deshacer última jugada"
+
+msgid "Take back your last move and the engine reply."
+msgstr "Retira tu última jugada y la respuesta del motor."

@@ -32,7 +32,7 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
         const desiredTop = board ? (beside ? Math.max(12, board.top + 16) : board.bottom + 8) : 12;
         const height = Math.min(region.scrollHeight, 160, innerHeight / 4);
         // Find a viewport gap beside the board and the active game controls.
-        const obstacles = [...document.querySelectorAll('#chessground, #study_board_actions, .study-session-controls, .study-chapter-navigation, .sparring-actions, .sparring-navigation, #hints, #reset_line, #study_previous_move, #study_next_move, #open_study_settings, #study_more_actions, .study-tree-move, #endgame_actions, .endgame-feedback-toggle, .endgame-review, .endgame-position-details, .endgame-goal')]
+        const obstacles = [...document.querySelectorAll('#chessground, #study_board_actions, .study-session-controls, .study-chapter-navigation, .sparring-actions, .sparring-navigation, #hints, #reset_line, #study_previous_move, #study_next_move, #open_study_settings, #study_more_actions, .study-tree-move, #endgame_actions, .endgame-feedback-toggle, .endgame-review, .endgame-position-details, .endgame-goal-heading, .endgame-live-assessment, .endgame-live-comment, #endgame_engine_status, .popup')]
             .map(element => element.getBoundingClientRect())
             .filter(item => item.width && item.height && item.right > rect.left && item.left < rect.right)
             .map(item => [Math.max(12, item.top - 8), Math.min(innerHeight - 12, item.bottom + 8)])

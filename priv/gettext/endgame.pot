@@ -449,3 +449,15 @@ msgstr ""
 
 msgid "Opponent has mate in %{moves}"
 msgstr ""
+
+msgid "Evaluation"
+msgstr ""
+
+msgid "Evaluation bar"
+msgstr ""
+
+msgid "Undo last move"
+msgstr ""
+
+msgid "Take back your last move and the engine reply."
+msgstr ""
