@@ -184,10 +184,15 @@ defmodule ListudyWeb.PlayerJourneyTest do
     chapter = build_conn() |> get("/en/endgames/basic") |> html_response(200)
     assert chapter =~ "data-endgame-start"
     assert chapter =~ "basic_rook_1"
+    assert chapter =~ ~s(aria-current="page">Checkmating)
     preview("endgame-chapter", chapter)
     exercise = build_conn() |> get("/en/endgames/basic/queen/1") |> html_response(200)
     assert exercise =~ "endgame_live_feedback"
     assert exercise =~ "endgame_review_moves"
+    assert exercise =~ ~s(href="/en/endgames")
+    assert exercise =~ ~s(href="/en/endgames/basic")
+    assert exercise =~ ~s(href="/en/endgames/basic#endgame_group_queen")
+    assert exercise =~ ~s(aria-current="page">Exercise 1)
     preview("endgame-play", exercise)
   end
 

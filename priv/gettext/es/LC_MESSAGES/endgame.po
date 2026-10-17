@@ -452,3 +452,6 @@ msgstr "Deshacer última jugada"
 
 msgid "Take back your last move and the engine reply."
 msgstr "Retira tu última jugada y la respuesta del motor."
+
+msgid "Breadcrumb"
+msgstr "Ruta de navegación"

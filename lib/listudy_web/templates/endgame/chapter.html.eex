@@ -1,7 +1,8 @@
 <div class="endgame-library">
-  <nav class="endgame-back" aria-label="<%= dgettext("endgame", "Endgames") %>">
-    <a href="<%= Routes.endgame_path(@conn, :index, @locale) %>"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m14 5-7 7 7 7"/></svg><%= dgettext("endgame", "Endgames") %></a>
-  </nav>
+  <%= render "_breadcrumbs.html", items: [
+    %{label: dgettext("endgame", "Endgames"), to: Routes.endgame_path(@conn, :index, @locale)},
+    %{label: @chapter.name, to: nil}
+  ] %>
   <% games = practice_games(@conn, @locale, [{@slug, @chapter}]) %>
   <header class="endgame-library-heading">
     <div>

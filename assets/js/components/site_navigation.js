@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     const section = document.querySelector('[data-training-kind="tactics"]') || /\/tactics(?:\/|$)/.test(path) ? 'tactics' : /\/analysis(?:\/|$)/.test(path) ? 'analysis'
         : /\/studies(?:\/|$)/.test(path) ? 'studies'
-        : /\/(?:blind-tactics|pieceless-tactics|endgames)(?:\/|$)/.test(path) ? 'practice' : null;
+        : /\/endgames(?:\/|$)/.test(path) ? 'endgames'
+        : /\/(?:blind-tactics|pieceless-tactics)(?:\/|$)/.test(path) ? 'practice' : null;
     header.querySelectorAll('[data-nav-section]').forEach(item => {
         if (item.dataset.navSection !== section) return;
         item.classList.add('is-current');
