@@ -277,3 +277,13 @@
 @media (max-width: 600px) {
   .study-workspace[data-training-kind="tactics"] #study_practice_choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.study-visualization { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 8px; font-size: 13px; }
+.study-visualization[hidden], .study-visualization [hidden] { display: none; }
+.study-visualization label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 500; }
+.study-visualization input { margin: 0; accent-color: var(--primary-color); }
+.study-visualization select, .study-visualization button { width: auto; min-height: 34px; margin: 0; padding: 4px 8px; font-size: 12px; }
+.study-visualization p { flex-basis: 100%; margin: 0; color: var(--font-color); line-height: 1.5; }
+.study-visualization small { color: var(--study-muted); }
+.study-visualization-hidden cg-board piece, .study-visualization-hidden cg-board square.last-move,
+.study-visualization-hidden cg-board square.check, .study-visualization-hidden .cg-shapes,
+.study-visualization-hidden .cg-custom-svgs { visibility: hidden; }

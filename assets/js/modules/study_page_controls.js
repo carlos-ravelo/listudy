@@ -147,6 +147,7 @@ export function setupPuzzleRun(i18n, { initialMode } = {}) {
     if (!modes.includes(mode)) mode = 'off';
     let reading = false;
     let sparring = false;
+    let visualization = false;
     const update = () => {
         window.studyPuzzleRunMode = mode;
         window.studyFullLines = mode !== 'smart';
@@ -154,7 +155,7 @@ export function setupPuzzleRun(i18n, { initialMode } = {}) {
         smart.setAttribute('aria-pressed', String(!reading && !sparring && mode === 'smart'));
         lines.setAttribute('aria-pressed', String(!reading && !sparring && mode !== 'smart'));
         order.value = mode === 'smart' ? localStorage.getItem('fullLineRunMode') || 'off' : mode;
-        orderControl.hidden = reading || sparring || mode === 'smart';
+        orderControl.hidden = reading || sparring || visualization || mode === 'smart';
         stop.hidden = reading || sparring || mode !== 'smart';
         smart.disabled = false;
         lines.disabled = false;
@@ -187,6 +188,10 @@ export function setupPuzzleRun(i18n, { initialMode } = {}) {
     });
     window.addEventListener('study-sparring-updated', event => {
         sparring = event.detail.active;
+        update();
+    });
+    window.addEventListener('study-visualization-updated', event => {
+        visualization = event.detail.active;
         update();
     });
     update();

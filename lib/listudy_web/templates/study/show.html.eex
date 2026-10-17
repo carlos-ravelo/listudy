@@ -37,6 +37,28 @@
      :class="{ 'study-reading-layout': reading }"
      @study-reading-updated.window="if (reading !== $event.detail.reading) { reading = $event.detail.reading; $nextTick(() => $dispatch('study-reading-layout-updated')); } expanded = false; $nextTick(() => overflowing = $refs.comments.scrollHeight > $refs.comments.clientHeight)">
   <div id="game_container" class="sidebar_main">
+    <%= if @study.training_kind == "tactics" do %>
+      <section id="study_visualization" class="study-visualization"
+               aria-label="<%= dgettext("study", "Visualization training") %>"
+               data-hide="<%= dgettext("study", "Hide pieces") %>"
+               data-reveal="<%= dgettext("study", "Show pieces (help)") %>"
+               data-memorize="<%= dgettext("study", "Memorize the position, then play %count% of your moves with the pieces hidden.") %>"
+               data-hidden="<%= dgettext("study", "Pieces hidden · Your moves: %count%") %>"
+               data-complete="<%= dgettext("study", "Line complete. Reset or choose another exercise.") %>"
+               data-reply="<%= dgettext("study", "Opponent played") %>"
+               data-history="<%= dgettext("study", "Without help: %clean%/%total% runs") %>">
+        <label><input type="checkbox"> <%= dgettext("study", "Visualization") %></label>
+        <select aria-label="<%= dgettext("study", "Moves with hidden pieces") %>" hidden>
+          <option value="auto"><%= dgettext("study", "Adaptive difficulty") %></option>
+          <option value="1"><%= dgettext("study", "1 move") %></option>
+          <option value="2"><%= dgettext("study", "2 moves") %></option>
+          <option value="4"><%= dgettext("study", "4 moves") %></option>
+        </select>
+        <button type="button" class="secondary" aria-pressed="false" hidden><%= dgettext("study", "Hide pieces") %></button>
+        <p role="status" aria-live="polite" hidden></p>
+        <small data-visualization-history hidden></small>
+      </section>
+    <% end %>
     <%= render "_sparring_status.html" %>
     <div class="study-board-frame">
       <%= render ListudyWeb.ComponentView, "chessground.html" %>

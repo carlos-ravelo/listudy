@@ -1215,3 +1215,45 @@ msgstr ""
 
 msgid "Description (optional)"
 msgstr ""
+
+msgid "Visualization training"
+msgstr ""
+
+msgid "Hide pieces"
+msgstr ""
+
+msgid "Show pieces (help)"
+msgstr ""
+
+msgid "Memorize the position, then play %count% of your moves with the pieces hidden."
+msgstr ""
+
+msgid "Pieces hidden · Your moves: %count%"
+msgstr ""
+
+msgid "Line complete. Reset or choose another exercise."
+msgstr ""
+
+msgid "Opponent played"
+msgstr ""
+
+msgid "Without help: %clean%/%total% runs"
+msgstr ""
+
+msgid "Visualization"
+msgstr ""
+
+msgid "Moves with hidden pieces"
+msgstr ""
+
+msgid "Adaptive difficulty"
+msgstr ""
+
+msgid "1 move"
+msgstr ""
+
+msgid "2 moves"
+msgstr ""
+
+msgid "4 moves"
+msgstr ""
