@@ -20,6 +20,18 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         browser = await chromium.launch({executablePath: '/usr/bin/google-chrome', headless: true, args: ['--no-sandbox']});
         const page = await browser.newPage({viewport: {width: 1366, height: 900}});
         const errors = [];
+        let tablebaseMode = 'offline', tablebaseRequests = 0, suppliedMove;
+        await page.route('https://tablebase.lichess.org/**', async route => {
+            if (tablebaseMode === 'offline') return route.fulfill({status: 503, headers: {'Access-Control-Allow-Origin': '*'}, body: ''});
+            tablebaseRequests++;
+            const ChessModule = require(path.join(root, 'assets/node_modules/chess.js'));
+            const Position = ChessModule.Chess || ChessModule;
+            const position = new Position(new URL(route.request().url()).searchParams.get('fen'));
+            const moves = position.moves({verbose: true}).map((move, index) => ({uci: move.from + move.to + (move.promotion || ''), category: 'win', dtm: index + 2}));
+            suppliedMove = moves[moves.length - 1].uci;
+            if (tablebaseMode === 'delayed') await new Promise(resolve => setTimeout(resolve, 150));
+            return route.fulfill({status: 200, contentType: 'application/json', headers: {'Access-Control-Allow-Origin': '*'}, body: JSON.stringify({category: 'loss', moves})});
+        });
         page.on('pageerror', error => { errors.push(error.message); console.error('Page error:', error.message); });
         await page.exposeFunction('testEndgamePosition', value => {
             const ChessModule = require(path.join(root, 'assets/node_modules/chess.js'));
@@ -240,6 +252,26 @@ const preview = path.join(process.env.LISTUDY_JOURNEY_PREVIEW || '/tmp/listudy-j
         await page.locator('#endgame_finish').click();
         await page.waitForFunction(() => document.getElementById('endgame_review_status').textContent.startsWith('1 / 1'), {timeout: 30000});
         await page.screenshot({path: '/tmp/listudy-endgame-review-real.png', fullPage: true});
+        await page.evaluate(() => {
+            localStorage.setItem('endgame_live_feedback', 'false');
+            localStorage.setItem('endgame_eval_bar', 'false');
+        });
+        tablebaseMode = 'available';
+        await visit('/');
+        await page.evaluate(() => main('7k/8/8/8/8/5Q2/5K2/8 w - - 0 1'));
+        await move('f3', 'f4');
+        await page.waitForFunction(() => chess.history().length === 2);
+        assert.equal(await page.evaluate(() => { const move = chess.history({verbose: true})[1]; return move.from + move.to; }), suppliedMove);
+        assert.equal(await page.evaluate(() => engineTest.commands.filter(command => command.startsWith('go')).length), 0, 'An available tablebase supplies the defence without an opponent search');
+        tablebaseMode = 'delayed'; tablebaseRequests = 0;
+        await visit('/');
+        await page.evaluate(() => main('7k/8/8/8/8/5Q2/5K2/8 w - - 0 1'));
+        await move('f3', 'f4');
+        for (let attempt = 0; attempt < 100 && !tablebaseRequests; attempt++) await page.waitForTimeout(10);
+        assert(tablebaseRequests, 'The opponent requests an eligible tablebase position');
+        await page.locator('#endgame_undo').click();
+        await page.waitForTimeout(300);
+        assert.equal(await page.evaluate(() => chess.history().length), 0, 'A late tablebase reply cannot move after undo');
         assert.deepEqual(errors, []);
         console.log('Optional endgame feedback, shared move grades, review/retry/resume, promotion, goals, stale replies, engine failure, responsive layouts and real Stockfish passed');
     } finally {

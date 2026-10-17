@@ -1,7 +1,7 @@
 require('regenerator-runtime/runtime');
 const Chess = require('chess.js');
 import { turn_color, setup_chess } from './modules/chess_utils.js';
-import { createSparringEngine } from './modules/sparring/uci_engine.js';
+import { createEndgameEngine } from './modules/endgame_engine.js';
 import { createEndgameFeedback, endgameMateCue } from './modules/endgame_feedback.js';
 import { renderEvaluationBar } from './modules/evaluation_bar.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
@@ -268,7 +268,7 @@ function main(position = fen, restored = null) {
     if (!window.ground) setup_ground(chess.fen()); else ground_init_state(chess.fen(), color);
     ground.setAutoShapes([]);
     resize_ground(); setup_move_handler(handleMove);
-    engine = createSparringEngine({ strength: 8, movetime: 1000 });
+    engine = createEndgameEngine();
     feedback = createEndgameFeedback({ engine, player: chess.turn(), target: target_result, toggle, evaluationToggle, panel, labels, onUpdate: updateFeedback, saved: restored?.feedback });
     const evaluationChange = evaluationToggle.onchange;
     evaluationToggle.onchange = () => { evaluationChange(); refreshReviewEvaluation(); };

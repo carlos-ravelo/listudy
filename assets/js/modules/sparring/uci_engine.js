@@ -95,12 +95,28 @@ function createUciEngine({ createWorker = createStockfishWorker,
 // Separate workers and hash tables keep the weakened opponent out of grading.
 export function createSparringEngine({ strength = 2, ...options } = {}) {
     let level = sparringStrength(strength);
+    let disposed = false;
+    const analyses = new Map();
     const analyst = createUciEngine(options);
     const opponent = createUciEngine(options);
     return {
         metadata: () => ({ distribution: 'stockfish', version: stockfishVersion, build: 'lite-single', eloTarget: sparringRating(level) }),
-        async bestMove(state) { return (await opponent.search(state, { elo: sparringRating(level) })).uci; },
-        analyze(state, searchOptions) { return analyst.search(state, { ...searchOptions, elo: null }); },
+        async bestMove(state, searchOptions = {}) { return (await opponent.search(state, { ...searchOptions, elo: sparringRating(level) })).uci; },
+        async analyze(state, searchOptions = {}) {
+            if (disposed) throw new Error('Engine disposed');
+            const key = JSON.stringify([stockfishVersion, state.initialFen, state.moves, searchOptions.depth || null, searchOptions.movetime || options.movetime || 700]);
+            if (analyses.has(key)) {
+                const value = analyses.get(key);
+                analyses.delete(key); analyses.set(key, value);
+                return { ...value, score: {...value.score}, pv: [...(value.pv || [])] };
+            }
+            const result = await analyst.search(state, { ...searchOptions, elo: null });
+            if (result.score && result.depth > 0) {
+                analyses.set(key, {...result, score: {...result.score}, pv: [...(result.pv || [])]});
+                if (analyses.size > 128) analyses.delete(analyses.keys().next().value);
+            }
+            return result;
+        },
         canReuseAnalysisMove: () => level === 8,
         setStrength(value) {
             const next = sparringStrength(value);
@@ -108,6 +124,6 @@ export function createSparringEngine({ strength = 2, ...options } = {}) {
             return level;
         },
         cancel() { analyst.cancel(); opponent.cancel(); },
-        dispose() { analyst.dispose(); opponent.dispose(); }
+        dispose() { disposed = true; analyses.clear(); analyst.dispose(); opponent.dispose(); }
     };
 }
