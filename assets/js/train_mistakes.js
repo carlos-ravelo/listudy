@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         positions.sort((a, b) => Number(gamePositionPending(stats, b)) - Number(gamePositionPending(stats, a)) ||
             b.times_repeated - a.times_repeated || new Date(b.last_played_at) - new Date(a.last_played_at));
     } catch (_) {
+        progressStatus.classList.remove('training-screen-reader');
         progressStatus.textContent = 'This study could not be loaded. Open the study or sync games and try again.';
         return;
     }
@@ -74,7 +75,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         sync.textContent = syncState === 'storage-error' ? 'Progress could not be saved on this device. Keep this page open and connect to synchronize.'
             : syncState === 'sync-error' ? 'Account sync failed. Check that you are signed in to the correct account.'
             : 'Saved on this device. Account sync will retry when connected.';
-        if (source.length > positions.length) progressStatus.textContent += ` · ${source.length - positions.length} changed positions skipped; sync games to refresh`;
+        progressStatus.classList.toggle('training-screen-reader', source.length <= positions.length);
+        if (source.length > positions.length) progressStatus.textContent = `${source.length - positions.length} changed positions skipped; sync games to refresh`;
     };
     window.addEventListener('study-progress-sync-merged', event => {
         if (event.detail.key === key) { stats = JSON.parse(event.detail.value); StorageAdapter.acceptSnapshot(key, event.detail.value); renderProgress(); }
@@ -131,7 +133,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         [...pagination.children].forEach((button, index) => {
             const value = results.get(positionKey(queue[index]));
             const state = value === undefined ? 'Not attempted' : value ? 'Recalled without help' : 'Needs another review';
-            button.hidden = Math.abs(index - currentIndex) > 2 && index !== 0 && index !== queue.length - 1;
             button.dataset.result = value === undefined ? 'unseen' : value ? 'clean' : 'assisted';
             button.setAttribute('aria-label', `Position ${index + 1}: ${state}`);
             if (index === currentIndex) button.setAttribute('aria-current', 'step');
@@ -160,10 +161,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const practice = document.createElement('a');
         practice.href = url.pathname + url.search;
         practice.textContent = 'Practice this line';
+        practice.className = 'button practice-primary training-practice-line';
         chaptersEl.appendChild(practice);
         const makeLink = chapter => {
             const link = document.createElement('a');
             link.href = chapter.url;
+            link.className = 'training-chapter-link';
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
             link.textContent = `${chapter.name} ↗`;

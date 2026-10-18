@@ -1,72 +1,78 @@
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
 
 
-<div class="training-container analysis-workspace" data-progress-user="<%= @current_user.id %>">
+<div class="training-container analysis-workspace practice-page" data-progress-user="<%= @current_user.id %>">
   <div class="training-heading">
-    <%= link "← Analysis overview", to: Routes.analysis_path(@conn, :index, filter: @filter), class: "analysis-back-link" %>
-    <h1><%= String.replace(@study.title, "_", " ") %></h1>
-  </div>
-  <div class="training-toolbar">
-    <label class="training-scope-label">Practice
-      <select id="training-scope" aria-label="Practice scope" disabled>
-        <option value="due">Due now</option>
-        <option value="all">All game positions</option>
-      </select>
-    </label>
-    <label>Period
-      <select id="time-filter" aria-label="Time period">
-        <option value="all" <%= if @filter == "all", do: "selected" %>>All time</option>
-        <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
-        <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
-      </select>
-    </label>
-    <details class="training-about">
-      <summary aria-label="About practice" title="About practice"><span aria-hidden="true">?</span></summary>
-      <p>Practice positions from your games. Attempts update the same reviews and study progress used by Smart. Hints and shown answers schedule another attempt; your game history stays unchanged.</p>
-    </details>
-  </div>
-  <p id="training-progress-status" role="status" aria-live="polite">Loading reviews…</p>
-  <p id="training-sync-status" role="status" hidden></p>
-  <p id="training-position-counter" class="training-position-counter" tabindex="-1" hidden></p>
-  <div id="chess-training-board" class="cg-wrap" hidden
-    data-study-key="<%= hd(String.split(@study.slug, "-")) %>" data-study-color="<%= @study.color %>" data-study-pgn="<%= @study_pgn %>"
-    data-mistakes="<%= @mistakes_json %>"></div>
-  <div id="training-controls" hidden>
-    <div class="training-actions">
-      <div class="training-helpers">
-        <button id="hint-btn" type="button" class="button button-outline">Hint</button>
-        <button id="solve-btn" type="button" class="training-text-button">Show answer</button>
-      </div>
-      <div class="training-navigation">
-        <button id="skip-mistake-btn" type="button" class="training-text-button">Skip</button>
-        <button id="next-mistake-btn" type="button" class="button button-primary" hidden>Next position</button>
-      </div>
+    <div class="training-heading-copy">
+      <%= link "← Analysis overview", to: Routes.analysis_path(@conn, :index, filter: @filter), class: "analysis-back-link" %>
+      <h1><%= String.replace(@study.title, "_", " ") %></h1>
     </div>
-    <h2 id="training-status" tabindex="-1" aria-live="polite">Your move</h2>
-    <p id="mistake-info"></p>
-    <div class="training-session-tools">
-      <details class="training-positions"><summary>Browse positions</summary><div id="mistakes-pagination" aria-label="Practice positions"></div></details>
+
+  </div>
+  <div class="training-board-column">
+    <div id="chess-training-board" class="cg-wrap" hidden
+      data-study-key="<%= hd(String.split(@study.slug, "-")) %>" data-study-color="<%= @study.color %>" data-study-pgn="<%= @study_pgn %>"
+      data-mistakes="<%= @mistakes_json %>"></div>
+    <p id="training-progress-status" class="training-screen-reader" role="status" aria-live="polite">Loading reviews…</p>
+    <p id="training-sync-status" role="status" hidden></p>
+    <p id="training-position-counter" class="training-position-counter training-screen-reader" tabindex="-1" hidden></p>
+    <nav class="training-positions" aria-label="Practice positions">
+      <div id="mistakes-pagination"></div>
+    </nav>
+  </div>
+  <div class="training-sidebar">
+    <div class="training-toolbar">
+      <label class="training-scope-label">Practice
+        <select id="training-scope" aria-label="Practice scope" disabled>
+          <option value="due">Due now</option>
+          <option value="all">All game positions</option>
+        </select>
+      </label>
+      <label>Period
+        <select id="time-filter" aria-label="Time period">
+          <option value="all" <%= if @filter == "all", do: "selected" %>>All time</option>
+          <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
+          <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
+        </select>
+      </label>
+      <details class="training-about">
+        <summary aria-label="About practice" title="About practice"><span aria-hidden="true">?</span></summary>
+        <p>Practice positions from your games. Attempts update the same reviews and study progress used by Smart. Hints and shown answers schedule another attempt; your game history stays unchanged.</p>
+      </details>
+    </div>
+    <div id="training-controls" hidden>
+      <section class="training-position-tools" aria-labelledby="training-status">
+        <h2 id="training-status" tabindex="-1" aria-live="polite">Your move</h2>
+        <p id="mistake-info"></p>
+        <div class="training-actions" role="group" aria-label="Position tools">
+          <button id="hint-btn" type="button" class="button button-outline practice-secondary">Hint</button>
+          <button id="solve-btn" type="button" class="button button-outline practice-secondary">Show answer</button>
+          <button id="skip-mistake-btn" type="button" class="button button-outline practice-secondary">Skip</button>
+          <button id="next-mistake-btn" type="button" class="button button-primary practice-primary" hidden>Next position</button>
+        </div>
+      </section>
+      <div id="training-chapters" class="training-chapters" aria-label="Study chapters" hidden></div>
       <button id="finish-training-btn" type="button" class="training-text-button">Finish session</button>
     </div>
-    <div id="training-chapters" class="training-chapters" aria-label="Study chapters" hidden></div>
+
   </div>
-  <section id="training-empty" class="training-end-panel" hidden aria-labelledby="training-empty-title">
+  <section id="training-empty" class="training-end-panel practice-panel" hidden aria-labelledby="training-empty-title">
     <h2 id="training-empty-title">You're up to date</h2>
     <p id="training-empty-description">Your game positions will return when their next review is due.</p>
-    <button type="button" data-review-all class="button">Review all game positions</button>
+    <button type="button" data-review-all class="button practice-primary">Review all game positions</button>
     <%= link "Analysis overview", to: Routes.analysis_path(@conn, :index, filter: @filter) %>
   </section>
-  <section id="training-summary" class="training-end-panel" hidden aria-labelledby="training-summary-title">
+  <section id="training-summary" class="training-end-panel practice-panel" hidden aria-labelledby="training-summary-title">
     <h2 id="training-summary-title" tabindex="-1">Session saved</h2>
     <p id="training-summary-result"></p>
     <p id="training-summary-time"></p>
     <div class="training-summary-actions">
-      <button id="training-remaining" type="button" class="button button-primary" hidden>Practice remaining</button>
-      <button type="button" data-review-all class="button button-outline">Review all game positions</button>
+      <button id="training-remaining" type="button" class="button button-primary practice-primary" hidden>Practice remaining</button>
+      <button type="button" data-review-all class="button button-outline practice-secondary">Review all game positions</button>
       <%= link "Back to analysis", to: Routes.analysis_path(@conn, :index, filter: @filter) %>
     </div>
   </section>
   <%= if @chapter_error do %><p class="training-chapters-error"><%= @chapter_error %></p><% end %>
 </div>
 
-<script defer type="text/javascript" src="/js/train_mistakes.js?v=training-3"></script>
+<script defer type="text/javascript" src="/js/train_mistakes.js?v=training-6"></script>

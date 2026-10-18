@@ -74,6 +74,7 @@ let testRun = 0;
         testRun++;
         cloud = {}; revisions = {}; stale = false;
         const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, extraHTTPHeaders: {'x-test-run': String(testRun)} });
+        await context.addInitScript(() => Object.defineProperty(crypto, 'randomUUID', {value: undefined, configurable: true}));
         const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
         await page.goto(base + '/train');
         try { await page.waitForSelector('cg-board'); }
@@ -104,6 +105,13 @@ let testRun = 0;
     let { context, page } = await start();
     assert.equal(card(await stats(page)).card.reps, 0);
     assert.equal(entry(await stats(page)).attempts, 0);
+    const desktopLayout = await page.evaluate(() => ({
+        board: document.getElementById('chess-training-board').getBoundingClientRect().toJSON(),
+        controls: document.getElementById('training-controls').getBoundingClientRect().toJSON(),
+        height: innerHeight
+    }));
+    assert(desktopLayout.board.right <= desktopLayout.controls.left, 'Desktop controls sit to the right of the board');
+    assert(Math.max(desktopLayout.board.bottom, desktopLayout.controls.bottom) <= desktopLayout.height, 'Board and controls fit in the desktop viewport');
     await page.screenshot({ path: '/tmp/listudy-train-desktop.png', fullPage: true });
     const lineUrl = await page.getByRole('link', { name: 'Practice this line', exact: true }).getAttribute('href');
     assert(lineUrl.includes('practice_fen='));
@@ -194,7 +202,13 @@ let testRun = 0;
     assert.equal(await page.locator('#smart_run_status').isVisible(), true);
     assert.equal(await page.evaluate(() => window.curr_move.length), 1, 'Practice line starts at the chapter lead-in rather than an unrelated Smart prompt');
     assert.equal(errors.length, 0, errors.join('\n'));
+    await page.setViewportSize({width: 1280, height: 900});
+    await page.screenshot({path: '/tmp/listudy-study-theme-desktop.png', fullPage: true});
+    await page.setViewportSize({width: 390, height: 844});
     await page.screenshot({ path: '/tmp/listudy-analysis-line.png', fullPage: true });
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+    await page.screenshot({path: '/tmp/listudy-study-theme-mobile-dark.png', fullPage: true});
+    await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
 
     directedStudy = true;
     const chapterUrl = new URL(lineUrl, base);
@@ -291,7 +305,7 @@ let testRun = 0;
     assert((await page.locator('#training-summary-result').textContent()).includes('0 practiced'));
     assert((await page.locator('#training-summary-result').textContent()).includes('3 not attempted'));
     await page.getByRole('button', { name: 'Practice remaining' }).click();
-    await page.locator('.training-positions > summary').click();
+    assert(await page.locator('#mistakes-pagination').isVisible(), 'Positions are accessible without opening a disclosure');
     await page.getByRole('button', { name: 'Position 3: Not attempted', exact: true }).click();
     await page.getByRole('button', { name: 'Show answer', exact: true }).click();
     await page.locator('#next-mistake-btn').click();

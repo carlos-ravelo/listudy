@@ -1,4 +1,4 @@
-<div data-training-kind="<%= @study.training_kind %>" class="study-workspace" data-game-positions-url="<%= if @study.is_owner, do: Routes.analysis_path(@conn, :positions, @study.id), else: "" %>">
+<div data-training-kind="<%= @study.training_kind %>" class="study-workspace practice-page" data-game-positions-url="<%= if @study.is_owner, do: Routes.analysis_path(@conn, :positions, @study.id), else: "" %>">
 <div class="study-session-controls">
   <div id="study_practice_choices" role="group" aria-label="<%= dgettext("study", "Study mode") %>">
     <button type="button" id="study_mode" aria-pressed="false"><%= dgettext("study", "Read") %></button>
@@ -136,7 +136,7 @@
       <h3 id="study_session_end_title" tabindex="-1"><%= dgettext("study", "Session finished") %></h3>
       <p id="study_session_result"></p>
       <div class="study-session-end-actions">
-        <button type="button" id="study_session_continue"><%= dgettext("study", "Continue practicing") %></button>
+        <button type="button" id="study_session_continue" class="practice-primary"><%= dgettext("study", "Continue practicing") %></button>
         <button type="button" id="study_session_finish" class="secondary"><%= dgettext("study", "Finish") %></button>
       </div>
     </section>

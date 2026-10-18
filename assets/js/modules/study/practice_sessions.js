@@ -11,7 +11,8 @@ function sessionDay(now) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-function createPracticeTracker({ save, id = () => crypto.randomUUID() }) {
+function createPracticeTracker({ save, id = () => typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}` }) {
     let current = null;
     let lastTick = 0;
     let lastActivity = 0;
