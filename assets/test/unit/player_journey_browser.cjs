@@ -205,18 +205,21 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         async function checkTacticsMetadata() {
             const importer = page.locator('.study-create-import');
             if (await importer.count() && !await importer.evaluate(el => el.open)) await importer.locator(':scope > summary').click();
-            assert.equal(await page.locator('#study_training_kind').inputValue(), 'tactics');
+            const segmented = await page.locator('.study-create').count();
+            const current = field => page.locator(segmented ? `input[name="study[${field}]"]:checked` : `#study_${field}`).inputValue();
+            const chooseKind = value => segmented ? page.locator(`input[name="study[training_kind]"][value="${value}"]`).check() : page.selectOption('#study_training_kind', value);
+            assert.equal(await current('training_kind'), 'tactics');
             await page.locator('.study-management-side').waitFor({state: 'hidden'});
             assert(await page.locator('.study-metadata-opening').isHidden());
-            const original = await page.locator('#study_color').inputValue();
-            await page.selectOption('#study_training_kind', 'repertoire');
+            const original = await current('color');
+            await chooseKind('repertoire');
             await page.locator('.study-management-side').waitFor({state: 'visible'});
             assert(await page.locator('.study-metadata-opening').isVisible());
-            assert.equal(await page.locator('#study_color').inputValue(), original);
-            await page.selectOption('#study_training_kind', 'tactics');
+            assert.equal(await current('color'), original);
+            await chooseKind('tactics');
             await page.locator('.study-management-side').waitFor({state: 'hidden'});
             assert(await page.locator('.study-metadata-opening').isHidden());
-            assert.equal(await page.locator('#study_color').inputValue(), original);
+            assert.equal(await current('color'), original);
         }
         await checkTacticsMetadata();
         await page.screenshot({path: '/tmp/listudy-tactics-import.png', fullPage: true});

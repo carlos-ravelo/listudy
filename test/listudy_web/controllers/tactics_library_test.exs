@@ -124,10 +124,10 @@ defmodule ListudyWeb.TacticsLibraryTest do
     assert html =~ "Create tactics"
     assert html =~ "study_pgn"
     assert Floki.find(html, "#study_description[required], #study_description[minlength]") == []
-    assert html =~ ~r/<option(?=[^>]*selected)(?=[^>]*value="tactics")[^>]*>/
+    assert [_] = Floki.find(html, "input[type='radio'][name='study[training_kind]'][value='tactics'][checked]")
     preview("import", html)
     normal = auth |> get("/en/studies/new") |> html_response(200)
-    assert normal =~ ~r/<option(?=[^>]*selected)(?=[^>]*value="repertoire")[^>]*>/
+    assert [_] = Floki.find(normal, "input[type='radio'][name='study[training_kind]'][value='repertoire'][checked]")
   end
 
   test "tactics collections are excluded from repertoire discovery and game comparison" do

@@ -1,5 +1,5 @@
-  <div class="study-management-import-card pgn_choice">
-    <h3 ><%= dgettext("study", "Import PGN or Lichess Study") %></h3>
+  <div class="<%= if Map.get(assigns, :creation, false), do: "study-create-import-fields", else: "study-management-import-card pgn_choice" %>">
+    <%= unless Map.get(assigns, :creation, false) do %><h3><%= dgettext("study", "Import PGN or Lichess Study") %></h3><% end %>
     <div class="study-management-import-grid">
       <div>
         <%= label @f, :pgn, dgettext("study", "Select a PGN to upload") %>

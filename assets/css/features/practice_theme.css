@@ -48,6 +48,54 @@
 .practice-page :is(a, button, input, select, summary):focus-visible { outline: 2px solid var(--practice-accent); outline-offset: 3px; }
 
 /* Libraries share source tabs, filters, and an explicit practice action. */
+.study-create.practice-page { max-width: 960px; margin-inline: auto; }
+.study-create.practice-page h1 { margin: 0 0 20px; font-size: clamp(22px, 3vw, 28px); font-weight: 600; line-height: 1.25; }
+.study-create.practice-page .study-form { display: flex; flex-direction: column; gap: 24px; margin: 0; }
+.study-create.practice-page .study-create-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; gap: 32px; }
+.study-create.practice-page .study-create-main { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.study-create.practice-page .study-create-options { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.study-create.practice-page .study-create-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-width: 0; padding: 16px; border: 1px solid var(--practice-divider); border-radius: 8px; box-shadow: 0 3px 14px rgb(20 40 65 / 5%); }
+.study-create.practice-page .study-create-card h2 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; }
+.study-create.practice-page .study-create-card p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--secondary-color); }
+.study-create.practice-page .study-create-import-fields { width: 100%; min-width: 0; }
+.study-create.practice-page .study-management-import-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.study-create.practice-page .study-create-card .study-create-legal { font-size: 11px; line-height: 1.5; }
+.study-create.practice-page .study-create-legal a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.study-create.practice-page .study-create-fields { display: grid; gap: 16px; width: 100%; max-width: 840px; min-width: 0; }
+.study-create.practice-page label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; line-height: 1.4; }
+.study-create.practice-page :is(input[type="text"], input[type="file"], textarea, select) { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; height: auto; margin: 0; padding: 10px 12px; border: 1px solid var(--practice-divider); border-radius: 6px; background: var(--bg-color); color: var(--font-color); font: inherit; font-size: 14px; line-height: 1.4; }
+.study-create.practice-page input[type="file"] { padding: 8px; font-size: 13px; }
+.study-create.practice-page input[type="file"]::file-selector-button { margin-inline-end: 8px; padding: 4px 8px; border: 1px solid var(--practice-divider); border-radius: 4px; background: var(--bg-highlight-color); color: var(--font-color); font: inherit; cursor: pointer; }
+.study-create.practice-page textarea { min-height: 64px; resize: vertical; }
+.study-create.practice-page .study-management-settings-row { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); gap: 16px; align-items: center; margin: 0; }
+.study-create.practice-page .study-management-kind { order: 1; }
+.study-create.practice-page .study-management-side { order: 2; }
+.study-create.practice-page .study-metadata-opening { order: 3; }
+.study-create.practice-page .study-segmented-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+.study-create.practice-page .study-segmented-field legend { margin: 0 0 6px; padding: 0; font-size: 13px; font-weight: 600; line-height: 1.4; }
+.study-create.practice-page .study-segmented-control { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--bg-highlight-color); }
+.study-create.practice-page .study-segmented-control label { position: relative; display: flex; margin: 0; font-weight: 500; cursor: pointer; }
+.study-create.practice-page .study-segmented-control input { appearance: none; position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.study-create.practice-page .study-segmented-control label > span { display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; min-height: 36px; padding: 6px 10px; border-radius: 999px; white-space: nowrap; color: var(--secondary-color); }
+.study-create.practice-page .study-segmented-control input:checked + span { background: var(--bg-color); color: var(--font-color); box-shadow: 0 1px 3px rgb(0 0 0 / 12%); }
+.study-create.practice-page .study-segmented-control label:hover > span { color: var(--font-color); }
+.study-create.practice-page .study-segmented-control input:focus-visible + span { outline: 2px solid var(--practice-accent); outline-offset: 2px; }
+.study-create.practice-page .study-form-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 16px; width: 100%; max-width: 840px; }
+.study-create.practice-page .study-management-private { min-height: 32px; gap: 8px; }
+.study-create.practice-page .study-management-private label { margin: 0; font-weight: 400; }
+.study-create.practice-page .study-management-private input { margin: 0; }
+.study-create.practice-page .study-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.study-create.practice-page .study-form-actions .practice-secondary { border-color: var(--practice-divider); color: var(--font-color); }
+@media (max-width: 1000px) {
+  .study-create.practice-page .study-create-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+}
+@media (max-width: 700px) {
+  .study-create.practice-page .study-create-options { gap: 16px; }
+  .study-create.practice-page .study-management-settings-row { grid-template-columns: minmax(0, 1fr); }
+  .study-create.practice-page .study-form-footer .study-form-actions { margin-inline-start: auto; }
+  .study-create.practice-page :is(input[type="text"], textarea, select) { font-size: 16px; }
+}
+
 :is(.tactics-collections, .repertoire-library) { --library-action: #206a9d; }
 [data-theme="dark"] :is(.tactics-collections, .repertoire-library) { --library-action: #8ec9f2; }
 :is(.tactics-collections, .repertoire-library) .study-library-views { gap: 8px; padding: 4px; border: 1px solid var(--library-divider); border-radius: 6px; background: color-mix(in srgb, var(--bg-highlight-color) 55%, var(--bg-color)); }

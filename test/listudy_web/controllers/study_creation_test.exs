@@ -9,10 +9,22 @@ defmodule ListudyWeb.StudyCreationTest do
   end
 
   test "creation offers a board first and retains import", %{conn: conn} do
-    html = conn |> get("/en/studies/new") |> html_response(200)
-    assert html =~ "Start on the board"
-    assert html =~ "source=blank"
-    assert html =~ "study_pgn"
+    for kind <- ["repertoire", "tactics"] do
+      html = conn |> get("/en/studies/new?kind=#{kind}") |> html_response(200)
+      assert html =~ "Start on the board"
+      assert html =~ "source=blank"
+      assert html =~ "study_pgn"
+      assert [_, _] = Floki.find(html, ".study-create-options > .study-create-card")
+      assert [_] = Floki.find(html, ".study-create-card #study_lichess_study")
+      assert [_] = Floki.find(html, ".study-create-card .study-create-legal")
+      assert [_] = Floki.find(html, ".study-create-fields #study_title")
+      assert [_] = Floki.find(html, ".study-form-actions a[href='/en/studies']")
+      assert [] = Floki.find(html, ".study-create details, .study-create .one-third")
+      if dir = System.get_env("LISTUDY_CREATE_FORM_PREVIEW") do
+        File.mkdir_p!(dir)
+        File.write!(Path.join(dir, kind <> ".html"), html)
+      end
+    end
   end
 
   test "blank repertoire and exercise share the chapter editor", %{conn: conn} do
