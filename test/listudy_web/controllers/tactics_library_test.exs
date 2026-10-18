@@ -52,7 +52,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
     end
   end
 
-  test "tactics and studies have separate libraries with shared collection controls", %{
+  test "studies manage both training kinds while tactics stays focused on puzzles", %{
     conn: conn
   } do
     owner = user()
@@ -82,7 +82,13 @@ defmodule ListudyWeb.TacticsLibraryTest do
     preview("library-collections", collections)
     studies = auth |> get("/en/studies") |> html_response(200)
     assert studies =~ repertoire.title
-    refute studies =~ own.title
+    assert studies =~ own.title
+    assert studies =~ saved.title
+    refute studies =~ inaccessible.title
+    assert studies =~ "data-library-kind"
+    refute studies =~ "data-library-help"
+    assert [_] = Floki.find(studies, "[data-study-id='#{own.id}'] .study-library-menu a[data-method='delete']")
+    preview("studies", studies)
     assert Enum.map(Listudy.StudyLibrary.daily_studies(owner.id), & &1.id) == [repertoire.id]
 
     html = auth |> get("/en/tactics/collections/#{own.slug}") |> html_response(200)

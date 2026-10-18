@@ -34,6 +34,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     let state = JSON.parse(library.dataset.libraryState);
     const color = library.querySelector('[data-library-color]');
     const group = library.querySelector('[data-library-group]');
+    const kind = library.querySelector('[data-library-kind]');
     const organize = library.querySelector('[data-library-organize]');
     const bulk = library.querySelector('[data-library-bulk]');
     const selectAll = library.querySelector('[data-library-select-all]');
@@ -83,6 +84,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             const groupName = state.groups[entry.group] || '';
             const searchable = normalize(row.dataset.search + ' ' + groupName);
             row.hidden = !((view === 'all' || entry.location === view) && searchable.includes(query) &&
+                (!kind || kind.value === 'all' || row.dataset.kind === kind.value) &&
                 (color.value === 'all' || row.dataset.color === color.value) &&
                 (group.value === 'all' || (group.value === 'none' ? !entry.group : entry.group === group.value)));
             if (!row.hidden) visible++;
@@ -109,7 +111,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             help.hidden = false;
         }
         library.querySelector('[data-library-empty]').hidden = visible !== 0;
-        library.querySelector('[data-library-empty-message]').textContent = query || color.value !== 'all' || group.value !== 'all'
+        library.querySelector('[data-library-empty-message]').textContent = query || color.value !== 'all' || group.value !== 'all' || (kind && kind.value !== 'all')
             ? labels.emptySearch : view === 'daily' ? labels.emptyDaily : labels.emptyLibrary;
         bulk.hidden = !organizing;
         library.querySelectorAll('[data-library-bulk-location]').forEach(button => {
@@ -121,7 +123,8 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         if (writeUrl) {
             const url = new URL(window.location.href);
             for (const [key, value] of Object.entries({ library_view: view === 'daily' ? '' : view,
-                q: search.value, color: color.value === 'all' ? '' : color.value, group: group.value === 'all' ? '' : group.value })) {
+                q: search.value, kind: kind && kind.value !== 'all' ? kind.value : '',
+                color: color.value === 'all' ? '' : color.value, group: group.value === 'all' ? '' : group.value })) {
                 if (value) url.searchParams.set(key, value); else url.searchParams.delete(key);
             }
             history.replaceState(null, '', url);
@@ -267,6 +270,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     });
     search.oninput = () => { selected.clear(); filter(); };
     color.onchange = group.onchange = () => { selected.clear(); filter(); };
+    if (kind) kind.onchange = () => { selected.clear(); filter(); };
     organize.onclick = () => { organizing = !organizing; selected.clear(); filter(); };
     selectAll.onchange = () => {
         rows.filter(row => !row.hidden).forEach(row => {
@@ -301,7 +305,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         if (await mutate({ action: 'move', study_ids: moveIds, group: moveGroup.value || null })) moveDialog.close();
     };
     library.querySelector('[data-library-show-all]').onclick = () => {
-        view = 'all'; search.value = ''; color.value = 'all'; group.value = 'all'; selected.clear(); filter(); search.focus();
+        view = 'all'; search.value = ''; color.value = 'all'; group.value = 'all'; if (kind) kind.value = 'all'; selected.clear(); filter(); search.focus();
     };
     document.addEventListener('click', event => { if (!event.target.closest('.study-library-menu')) closeMenus(); });
     document.addEventListener('keydown', event => {
@@ -315,6 +319,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     view = hasViews && ['daily', 'library', 'all'].includes(url.searchParams.get('library_view'))
         ? url.searchParams.get('library_view') : hasViews ? 'daily' : 'all';
     search.value = url.searchParams.get('q') || '';
+    if (kind) kind.value = ['repertoire', 'tactics'].includes(url.searchParams.get('kind')) ? url.searchParams.get('kind') : 'all';
     color.value = ['white', 'black'].includes(url.searchParams.get('color')) ? url.searchParams.get('color') : 'all';
     if ([...group.options].some(option => option.value === url.searchParams.get('group'))) group.value = url.searchParams.get('group');
     renderGroups();

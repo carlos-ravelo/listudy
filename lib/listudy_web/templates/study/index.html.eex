@@ -12,17 +12,17 @@
        saved: dgettext("study", "Organization saved."), saving: dgettext("study", "Saving…"),
        failed: dgettext("study", "Could not save your organization. Try again."),
        removeGroup: copy.remove_group,
-       dailyHelp: copy.daily_help,
-       libraryHelp: copy.library_help,
-       allHelp: copy.all_help,
        emptyDaily: copy.empty_daily,
        emptyLibrary: copy.empty_library,
        emptySearch: copy.empty_search
      }) %>">
   <div class="study-library-heading">
     <h1><%= if tactics, do: gettext("Tactics"), else: copy.title %></h1>
-    <%= if !tactics and (@studies != [] or @favorites != []) do %>
+    <%= unless tactics do %>
+      <div class="study-library-create-actions">
       <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, if(tactics, do: [kind: "tactics"], else: [])), class: "button study-library-create" %>
+      <%= link dgettext("study", "Create tactics"), to: Routes.study_path(@conn, :new, @locale, kind: "tactics"), class: "button practice-secondary" %>
+      </div>
     <% end %>
   </div>
   <%= if tactics do %>
@@ -46,11 +46,15 @@
         <button type="button" data-library-view="<%= view %>" aria-pressed="<%= view == "daily" %>"><%= label %> <span data-library-view-count="<%= view %>"></span></button>
       <% end %>
     </nav>
-    <p class="study-library-help" data-library-help hidden></p>
     <% end %>
     <div class="study-library-toolbar" data-library-controls hidden>
       <input type="search" data-library-search aria-label="<%= dgettext("study", "Search this list") %>" placeholder="<%= dgettext("study", "Search this list…") %>" autocomplete="off">
       <%= unless tactics do %>
+      <select data-library-kind name="kind" aria-label="<%= gettext("Study type") %>">
+        <option value="all"><%= gettext("All types") %></option>
+        <option value="repertoire"><%= gettext("Repertoires") %></option>
+        <option value="tactics"><%= gettext("Tactics") %></option>
+      </select>
       <select data-library-color <%= if tactics, do: "hidden" %> aria-label="<%= dgettext("study", "Study color") %>">
         <option value="all"><%= dgettext("study", "Both colors") %></option>
         <option value="white"><%= dgettext("study", "White") %></option>

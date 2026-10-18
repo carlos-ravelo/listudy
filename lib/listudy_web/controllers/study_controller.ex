@@ -6,7 +6,7 @@ defmodule ListudyWeb.StudyController do
   alias Listudy.Studies.Study
   alias Listudy.StudyFavorites
 
-  def index(conn, _params), do: library(conn, "repertoire")
+  def index(conn, _params), do: library(conn, nil)
 
   def tactics(conn, params) do
     filters = ListudyWeb.PuzzlePreferences.filters(conn, params)
@@ -32,8 +32,8 @@ defmodule ListudyWeb.StudyController do
         {:error, _} -> -1
       end
 
-    studies = Enum.filter(Studies.get_study_by_user!(user), &(&1.training_kind == kind))
-    favorites = Enum.filter(Studies.get_studies_by_favorite!(user), &(&1.training_kind == kind))
+    studies = Enum.filter(Studies.get_study_by_user!(user), &(is_nil(kind) or &1.training_kind == kind))
+    favorites = Enum.filter(Studies.get_studies_by_favorite!(user), &(is_nil(kind) or &1.training_kind == kind))
     owned = MapSet.new(studies, & &1.id)
     favorites = Enum.reject(favorites, &MapSet.member?(owned, &1.id))
 

@@ -69,6 +69,18 @@
 :is(.tactics-collections, .repertoire-library) .study-library-create { background: #206a9d; border-color: #206a9d; color: #fff; min-height: 44px; }
 :is(.tactics-collections, .repertoire-library) .study-library-create:hover { background: #18527a; border-color: #18527a; }
 
+.repertoire-library .study-library-heading { flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
+.repertoire-library .study-library-create-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.repertoire-library .study-library-list { gap: 6px; }
+.repertoire-library .study-library-row { gap: 8px; min-height: 0; padding: 4px 10px; }
+.repertoire-library .study-library-content { min-height: 40px; padding: 2px 0; gap: 2px 12px; }
+.repertoire-library .study-library-color { flex: 0 0 72px; }
+.repertoire-library .study-library-title-line { grid-column: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; min-width: 0; }
+.repertoire-library .study-library-title { font-size: 14px; line-height: 1.3; }
+.repertoire-library .study-library-type { flex-shrink: 0; padding: 1px 6px; border-radius: 4px; background: var(--bg-color); color: var(--secondary-color); font-size: 11px; line-height: 1.4; }
+.repertoire-library .study-library-description { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; font-size: 12px; }
+.repertoire-library .study-library-toolbar { padding: 8px; gap: 8px; margin-top: 8px; }
+
 .tactics-collections .study-library-toolbar { display: flex; flex-wrap: wrap; gap: 12px; padding: 0; margin-bottom: 24px; border: 0; border-radius: 0; background: transparent; }
 
 /* Analysis: accounts and the game library feed the training targets below. */
@@ -149,6 +161,7 @@
   .analysis-games-page .analysis-game-row { align-items: flex-start; }
 }
 @media (max-width: 600px) {
+  .repertoire-library .study-library-color { flex-basis: 22px; }
   :is(.analysis-overview-page, .analysis-games-page).practice-page { padding-inline: 12px; box-sizing: border-box; }
   .practice-page .practice-panel { padding: 16px; }
   .analysis-overview-page .analysis-page-heading { align-items: flex-start; flex-wrap: wrap; }
@@ -165,8 +178,9 @@
 }
 
 @media (max-width: 420px) {
-  :is(.tactics-collections, .repertoire-library) .study-library-row { padding: 10px 12px; }
-  :is(.tactics-collections, .repertoire-library) .study-library-content { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .tactics-collections .study-library-row { padding: 10px 12px; }
+  .repertoire-library .study-library-row { padding: 4px 8px; }
+  :is(.tactics-collections, .repertoire-library) .study-library-content { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .study-library-practice { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 4px; }
   :is(.tactics-collections, .repertoire-library) .study-library-empty { padding: 20px; }
   :is(.tactics-collections, .repertoire-library) .study-library-views { gap: 4px; }
