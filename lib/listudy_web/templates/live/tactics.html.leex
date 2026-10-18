@@ -43,14 +43,6 @@
       <p><%= dgettext("endgame", "Currently playing tactics by:") <> " " <> @player.name %></p>
     <% end %>
 
-    <%= if @tactic.source == "lichess" do %>
-      <details class="puzzle-about">
-        <summary><%= gettext("About this puzzle") %></summary>
-        <p><a href="<%= @tactic.link || "https://lichess.org/training/" <> @tactic.source_id %>" translate="no">Lichess #<%= @tactic.source_id %></a></p>
-        <p><%= gettext("Puzzle data from Lichess (CC0). Progress is saved on this device.") %></p>
-      </details>
-    <% end %>
-
   </div>
 </div>
 </div>

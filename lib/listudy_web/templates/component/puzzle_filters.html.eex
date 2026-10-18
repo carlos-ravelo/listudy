@@ -23,11 +23,11 @@
     <div class="puzzle-filter-action">
       <button type="submit" class="puzzle-practice-button" phx-disable-with="<%= gettext("Loading…") %>"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M5 3l8 5-8 5z"/></svg><%= if @live, do: gettext("Apply and practice"), else: gettext("Practice puzzles") %></button>
     </div>
-    <p id="<%= @id %>-status" class="puzzle-filter-status" role="status" aria-live="polite" aria-atomic="true" <%= if @error, do: raw("data-filter-error=\"true\"") %>>
-      <%= cond do %>
-        <% @error -> %><%= @error %>
-        <% @count == 0 -> %><%= gettext("No puzzles match. Try another theme or a wider rating range.") %>
-        <% true -> %><span data-puzzle-count="<%= @count %>" data-count-label="<%= gettext("%{count} puzzles available", count: "{count}") %>"><%= gettext("%{count} puzzles available", count: @count) %></span>
+    <p id="<%= @id %>-status" class="puzzle-filter-status" role="status" aria-live="polite" aria-atomic="true" <%= if !@error && @count != 0, do: "hidden" %> <%= if @error, do: raw("data-filter-error=\"true\"") %>>
+      <%= if @error do %>
+        <%= @error %>
+      <% else %>
+        <%= if @count == 0, do: gettext("No puzzles match. Try another theme or a wider rating range.") %>
       <% end %>
     </p>
   </div>
