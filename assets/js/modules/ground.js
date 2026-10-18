@@ -58,9 +58,8 @@ function setup_ground(fen) {
  * Window resize callback
  */
 function onresize() {
-    // Don't resize ground if the window width is unchanged
-    const reading = document.getElementById("study_layout")?.classList.contains("study-reading-layout");
-    if (window.innerWidth === window.window_width && (!reading || window.innerHeight === window.window_height)) {
+    const study = document.getElementById("study_layout");
+    if (window.innerWidth === window.window_width && (!study || window.innerHeight === window.window_height)) {
         return;
     }
 
@@ -76,6 +75,11 @@ function onresize() {
 function calculate_width() {
     let gc = document.getElementById("game_container");
     const frame = gc.querySelector(".study-board-frame");
+    if (frame && gc.closest(".study-workspace") && window.innerWidth > 600) {
+        const actions = document.getElementById("study_board_actions");
+        const controlsHeight = actions ? actions.offsetHeight + parseFloat(getComputedStyle(actions).marginTop || 0) : 0;
+        return Math.min(gc.clientWidth, Math.max(240, Math.floor(window.innerHeight - frame.getBoundingClientRect().top - controlsHeight - 16)));
+    }
     let gc_width = (frame || gc).offsetWidth;
     let width = gc_width ;//- 7; // for the numbers on the side of the ground
     //width -= width % 8; // fix chrome alignment errors; https://github.com/ornicar/lila/pull/3881
@@ -86,6 +90,13 @@ function calculate_width() {
 // call on window resizing
 function resize_ground() {
     let width_integer = calculate_width();
+    const studyContainer = document.getElementById("game_container");
+    if (studyContainer.closest(".study-workspace")) {
+        studyContainer.style.setProperty("--study-board-size", window.innerWidth > 600 ? width_integer + "px" : "100%");
+        // Account for controls that wrap after the board column becomes narrower.
+        width_integer = calculate_width();
+        studyContainer.style.setProperty("--study-board-size", window.innerWidth > 600 ? width_integer + "px" : "100%");
+    }
     let width = "" + width_integer + "px";
     let chessground = document.getElementById("chessground");
     chessground.style.width = width;

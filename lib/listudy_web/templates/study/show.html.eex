@@ -107,6 +107,27 @@
         </section>
 
         
+        <!-- Active session feedback -->
+        <div class="study-session-progress">
+          <p id="study_sync_status" role="status" aria-live="polite" hidden></p>
+          <div class="option_item_progressbar" style="width: 100%;">
+        
+            <p id="failed_positions_status" role="status" hidden></p>
+        
+            <p id="smart_run_status" class="study-weak-run-status" aria-live="polite" hidden></p>
+            <p id="study_session_counter" class="study-session-counter" hidden></p>
+            <section id="study_session_end" class="study-session-end" hidden aria-labelledby="study_session_end_title">
+              <h3 id="study_session_end_title" tabindex="-1"><%= dgettext("study", "Session finished") %></h3>
+              <p id="study_session_result"></p>
+              <div class="study-session-end-actions">
+                <button type="button" id="study_session_continue" class="practice-primary"><%= dgettext("study", "Continue practicing") %></button>
+                <button type="button" id="study_session_finish" class="secondary"><%= dgettext("study", "Finish") %></button>
+              </div>
+            </section>
+            <p id="weak_run_status" class="study-weak-run-status" hidden></p>
+          </div>
+        </div>
+
         <div class="study-comment-panel" :class="{ 'study-comments-expanded': expanded }">
           <div id="comments" class="study_comments" x-ref="comments"></div>
           <button type="button" class="study-read-comment-toggle" x-cloak
@@ -123,26 +144,6 @@
 
 
 
-<!-- Active session feedback -->
-<div class="study-session-progress">
-  <p id="study_sync_status" role="status" aria-live="polite" hidden></p>
-  <div class="option_item_progressbar" style="width: 100%;">
-
-    <p id="failed_positions_status" role="status" hidden></p>
-
-    <p id="smart_run_status" class="study-weak-run-status" aria-live="polite" hidden></p>
-    <p id="study_session_counter" class="study-session-counter" hidden></p>
-    <section id="study_session_end" class="study-session-end" hidden aria-labelledby="study_session_end_title">
-      <h3 id="study_session_end_title" tabindex="-1"><%= dgettext("study", "Session finished") %></h3>
-      <p id="study_session_result"></p>
-      <div class="study-session-end-actions">
-        <button type="button" id="study_session_continue" class="practice-primary"><%= dgettext("study", "Continue practicing") %></button>
-        <button type="button" id="study_session_finish" class="secondary"><%= dgettext("study", "Finish") %></button>
-      </div>
-    </section>
-    <p id="weak_run_status" class="study-weak-run-status" hidden></p>
-  </div>
-</div>
 
 <%= render "_study_settings.html", study: @study %>
 
@@ -244,7 +245,6 @@
   i18n.progress_sync_error = "<%= dgettext "study", "Progress could not be synchronized. Your local copy is retained; check that you are signed in to the correct account." %>";
   i18n.progress_sync_offline = "<%= dgettext "study", "Progress is saved on this device. Cloud sync will retry when a connection is available." %>";
   i18n.smart_review = "<%= dgettext "study", "Smart: reviewing a due position" %>";
-  i18n.smart_review_chain = "<%= dgettext "study", "Smart: reviewing a line" %>";
   i18n.smart_long_review = "<%= dgettext "study", "Smart: checking a longer line" %>";
   i18n.smart_complete = "<%= dgettext "study", "Smart session complete for now" %>";
   i18n.session_labels = {

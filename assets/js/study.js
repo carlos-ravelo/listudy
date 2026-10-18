@@ -153,6 +153,7 @@ function selectNextSmartPosition() {
         finish_chapter_practice(false);
         ground.set({ movable: { dests: new Map() } });
         document.getElementById('smart_run_status').textContent = i18n.smart_complete;
+        document.getElementById('smart_run_status').hidden = false;
         return;
     }
     const { target, nextDue } = gameLineQueue
@@ -172,8 +173,9 @@ function selectNextSmartPosition() {
     }
     smartSession.lastChapter = target.chapter;
     smartSession.presentation = (smartSession.presentation || 0) + 1;
-    status.textContent = target.reviewChain ? (target.longReview ? i18n.smart_long_review : i18n.smart_review_chain)
+    status.textContent = target.reviewChain ? (target.longReview ? i18n.smart_long_review : '')
         : target.type === 'line' ? i18n.smart_learning : i18n.smart_review;
+    status.hidden = !status.textContent;
     const select = document.getElementById('chapter_select');
     select.value = String(target.chapter);
     select.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { smartRun: true } }));
@@ -984,8 +986,9 @@ function setup_move() {
     display_comments(false);
     if (smartTarget?.type === 'line') {
         document.getElementById('smart_run_status').textContent = smartTarget.reviewChain
-            ? (smartTarget.longReview ? i18n.smart_long_review : i18n.smart_review_chain)
+            ? (smartTarget.longReview ? i18n.smart_long_review : '')
             : smartIntroductionMove() ? i18n.smart_introduction : i18n.smart_learning;
+        document.getElementById('smart_run_status').hidden = !document.getElementById('smart_run_status').textContent;
     }
     studyMoveNavigation.update();
     update_read_mode_ui();
