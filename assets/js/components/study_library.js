@@ -4,8 +4,34 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     if (!rows.length) return;
     library.dataset.initialized = 'true';
     const labels = JSON.parse(library.dataset.libraryLabels);
-    let state = JSON.parse(library.dataset.libraryState);
     const search = library.querySelector('[data-library-search]');
+    if (library.hasAttribute('data-library-simple')) {
+        const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
+        const filter = (writeUrl = true) => {
+            const query = normalize(search.value.trim());
+            rows.forEach(row => { row.hidden = !normalize(row.dataset.search).includes(query); });
+            const visible = rows.filter(row => !row.hidden).length;
+            library.querySelector('[data-library-count]').textContent = `${visible} / ${rows.length}`;
+            library.querySelectorAll('[data-library-section]').forEach(section => {
+                section.hidden = !section.querySelector('[data-library-row]:not([hidden])');
+            });
+            library.querySelector('[data-library-empty]').hidden = visible !== 0;
+            library.querySelector('[data-library-empty-message]').textContent = labels.emptySearch;
+            if (writeUrl) {
+                const url = new URL(window.location.href);
+                if (search.value) url.searchParams.set('q', search.value); else url.searchParams.delete('q');
+                for (const key of ['group', 'color', 'library_view']) url.searchParams.delete(key);
+                history.replaceState(null, '', url);
+            }
+        };
+        search.value = new URL(window.location.href).searchParams.get('q') || '';
+        search.addEventListener('input', () => filter());
+        library.querySelector('[data-library-show-all]').onclick = () => { search.value = ''; filter(); search.focus(); };
+        library.querySelectorAll('[data-library-controls]').forEach(control => { control.hidden = false; });
+        filter(false);
+        return;
+    }
+    let state = JSON.parse(library.dataset.libraryState);
     const color = library.querySelector('[data-library-color]');
     const group = library.querySelector('[data-library-group]');
     const organize = library.querySelector('[data-library-organize]');
@@ -19,7 +45,8 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     const selected = new Set();
     const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
     const setting = row => state.studies[row.dataset.studyId] || { location: 'daily', group: null };
-    let view = 'daily';
+    const hasViews = Boolean(library.querySelector('[data-library-view]'));
+    let view = hasViews ? 'daily' : 'all';
     let organizing = false;
     let busy = false;
     let moveIds = [];
@@ -76,8 +103,11 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             button.querySelector('[data-library-view-count]').textContent = counts[button.dataset.libraryView];
         });
         library.querySelector('[data-library-count]').textContent = `${visible} / ${counts[view]}`;
-        library.querySelector('[data-library-help]').textContent = labels[view + 'Help'];
-        library.querySelector('[data-library-help]').hidden = false;
+        const help = library.querySelector('[data-library-help]');
+        if (help) {
+            help.textContent = labels[view + 'Help'];
+            help.hidden = false;
+        }
         library.querySelector('[data-library-empty]').hidden = visible !== 0;
         library.querySelector('[data-library-empty-message]').textContent = query || color.value !== 'all' || group.value !== 'all'
             ? labels.emptySearch : view === 'daily' ? labels.emptyDaily : labels.emptyLibrary;
@@ -282,7 +312,8 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     });
     groupOptions();
     const url = new URL(window.location.href);
-    view = ['daily', 'library', 'all'].includes(url.searchParams.get('library_view')) ? url.searchParams.get('library_view') : 'daily';
+    view = hasViews && ['daily', 'library', 'all'].includes(url.searchParams.get('library_view'))
+        ? url.searchParams.get('library_view') : hasViews ? 'daily' : 'all';
     search.value = url.searchParams.get('q') || '';
     color.value = ['white', 'black'].includes(url.searchParams.get('color')) ? url.searchParams.get('color') : 'all';
     if ([...group.options].some(option => option.value === url.searchParams.get('group'))) group.value = url.searchParams.get('group');

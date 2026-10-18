@@ -1,7 +1,6 @@
 <% tactics = Map.get(assigns, :tactics, false) %>
 <% copy = library_copy(tactics) %>
-<% collections = @conn.params["source"] == "collections" %>
-<div class="study-library<%= unless tactics, do: " repertoire-library practice-page" %>" data-study-library data-library-state="<%= Jason.encode!(@library_data) %>"
+<div class="study-library<%= unless tactics, do: " repertoire-library practice-page" %>" data-study-library <%= if tactics, do: "data-library-simple" %> data-library-state="<%= Jason.encode!(@library_data) %>"
      data-library-endpoint="/api/study-library"
      data-library-labels="<%= Jason.encode!(%{
        daily: dgettext("study", "Daily"), library: dgettext("study", "Library"), all: copy.all,
@@ -27,41 +26,31 @@
     <% end %>
   </div>
   <%= if tactics do %>
-    <nav class="tactics-sources" aria-label="<%= gettext("Puzzle source") %>">
-      <%= link gettext("Included puzzles"), to: Routes.tactics_library_path(@conn, :tactics, @locale),
-            aria_current: if(!collections, do: "page", else: "false") %>
-      <%= link gettext("Your collections"), to: Routes.tactics_library_path(@conn, :tactics, @locale, source: "collections"),
-            aria_current: if(collections, do: "page", else: "false") %>
-    </nav>
-    <section class="puzzle-launcher tactics-source-panel" aria-labelledby="puzzle-launcher-title" <%= if collections, do: "hidden" %>>
-      <div class="puzzle-launcher-heading">
-        <h2 id="puzzle-launcher-title"><%= gettext("Included puzzles") %></h2>
-        <p><%= gettext("Lichess puzzles, ready to play. Choose your theme and rating.") %></p>
-      </div>
+    <div class="tactics-cards">
+    <section class="puzzle-launcher tactics-source-panel" aria-labelledby="puzzle-launcher-title">
+      <h2 id="puzzle-launcher-title"><%= gettext("Included puzzles") %></h2>
       <%= render ListudyWeb.ComponentView, "puzzle_filters.html", conn: @conn, locale: @locale,
             id: "library-puzzles", filters: @puzzle_filters, themes: @puzzle_themes,
             count: @puzzle_count, live: false, error: nil %>
     </section>
-    <section class="tactics-source-panel tactics-collections" aria-labelledby="tactics-collections-title" <%= unless collections, do: "hidden" %>>
-      <header class="tactics-collections-header">
-        <div>
-          <h2 id="tactics-collections-title"><%= gettext("Your collections") %></h2>
-          <p><%= gettext("Puzzles you create, import or save.") %></p>
-        </div>
-        <%= if @studies != [] or @favorites != [] do %>
-          <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, kind: "tactics"), class: "button study-library-create" %>
-        <% end %>
+    <section class="tactics-source-panel tactics-collections" aria-labelledby="tactics-collections-title">
+      <header class="tactics-card-heading">
+        <h2 id="tactics-collections-title"><%= gettext("Your collections") %></h2>
+        <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, kind: "tactics"), class: "button study-library-create" %>
       </header>
   <% end %>
   <%= if @studies != [] or @favorites != [] do %>
+    <%= unless tactics do %>
     <nav class="study-library-views" data-library-controls hidden aria-label="<%= dgettext("study", "Study lists") %>">
       <%= for {view, label} <- [{"daily", dgettext("study", "Daily")}, {"library", dgettext("study", "Library")}, {"all", copy.all}] do %>
         <button type="button" data-library-view="<%= view %>" aria-pressed="<%= view == "daily" %>"><%= label %> <span data-library-view-count="<%= view %>"></span></button>
       <% end %>
     </nav>
     <p class="study-library-help" data-library-help hidden></p>
+    <% end %>
     <div class="study-library-toolbar" data-library-controls hidden>
       <input type="search" data-library-search aria-label="<%= dgettext("study", "Search this list") %>" placeholder="<%= dgettext("study", "Search this list…") %>" autocomplete="off">
+      <%= unless tactics do %>
       <select data-library-color <%= if tactics, do: "hidden" %> aria-label="<%= dgettext("study", "Study color") %>">
         <option value="all"><%= dgettext("study", "Both colors") %></option>
         <option value="white"><%= dgettext("study", "White") %></option>
@@ -70,8 +59,10 @@
       <select data-library-group aria-label="<%= dgettext("study", "Study group") %>"><option value="all"><%= dgettext("study", "All groups") %></option></select>
       <button type="button" data-library-organize aria-pressed="false"><%= dgettext("study", "Organize") %></button>
       <button type="button" data-library-manage-groups><%= dgettext("study", "Groups") %></button>
+      <% end %>
       <span class="study-library-count" data-library-count role="status" aria-live="polite"></span>
     </div>
+    <%= unless tactics do %>
     <div class="study-library-bulk" data-library-bulk hidden>
       <label class="study-library-select-all"><input type="checkbox" data-library-select-all> <%= dgettext("study", "Select visible") %></label>
       <span data-library-selected></span>
@@ -80,6 +71,7 @@
       <button type="button" data-library-bulk-group disabled><%= dgettext("study", "Move to group…") %></button>
     </div>
     <p class="study-library-save-status" data-library-save-status role="status" aria-live="polite"></p>
+    <% end %>
   <% end %>
   <%= if @studies == [] and @favorites == [] do %>
     <div class="study-library-empty">
@@ -94,13 +86,13 @@
     </div>
   <% else %>
     <section data-library-section aria-label="<%= copy.title %>">
-      <%= render "_library_list.html", studies: @studies, conn: @conn, locale: @locale, editable: true, show_color: !tactics %>
+      <%= render "_library_list.html", studies: @studies, conn: @conn, locale: @locale, editable: true, show_color: !tactics, organizable: !tactics %>
     </section>
   <% end %>
   <%= if @favorites != [] do %>
     <section class="study-library-favorites" data-library-section aria-labelledby="library-favorites-title">
       <h2 id="library-favorites-title"><%= copy.favorites %></h2>
-      <%= render "_library_list.html", studies: @favorites, conn: @conn, locale: @locale, editable: false, show_color: !tactics %>
+      <%= render "_library_list.html", studies: @favorites, conn: @conn, locale: @locale, editable: false, show_color: !tactics, organizable: !tactics %>
     </section>
   <% end %>
   <div class="study-library-empty" data-library-empty hidden>
@@ -109,8 +101,10 @@
   </div>
   <%= if tactics do %>
     </section>
+    </div>
     <%= render ListudyWeb.ComponentView, "tactics_modes.html", conn: @conn, locale: @locale %>
   <% end %>
+  <%= unless tactics do %>
   <dialog class="study-library-dialog" data-library-groups-dialog aria-labelledby="library_groups_title">
     <header><h2 id="library_groups_title"><%= dgettext("study", "Study groups") %></h2><form method="dialog"><button><%= dgettext("study", "Close") %></button></form></header>
     <p><%= copy.groups_help %></p>
@@ -130,4 +124,5 @@
     </form>
     <p data-library-dialog-status role="status" aria-live="polite"></p>
   </dialog>
+  <% end %>
 </div>

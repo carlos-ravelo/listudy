@@ -1,11 +1,16 @@
+<% organizable = Map.get(assigns, :organizable, true) %>
 <ul class="study-library-list">
   <%= for study <- @studies do %>
     <li class="study-library-row" data-library-row data-study-id="<%= study.id %>" data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>">
+<%= if organizable do %>
       <label class="study-library-select" data-library-select hidden><input type="checkbox" data-library-check aria-label="<%= dgettext("study", "Select study") %>: <%= study.title %>"></label>
-      <a class="study-library-content" href="<%= training_path(@conn, @locale, study) %>">
+<% end %>
+      <a class="study-library-content" href="<%= training_path(@conn, @locale, study) %>" title="<%= unless organizable, do: study.title %>">
         <span class="study-library-title"><%= study.title %></span>
+<%= if organizable do %>
         <span class="study-library-description"><%= study.description %></span>
         <span class="study-library-group-label" data-library-row-group hidden></span>
+<% end %>
         <span class="study-library-practice"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M5 3l8 5-8 5z"/></svg><%= gettext("Practice") %></span>
       </a>
       <%= if Map.get(assigns, :show_color, true) and study.color in ["white", "black"] do %>
@@ -14,11 +19,14 @@
           <span class="study-library-color-label"><%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %></span>
         </span>
       <% end %>
+      <%= if organizable do %>
       <details class="study-library-menu">
         <summary aria-label="<%= dgettext("study", "Study actions") %>: <%= study.title %>"><span aria-hidden="true">⋯</span></summary>
         <div class="study-library-menu-content">
+          <%= if organizable do %>
           <button type="button" data-library-move-location hidden><%= dgettext("study", "Move to Library") %></button>
           <button type="button" data-library-move-to-group hidden><%= dgettext("study", "Move to group…") %></button>
+          <% end %>
       <%= if !study.private || @editable do %>
         <%= link dgettext("study", "Clone study"), to: Routes.study_path(@conn, :clone, @locale, study), method: :post,
           class: "study-library-edit", aria: [label: dgettext("study", "Clone study") <> ": " <> study.title] %>
@@ -37,6 +45,7 @@
       <% end %>
         </div>
       </details>
+      <% end %>
     </li>
   <% end %>
 </ul>

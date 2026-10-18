@@ -27,14 +27,9 @@ const fixtures = process.env.LISTUDY_DISCOVERY_PREVIEW || '/tmp/listudy-discover
         assert.equal(await page.locator('[data-nav-section=practice]').count(), 0);
         assert.equal(await page.locator('.tactics-modes').evaluate(el => getComputedStyle(el).fontVariant), 'normal', 'Mode links retain readable text rather than inherited small caps');
         assert(await page.locator('.puzzle-launcher').isVisible());
-        assert(await page.locator('.tactics-collections').isHidden());
-        await page.locator('.tactics-sources a').nth(1).focus();
-        await Promise.all([page.waitForNavigation(), page.keyboard.press('Enter')]);
-        assert(new URL(page.url()).searchParams.get('source') === 'collections');
         assert(await page.locator('.tactics-collections').isVisible());
-        assert(await page.locator('.puzzle-launcher').isHidden());
-        await page.goBack();
-        assert(await page.locator('.puzzle-launcher').isVisible());
+        assert.equal(await page.locator('.tactics-sources, .study-library-views').count(), 0);
+        assert.equal(await page.locator('.tactics-cards > .tactics-source-panel').count(), 2);
         for (const mode of ['blind-tactics', 'pieceless-tactics']) {
             await page.locator(`.tactics-modes a[href='/en/${mode}']`).click();
             await page.waitForFunction(() => window.ground && window.chess);
@@ -84,7 +79,7 @@ const fixtures = process.env.LISTUDY_DISCOVERY_PREVIEW || '/tmp/listudy-discover
                 await page.goto(base + '/en/tactics' + source);
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                 const panels = page.locator('.tactics-source-panel:visible');
-                assert.equal(await panels.count(), 1);
+                assert.equal(await panels.count(), 2);
                 const panel = await panels.boundingBox(), modes = await page.locator('.tactics-modes').boundingBox();
                 assert(modes.y >= panel.y + panel.height, 'Visualization follows the selected source');
                 for (const theme of ['light', 'dark']) {
