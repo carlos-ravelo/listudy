@@ -12,3 +12,4 @@
 
 Listudy.Seeds.call()
 Code.eval_file(Path.join(__DIR__, "seed_openings.exs"))
+Code.eval_file(Path.join(__DIR__, "seed_beginner_studies.exs"))

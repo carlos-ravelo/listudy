@@ -1,0 +1,189 @@
+[Event "The Main Ideas"]
+[Site "?"]
+[Date "2023.04.19"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "D00"]
+[Opening "Queen's Pawn Game: Accelerated London System"]
+[StudyName "Ideas in the London System"]
+[ChapterName "The Main Ideas"]
+[ChapterURL "https://lichess.org/study/lwahBieP/0Nlrc5Ls"]
+[Annotator "https://lichess.org/@/MatteoHaas"]
+[UTCDate "2023.04.19"]
+[UTCTime "14:25:39"]
+[ListudyChapterId "516ffcf586a1d9635591d79bd33ffc3a"]
+[Orientation "white"]
+
+1. d4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] In this chapter I'll explain the main ideas you will do in most London Opening games. }
+1... d5 2. Bf4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Our London Opening move.
+Plan Part #1: Start with d4 and Bf4. }
+2... Nf6 3. e3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Plan Part #2: Build a Pyramid! Play the moves e3 and c3 as soon as you can! [%csl Gc3,Ge3][%cal Gc2c3] }
+( 3. Nf3 c5 4. e3 Nc6 5. c3 Qb6 6. Qb3 c4 7. Qc2 Bf5 ) 3... c5
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] When c5 hits you never want to take on c5. The main reason is because when you take something you RELEASE TENSION and releasing tension is bad. You don't want to capture with your d4 pawn cause then you're just gonna destroy your own pyramid. Instead you let them take us. If they ever play cxd4, you almost always capture back with the e-pawn. [%csl Gd4][%cal Ge3d4,Gc5d4,Rd4c5] }
+4. c3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Your goal is to have e3 already played and to MEET C5 WITH C3. [%csl Ge3][%cal Gc7c5,Gc2c3] }
+4... e6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Plan Part #3: Develop your remaining minor pieces.
+The question is, where? The answer? Where they are closest to the CENTER!! The center is where your pieces are the most powerful, so we should get our pieces towards there. Thus, the best squares for our pieces are Nd2, Nf3 and Bd3. [%cal Bf1d3,Bb1d2,Bg1f3] }
+5. Nd2
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] I recommend developing the queen's knight before the king's knight, because there are some nasty things that can happen if you play Nf3 too early. You can avoid these annoyances by developing the queen knight first. [%csl Gd2][%cal Rg1f3,Gb1d2] }
+5... Nc6 6. Ngf3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Both knights are out to their best squares
+Here black can play either Bd6 or Be7. Be7 is more passive. I created a sideline so you can see my recommendation for what to do if they play that.
+The mainline runs Bd6. [%cal Bf8e7,Bf8d6] }
+6... Bd6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] IDEA #4: The "Standoff" as GM Simon Williams likes to call it. There are two pistols aiming at each other. When black plays Bd6 aiming at your bishop, you've got to remember to NOT TAKE, but to drop this bishop back to g3.
+If you take, you help black to develop the queen and they can play e5 next. That is unacceptable. [%cal Rf4d6,Gf4g3] }
+( 6... Be7 ) 7. Bg3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Generally when you are given a choice whether to make an exchange or not, you should NOT do the exchange, but KEEP THE TENSION and let your opponent make the exchange. If black takes the bishop on g3, which weaker plays often do, you get a free open file and g-pawn battering rams. These are both excellent resources when you do your kingside attack. [%cal Bd6g3,Bh2g3,Yh1h8] }
+7... O-O ( 7... Bxg3 8. hxg3 h6 9. Ne5
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Super important move. The idea is to stop black playing e5 and we want to increase our control of this square by playing f4. [%csl Be5][%cal Bf3e5,Rf2f4] }
+9... Qd6 10. f4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] We upgraded our "Pyramid" into a "Stonewall" and we can do a very good kingside attack. [%csl Rb2,Rc3,Rd4,Re3,Rf4,Ge5][%cal Re3f4,Re3d4,Rb2d4,Gd4e5,Gf4e5] }
+10... cxd4 11. exd4 ) 8. Bd3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] We completed idea 3, developing all our minor pieces [%csl Bd3,Bd2,Bf3] }
+8... Re8
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Okay here is a typical example where black is going to play e6-e5, break up the center and free up his position and his light squared bishop.
+**GOLDEN RULE** #4: You should *NEVER* allow black to play e5. You have to block this square. [%csl Be5,Yc8][%cal Rf8e8,Re8e5,Be6e5,Yc8f5] }
+9. Ne5
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] **GOLDEN RULE** #5 Play Ne5. You have to play this at some point in the London System in order to get into the middlegame. With the move Ne5, we are:
+1. Preventing black from playing e5. *Super important, please take note of this*
+2. Occupying the center, the very best thing you can do
+3. Getting ready to play f4 next (Stonewall) and thereby setting up potential for a kingside attack. [%csl Ge5][%cal Gf2f4,Re6e5] }
+9... Qc7
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] The knight is attacked by too many pieces and not supported enough. [%csl Re5][%cal Rc7e5,Rc6e5] }
+10. f4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] GOLDEN IDEA #6: Convert the "Pyramid" into what's known as a "Stonewall". (Pawns on c3, d4, e3 and f4)
+This is your main goal in the London System out of the opening. You want to have:
+1. Got all your pieces out and working, controlling both light and dark squares
+2. Stopped black playing e5 (played Ne5)
+3. Built your stonewall successfully [%csl Ge4,Rb2,Rc3,Rd4,Rf4,Re3][%cal Gd3e4,Gd2e4,Rb2d4,Re3d4,Re3f4] }
+10... b6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Now what do we do? We're in the middlegame. The plan is pretty straight forward: Put everything on the kingside and checkmate black. :)
+The attack will depend on your game; I can't really give you exact guidelines.
+But in Chapters 3 & 4 I included good examples on how to attack, and you can also check out my study containing my most brutal London Opening games: https://lichess.org/study/VSmBjmFj [%cal Bg3h4,Bd2f3,Be1g1,Yd1h5,Bd1f3,Yf3g5] }
+( 10... cxd4 11. exd4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] If black captures on d4 you always recapture with e3 pawn [%cal Rc5d4,Re3d4] }
+11... Bxe5 12. fxe5
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] If black chops off your knight on e5 then you take with the f4 pawn. You keep your pawn on d4 and open the f-file. [%csl Gd4][%cal Rd6e5,Rf4e5,Gf1f7,Ge1g1] }
+12... Nd7
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] This is a fantastic attacking position for white. The white pieces are coming flying in, you have the two bishops, Qh5, Nf3-g5, and even castling bringing the rooks in on the f-file. [%csl Rc6,Rc7,Rd7,Rc8][%cal Bd3h7,Bd1h5,Bd2f3,Bf3g5,Be1g1] }
+) *
+
+[Event "- Black plays D5"]
+[Site "?"]
+[Date "2023.04.19"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "D00"]
+[Opening "Queen's Pawn Game: Accelerated London System, Steinitz Countergambit"]
+[StudyName "Ideas in the London System"]
+[ChapterName "- Black plays D5"]
+[ChapterURL "https://lichess.org/study/lwahBieP/lyvQ3SDU"]
+[Annotator "https://lichess.org/@/MatteoHaas"]
+[UTCDate "2023.04.19"]
+[UTCTime "14:25:39"]
+[ListudyOriginalResult "*"]
+[ListudyExcerpt "Opening excerpt: at most 12 full moves per line. Full source: https://lichess.org/study/lwahBieP/lyvQ3SDU"]
+[ListudyChapterId "397492dff7a8b6e58e3bc871dd7ec00f"]
+[Orientation "white"]
+
+1. d4 d5
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] We've already talked about this a fair bit but I'd just like to go over a few extra things before we move on to 1...Nf6. }
+2. Bf4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Okay so black can play this early c5 move and I talk about this Nf6 + c5 on move 2 setup in more detail on chapter 9. [%cal Bc7c5] }
+( 2. Nf3 Nf6 3. Bf4 e6 4. e3 ) 2... c5 ( 2... e6 3. e3 ) 3. e3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Building our pyramid [%csl Re3,Rd4,Rf2,Rc3,Rb2][%cal Rc2c3] }
+3... Nf6 4. c3 Nc6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] In chapter 2, The Essential Ideas, I recommended you play Nd2 before Nf3. If you're wondering why that is, I encourage you check out the sideline 5.Nf3 to see what happens. [%csl Gd2,Rf3][%cal Gb1d2,Rg1f3] }
+5. Nd2 ( 5. Nf3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] This is a very common mistake. Many London Opening players are playing Nf3 either right here or even before they build the pyramid. It looks like the most natural developing move, however there is a flaw with it. }
+5... Qb6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Black can now go Qb6, hitting b2. [%csl Rb2,Ra1][%cal Rb6b2] }
+6. Qb3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] This is the way you're supposed to meet Qb6; with Qb3. If black takes your queen then you get an open a-file. [%csl Gb3][%cal Gd1b3,Bb6b3,Ba2b3] }
+6... c4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] But now black plays this forcing move c4. And of course you don't want to exchange queens because then you allow black to open the a-file for himself [%csl Rb6][%cal Rc5c4,Rb3b6,Ra7b6] }
+7. Qc2
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] So we play Qc2. And if black allows (say for example if black plays a bad move like e6), then white is going to play b3 and you will have the better pawn structure. However... [%csl Gc2][%cal Gb2b3,Re7e6] }
+7... Bf5
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Black has this very crafty move Bf5.
+(Continue to next move) [%csl Bf5,Ra1][%cal Bc2f5,Rb6b2,Rb2a1] }
+8. Qxf5 Qxb2
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Okay...So remember how I told you to develop Nd2 before Nf3? Well, now we can see why. Imagine in this position if we had the knight on d2 instead of the Nf3. Well, the rook wouldn't be trapped! It could escape to b1, and black's Bf5 move would be a blunder; white would be up a piece! [%csl Rf3,Ga1][%cal Ga1b1,Gb1d2,Yc8f5,Rg1f3] }
+) 5... Qb6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Okay so this is a move I wanted to talk about a bit. Black's idea with the c5 move was for the queen to come to b6 and attack the b2 pawn. This is a move you need to watch out for in the London System, but if you know how to meet it then you're ok. [%csl Rb2,Rf4][%cal Rd8b6,Rb6b2,Yf4c1] }
+6. Qb3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Each side is hoping the other side will take the queen, in which case the a-file will be opened up. [%cal Rb3b6,Rb6b3,Ga2b3,Ga7b6] }
+6... c4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Here black tries to force white to trade queens, but we will just move to c2. [%cal Rc5c4] }
+( 6... Bf5 7. dxc5 ) 7. Qc2
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] And now black has to deal with the white pawn breaks b3 and e4. White is better because he has the active pawn breaks, and black's c5-c4 gaining-space move is, in fact, a passive move. [%csl Gb3,Ge4][%cal Gb2b3,Ge3e4] }
+7... e6 ( 7... Bf5 8. Qxf5 Qxb2 9. Qb1 Qxc3 10. Ne2 Qb4 11. Qc1 Ne4 12. f3
+Qxd2+ ) 8. b3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] There it goes with our pawn break b3. White gets a very good game }
+8... cxb3 9. axb3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] White has the better pawn structure [%csl Gb3,Gc3,Gd4,Ge3,Gf2,Gg2,Gh2,Ra7,Rb7,Rd5][%cal Gc3c4,Gc4d5] }
+*
+
+[Event "Crashing on the Kingside"]
+[Site "https://lichess.org/q4Y2Hz48"]
+[Date "2018.02.03"]
+[Round "-"]
+[White "FunnyAnimatorJimTV"]
+[Black "MateusCornelius16"]
+[Result "*"]
+[WhiteElo "1842"]
+[BlackElo "1848"]
+[TimeControl "900+10"]
+[Termination "Normal"]
+[Variant "Standard"]
+[ECO "D00"]
+[Opening "Queen's Pawn Game: Accelerated London System, Steinitz Countergambit"]
+[StudyName "Ideas in the London System"]
+[ChapterName "Crashing on the Kingside"]
+[ChapterURL "https://lichess.org/study/lwahBieP/3QxBmZUF"]
+[Annotator "https://lichess.org/@/MatteoHaas"]
+[ListudyOriginalResult "1-0"]
+[ListudyExcerpt "Opening excerpt: at most 12 full moves per line. Full source: https://lichess.org/study/lwahBieP/3QxBmZUF"]
+[ListudyChapterId "495b7249c9c9e10304f3a2f8431b2d2b"]
+[Orientation "white"]
+
+1. d4 d5 2. Bf4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Starting with d4 and Bf4 }
+2... c5 3. e3 e6 4. c3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] I built my pyramid [%csl Rb2,Rc3,Rd4,Re3,Rf2][%cal Rf2d4,Rb2d4] }
+4... Nc6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Black developed the knight [%csl Gc6] }
+5. Nd2
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] I develop my queen knight [%csl Gd2][%cal Gb1d2] }
+5... h6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] An utterly pointless bunny-ear move. I BEG YOU not to play moves like this in your games. [%csl Bh6][%cal Bh7h6] }
+6. Ngf3 Nf6 7. Bd3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Developed all my minor pieces [%csl Bd2,Bd3,Bf3] }
+7... Bd6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Standoff. Do we take? Of course not, because that releases tension, and releasing tension is bad. [%cal Rd6f4,Rf4d6] }
+8. Bg3
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Instead we step back a bit and allow them to take us if they want. [%cal Bd6g3] }
+8... O-O 9. Ne5
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Ne5, the key move. Occupying the center [%csl Ge5][%cal Gf3e5] }
+9... Qc7
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] The knight is attacked [%csl Re5][%cal Rc7e5] }
+10. f4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Which beautifully makes us go into a Stonewall. Because we prevented e5, black's light squared bishop stays blocked in and will most likely be a dead piece for black the whole game, while all of the white pieces are very happy. :) [%csl Gb2,Gc3,Gd4,Ge3,Gf4,Rc8][%cal Gf4e5,Gd4e5,Rc8e6] }
+10... a6
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Maybe black is going to try and undermine this white queenside pawn chain [%csl Rc3,Rd4,Rb2][%cal Bb7b5,Bb5b4,Bb4c3] }
+11. Bh4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] I reposition this bishop, getting ready to swap off that knight that protects the black king [%csl Gh4][%cal Rh4f6,Gg3h4] }
+11... Be7 12. g4
+{ [%anno "FunnyAnimatorJimTV", funnyanimatorjimtv] Here comes the attack!! [%csl Rg4,Rf4][%cal Rg2g4,Rg4g5] }
+12... cxd4 *

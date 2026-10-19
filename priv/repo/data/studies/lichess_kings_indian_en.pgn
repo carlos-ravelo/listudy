@@ -1,0 +1,120 @@
+[Event "Introduction"]
+[Site "?"]
+[Date "2021.01.29"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E90"]
+[Opening "King's Indian Defense: Normal Variation, Rare Defenses"]
+[StudyName "🏆King's Indian Defense 🏹"]
+[ChapterName "Introduction"]
+[ChapterURL "https://lichess.org/study/rlgqOaZK/XHsdFw1U"]
+[Annotator "https://lichess.org/@/LeninPerez"]
+[UTCDate "2021.01.29"]
+[UTCTime "21:11:39"]
+[ChapterMode "gamebook"]
+[ListudyChapterId "09ab9f0f7f5ad34e29608c7d24fbbdcb"]
+[Orientation "black"]
+
+{ Hi all! Welcome to a new studio. In this study I am going to tell you about King's Indian Defense.
+
+King's Indian Defense is one of the most popular and AGGRESSIVE ways to deal with the opening move 1.d4. It is a semi-closed opening. Black gives up the center and hopes to keep it stable while attacking the opposing king. This defense was used by great players, among them, former world champion Garry Kasparov.
+
+Before we begin, I would like to comment on something.
+In the comments of my previous studies I have seen that many have corrected me in some words, and that is really my first language IS NOT ENGLISH. So sorry if I don't say a sentence correctly.
+
+Support my study: https://lichess.org/study/4JQtS6iu
+
+With nothing more to say, let this wonderful study begin!
+Press the space button to start :) }
+1. d4 { Play 1.Nf6 [%csl Gf6][%cal Gg8f6] } 1... Nf6
+{ You can start differently, but the correct one is Nf6. } 2. c4
+{ Now play 2.g6 [%csl Gg6][%cal Gg7g6] } 2... g6
+{ This move is that of the King's Indian Defense.
+The idea of this move is to take the bishop to g7, where it will be very well placed. [%cal Gf8g7] }
+3. Nc3 { So where should this bishop go? [%csl Gf8] } 3... Bg7 { That's! } 4.
+e4
+{ Normally when the white player makes e4 we respond with d6 (You can do it now) [%csl Gd6][%cal Gd7d6] }
+4... d6 5. Nf3 { What should you do now? } 5... O-O
+{ Very well! This is the King's Indian Defense.
+You develop the pieces of the kingside, so that it castles as soon as possible. In that course, the center is a bit weakened, but then we will fight for it with c5 or e5. }
+*
+
+[Event "Normal Variation"]
+[Site "?"]
+[Date "2021.01.29"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E94"]
+[Opening "King's Indian Defense: Orthodox Variation"]
+[StudyName "🏆King's Indian Defense 🏹"]
+[ChapterName "Normal Variation"]
+[ChapterURL "https://lichess.org/study/rlgqOaZK/FaffVhMQ"]
+[Annotator "https://lichess.org/@/LeninPerez"]
+[UTCDate "2021.01.29"]
+[UTCTime "21:26:47"]
+[ChapterMode "gamebook"]
+[ListudyChapterId "64113bd0a0b74bcc5dc9e25e97d800fb"]
+[Orientation "black"]
+
+1. d4 { Can you perform the moves you played in the previous chapter? } 1...
+Nf6 { That's, this is your first move! } 2. c4 { Now? } 2... g6 { Very well! }
+3. Nc3 Bg7 4. e4 { What should you do now? } 4... d6 { That's! } 5. Nf3
+{ And now? } 5... O-O { Nice job! You have come very far! } 6. Be2
+{ The white player takes into account the kingside castling.
+You have 2 ways to follow, with e5 or with c5.
+What would you play? [%csl Rg1,Bc5,Be5][%cal Re1g1,Bc7c5,Be7e5] }
+6... e5
+{ When the white player wants the kingside castling playing e5 is the best!
+Now the player white has 3 options.
+You can castle, advance the pawn, or change. We are going to see these 3 options in this study. }
+( 6... c5
+{ This move is reasonable but when White wants to castle short, you must play e5. }
+) 7. O-O { I'll show you how to play this move first, O-O.
+Capture the pawn }
+7... exd4 8. Nxd4 { How to activate this tower? [%csl Bf8] } 8... Re8
+{ Excellent! } 9. f3 { Where would you take this knight? [%csl Gb8] } 9... Nc6
+{ Very well! } 10. Be3
+{ The f7 pawn wants to advance, but the knight prevents it. What should you do then? [%csl Yf5][%cal Yf7f5] }
+10... Nh5
+{ That's! Now you must move your pieces to the kingside and advance your g and f pawns to attack the enemy king! [%cal Yf7f5,Yg6g5,Yg5g4] }
+*
+
+[Event "Jan Timman - Veselin Topalov"]
+[Site "Moscow RUS"]
+[Date "1994.12.09"]
+[Round "8"]
+[White "Jan Timman"]
+[Black "Veselin Topalov"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "E87"]
+[Opening "King's Indian Defense: Sämisch Variation, Closed Variation"]
+[StudyName "King's Indian Defense, Samisch Variation"]
+[ChapterName "Jan Timman - Veselin Topalov"]
+[ChapterURL "https://lichess.org/study/Joy5NGT1/nCf4188a"]
+[Annotator "https://lichess.org/@/EamonMont"]
+[ListudyOriginalResult "0-1"]
+[ListudyExcerpt "Opening excerpt: at most 12 full moves per line. Full source: https://lichess.org/study/Joy5NGT1/nCf4188a"]
+[ListudyChapterId "5d95f0b3a0f39cacc1c2268a5b095c96"]
+[Orientation "black"]
+
+1. c4 Nf6 2. Nc3 g6 3. e4 d6 4. d4 Bg7 5. f3 O-O 6. Be3 e5
+{ In the 1990s this classical move experienced a revival, especially due to Kasparov's efforts. }
+7. d5 ( 7. Nge2 { White can also keep the tension in the center } 7... c6 8.
+Qd2 Nbd7 9. O-O-O a6 10. Kb1 b5 ) 7... Nh5 { [%csl Gc7][%cal Ge1c1] } ( 7... c6
+{ [%csl Ge4,Gd5,Gc4] } 8. Bd3 cxd5 9. cxd5 Nh5 10. Nge2 f5 11. exf5 gxf5
+{ [%csl Gf5,Ge5] } 12. O-O Nd7 ) 8. Qd2 f5 9. O-O-O a6 $5
+{ [%cal Gb7b5,Ga8a2] } ( 9... f4 10. Bf2 Bf6 11. Nge2 Bh4 12. Bg1
+{ The old way of playing has lost most of its appeal. } ) ( 9... Nd7 ) 10. exf5
+{ Timman is the first to make a radical change in the character of the position. It's more popular to delay such decisions. }
+( 10. Kb1 ) ( 10. Bd3 c5 11. dxc6 Nxc6 12. Nd5 Be6 ) 10... gxf5
+{ If Black can take back on f5 with the g-pawn, he is happy because he improves his central control. }
+11. Nge2 b5 $1
+{ A classic pawn sacrifice vs the Samisch. Black tries to open lines against the White king. }
+12. Ng3 ( 12. cxb5 axb5 ) 12... Nf6 *

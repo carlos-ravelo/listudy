@@ -1,0 +1,51 @@
+{
+  "engine": "Stockfish 19 Lite WASM (npm stockfish 19.0.1)",
+  "review_date": "2026-10-19",
+  "move_search": {
+    "maximum_depth": 16,
+    "maximum_time_ms": 350
+  },
+  "final_search": {
+    "maximum_depth": 20,
+    "maximum_time_ms": 2000
+  },
+  "chapters": [
+    {
+      "chapter_id": "b618059532ef4402afcb55a40ad5ff01",
+      "title": "1. Quiet development against ...Bc5",
+      "legal_plies": 18,
+      "minimum_completed_move_search_depth": 14,
+      "largest_estimated_move_loss": {
+        "cp": 14,
+        "move": "3.Bc4"
+      },
+      "final_white_cp": 13,
+      "final_completed_depth": 20
+    },
+    {
+      "chapter_id": "b618059532ef4402afcb55a40ad5ff02",
+      "title": "2. Two Knights: support the centre and castle",
+      "legal_plies": 20,
+      "minimum_completed_move_search_depth": 14,
+      "largest_estimated_move_loss": {
+        "cp": 14,
+        "move": "3.Bc4"
+      },
+      "final_white_cp": 9,
+      "final_completed_depth": 20
+    },
+    {
+      "chapter_id": "b618059532ef4402afcb55a40ad5ff03",
+      "title": "3. Respond to the central break ...d5",
+      "legal_plies": 12,
+      "minimum_completed_move_search_depth": 14,
+      "largest_estimated_move_loss": {
+        "cp": 18,
+        "move": "4...d5"
+      },
+      "final_white_cp": 38,
+      "final_completed_depth": 20
+    }
+  ],
+  "pgn_sha256": "7c4f9633d523c843c51e771ed37054a81afdbe21cf16a97e1e2cf06f1f9c9f5c"
+}

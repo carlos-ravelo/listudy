@@ -19,7 +19,7 @@ defmodule Listudy.StarterOpeningsTest do
     capture_io(fn -> Code.eval_file("priv/repo/seed_openings.exs") end)
     selector = Openings.list_openings_study_form()
     names = Enum.map(selector, & &1.name)
-    assert length(catalog.openings) == 10
+    assert length(catalog.openings) == 12
     assert Enum.all?(catalog.openings, &(&1.name in names))
     assert names == Enum.sort(names)
     assert Repo.get!(Opening, edited.id).description == "Administrator's description"

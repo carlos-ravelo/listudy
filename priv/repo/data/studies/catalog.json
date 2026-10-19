@@ -1,0 +1,292 @@
+{
+  "retrieved_on": "2026-10-19",
+  "studies": [
+    {
+      "id": "italian",
+      "slug": "seeditalian02-italian-game-introduction",
+      "title": "Italian Game: First Steps",
+      "color": "white",
+      "opening_slug": "italian-game",
+      "pgn_file": "lichess_italian_en.pgn",
+      "sha256": "90e8eb2d8f536d6ff505eefaa716ee68c71bae8688c129e2a1805fe020aba184",
+      "description": "Play White. Introductory lines and original English annotations from Lichess. Source annotators: BobbyMen. Start in Read mode, then try Sparring. ChapterURL links to each original source. Selected model games are opening excerpts. Sources: https://lichess.org/study/pPHITVvn",
+      "sources": [
+        "https://lichess.org/study/pPHITVvn"
+      ],
+      "authors": [
+        {
+          "name": "BobbyMen",
+          "url": "https://lichess.org/@/BobbyMen"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "The Italian Game-First 7 moves",
+          "chapter_url": "https://lichess.org/study/pPHITVvn/xrsUvjW3",
+          "chapter_id": "ec6eb5c97792fc1fa37b8d2a4bf16ce1",
+          "annotator": "https://lichess.org/@/BobbyMen",
+          "opening_excerpt": false,
+          "max_plies": null,
+          "source_chapter_sha256": "c3509c27645bbc59553ca23bd3254131e17c032aba8d33264b4d64e6161bef06",
+          "original_mainline_plies": 13,
+          "mainline_plies": 13,
+          "prose_comments": 1
+        },
+        {
+          "title": "The Italian Game",
+          "chapter_url": "https://lichess.org/study/pPHITVvn/e3kXCH1d",
+          "chapter_id": "ee6a251397a6d2263c92ae721ff1366d",
+          "annotator": "https://lichess.org/@/BobbyMen",
+          "opening_excerpt": false,
+          "max_plies": null,
+          "source_chapter_sha256": "b1d5ef344a19e4ec95d84849b0e6b45af023d651a2ad5c454c917c48431a8ce5",
+          "original_mainline_plies": 19,
+          "mainline_plies": 19,
+          "prose_comments": 5
+        }
+      ]
+    },
+    {
+      "id": "kings_indian",
+      "slug": "seedkingsindian01-kings-indian-defense",
+      "title": "King's Indian Defense: First Steps",
+      "color": "black",
+      "opening_slug": "kings-indian-defense",
+      "pgn_file": "lichess_kings_indian_en.pgn",
+      "sha256": "ccc5f24164142cb5481d5d1e366293106dcce5087f831ab5f5e743c3d811c192",
+      "description": "Play Black. Introductory lines and original English annotations from Lichess. Source annotators: LeninPerez, EamonMont. Start in Read mode, then try Sparring. ChapterURL links to each original source. Selected model games are opening excerpts. Sources: https://lichess.org/study/rlgqOaZK, https://lichess.org/study/Joy5NGT1",
+      "sources": [
+        "https://lichess.org/study/rlgqOaZK",
+        "https://lichess.org/study/Joy5NGT1"
+      ],
+      "authors": [
+        {
+          "name": "LeninPerez",
+          "url": "https://lichess.org/@/LeninPerez"
+        },
+        {
+          "name": "EamonMont",
+          "url": "https://lichess.org/@/EamonMont"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "Introduction",
+          "chapter_url": "https://lichess.org/study/rlgqOaZK/XHsdFw1U",
+          "chapter_id": "09ab9f0f7f5ad34e29608c7d24fbbdcb",
+          "annotator": "https://lichess.org/@/LeninPerez",
+          "opening_excerpt": false,
+          "max_plies": null,
+          "source_chapter_sha256": "8bf9a7a44668ce19a510d4edc0beb20fe166e56ca499fbdd2d5c51c56b962ef7",
+          "original_mainline_plies": 10,
+          "mainline_plies": 10,
+          "prose_comments": 7
+        },
+        {
+          "title": "Normal Variation",
+          "chapter_url": "https://lichess.org/study/rlgqOaZK/FaffVhMQ",
+          "chapter_id": "64113bd0a0b74bcc5dc9e25e97d800fb",
+          "annotator": "https://lichess.org/@/LeninPerez",
+          "opening_excerpt": false,
+          "max_plies": null,
+          "source_chapter_sha256": "e0227422b1be823fbb97974d07e02bb671fb0412817d4884c8b19c09558d674a",
+          "original_mainline_plies": 20,
+          "mainline_plies": 20,
+          "prose_comments": 11
+        },
+        {
+          "title": "Jan Timman - Veselin Topalov",
+          "chapter_url": "https://lichess.org/study/Joy5NGT1/nCf4188a",
+          "chapter_id": "5d95f0b3a0f39cacc1c2268a5b095c96",
+          "annotator": "https://lichess.org/@/EamonMont",
+          "opening_excerpt": true,
+          "max_plies": 24,
+          "source_chapter_sha256": "9bc3e294d4b328dd87d6ea3ca419052c90511aef88263300a44750e2beaa71af",
+          "original_mainline_plies": 82,
+          "mainline_plies": 24,
+          "prose_comments": 6
+        }
+      ]
+    },
+    {
+      "id": "queens_gambit_declined",
+      "slug": "seedqgd01-queens-gambit-declined",
+      "title": "Queen's Gambit Declined: First Steps",
+      "color": "black",
+      "opening_slug": "queens-gambit-declined",
+      "pgn_file": "lichess_queens_gambit_declined_en.pgn",
+      "sha256": "296dbe05e45f15258f5435ede736ba99dd26d3bd9bf3993790a7f84abc594773",
+      "description": "Play Black. Introductory lines and original English annotations from Lichess. Source annotators: LeninPerez. Start in Read mode, then try Sparring. ChapterURL links to each original source. Selected model games are opening excerpts. Sources: https://lichess.org/study/4NDhDHBV",
+      "sources": [
+        "https://lichess.org/study/4NDhDHBV"
+      ],
+      "authors": [
+        {
+          "name": "LeninPerez",
+          "url": "https://lichess.org/@/LeninPerez"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "Basic Development",
+          "chapter_url": "https://lichess.org/study/4NDhDHBV/Iu25LKBY",
+          "chapter_id": "e2c07e93bbbc83b6964092e9f576a70f",
+          "annotator": "https://lichess.org/@/LeninPerez",
+          "opening_excerpt": false,
+          "max_plies": null,
+          "source_chapter_sha256": "a5dec2362c792ea4894f448c2c86c018b8192bfe3fad8550aaad2ede347bfe29",
+          "original_mainline_plies": 10,
+          "mainline_plies": 10,
+          "prose_comments": 3
+        },
+        {
+          "title": "Development Queenside",
+          "chapter_url": "https://lichess.org/study/4NDhDHBV/Rq33z2Lw",
+          "chapter_id": "74c5d772030e0b7d1669ea523074aebb",
+          "annotator": "https://lichess.org/@/LeninPerez",
+          "opening_excerpt": false,
+          "max_plies": null,
+          "source_chapter_sha256": "3b3df8285979db7dc373de68fff886c183b7ed92e5bd68af47dac26ce46d72c0",
+          "original_mainline_plies": 18,
+          "mainline_plies": 18,
+          "prose_comments": 5
+        },
+        {
+          "title": "Illustrative Game",
+          "chapter_url": "https://lichess.org/study/4NDhDHBV/6eyu7yCP",
+          "chapter_id": "d4286c86f06c1c3122f9df580d13220d",
+          "annotator": "https://lichess.org/@/LeninPerez",
+          "opening_excerpt": true,
+          "max_plies": 24,
+          "source_chapter_sha256": "18527e1d4c283da57cc51cc5a243a57975330e46dd0126a4605c7deb255f5396",
+          "original_mainline_plies": 112,
+          "mainline_plies": 24,
+          "prose_comments": 11
+        }
+      ]
+    },
+    {
+      "id": "london",
+      "slug": "seedlondon01-london-system",
+      "title": "London System: First Steps",
+      "color": "white",
+      "opening_slug": "london-system",
+      "pgn_file": "lichess_london_en.pgn",
+      "sha256": "77ffcfeee01c435338c58af3c56387c76b49dc1b663b5da7180120fc444b07ae",
+      "description": "Play White. Introductory lines and original English annotations from Lichess. Source annotators: MatteoHaas, FunnyAnimatorJimTV. Start in Read mode, then try Sparring. ChapterURL links to each original source. Selected model games are opening excerpts. Sources: https://lichess.org/study/lwahBieP",
+      "sources": [
+        "https://lichess.org/study/lwahBieP"
+      ],
+      "authors": [
+        {
+          "name": "MatteoHaas",
+          "url": "https://lichess.org/@/MatteoHaas"
+        },
+        {
+          "name": "FunnyAnimatorJimTV",
+          "url": "https://lichess.org/@/funnyanimatorjimtv"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "The Main Ideas",
+          "chapter_url": "https://lichess.org/study/lwahBieP/0Nlrc5Ls",
+          "chapter_id": "516ffcf586a1d9635591d79bd33ffc3a",
+          "annotator": "https://lichess.org/@/MatteoHaas",
+          "opening_excerpt": false,
+          "max_plies": 24,
+          "source_chapter_sha256": "f688a82d9820bcbd5772335a7dfa6a5e147140954fd7e82dbe14f429ebec3e91",
+          "original_mainline_plies": 20,
+          "mainline_plies": 20,
+          "prose_comments": 21
+        },
+        {
+          "title": "- Black plays D5",
+          "chapter_url": "https://lichess.org/study/lwahBieP/lyvQ3SDU",
+          "chapter_id": "397492dff7a8b6e58e3bc871dd7ec00f",
+          "annotator": "https://lichess.org/@/MatteoHaas",
+          "opening_excerpt": true,
+          "max_plies": 24,
+          "source_chapter_sha256": "8f0b67d09bceae8be75ed91c46dfa42438e8ce42739ba949808f01ccdb0ccfb7",
+          "original_mainline_plies": 17,
+          "mainline_plies": 17,
+          "prose_comments": 16
+        },
+        {
+          "title": "Crashing on the Kingside",
+          "chapter_url": "https://lichess.org/study/lwahBieP/3QxBmZUF",
+          "chapter_id": "495b7249c9c9e10304f3a2f8431b2d2b",
+          "annotator": "https://lichess.org/@/MatteoHaas",
+          "opening_excerpt": true,
+          "max_plies": 24,
+          "source_chapter_sha256": "fa06fffbd7f19469d7a020695f2c38a0fc90cbd7ea9cac1e42e262b948c6b5b9",
+          "original_mainline_plies": 69,
+          "mainline_plies": 24,
+          "prose_comments": 9
+        }
+      ]
+    },
+    {
+      "id": "queens_gambit",
+      "slug": "seedqueensgambit01-queens-gambit",
+      "title": "Queen's Gambit: First Steps",
+      "color": "white",
+      "opening_slug": "queens-gambit",
+      "pgn_file": "lichess_queens_gambit_en.pgn",
+      "sha256": "50c5f53a25587e5c1aac58409a9a15db5c53c14301b346c73e48913bc33dbd06",
+      "description": "Play White. Introductory lines and original English annotations from Lichess. Source annotators: caelT8, ErinYu. Start in Read mode, then try Sparring. ChapterURL links to each original source. Selected model games are opening excerpts. Sources: https://lichess.org/study/DAmLK0ug, https://lichess.org/study/5wYcdjXQ",
+      "sources": [
+        "https://lichess.org/study/DAmLK0ug",
+        "https://lichess.org/study/5wYcdjXQ"
+      ],
+      "authors": [
+        {
+          "name": "caelT8",
+          "url": "https://lichess.org/@/caelT8"
+        },
+        {
+          "name": "ErinYu",
+          "url": "https://lichess.org/@/ErinYu"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "Queen's Gambit Accepted",
+          "chapter_url": "https://lichess.org/study/DAmLK0ug/R4HNZsei",
+          "chapter_id": "79262e292cef707f8dfedb44a2f3e577",
+          "annotator": "https://lichess.org/@/caelT8",
+          "opening_excerpt": false,
+          "max_plies": 24,
+          "source_chapter_sha256": "5258544b0980ee7d9f1433d4fd2367fca3b7befd683e9ecacb0c0764585bce6d",
+          "original_mainline_plies": 21,
+          "mainline_plies": 21,
+          "prose_comments": 12
+        },
+        {
+          "title": "Queen's Gambit Declined",
+          "chapter_url": "https://lichess.org/study/DAmLK0ug/NkvYBeNe",
+          "chapter_id": "7c9b789f4f87bc535335b397cafa069b",
+          "annotator": "https://lichess.org/@/caelT8",
+          "opening_excerpt": false,
+          "max_plies": 24,
+          "source_chapter_sha256": "c227ea08ff1abd55976f130f1f593c950a09abfdbc14696d35b1633d6a69caf0",
+          "original_mainline_plies": 24,
+          "mainline_plies": 24,
+          "prose_comments": 13
+        },
+        {
+          "title": "colwem - PsiMaster",
+          "chapter_url": "https://lichess.org/study/5wYcdjXQ/MrDITFgI",
+          "chapter_id": "64a5be388ea06b90bc4f1680460a5994",
+          "annotator": "lichess.org",
+          "opening_excerpt": true,
+          "max_plies": 20,
+          "source_chapter_sha256": "b60f0fa6a8d7268a0c1e40b6c0b17f7f4f30e962699af82a0e82f19ab0fd1d0f",
+          "original_mainline_plies": 128,
+          "mainline_plies": 20,
+          "prose_comments": 4
+        }
+      ]
+    }
+  ]
+}

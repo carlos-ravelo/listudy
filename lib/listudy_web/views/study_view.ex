@@ -1,6 +1,8 @@
 defmodule ListudyWeb.StudyView do
   use ListudyWeb, :view
 
+  def seed_source(study), do: Listudy.Seeds.BeginnerStudies.source_for(study.slug)
+
   def training_path(conn, locale, %{training_kind: "tactics"} = study),
     do: Routes.tactics_collection_path(conn, :tactics_collection, locale, study)
 
