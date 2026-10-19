@@ -332,3 +332,21 @@
   .training-container.practice-page:has(#chess-training-board[hidden]) { display: block; max-width: 800px; }
   .training-container.practice-page:has(#chess-training-board[hidden]) .training-heading { max-width: 500px; margin-inline: auto; }
 }
+
+/* Shared study rows used by the personal library and public search. */
+.repertoire-library .study-library-list { grid-template-columns: minmax(0, 1fr); }
+.repertoire-library [data-study-entry] { min-width: 0; flex-wrap: nowrap; gap: 6px; }
+.repertoire-library [data-study-entry] .study-library-content { display: flex; flex-direction: column; align-items: stretch; justify-content: center; min-width: 0; min-height: 40px; gap: 2px; }
+.repertoire-library [data-study-entry] .study-library-title-line { flex-wrap: nowrap; min-width: 0; gap: 6px; }
+.repertoire-library [data-study-entry] .study-library-title { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.repertoire-library [data-study-entry] .study-library-visibility { flex-shrink: 0; white-space: nowrap; }
+.study-list-author { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--secondary-color); font-size: 11px; }
+.study-list-favorites { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; min-width: 30px; color: var(--secondary-color); font-size: 12px; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) {
+  .repertoire-library [data-study-entry] { padding: 4px 6px; gap: 4px; }
+  .repertoire-library [data-study-entry] .study-library-content { min-height: 36px; }
+  .repertoire-library [data-study-entry] :is(.study-library-type, .study-library-visibility, .study-list-author, .study-library-group-label) { display: none; }
+  .repertoire-library [data-study-entry] .study-library-color { flex-basis: 18px; }
+  .repertoire-library [data-study-entry] .study-library-color > span:first-child { font-size: 16px; }
+  .repertoire-library [data-study-entry] :is(.study-library-favorite, .study-library-menu > summary) { width: 32px; min-height: 44px; box-sizing: border-box; }
+}

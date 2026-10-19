@@ -1,0 +1,60 @@
+<% discovery = Map.get(assigns, :discovery, false) %>
+<% favorite = MapSet.member?(Map.get(assigns, :favorite_ids, MapSet.new()), @study.id) %>
+<% study = @study %>
+<li class="study-library-row<%= if discovery, do: " study_search_result" %>" data-study-entry data-library-row data-favorite="<%= favorite %>" data-editable="<%= @editable %>" data-private="<%= study.private %>" data-study-id="<%= study.id %>" data-kind="<%= study.training_kind %>" data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>" id="study-result-<%= study.id %>">
+  <%= unless discovery do %>
+    <label class="study-library-select" data-library-select hidden><input type="checkbox" data-library-check aria-label="<%= dgettext("study", "Select study") %>: <%= study.title %>"></label>
+  <% end %>
+  <a class="study-library-content" href="<%= ListudyWeb.StudyView.training_path(@context, @locale, study) %>" aria-labelledby="study-title-<%= study.id %>" title="<%= study.title %>">
+    <span class="study-library-title-line">
+      <span class="study-library-title" id="study-title-<%= study.id %>"><%= study.title %></span>
+      <%= if discovery do %>
+        <span class="study-list-author"><%= if ListudyWeb.StudyView.seed_source(study), do: dgettext("study", "Imported by"), else: dgettext("study", "by") %> <%= study.user.username %></span>
+      <% else %>
+        <span class="study-library-type"><%= if study.training_kind == "tactics", do: gettext("Tactics"), else: gettext("Repertoire") %></span>
+        <%= if @editable do %><span class="study-library-visibility" data-library-visibility><%= if study.private, do: dgettext("study", "Private"), else: dgettext("study", "Public") %></span><% end %>
+      <% end %>
+    </span>
+    <%= if study.description not in [nil, ""] do %>
+      <span class="study-library-description"><%= study.description %></span>
+    <% end %>
+    <%= unless discovery do %><span class="study-library-group-label" data-library-row-group hidden></span><% end %>
+  </a>
+  <%= if study.training_kind != "tactics" and study.color in ["white", "black"] do %>
+    <span class="study-library-color" title="<%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %>">
+      <span aria-hidden="true"><%= if study.color == "white", do: "♔", else: "♚" %></span>
+      <span class="study-library-color-label"><%= if study.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %></span>
+    </span>
+  <% end %>
+  <%= if discovery do %>
+    <span class="study-list-favorites" aria-label="<%= dngettext("study", "%{count} favorite", "%{count} favorites", length(study.study_favorites)) %>">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg><%= length(study.study_favorites) %>
+    </span>
+  <% else %>
+    <button type="button" class="study-library-favorite" data-library-favorite aria-pressed="<%= favorite %>" aria-label="<%= dgettext("study", "Favorite") %>: <%= study.title %>" title="<%= dgettext("study", "Favorite") %>">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>
+    </button>
+      <details class="study-library-menu">
+        <summary aria-label="<%= dgettext("study", "Study actions") %>: <%= study.title %>"><span aria-hidden="true">⋯</span></summary>
+        <div class="study-library-menu-content">
+          <button type="button" data-library-move-to-group hidden><%= dgettext("study", "Move to group…") %></button>
+      <%= if !study.private || @editable do %>
+        <%= link dgettext("study", "Clone study"), to: Routes.study_path(@context, :clone, @locale, study), method: :post,
+          class: "study-library-edit", aria: [label: dgettext("study", "Clone study") <> ": " <> study.title] %>
+      <% end %>
+      <%= if @editable do %>
+        <a class="study-library-edit" href="<%= Routes.study_path(@context, :edit, @locale, study.slug) %>" aria-label="<%= dgettext("study", "Edit") %>: <%= study.title %>"><%= dgettext("study", "Edit") %></a>
+        <%= link to: Routes.study_path(@context, :delete, @locale, study), method: :delete,
+          data: [confirm: study.title <> " — " <> dgettext("study", "Are you sure?") <> " " <> dgettext("study", "This can not be undone!")],
+          class: "study-library-delete", title: dgettext("study", "Delete Study"),
+          aria: [label: dgettext("study", "Delete Study") <> ": " <> study.title] do %>
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" />
+          </svg>
+          <span><%= dgettext("study", "Delete Study") %></span>
+        <% end %>
+      <% end %>
+        </div>
+      </details>
+  <% end %>
+</li>

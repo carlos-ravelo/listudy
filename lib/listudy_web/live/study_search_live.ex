@@ -42,29 +42,7 @@ defmodule ListudyWeb.StudySearchLive do
       <% else %>
         <ul class="study-library-list study_search_results" aria-label="<%= dgettext("study", "Studies") %>">
           <%= for match <- @matches do %>
-            <li class="study_search_result" id="study-result-<%= match.id %>">
-              <a class="study-discovery-row study-library-row" href="<%= Routes.study_path(@socket, :show, @locale, match) %>" aria-labelledby="study-title-<%= match.id %>">
-                <div class="study-library-content">
-                  <div class="study-library-title-line">
-                    <h2 class="study-library-title" id="study-title-<%= match.id %>"><%= match.title %></h2>
-                    <span class="study-discovery-author"><%= if Listudy.Seeds.BeginnerStudies.source_for(match.slug), do: dgettext("study", "Imported by"), else: dgettext("study", "by") %> <%= match.user.username %></span>
-                  </div>
-                  <%= if match.description not in [nil, ""] do %>
-                    <span class="study-library-description"><%= shorten_description(match.description) %></span>
-                  <% end %>
-                </div>
-                <%= if match.color in ["white", "black"] do %>
-                  <span class="study-library-color">
-                    <span aria-hidden="true"><%= if match.color == "black", do: "♚", else: "♔" %></span>
-                    <span class="study-library-color-label"><%= if match.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %></span>
-                  </span>
-                <% end %>
-                <span class="study-discovery-favorites" aria-label="<%= dngettext("study", "%{count} favorite", "%{count} favorites", length(match.study_favorites)) %>">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>
-                  <%= length(match.study_favorites) %>
-                </span>
-              </a>
-            </li>
+            <%= Phoenix.View.render(ListudyWeb.ComponentView, "study_list_row.html", study: match, context: @socket, locale: @locale, editable: false, discovery: true) %>
           <% end %>
         </ul>
       <% end %>
@@ -93,17 +71,5 @@ defmodule ListudyWeb.StudySearchLive do
     color = if params["color"] in ["white", "black"], do: params["color"], else: "all"
     result = Studies.search_by_title(query, order, color)
     {:noreply, assign(socket, matches: result, ordering: order, color: color, query: query)}
-  end
-
-  defp shorten_description(description) do
-    limit = 200
-
-    case String.length(description) do
-      n when n < limit ->
-        description
-
-      _ ->
-        String.slice(description, 0, limit) <> "..."
-    end
   end
 end
