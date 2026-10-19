@@ -16,15 +16,22 @@ defmodule ListudyWeb.StudySearchLive do
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
           <input id="study-search" type="search" aria-label="<%= dgettext("study", "Search for studies") %>" name="q" value="<%= @query %>" placeholder="<%= dgettext("study", "Search") %>…" autocomplete="off" phx-debounce="250" maxlength="100"/>
         </div>
-        <select name="color" id="study-search-color" aria-label="<%= dgettext("study", "Study color") %>">
-          <option value="all" <%= if @color == "all" do %>selected<%end%>><%= dgettext("study", "Both colors") %></option>
-          <option value="white" <%= if @color == "white" do %>selected<%end%>><%= dgettext("study", "White") %></option>
-          <option value="black" <%= if @color == "black" do %>selected<%end%>><%= dgettext("study", "Black") %></option>
-        </select>
-        <select name="ordering" id="ordering" aria-label="<%= dgettext("study", "Sort studies") %>">
-          <option value="newest" <%= if @ordering == "newest" do %>selected<%end%>><%= dgettext("study", "Newest")%></option>
-          <option value="favorites" <%= if @ordering == "favorites" do %>selected<%end%>><%= dgettext("study", "Favorites")%></option>
-        </select>
+        <div id="study-search-colors" phx-hook="StudySearchColors" class="study-discovery-selectors study-library-color-toggles" role="group" aria-label="<%= dgettext("study", "Study color") %>">
+          <input type="hidden" name="color" value="<%= @color %>"/>
+          <%= for {value, label, piece} <- [{"white", dgettext("study", "White"), "♔"}, {"black", dgettext("study", "Black"), "♚"}] do %>
+            <button type="button" data-library-color="<%= value %>" aria-pressed="<%= @color == value %>">
+              <span class="study-discovery-selector-piece" aria-hidden="true"><%= piece %></span><%= label %>
+            </button>
+          <% end %>
+        </div>
+        <div class="study-discovery-selectors" role="group" aria-label="<%= dgettext("study", "Sort studies") %>">
+          <%= for {value, label} <- [{"newest", dgettext("study", "Newest")}, {"favorites", dgettext("study", "Favorites")}] do %>
+            <label>
+              <input type="radio" name="ordering" value="<%= value %>" <%= if @ordering == value, do: "checked" %>/>
+              <span><%= label %></span>
+            </label>
+          <% end %>
+        </div>
       </form>
 
       <%= if @matches == [] do %>
@@ -71,6 +78,12 @@ defmodule ListudyWeb.StudySearchLive do
 
     {:ok,
      assign(socket, query: nil, ordering: "newest", color: "all", matches: result, locale: locale)}
+  end
+
+  def handle_event("set-color", %{"color" => color}, socket)
+      when color in ["all", "white", "black"] do
+    result = Studies.search_by_title(socket.assigns.query || "", socket.assigns.ordering, color)
+    {:noreply, assign(socket, matches: result, color: color)}
   end
 
   def handle_event(_, %{"q" => query, "ordering" => order} = params, socket)

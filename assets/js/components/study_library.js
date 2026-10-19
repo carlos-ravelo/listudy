@@ -1,3 +1,5 @@
+import {setupColorToggles} from "./color_toggles";
+
 export function setupStudyLibrary(library = document.querySelector('[data-study-library]')) {
     if (!library || library.dataset.initialized) return;
     const rows = [...library.querySelectorAll('[data-library-row]')];
@@ -293,8 +295,8 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     });
     search.oninput = () => { selected.clear(); filter(); };
     group.onchange = () => { selected.clear(); filter(); };
-    colorButtons.forEach(button => button.onclick = () => {
-        color.value = color.value === button.dataset.libraryColor ? 'all' : button.dataset.libraryColor;
+    setupColorToggles(library, value => {
+        color.value = value;
         selected.clear();
         filter();
     });
