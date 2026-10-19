@@ -10,10 +10,12 @@ export function chapterMoveLines(root, fen) {
         const group = { moves: [], variations: [] };
         while (node) {
             const ply = initialPly + path.length - 1;
+            const symbols = { 1: '!', 2: '?', 3: '!!', 4: '??', 5: '!?', 6: '?!' };
+            const san = node.move + [...new Set((node.nags || []).map(nag => symbols[Number(String(nag).replace('$', ''))] || ''))].join('');
             group.moves.push({
-                path, san: node.move, number: Math.floor(ply / 2) + 1,
+                path, san, number: Math.floor(ply / 2) + 1,
                 color: ply % 2 ? 'black' : 'white',
-                label: `${Math.floor(ply / 2) + 1}${ply % 2 ? '...' : '.'} ${node.move}`
+                label: `${Math.floor(ply / 2) + 1}${ply % 2 ? '...' : '.'} ${san}`
             });
             (node.children || []).slice(1).forEach((alternative, index) => {
                 group.variations.push(line(alternative, [...path, index + 1]));

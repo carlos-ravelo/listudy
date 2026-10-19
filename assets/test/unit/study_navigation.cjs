@@ -94,7 +94,7 @@ function fixture(moves, fen, orientation = 'white') {
         recordContinuationReview: reviewContext.recordContinuationReview,
         chapterFailures: reviewContext.chapterFailures, recordPositionResult: reviewContext.recordPositionResult,
         updateFailedPositionsUi() {}, selectNextSmartPosition: () => context.advances++,
-        spacedReviewRunActive: false, weakChapterRunActive: false, readMode: false,
+        spacedReviewRunActive: false, weakChapterRunActive: false, readMode: false, tacticsCollection: false,
         total_moves: 0, combo_count: 0, attempts: 0, reviews: 0, resets: 0, advances: 0,
         max_depth: 100, DEPTH_MAX: 100, depth_limit_enabled: false, board_review: 'slow',
         i18n: { review_slow: 'slow', key_move_enabled: 'enabled' }, success_div: {}, error_div: {}, info_div: {},
@@ -115,9 +115,9 @@ function fixture(moves, fen, orientation = 'white') {
             chess.undo();
             return move.san;
         },
-        tree_possible_moves: access => access.slice(1).reduce((nodes, index) => nodes[index].children, root),
+        tree_possible_moves: access => access.slice(1).reduce((nodes, index) => nodes[index].children, context.trees[access[0]].root),
         tree_children: access => context.tree_possible_moves(access),
-        tree_get_node: access => access.slice(1).reduce((parent, index) => parent.children[index], { children: root }),
+        tree_get_node: access => access.slice(1).reduce((parent, index) => parent.children[index], { children: context.trees[access[0]].root }),
         tree_get_node_depth: node => 1 + Math.floor(node.move_index / 2),
         tree_move_index: (access, san) => context.tree_possible_moves(access).findIndex(node => node.move === san),
         ai_move: access => context.tree_possible_moves(access)[0]?.move,
@@ -185,6 +185,29 @@ function assertSynchronized({ context, board, links }) {
             }
         }
     }
+
+    const tactics = fixture(['e4', 'e5', 'Nf3']);
+    const trainer = tactics.context;
+    trainer.tacticsCollection = true;
+    trainer.trees[0].first_variation = null;
+    trainer.trees[0].root.push({ move: 'd4', children: [], move_index: 0 });
+    trainer.readingTrees = trainer.trees;
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/tactics_mainline.js'), 'utf8')
+        .replace(/export \{[^}]+\};/, ''), trainer);
+    trainer.practiceTrees = trainer.tacticsMainline(trainer.readingTrees, 'white');
+    trainer.chapterMoveCatalogs = [statsContext.chapterMoveCatalog(trainer.practiceTrees[0].root, true)];
+    const startTraining = declarations.find(node => node.type === 'FunctionDeclaration' && node.id.name === 'start_training');
+    vm.runInContext(source.slice(startTraining.start, startTraining.end), trainer);
+    trainer.start_training();
+    assert.equal(trainer.tree_possible_moves([0]).map(node => node.move).join(','), 'e4');
+    trainer.set_read_mode(true);
+    assert.equal(trainer.tree_possible_moves([0]).map(node => node.move).join(','), 'e4,d4');
+    assert.equal(trainer.play_read_move('d4'), true);
+    assert.deepEqual(trainer.chess.history(), ['d4']);
+    trainer.set_read_mode(false);
+    assert.equal(trainer.chess.history().length, 0);
+    assert.equal(trainer.tree_possible_moves([0]).map(node => node.move).join(','), 'e4');
+    assert.equal(trainer.curr_move.length, 1, 'Leaving an illustrative variation resets the training path');
 
     const reading = fixture(['e4', 'e5', 'Nf3']);
     const { context: reader } = reading;

@@ -1,9 +1,13 @@
 import {Node, Tree} from './tree.js';
 
 function createNode(move) {
+    const annotation = move.move.match(/[!?]+$/)?.[0];
+    const symbolicNag = { '!': 1, '?': 2, '!!': 3, '??': 4, '!?': 5, '?!': 6 }[annotation];
     // filter only valid san characters, remove !,?, etc.
     move.move = move.move.replace(/[^a-zA-Z0-9-+=#]/g, "");
     let node = new Node(move.move);
+    node.nags = [...(move.nags || []).map(nag => Number(String(nag).replace('$', ''))),
+        ...(symbolicNag ? [symbolicNag] : [])];
     node.comments = move.comments;
     node.updated = Date.now();
 

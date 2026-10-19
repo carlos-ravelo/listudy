@@ -221,6 +221,7 @@
   i18n.read_choose_continuation = "<%= dgettext "study", "Choose a continuation from this chapter." %>";
   i18n.read_start_position = "<%= dgettext "study", "Starting position" %>";
   i18n.read_variation = "<%= dgettext "study", "Variation" %>";
+  i18n.tactics_no_mainline_moves = "<%= dgettext "study", "No moves to practice before the main line's error annotation. Explore this chapter in reading mode." %>";
   i18n.info_arrows = "<%= dgettext "study", "By default arrows will provide hints to show which moves are in this study. Using the options below you can control for how many moves the arrows/hints should stay visible. By default they stay visible until all moves in a position has been played twice. Any non-playable arrow annotations from the study or PGN file will appear as transparent arrows." %>";
   i18n.error_wrong_move = "<%= dgettext "study", "This move is not in the study, try again." %>";
   i18n.success_right_move = "<%= dgettext "study", "Right move!" %>";

@@ -1531,3 +1531,6 @@ msgstr "¿Ya tienes un archivo o un estudio de Lichess? Impórtalo"
 
 msgid "Import PGN"
 msgstr "Importar PGN"
+
+msgid "No moves to practice before the main line's error annotation. Explore this chapter in reading mode."
+msgstr "No hay jugadas para practicar antes de la marca de error de la línea principal. Explora este capítulo en el modo lectura."

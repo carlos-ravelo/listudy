@@ -1,5 +1,6 @@
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
 import { chapterLearningProgress } from './modules/study/learning_progress.js';
+import { tacticsMainline } from './modules/study/tactics_mainline.js';
 import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { setupStudySessions } from './modules/study_sessions.js';
@@ -49,6 +50,8 @@ let sparring = null;
 let studyMoveNavigation = { update() {} };
 let studyMoveTree = { update() {} };
 let readMode = false;
+let readingTrees = [];
+let practiceTrees = [];
 let chapterStats = { version: 1, chapters: {} };
 let practiceChapter = null;
 let chapterMoveCatalogs = [];
@@ -251,6 +254,7 @@ function startFailedPositions() {
     if (spacedReviewRunActive) stopSpacedReviewRun();
     window.dispatchEvent(new Event('study-puzzle-run-off'));
     readMode = false;
+    if (tacticsCollection) window.trees = practiceTrees;
     finish_chapter_practice(false);
     lineEligibleForReview = false;
     failedPositionRun = { positions, index: 0 };
@@ -1036,6 +1040,7 @@ function play_move(san) {
 }
 
 function start_training() {
+    if (tacticsCollection) window.trees = readMode ? readingTrees : practiceTrees;
     visualization?.reset();
     if (sparring?.active) { sparring.stop(); studySessions.end(); }
     if (!readMode) studySessions.begin(smartSession ? 'smart' : 'lines');
@@ -1071,7 +1076,7 @@ function start_training() {
     if (!readMode && !spacedReviewRunActive && !smartSession && !window.studyFullLines && key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
         for (let ki = 0; ki < window.first_variation; ++ki) {
             // Moves that are not fully trained are not skipped
-            if (tree_children(curr_move)[0].value != 5) { break; }
+            if (tree_children(curr_move)[0]?.value != 5) { break; }
             // Multiple moves are played without delay, causes distorted sound
             // sound_enabled controls if sound is played in sound.js
             // the sounds are initiated by ground.move which is used by play_move
@@ -1082,8 +1087,9 @@ function start_training() {
             sound_enabled = stored_sound;
         }
     }
-    if (!readMode && color != turn_color(chess)) {
-        play_move(ai_move(curr_move));
+    if (!readMode && tree_children(curr_move).length && color != turn_color(chess)) {
+        const reply = ai_move(curr_move);
+        if (reply !== undefined) play_move(reply);
     }
     if (!readMode) {
         beginChapterPractice(chapterStats, chapter, chapterReviewSignatures[chapter]);
@@ -1091,6 +1097,11 @@ function start_training() {
         StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     }
     setup_move();
+
+    if (!readMode && tacticsCollection && !chapterMoveCatalogs[chapter].size) {
+        ground.set({ movable: { dests: new Map() } });
+        set_text(info_div, i18n.tactics_no_mainline_moves || i18n.no_playable_chapters);
+    }
 
     /* TODO figure out how to remove this. This is a workaround to make sure arrows appear right from
     the start. Without this, setShapes() in display_arrows() appear to have no effect. It's only needed the
@@ -1123,6 +1134,9 @@ function setup_trees() {
         }
     }
     
+    readingTrees = trees;
+    practiceTrees = tacticsCollection ? tacticsMainline(trees, studyColor) : trees;
+    trees = practiceTrees;
     window.trees = trees;
     chapterReviewSignatures = trees.map(tree => chapterReviewSignature(tree.root, tree.headers.FEN));
     const standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
@@ -1413,6 +1427,7 @@ function toggle_comments() {
 
 function get_repertoire_depth() {
     let starting_moves = trees[chapter].root;
+    if (!starting_moves.length) return 1;
     let for_white = color == "white";
     return tree_max_num_moves_deep(starting_moves, for_white);
 }
@@ -1732,7 +1747,7 @@ async function main() {
     chapterReviews = readChapterReviews(StorageAdapter.getItem(chapter_reviews_key()));
     if (bindChapterIdentities(chapterStats, trees)) StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     if (bindChapterIdentities(chapterReviews, trees)) StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
-    smartCatalog = cachedPositionCatalog(trees, studyColor, pgn);
+    smartCatalog = cachedPositionCatalog(trees, studyColor, tacticsCollection ? 'tactics-mainline-v1|' + pgn : pgn);
     let previousTrees = [];
     try { previousTrees = JSON.parse(await StorageAdapter.legacyTree(study_id + '_tree') || '[]'); } catch (_) {}
     if (!Array.isArray(previousTrees)) previousTrees = [];
@@ -1744,7 +1759,7 @@ async function main() {
         if (event.detail.key === chapter_stats_key()) {
             chapterStats = JSON.parse(event.detail.value);
             bindChapterIdentities(chapterStats, trees);
-            reconcileStudyProgress(chapterStats, trees, smartCatalog, chapterReviewSignatures, [], studyColor);
+            reconcileStudyProgress(chapterStats, practiceTrees, smartCatalog, chapterReviewSignatures, [], studyColor);
         } else if (event.detail.key === chapter_reviews_key()) {
             chapterReviews = readChapterReviews(event.detail.value);
             bindChapterIdentities(chapterReviews, trees);
@@ -1771,7 +1786,9 @@ async function main() {
             stopWeakChapterRun(); stopSpacedReviewRun();
             window.dispatchEvent(new Event('study-puzzle-run-off'));
             failedPositionRun = null; updateFailedPositionsUi();
-            readMode = false; update_read_mode_ui();
+            readMode = false;
+            if (tacticsCollection) window.trees = practiceTrees;
+            update_read_mode_ui();
             overlay_manager.clear_overlays();
             studySessions.begin('sparring');
         },
