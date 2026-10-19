@@ -70,6 +70,17 @@ export function createStudySparring(chapters, { startFen, starts = sparringStart
     }
     return { position, startPositions: starts, repertoire: {
         routes,
+        restore(moves) {
+            const replay = new Chess(initialFen);
+            frontier = group.chapters.map(chapter => ({ chapter, path: [], children: chapters[chapter].root }));
+            for (const move of moves) {
+                const played = replay.move({ from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4] });
+                if (!played) throw new Error('Illegal repertoire history');
+                frontier = frontier.flatMap(route => route.children.flatMap((node, index) =>
+                    node.move === played.san ? [{ chapter: route.chapter, path: [...route.path, index], children: node.children || [] }] : []));
+            }
+            available = null;
+        },
         sources: () => frontier.map(source),
         path: () => routes()[0]?.path || [],
         choices: () => [...continuations().values()].map(({ uci, san }) => ({ uci, san })),

@@ -2,7 +2,6 @@
   <div class="sparring-actions" role="group" aria-label="<%= dgettext("study", "Play and review") %>">
     <button type="button" data-sparring="analyze"><%= dgettext("study", "Pause and review") %></button>
     <button type="button" data-sparring="continue" data-theory="<%= dgettext("study", "Play the engine") %>" data-resume="<%= dgettext("study", "Continue playing") %>" data-retry="<%= dgettext("study", "Retry Stockfish") %>"><%= dgettext("study", "Play against Stockfish") %></button>
-    <button type="button" data-sparring="retry" hidden><%= dgettext("study", "Retry move") %></button>
     <button type="button" class="sparring-resign" data-sparring="resign" aria-label="<%= dgettext("study", "Resign game") %>" title="<%= dgettext("study", "Resign game") %>" data-confirm="<%= dgettext("study", "Resign this game? You can still review and download your results.") %>"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 21V4m0 0c5-4 9 4 14 0v10c-5 4-9-4-14 0" /></svg></button>
   </div>
   <section data-sparring="summary" hidden aria-labelledby="sparring_results_title">

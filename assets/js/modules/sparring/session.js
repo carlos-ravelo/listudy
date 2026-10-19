@@ -146,15 +146,18 @@ export function createSparringSession({ position, repertoire, engine, player, ra
         },
         analyzeHere() { if (!disposed && started && !thinking && phase !== 'finished') pause('manual'); },
         resign() { if (!disposed && started && phase !== 'finished') pause('resigned', true); },
-        retry(ply) {
-            const row = ply === undefined ? reviews[reviews.length - 1]
-                : [...reviews].reverse().find(row => row.ply === ply && moves[ply] === row.uci && row.positionKey === moves.slice(0, ply).join(' '));
-            if (disposed || thinking || phase === 'finished' || !row || !position.restore || row.ply >= moves.length) return;
-            if (position.at(row.ply).turn() !== player) return;
+        async retry(ply = reviews[reviews.length - 1]?.ply) {
+            if (!started || disposed || thinking || !Number.isInteger(ply) || ply < 0 || ply >= moves.length || !position.restore) return;
             revision++; engine.cancel?.();
-            position.restore(row.ply); moves.splice(row.ply);
-            retryPly = row.ply;
-            phase = 'free'; reason = null; feedback = null; error = null; emit();
+            position.restore(ply); moves.splice(ply);
+            repertoire.restore?.(moves);
+            while (theoryPlies.length && theoryPlies[theoryPlies.length - 1] >= ply) theoryPlies.pop();
+            retryPly = ply;
+            assisted = true;
+            nextCheckpoint = checkpointEvery ? freeCount + checkpointEvery : Infinity;
+            phase = repertoire.restore && repertoire.choices().length ? 'theory' : 'free';
+            reason = null; feedback = null; error = null; emit();
+            await settle();
         },
         dispose() { disposed = true; revision++; engine.dispose(); }
     };

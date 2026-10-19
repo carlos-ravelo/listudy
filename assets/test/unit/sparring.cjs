@@ -221,9 +221,9 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     await rewind.move('g1f3');
     assert.equal(rewind.snapshot().moves.length,4);
     assert.deepEqual(plain(rewind.snapshot().reviews[0].evaluationBefore),{type:'cp',value:0,turn:'w'});
-    rewind.retry(1);
-    assert.equal(rewind.snapshot().moves.length,4);
-    rewind.retry(0);
+    await rewind.retry(1);
+    assert.deepEqual(plain(rewind.snapshot().moves),['e2e4','e7e5']);
+    await rewind.retry(0);
     assert.equal(rewind.snapshot().phase,'free');
     assert.equal(rewind.snapshot().moves.length,0);
     assert.equal(rewind.snapshot().canPlay,true);
@@ -232,8 +232,23 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert.equal(rewind.snapshot().freeCount,2);
     assert.equal(rewind.snapshot().reviews.filter(row=>!row.assisted).length,2);
     rewind.resign();
-    rewind.retry(0);
-    assert.equal(rewind.snapshot().phase,'finished');
+    await rewind.retry(0);
+    assert.equal(rewind.snapshot().phase,'free');
+
+    // Replaying a book move restores its repertoire branches, even after resignation.
+    const book = make();
+    await book.session.start();
+    await book.session.move('e2e4');
+    assert.equal(book.session.snapshot().moves.length, 2);
+    await book.session.retry(0);
+    assert.equal(book.session.snapshot().phase, 'theory');
+    assert.deepEqual(plain(book.session.hint().map(move => move.uci)), ['e2e4']);
+    await book.session.move('e2e4');
+    book.session.resign();
+    await book.session.retry(1);
+    assert.equal(book.session.snapshot().phase, 'theory');
+    assert.equal(book.session.snapshot().canPlay, true);
+    assert.equal(book.session.snapshot().moves.length, 2);
 
     const decisions = [];
     const analyzed = createSparringSession({ ...createChapterSparring({ headers: {}, root: [] }), player: 'w',
@@ -253,7 +268,7 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     await analyzed.continueWithEngine();
     assert.equal(analyzed.snapshot().canPlay, true);
     analyzed.analyzeHere();
-    analyzed.retry();
+    await analyzed.retry();
     assert.deepEqual(plain(analyzed.snapshot().moves), []);
     assert.equal(analyzed.snapshot().freeCount, 1);
     await analyzed.move('e2e4');

@@ -116,15 +116,15 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         window.dispatchEvent(new CustomEvent('study-sparring-updated', { detail: { active: false } }));
         document.getElementById('hints').disabled = false;
     }
-    function seek(ply, row = null) {
+    function seek(ply, row = null, selected = false) {
         if (!session || pendingPromotion) return;
         inspectedRow = row;
         const target = Math.max(0, Math.min(currentState.moves.length, ply));
-        readIndex = target === currentState.moves.length ? null : target;
+        readIndex = target === currentState.moves.length && !selected ? null : target;
         render(currentState);
     }
     const moveTree = setupStudyMoveTree({ element: find('moves'), startLabel: labels.start,
-        variationLabel: labels.variation, onSelect: path => seek(path.length) });
+        variationLabel: labels.variation, onSelect: path => seek(path.length, null, true) });
     function render(state) {
         currentState = state;
         const board = getBoard();
@@ -173,16 +173,14 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         find('continue').textContent = state.error ? find('continue').dataset.retry
             : state.phase === 'theory' ? find('continue').dataset.theory : find('continue').dataset.resume;
 
-        find('retry').hidden = !review || state.phase === 'finished' || !latest;
         find('resign').disabled = state.phase === 'finished';
         find('resign').hidden = state.phase === 'finished';
         const actions = panel.querySelector('.sparring-actions');
-        const primary = review && state.reason === 'blunder' && !find('retry').hidden ? find('retry')
-            : review || state.error ? find('continue') : find('analyze');
-        for (const name of ['analyze', 'continue', 'retry']) find(name).dataset.primary = String(find(name) === primary);
+        const primary = review || state.error ? find('continue') : find('analyze');
+        for (const name of ['analyze', 'continue']) find(name).dataset.primary = String(find(name) === primary);
         actions.hidden = state.phase === 'finished';
         actions.dataset.theory = String(state.phase === 'theory' && !state.error);
-        actions.dataset.secondary = String(['analyze', 'continue', 'retry'].some(name => !find(name).hidden && find(name) !== primary));
+        actions.dataset.secondary = String(['analyze', 'continue'].some(name => !find(name).hidden && find(name) !== primary));
         if (actions.firstElementChild !== primary) {
             const focused = document.activeElement;
             actions.prepend(primary);
@@ -245,23 +243,24 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         }
         const selectedPly = readIndex === null ? state.moves.length : readIndex;
         const row = inspectedRow || (browsing ? visibleRows.get(selectedPly - 1) : [...visibleRows.values()].pop());
-        find('move-detail').hidden = (!browsing && !row || !selectedPly && !inspectedRow) || !showGrades;
-        find('show-best').hidden = !row?.best;
+        find('move-detail').hidden = (!browsing && !row) || (!selectedPly && !inspectedRow);
+        const retryPly = inspectedRow ? inspectedRow.ply : browsing ? selectedPly - 1 : row?.ply;
+        find('show-best').hidden = !showGrades || !row?.best;
         find('show-best').disabled = state.thinking;
-        find('retry-selected').hidden = !row || state.phase === 'finished';
-        find('retry-selected').disabled = state.thinking;
-        find('move-grade').textContent = row
+        find('retry-selected').hidden = !Number.isInteger(retryPly) || retryPly < 0 || retryPly >= state.moves.length;
+        find('retry-selected').disabled = state.thinking || !!pendingPromotion;
+        find('move-grade').textContent = showGrades && row
             ? `${row.san} ${gradeSymbol(row.grade)} · ${gradeLabel(row.grade)}${row.assisted ? ' · ' + labels.assisted : ''}`
             : theory.has(selectedPly - 1) ? labels.correct : labels.notAnalysed;
-        find('move-evaluation').textContent = row?.evaluationBefore && row?.evaluationAfter
+        find('move-evaluation').textContent = showGrades && row?.evaluationBefore && row?.evaluationAfter
             ? `${labels.evaluation}: ${evaluation(row.evaluationBefore)} → ${evaluation(row.evaluationAfter)}` : '';
-        find('move-recommendation').textContent = row?.pv.length
+        find('move-recommendation').textContent = showGrades && row?.pv.length
             ? `${labels.recommendation}: ${continuation(row.ply, row.pv)}` : '';
         find('show-best').onclick = () => {
             seek(row.ply, row);
             if (row.best?.length >= 4) board.setShapes([{ orig: row.best.slice(0, 2), dest: row.best.slice(2, 4), brush: 'normal' }]);
         };
-        find('retry-selected').onclick = () => { readIndex = null; inspectedRow = null; session.retry(row.ply); document.getElementById('chessground').focus(); };
+        find('retry-selected').onclick = async () => { readIndex = null; inspectedRow = null; await session.retry(retryPly); document.getElementById('chessground').focus(); };
         find('latest').hidden = !browsing;
     }
     async function move(from, to, promotion) {
@@ -348,7 +347,6 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         if (!window.confirm(find('resign').dataset.confirm)) return;
         pendingPromotion = null; picker?.close(); session?.resign();
     });
-    find('retry').addEventListener('click', () => { readIndex = null; inspectedRow = null; session?.retry(); document.getElementById('chessground').focus(); });
     for (const name of ['review-every', 'pause-blunder', 'live']) find(name).addEventListener('change', persistPreferences);
     find('download').addEventListener('click', () => { if (session) download(result(session.snapshot())); });
     for (const opener of document.querySelectorAll('[data-study-dialog="study_sparring_history_dialog"]')) opener.addEventListener('click', history);

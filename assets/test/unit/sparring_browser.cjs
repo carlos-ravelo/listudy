@@ -312,10 +312,11 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         await page.click('[data-sparring="continue"]');
         await page.waitForFunction(() => !document.querySelector('[data-sparring="analyze"]').disabled);
         assert.equal(await page.locator('[data-sparring="summary"]').isHidden(), true);
+        assert.equal(await page.locator('[data-sparring="retry"]').count(), 0);
         assert.equal(await page.evaluate(() => document.activeElement.id), 'chessground');
         await page.click('#open_study_settings');
         await page.uncheck('[data-sparring="live"]');
-        assert.equal(await page.locator('[data-sparring="move-detail"]').isHidden(), true);
+        assert.equal(await page.locator('[data-sparring="show-best"]').isHidden(), true);
         assert.equal(await page.locator('[data-sparring="moves"] [data-grade="blunder"], [data-sparring="moves"] [data-grade="best"], [data-sparring="moves"] [data-grade="acceptable"], [data-sparring="moves"] [data-grade="inaccuracy"], [data-sparring="moves"] [data-grade="mistake"]').count(), 0);
         await page.check('[data-sparring="live"]');
         await page.keyboard.press('Escape');
