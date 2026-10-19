@@ -7,9 +7,11 @@ defmodule ListudyWeb.StudySearchLive do
 
   def render(assigns) do
     ~L"""
-    <section class="study-discovery" aria-labelledby="study-discovery-title">
-      <h1 id="study-discovery-title"><%= dgettext("study", "Search for studies") %></h1>
-      <form class="study-discovery-toolbar" phx-change="suggest" phx-submit="search" role="search">
+    <section class="study-discovery study-library repertoire-library practice-page" aria-labelledby="study-discovery-title">
+      <div class="study-library-heading">
+        <h1 id="study-discovery-title"><%= dgettext("study", "Search for studies") %></h1>
+      </div>
+      <form class="study-discovery-toolbar study-library-toolbar" phx-change="suggest" phx-submit="search" role="search">
         <div class="study-discovery-search">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
           <input id="study-search" type="search" aria-label="<%= dgettext("study", "Search for studies") %>" name="q" value="<%= @query %>" placeholder="<%= dgettext("study", "Search") %>…" autocomplete="off" phx-debounce="250" maxlength="100"/>
@@ -26,34 +28,30 @@ defmodule ListudyWeb.StudySearchLive do
       </form>
 
       <%= if @matches == [] do %>
-        <div class="study-discovery-empty" role="status">
+        <div class="study-discovery-empty study-library-empty" role="status">
           <p><%= dgettext("study", "No studies found. Try another opening or import your repertoire.") %></p>
           <a href="<%= Routes.study_path(@socket, :new, @locale) %>"><%= dgettext("study", "Import my repertoire") %></a>
         </div>
       <% else %>
-        <ul class="study-discovery-list study_search_results" aria-label="<%= dgettext("study", "Studies") %>">
+        <ul class="study-library-list study_search_results" aria-label="<%= dgettext("study", "Studies") %>">
           <%= for match <- @matches do %>
             <li class="study_search_result" id="study-result-<%= match.id %>">
-              <a class="study-discovery-row" href="<%= Routes.study_path(@socket, :show, @locale, match) %>" aria-labelledby="study-title-<%= match.id %>">
-                <span class="study-discovery-piece" aria-hidden="true">
-                  <%= if match.color in ["white", "black"] do %>
-                    <%= if match.color == "black", do: "♚", else: "♔" %>
-                  <% else %>
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h6l2 2 2-2h6v15h-6l-2 2-2-2H4Z"/><path d="M12 6v15"/></svg>
-                  <% end %>
-                </span>
-                <div class="study-discovery-content">
-                  <h2 id="study-title-<%= match.id %>"><%= match.title %></h2>
-                  <%= if match.description not in [nil, ""] do %>
-                    <p class="study-discovery-description"><%= shorten_description(match.description) %></p>
-                  <% end %>
-                  <div class="study-discovery-meta">
-                    <%= if match.color in ["white", "black"] do %>
-                      <span class="study-discovery-side"><%= if match.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %></span>
-                    <% end %>
-                    <span><%= dgettext("study", "by") %> <%= match.user.username %></span>
+              <a class="study-discovery-row study-library-row" href="<%= Routes.study_path(@socket, :show, @locale, match) %>" aria-labelledby="study-title-<%= match.id %>">
+                <div class="study-library-content">
+                  <div class="study-library-title-line">
+                    <h2 class="study-library-title" id="study-title-<%= match.id %>"><%= match.title %></h2>
+                    <span class="study-discovery-author"><%= if Listudy.Seeds.BeginnerStudies.source_for(match.slug), do: dgettext("study", "Imported by"), else: dgettext("study", "by") %> <%= match.user.username %></span>
                   </div>
+                  <%= if match.description not in [nil, ""] do %>
+                    <span class="study-library-description"><%= shorten_description(match.description) %></span>
+                  <% end %>
                 </div>
+                <%= if match.color in ["white", "black"] do %>
+                  <span class="study-library-color">
+                    <span aria-hidden="true"><%= if match.color == "black", do: "♚", else: "♔" %></span>
+                    <span class="study-library-color-label"><%= if match.color == "white", do: dgettext("study", "White"), else: dgettext("study", "Black") %></span>
+                  </span>
+                <% end %>
                 <span class="study-discovery-favorites" aria-label="<%= dngettext("study", "%{count} favorite", "%{count} favorites", length(match.study_favorites)) %>">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>
                   <%= length(match.study_favorites) %>
