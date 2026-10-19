@@ -17,15 +17,9 @@ defmodule ListudyWeb.StudyView do
             "study",
             "Remove this group? Its collections will be kept in their current lists."
           ),
-        daily_help: dgettext("study", "Keep the collections you practice regularly here."),
         library_help:
           dgettext("study", "Other collections stay available here whenever you need them."),
         all_help: dgettext("study", "All your tactics collections."),
-        empty_daily:
-          dgettext(
-            "study",
-            "Your daily list is empty. Open Library or All collections to bring a collection back."
-          ),
         empty_library:
           dgettext(
             "study",
@@ -47,7 +41,7 @@ defmodule ListudyWeb.StudyView do
         groups_help:
           dgettext(
             "study",
-            "Group collections by book, theme or purpose. Groups work across Daily and Library."
+            "Group collections by book, theme or purpose. Groups keep your collections organized."
           )
       }
     else
@@ -55,20 +49,13 @@ defmodule ListudyWeb.StudyView do
         all: dgettext("study", "All studies"),
         remove_group:
           dgettext("study", "Remove this group? Its studies will be kept in their current lists."),
-        daily_help:
-          dgettext("study", "Keep everyday studies here. Move reference material to Library."),
         library_help:
           dgettext("study", "Reference studies stay available for practice and collections."),
         all_help: dgettext("study", "All your studies, including reference material."),
-        empty_daily:
-          dgettext(
-            "study",
-            "Your daily list is empty. Open Library or All studies to bring a study back."
-          ),
         empty_library:
           dgettext(
             "study",
-            "No reference studies yet. Move studies here from their actions menu or use Organize."
+            "No studies yet. Import a repertoire or explore public studies."
           ),
         empty_search: dgettext("study", "No studies match these filters."),
         title: dgettext("study", "Your Studies"),
@@ -86,7 +73,7 @@ defmodule ListudyWeb.StudyView do
         groups_help:
           dgettext(
             "study",
-            "Group studies by opening, repertoire or purpose. Groups work across Daily and Library."
+            "Group studies by opening, repertoire or purpose. Favorites can belong to any group."
           )
       }
     end

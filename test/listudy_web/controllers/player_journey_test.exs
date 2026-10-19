@@ -80,7 +80,7 @@ defmodule ListudyWeb.PlayerJourneyTest do
     preview("daily-puzzle", puzzle)
   end
 
-  test "home uses daily organization, deduplicates saved studies and protects private sources", %{
+  test "home uses favorites, deduplicates saved studies and protects private sources", %{
     conn: conn
   } do
     user =
@@ -174,11 +174,12 @@ defmodule ListudyWeb.PlayerJourneyTest do
     assert html =~ "home-daily-study-recent"
     assert html =~ "home-daily-study-most-used"
     refute html =~ "home-daily-sparring"
-    assert length(Regex.scan(~r/class="home-daily-study"/, html)) == 9
+    assert length(Regex.scan(~r/class="home-daily-study"/, html)) == 2
     assert html =~ "Saved public repertoire"
     refute html =~ reference.title
+    refute html =~ Enum.at(studies, 1).title
     refute html =~ hidden.title
-    assert Listudy.StudyLibrary.daily_studies(nil) == []
+    assert Listudy.StudyLibrary.favorite_studies(nil) == []
     preview("daily-home", html)
   end
 

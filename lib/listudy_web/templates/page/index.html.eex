@@ -7,10 +7,10 @@
   <div class="home-paths">
     <section class="home-card home-openings home-daily-studies" aria-labelledby="home-studies-title">
       <h2 id="home-studies-title"><%= dgettext "index", "Study openings" %></h2>
-      <%= if @daily_studies != [] do %>
-        <div class="home-daily-scroll" role="region" aria-labelledby="home-studies-title" <%= if length(@daily_studies) > 3, do: raw("tabindex=\"0\"") %>>
+      <%= if @favorite_studies != [] do %>
+        <div class="home-daily-scroll" role="region" aria-labelledby="home-studies-title" <%= if length(@favorite_studies) > 3, do: raw("tabindex=\"0\"") %>>
           <ul class="home-daily-studies-list">
-            <%= for study <- @daily_studies do %>
+            <%= for study <- @favorite_studies do %>
               <% last = @last_study && study.id == @last_study.id %>
               <li>
                 <%= link to: Routes.study_path(@conn, :show, @locale, study.slug), class: "home-daily-study",
@@ -42,7 +42,7 @@
       <% else %>
         <div class="home-daily-studies-empty">
           <%= if Pow.Plug.current_user(@conn) do %>
-            <p><%= dgettext "index", "Choose studies for your daily practice." %></p>
+            <p><%= dgettext "index", "Mark studies as favorites to keep them here." %></p>
             <%= link (dgettext "index", "Your Studies"), to: Routes.study_path(@conn, :index, @locale), class: "home-text-link" %>
           <% else %>
             <p><%= dgettext "index", "Explore opening studies and build a repertoire you can practice." %></p>

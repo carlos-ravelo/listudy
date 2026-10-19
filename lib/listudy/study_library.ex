@@ -24,18 +24,13 @@ defmodule Listudy.StudyLibrary do
 
   def fetch(_), do: @empty
 
-  def daily_studies(user_id) when is_integer(user_id) and user_id > 0 do
-    settings = fetch(user_id)
-
-    (Studies.get_study_by_user!(user_id) ++ Studies.get_studies_by_favorite!(user_id))
+  def favorite_studies(user_id) when is_integer(user_id) and user_id > 0 do
+    Studies.get_studies_by_favorite!(user_id)
+    |> Enum.filter(&(&1.training_kind == "repertoire"))
     |> Enum.uniq_by(& &1.id)
-    |> Enum.filter(fn study ->
-      entry = Map.get(settings["studies"], Integer.to_string(study.id), %{})
-      study.training_kind == "repertoire" and Map.get(entry, "location", "daily") == "daily"
-    end)
   end
 
-  def daily_studies(_), do: []
+  def favorite_studies(_), do: []
 
   def most_used(user_id, studies) when is_integer(user_id) and user_id > 0 do
     keys = Map.new(studies, &{hd(String.split(&1.slug, "-")) <> "_chapter_stats", &1.id})
@@ -94,6 +89,32 @@ defmodule Listudy.StudyLibrary do
           Repo.rollback(reason)
       end
     end)
+  end
+
+  defp apply_operation(
+         data,
+         %{"action" => "set_favorite", "study_id" => id, "favorite" => favorite},
+         user_id
+       )
+       when is_boolean(favorite) do
+    study = if id = study_id(id), do: Repo.get(Listudy.Studies.Study, id)
+
+    if study && (!study.private || study.user_id == user_id) do
+      if favorite do
+        %Listudy.StudyFavorites.StudyFavorite{}
+        |> Listudy.StudyFavorites.StudyFavorite.changeset(%{user_id: user_id, study_id: study.id})
+        |> Repo.insert!(on_conflict: :nothing, conflict_target: [:user_id, :study_id])
+      else
+        Repo.delete_all(
+          from f in Listudy.StudyFavorites.StudyFavorite,
+            where: f.user_id == ^user_id and f.study_id == ^study.id
+        )
+      end
+
+      {:ok, data}
+    else
+      {:error, :forbidden}
+    end
   end
 
   defp apply_operation(data, %{"action" => "move", "study_ids" => ids} = operation, user_id)

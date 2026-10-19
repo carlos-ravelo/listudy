@@ -1,8 +1,8 @@
-import {setupColorToggles} from "./color_toggles";
+import {setupColorToggles} from "./color_toggles.js";
 
 export function setupStudyLibrary(library = document.querySelector('[data-study-library]')) {
     if (!library || library.dataset.initialized) return;
-    const rows = [...library.querySelectorAll('[data-library-row]')];
+    let rows = [...library.querySelectorAll('[data-library-row]')];
     if (!rows.length) return;
     library.dataset.initialized = 'true';
     const labels = JSON.parse(library.dataset.libraryLabels);
@@ -54,9 +54,9 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     const status = library.querySelector('[data-library-save-status]');
     const selected = new Set();
     const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
-    const setting = row => state.studies[row.dataset.studyId] || { location: 'daily', group: null };
+    const setting = row => state.studies[row.dataset.studyId] || { group: null };
     const hasViews = Boolean(library.querySelector('[data-library-view]'));
-    let view = hasViews ? 'daily' : 'all';
+    let view = 'all';
     let organizing = false;
     let busy = false;
     let moveIds = [];
@@ -78,7 +78,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         selectAll.checked = visible.length > 0 && visible.every(row => selected.has(row.dataset.studyId));
         selectAll.indeterminate = !selectAll.checked && visible.some(row => selected.has(row.dataset.studyId));
         library.querySelector('[data-library-selected]').textContent = `${selected.size} ${labels.selected}`;
-        library.querySelectorAll('[data-library-bulk-location], [data-library-bulk-group]').forEach(button => {
+        library.querySelectorAll('[data-library-bulk-group]').forEach(button => {
             button.disabled = busy || selected.size === 0;
         });
         const ownsSelection = rows.filter(row => selected.has(row.dataset.studyId)).every(row => row.dataset.editable === 'true');
@@ -91,13 +91,13 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     function filter(writeUrl = true) {
         const query = normalize(search.value.trim());
         let visible = 0;
-        const counts = { daily: 0, library: 0, all: rows.length };
+        const counts = { favorites: 0, all: rows.length };
         rows.forEach(row => {
             const entry = setting(row);
-            counts[entry.location === 'library' ? 'library' : 'daily']++;
+            if (row.dataset.favorite === 'true') counts.favorites++;
             const groupName = state.groups[entry.group] || '';
             const searchable = normalize(row.dataset.search + ' ' + groupName);
-            row.hidden = !((view === 'all' || entry.location === view) && searchable.includes(query) &&
+            row.hidden = !((view === 'all' || row.dataset.favorite === 'true') && searchable.includes(query) &&
                 (!kind || kind.value === 'all' || row.dataset.kind === kind.value) &&
                 (color.value === 'all' || row.dataset.color === color.value) &&
                 (group.value === 'all' || (group.value === 'none' ? !entry.group : entry.group === group.value)));
@@ -106,9 +106,6 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             label.textContent = groupName;
             label.hidden = !groupName;
             row.querySelector('[data-library-select]').hidden = !organizing;
-            const move = row.querySelector('[data-library-move-location]');
-            move.hidden = false;
-            move.textContent = entry.location === 'library' ? labels.toDaily : labels.toLibrary;
             row.querySelector('[data-library-move-to-group]').hidden = false;
         });
         library.querySelectorAll('[data-library-section]').forEach(section => {
@@ -126,11 +123,8 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         }
         library.querySelector('[data-library-empty]').hidden = visible !== 0;
         library.querySelector('[data-library-empty-message]').textContent = query || color.value !== 'all' || group.value !== 'all' || (kind && kind.value !== 'all')
-            ? labels.emptySearch : view === 'daily' ? labels.emptyDaily : labels.emptyLibrary;
+            ? labels.emptySearch : view === 'favorites' ? labels.emptyFavorites : labels.emptyLibrary;
         bulk.hidden = !organizing;
-        library.querySelectorAll('[data-library-bulk-location]').forEach(button => {
-            button.hidden = button.dataset.libraryBulkLocation === view;
-        });
         organize.setAttribute('aria-pressed', String(organizing));
         organize.textContent = organizing ? labels.done : labels.organize;
         colorButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.libraryColor === color.value)));
@@ -141,7 +135,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         selection();
         if (writeUrl) {
             const url = new URL(window.location.href);
-            for (const [key, value] of Object.entries({ library_view: view === 'daily' ? '' : view,
+            for (const [key, value] of Object.entries({ library_view: view === 'all' ? '' : view,
                 q: search.value, kind: kind && kind.value !== 'all' ? kind.value : '',
                 color: color.value === 'all' ? '' : color.value, group: group.value === 'all' ? '' : group.value })) {
                 if (value) url.searchParams.set(key, value); else url.searchParams.delete(key);
@@ -185,6 +179,15 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
                     row.dataset.private = String(operation.private);
                     row.querySelector('[data-library-visibility]').textContent = operation.private ? labels.private : labels.public;
                 });
+            }
+            if (operation.action === 'set_favorite') {
+                const row = rows.find(row => row.dataset.studyId === operation.study_id);
+                row.dataset.favorite = String(operation.favorite);
+                row.querySelector('[data-library-favorite]').setAttribute('aria-pressed', String(operation.favorite));
+                if (!operation.favorite && row.dataset.editable !== 'true') {
+                    row.remove();
+                    rows = rows.filter(item => item !== row);
+                }
             }
             selected.clear();
             groupOptions();
@@ -279,11 +282,10 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             if (event.target.checked) selected.add(id); else selected.delete(id);
             selection();
         };
-        row.querySelector('[data-library-move-location]').onclick = async () => {
-            closeMenus();
-            if (await mutate({ action: 'move', study_ids: [id], location: setting(row).location === 'library' ? 'daily' : 'library' })) {
-                const focus = !row.hidden ? row.querySelector('summary') : library.querySelector('[data-library-row]:not([hidden]) .study-library-content');
-                (focus || search).focus();
+        row.querySelector('[data-library-favorite]').onclick = async () => {
+            const favorite = row.dataset.favorite !== 'true';
+            if (await mutate({ action: 'set_favorite', study_id: id, favorite })) {
+                if (row.hidden || !row.isConnected) search.focus();
             }
         };
         row.querySelector('[data-library-move-to-group]').onclick = () => showMove([id]);
@@ -308,9 +310,6 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         });
         selection();
     };
-    library.querySelectorAll('[data-library-bulk-location]').forEach(button => button.onclick = async () => {
-        if (await mutate({ action: 'move', study_ids: [...selected], location: button.dataset.libraryBulkLocation })) library.querySelector('.study-library-manage > summary').focus();
-    });
     library.querySelector('[data-library-bulk-group]').onclick = () => showMove(selected);
     const bulkEdit = library.querySelector('.study-library-bulk-edit');
     bulkEdit.querySelector('summary').onclick = () => closeMenus(bulkEdit);
@@ -355,8 +354,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     library.querySelector('.study-library-manage > summary').onclick = () => closeMenus(library.querySelector('.study-library-manage'));
     groupOptions();
     const url = new URL(window.location.href);
-    view = hasViews && ['daily', 'library', 'all'].includes(url.searchParams.get('library_view'))
-        ? url.searchParams.get('library_view') : hasViews ? 'daily' : 'all';
+    view = hasViews && url.searchParams.get('library_view') === 'favorites' ? 'favorites' : 'all';
     search.value = url.searchParams.get('q') || '';
     if (kind) kind.value = ['repertoire', 'tactics'].includes(url.searchParams.get('kind')) ? url.searchParams.get('kind') : 'all';
     color.value = ['white', 'black'].includes(url.searchParams.get('color')) ? url.searchParams.get('color') : 'all';

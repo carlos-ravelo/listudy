@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '../../..');
 let html = fs.readFileSync(process.env.LISTUDY_LIBRARY_PREVIEW || '/tmp/listudy-library-preview.html', 'utf8').replace(/<script\b[\s\S]*?<\/script>/gi, '');
 const rows = [...html.matchAll(/<li class="study-library-row"[\s\S]*?<\/li>/g)].map(match => match[0]);
 const ids = rows.map(row => row.match(/data-study-id="(\d+)"/)[1]);
-const names = ['White repertoire — Daily summary', 'Black repertoire — Daily summary', 'Endgame essentials'];
+const names = ['White repertoire — Favorite repertoire', 'Black repertoire — Favorite repertoire', 'Endgame essentials'];
 const recolor = row => row.replace('data-color="white"', 'data-color="black"').replace(/title="White"/g, 'title="Black"').replace(/>White</g, '>Black<').replace(/♔/g, '♚');
 const first = rows.map((row, i) => { const named = row.replace(/Repertoire \d+/g, names[i]); return i === 1 ? recolor(named) : named; });
 const references = ['Queen’s Gambit Declined', 'Slav Defense', 'Semi-Slav', 'Catalan', 'Nimzo-Indian', 'King’s Indian',
@@ -25,6 +25,7 @@ let state = { version: 1, groups: { white: 'White repertoire', black: 'Black rep
 ids.forEach((id, i) => state.studies[id] = { location: 'daily', group: ['white', 'black', 'endgames'][i] });
 references.forEach((_, i) => state.studies[2000+i] = { location: 'library', group: i % 2 ? 'black' : 'white' });
 const initial = structuredClone(state);
+const favorites = new Set(ids);
 let failNext = false;
 const visibility = {};
 const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -33,7 +34,12 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     const url = new URL(req.url, 'http://localhost');
     if (url.pathname === '/') {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.end(html.replace(/data-library-state="[^"]*"/, `data-library-state="${escape(JSON.stringify(state))}"`)); return;
+        const rendered = html.replace(/<li class="study-library-row"[\s\S]*?<\/li>/g, row => {
+            const id = row.match(/data-study-id="(\d+)"/)[1];
+            return row.replace(/data-favorite="[^"]*"/, `data-favorite="${favorites.has(id)}"`)
+                .replace(/(data-library-favorite aria-pressed=")[^"]*/, `$1${favorites.has(id)}`);
+        });
+        res.end(rendered.replace(/data-library-state="[^"]*"/, `data-library-state="${escape(JSON.stringify(state))}"`)); return;
     }
     const file = url.pathname.startsWith('/assets/') ? path.join(root, url.pathname) : path.join(root, 'priv/static', url.pathname);
     if (!file.startsWith(root + '/') || !fs.existsSync(file)) { res.statusCode=404; res.end(); return; }
@@ -54,6 +60,7 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
             if('location' in op)state.studies[id].location=op.location;
             if('group' in op)state.studies[id].group=op.group;
         }
+        if(op.action==='set_favorite') { if(op.favorite) favorites.add(op.study_id); else favorites.delete(op.study_id); }
         if(op.action==='set_privacy') for(const id of op.study_ids) visibility[id] = op.private;
         if(op.action==='create_group')state.groups['group-'+Object.keys(state.groups).length]=op.name;
         if(op.action==='rename_group')state.groups[op.group]=op.name;
@@ -67,6 +74,8 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     const visible=page.locator('[data-library-row]:visible');
     const saved=()=>page.waitForFunction(()=>document.querySelector('[data-library-save-status]').textContent==='Organization saved.');
     await goto();
+    assert.equal(await visible.count(),30);
+    await page.locator('[data-library-view="favorites"]').click();
     assert.equal(await visible.count(),3);
     assert.equal(await page.locator('[data-library-filter-panel]').isVisible(),false);
     await page.locator('[data-library-toggle-filters]').click();
@@ -80,14 +89,14 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     await page.locator('[data-library-toggle-filters]').click();
     assert.equal(await page.locator('[data-library-filter-panel]').isVisible(),false);
     await page.screenshot({path:'/tmp/listudy-library-desktop.png',fullPage:true});
-    await page.locator('[data-library-view="library"]').click();
-    assert.equal(await visible.count(),27);
+    await page.locator('[data-library-view="all"]').click();
+    assert.equal(await visible.count(),30);
     await page.screenshot({path:'/tmp/listudy-library-references.png',fullPage:true});
     await page.locator('[data-library-search]').fill('grunfeld');
     assert.equal(await visible.count(),1);
     assert(page.url().includes('q=grunfeld'));
     await page.locator('[data-library-search]').fill('');
-    await page.locator('[data-library-view="daily"]').click();
+    await page.locator('[data-library-view="favorites"]').click();
     await page.locator('.study-library-manage > summary').click();
     await page.locator('[data-library-organize]').click();
     await page.locator('[data-library-select-all]').check();
@@ -114,19 +123,8 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     assert(ids.every(id=>visibility[id]===true));
     assert.equal(await visible.locator('[data-library-visibility]').allTextContents().then(labels=>labels.every(label=>label==='Private')),true);
 
-    await page.locator('[data-library-select-all]').check();
-    await visible.first().locator('[data-library-check]').uncheck();
-    assert((await page.locator('[data-library-selected]').textContent()).startsWith('2 '));
-    await page.locator('[data-library-bulk-location="library"]').click();
+    await visible.last().locator('[data-library-favorite]').click();
     await saved();
-    assert.equal(await visible.count(),1);
-    await page.locator('[data-library-view="library"]').click();
-    assert.equal(await visible.count(),29);
-    await visible.first().locator('summary').click();
-    await visible.first().locator('[data-library-move-location]').click();
-    await saved();
-    assert.equal(await visible.count(),28);
-    await page.locator('[data-library-view="daily"]').click();
     assert.equal(await visible.count(),2);
     await page.locator('.study-library-manage > summary').click();
     await page.locator('[data-library-manage-groups]').click();
@@ -157,8 +155,7 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     await page.keyboard.press('Escape');
     assert.equal(await visible.first().locator('[data-library-row-group]').textContent(),'Main repertoire');
     failNext=true;
-    await visible.first().locator('summary').click();
-    await visible.first().locator('[data-library-move-location]').click();
+    await visible.first().locator('[data-library-favorite]').click();
     await page.waitForFunction(()=>document.querySelector('[data-library-save-status]').classList.contains('is-error'));
     assert.equal(await visible.count(),1);
     await page.reload();
@@ -171,7 +168,7 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     await saved();
     await page.keyboard.press('Escape');
     assert.equal(await visible.count(),2);
-    assert.equal(Object.values(state.studies).filter(entry=>entry.location==='library').length,28);
+    assert.equal(favorites.size,2);
     state.groups={};
     for(const entry of Object.values(state.studies))entry.group=null;
     await goto();

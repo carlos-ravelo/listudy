@@ -87,9 +87,15 @@ defmodule ListudyWeb.TacticsLibraryTest do
     refute studies =~ inaccessible.title
     assert studies =~ "data-library-kind"
     refute studies =~ "data-library-help"
-    assert [_] = Floki.find(studies, "[data-study-id='#{own.id}'] .study-library-menu a[data-method='delete']")
+
+    assert [_] =
+             Floki.find(
+               studies,
+               "[data-study-id='#{own.id}'] .study-library-menu a[data-method='delete']"
+             )
+
     preview("studies", studies)
-    assert Enum.map(Listudy.StudyLibrary.daily_studies(owner.id), & &1.id) == [repertoire.id]
+    assert Enum.map(Listudy.StudyLibrary.favorite_studies(owner.id), & &1.id) == []
 
     html = auth |> get("/en/tactics/collections/#{own.slug}") |> html_response(200)
     assert html =~ ~s(data-training-kind="tactics")
@@ -124,10 +130,21 @@ defmodule ListudyWeb.TacticsLibraryTest do
     assert html =~ "Create tactics"
     assert html =~ "study_pgn"
     assert Floki.find(html, "#study_description[required], #study_description[minlength]") == []
-    assert [_] = Floki.find(html, "input[type='radio'][name='study[training_kind]'][value='tactics'][checked]")
+
+    assert [_] =
+             Floki.find(
+               html,
+               "input[type='radio'][name='study[training_kind]'][value='tactics'][checked]"
+             )
+
     preview("import", html)
     normal = auth |> get("/en/studies/new") |> html_response(200)
-    assert [_] = Floki.find(normal, "input[type='radio'][name='study[training_kind]'][value='repertoire'][checked]")
+
+    assert [_] =
+             Floki.find(
+               normal,
+               "input[type='radio'][name='study[training_kind]'][value='repertoire'][checked]"
+             )
   end
 
   test "tactics collections are excluded from repertoire discovery and game comparison" do

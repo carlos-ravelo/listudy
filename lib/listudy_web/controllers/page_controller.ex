@@ -35,17 +35,17 @@ defmodule ListudyWeb.PageController do
              do: last_study,
              else: nil
 
-        daily_studies = Listudy.StudyLibrary.daily_studies(user_id)
+        favorite_studies = Listudy.StudyLibrary.favorite_studies(user_id)
 
-        daily_studies =
-          if last_study && !Enum.any?(daily_studies, &(&1.id == last_study.id)),
-            do: [last_study | daily_studies],
-            else: daily_studies
+        favorite_studies =
+          if last_study && !Enum.any?(favorite_studies, &(&1.id == last_study.id)),
+            do: [last_study | favorite_studies],
+            else: favorite_studies
 
-        most_used = Listudy.StudyLibrary.most_used(user_id, daily_studies)
+        most_used = Listudy.StudyLibrary.most_used(user_id, favorite_studies)
 
-        daily_studies =
-          Enum.sort_by(daily_studies, fn study ->
+        favorite_studies =
+          Enum.sort_by(favorite_studies, fn study ->
             cond do
               last_study && study.id == last_study.id -> 0
               study.id == most_used -> 1
@@ -62,7 +62,7 @@ defmodule ListudyWeb.PageController do
             ),
           last_study: last_study,
           most_used: most_used,
-          daily_studies: daily_studies
+          favorite_studies: favorite_studies
         )
 
       _ ->

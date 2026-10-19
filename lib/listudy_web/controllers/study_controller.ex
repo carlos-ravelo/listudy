@@ -32,14 +32,23 @@ defmodule ListudyWeb.StudyController do
         {:error, _} -> -1
       end
 
-    studies = Enum.filter(Studies.get_study_by_user!(user), &(is_nil(kind) or &1.training_kind == kind))
-    favorites = Enum.filter(Studies.get_studies_by_favorite!(user), &(is_nil(kind) or &1.training_kind == kind))
+    studies =
+      Enum.filter(Studies.get_study_by_user!(user), &(is_nil(kind) or &1.training_kind == kind))
+
+    favorites =
+      Enum.filter(
+        Studies.get_studies_by_favorite!(user),
+        &(is_nil(kind) or &1.training_kind == kind)
+      )
+
+    favorite_ids = MapSet.new(favorites, & &1.id)
     owned = MapSet.new(studies, & &1.id)
     favorites = Enum.reject(favorites, &MapSet.member?(owned, &1.id))
 
     render(conn, "index.html",
       studies: studies,
       favorites: favorites,
+      favorite_ids: favorite_ids,
       library_data: Listudy.StudyLibrary.fetch(user),
       tactics: kind == "tactics"
     )

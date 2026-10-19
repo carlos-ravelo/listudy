@@ -1,7 +1,8 @@
 <% organizable = Map.get(assigns, :organizable, true) %>
+<% favorite_ids = Map.get(assigns, :favorite_ids, MapSet.new()) %>
 <ul class="study-library-list">
   <%= for study <- @studies do %>
-    <li class="study-library-row" data-library-row data-editable="<%= @editable %>" data-private="<%= study.private %>" data-study-id="<%= study.id %>" data-kind="<%= study.training_kind %>" data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>">
+    <li class="study-library-row" data-library-row data-favorite="<%= MapSet.member?(favorite_ids, study.id) %>" data-editable="<%= @editable %>" data-private="<%= study.private %>" data-study-id="<%= study.id %>" data-kind="<%= study.training_kind %>" data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>">
 <%= if organizable do %>
       <label class="study-library-select" data-library-select hidden><input type="checkbox" data-library-check aria-label="<%= dgettext("study", "Select study") %>: <%= study.title %>"></label>
 <% end %>
@@ -27,11 +28,13 @@
         <%= if Map.get(assigns, :show_color, true) do %><span class="study-library-color" aria-hidden="true"></span><% end %>
       <% end %>
       <%= if organizable do %>
+      <button type="button" class="study-library-favorite" data-library-favorite aria-pressed="<%= MapSet.member?(favorite_ids, study.id) %>" aria-label="<%= dgettext("study", "Favorite") %>: <%= study.title %>" title="<%= dgettext("study", "Favorite") %>">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>
+      </button>
       <details class="study-library-menu">
         <summary aria-label="<%= dgettext("study", "Study actions") %>: <%= study.title %>"><span aria-hidden="true">⋯</span></summary>
         <div class="study-library-menu-content">
           <%= if organizable do %>
-          <button type="button" data-library-move-location hidden><%= dgettext("study", "Move to Library") %></button>
           <button type="button" data-library-move-to-group hidden><%= dgettext("study", "Move to group…") %></button>
           <% end %>
       <%= if !study.private || @editable do %>

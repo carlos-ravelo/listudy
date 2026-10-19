@@ -120,3 +120,9 @@
 .study-library-bulk-edit > summary { width: auto; padding: 0 10px; border: 1px solid var(--library-divider); font-size: 13px; }
 .study-library-bulk-edit-help { flex-basis: 100%; color: var(--secondary-color); }
 .study-library-visibility { font-size: 11px; line-height: 1.5; color: var(--secondary-color); }
+
+.study-library-favorite { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; min-height: 36px; margin: 0; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--secondary-color); }
+.study-library-favorite[aria-pressed="true"] { color: var(--library-action, var(--font-color)); }
+.study-library-favorite[aria-pressed="true"] svg { fill: currentColor; }
+.study-library-favorite:hover { background: var(--bg-highlight-color); }
+@media (pointer: coarse) { .study-library-favorite { width: 44px; min-height: 44px; } }

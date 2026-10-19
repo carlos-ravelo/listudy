@@ -3,17 +3,16 @@
 <div class="study-library<%= unless tactics, do: " repertoire-library practice-page" %>" data-study-library <%= if tactics, do: "data-library-simple" %> data-library-state="<%= Jason.encode!(@library_data) %>"
      data-library-endpoint="/api/study-library"
      data-library-labels="<%= Jason.encode!(%{
-       daily: dgettext("study", "Daily"), library: dgettext("study", "Library"), all: copy.all,
+       favorites: dgettext("study", "Favorites"), all: copy.all,
        selected: dgettext("study", "selected"), noGroup: dgettext("study", "No group"), allGroups: dgettext("study", "All groups"),
        save: dgettext("study", "Save"), remove: dgettext("study", "Remove group"),
        edit: dgettext("study", "Edit"), cancel: dgettext("study", "Cancel"),
        rename: dgettext("study", "Group name"), organize: dgettext("study", "Organize"), done: dgettext("study", "Done organizing"),
-       toLibrary: dgettext("study", "Move to Library"), toDaily: dgettext("study", "Use daily"),
        updated: dgettext("study", "Studies updated."), private: dgettext("study", "Private"), public: dgettext("study", "Public"),
        saved: dgettext("study", "Organization saved."), saving: dgettext("study", "Saving…"),
        failed: dgettext("study", "Could not save your organization. Try again."),
        removeGroup: copy.remove_group,
-       emptyDaily: copy.empty_daily,
+       emptyFavorites: dgettext("study", "No favorites yet. Mark a study with its star."),
        emptyLibrary: copy.empty_library,
        emptySearch: copy.empty_search
      }) %>">
@@ -43,8 +42,8 @@
   <%= if @studies != [] or @favorites != [] do %>
     <%= unless tactics do %>
     <nav class="study-library-views" data-library-controls hidden aria-label="<%= dgettext("study", "Study lists") %>">
-      <%= for {view, label} <- [{"daily", dgettext("study", "Daily")}, {"library", dgettext("study", "Library")}, {"all", copy.all}] do %>
-        <button type="button" data-library-view="<%= view %>" aria-pressed="<%= view == "daily" %>"><%= label %> <span data-library-view-count="<%= view %>"></span></button>
+      <%= for {view, label} <- [{"all", copy.all}, {"favorites", dgettext("study", "Favorites")}] do %>
+        <button type="button" data-library-view="<%= view %>" aria-pressed="<%= view == "all" %>"><%= label %> <span data-library-view-count="<%= view %>"></span></button>
       <% end %>
     </nav>
     <% end %>
@@ -89,8 +88,6 @@
     <div class="study-library-bulk" data-library-bulk hidden>
       <label class="study-library-select-all"><input type="checkbox" data-library-select-all> <%= dgettext("study", "Select visible") %></label>
       <span data-library-selected></span>
-      <button type="button" data-library-bulk-location="library" disabled><%= dgettext("study", "Move to Library") %></button>
-      <button type="button" data-library-bulk-location="daily" disabled><%= dgettext("study", "Use daily") %></button>
       <button type="button" data-library-bulk-group disabled><%= dgettext("study", "Move to group…") %></button>
       <details class="study-library-menu study-library-bulk-edit">
         <summary><%= dgettext("study", "Edit selected") %></summary>
@@ -117,13 +114,13 @@
     </div>
   <% else %>
     <section data-library-section aria-label="<%= copy.title %>">
-      <%= render "_library_list.html", studies: @studies, conn: @conn, locale: @locale, editable: true, show_color: !tactics, organizable: !tactics %>
+      <%= render "_library_list.html", studies: @studies, conn: @conn, locale: @locale, editable: true, show_color: !tactics, organizable: !tactics, favorite_ids: @favorite_ids %>
     </section>
   <% end %>
   <%= if @favorites != [] do %>
     <section class="study-library-favorites" data-library-section aria-labelledby="library-favorites-title">
       <h2 id="library-favorites-title"><%= copy.favorites %></h2>
-      <%= render "_library_list.html", studies: @favorites, conn: @conn, locale: @locale, editable: false, show_color: !tactics, organizable: !tactics %>
+      <%= render "_library_list.html", studies: @favorites, conn: @conn, locale: @locale, editable: false, show_color: !tactics, organizable: !tactics, favorite_ids: @favorite_ids %>
     </section>
   <% end %>
   <div class="study-library-empty" data-library-empty hidden>

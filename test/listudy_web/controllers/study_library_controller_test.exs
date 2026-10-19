@@ -212,13 +212,59 @@ defmodule ListudyWeb.StudyLibraryControllerTest do
     conn = build_conn() |> Pow.Plug.assign_current_user(owner, [])
     html = conn |> get(Routes.study_path(conn, :index, "en")) |> html_response(200)
     assert html =~ "data-library-state="
-    assert html =~ "data-library-view=\"daily\""
-    assert html =~ "data-library-view=\"library\""
+    assert html =~ "data-library-view=\"favorites\""
+    assert html =~ "data-library-view=\"all\""
+    refute html =~ "data-library-view=\"daily\""
+
+    assert [_] =
+             Floki.find(
+               html,
+               "[data-study-id='#{first.id}'] [data-library-favorite][aria-pressed='true']"
+             )
+
     assert html =~ "data-library-groups-dialog"
     assert length(Regex.scan(~r/data-study-id="#{first.id}"/, html)) == 1
     assert html =~ "data-method=\"delete\""
     assert html =~ "data-confirm="
     if path = System.get_env("LISTUDY_LIBRARY_PREVIEW"), do: File.write!(path, html)
+  end
+
+  test "stars use real favorites, are idempotent and preserve folders", %{
+    owner: owner,
+    other: other,
+    studies: [first | _],
+    foreign: foreign
+  } do
+    data = operation(owner, %{action: "create_group", name: "Openings"}) |> json_response(200)
+    group = data["data"]["groups"] |> Map.keys() |> hd()
+    operation(owner, %{action: "move", study_ids: [first.id], group: group}) |> json_response(200)
+
+    for _ <- 1..2 do
+      operation(owner, %{action: "set_favorite", study_id: first.id, favorite: true})
+      |> json_response(200)
+    end
+
+    assert Enum.map(Listudy.Studies.get_studies_by_favorite!(owner.id), & &1.id) == [first.id]
+    assert Enum.map(StudyLibrary.favorite_studies(owner.id), & &1.id) == [first.id]
+
+    assert operation(other, %{action: "set_favorite", study_id: first.id, favorite: true})
+           |> response(403)
+
+    operation(owner, %{action: "set_favorite", study_id: foreign.id, favorite: true})
+    |> json_response(200)
+
+    assert Listudy.StudyFavorites.user_favorites_study(owner.id, foreign.id)
+
+    for _ <- 1..2 do
+      operation(owner, %{action: "set_favorite", study_id: first.id, favorite: false})
+      |> json_response(200)
+    end
+
+    refute Listudy.StudyFavorites.user_favorites_study(owner.id, first.id)
+    assert StudyLibrary.fetch(owner.id)["studies"][to_string(first.id)]["group"] == group
+
+    assert operation(owner, %{action: "set_favorite", study_id: first.id, favorite: "true"})
+           |> response(422)
   end
 
   test "legacy preference writes cannot overwrite library organization", %{owner: owner} do
