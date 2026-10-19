@@ -1,6 +1,5 @@
 """Edit one chapter using python-chess; preserve all other source text."""
 import io
-import copy
 import re
 import uuid
 import chess.pgn
@@ -9,6 +8,107 @@ MAX_NODES = 10000
 MAX_DEPTH = 128
 CHAPTER_ID = 'ListudyChapterId'
 ORIGINAL_INDEX = 'ListudyOriginalIndex'
+
+# Ignore comments and variations when counting main-line moves, without boards.
+MAINLINE_TOKENS = re.compile(
+    r'\{[^}]*\}|;[^\r\n]*|^%[^\r\n]*|(?P<open>\()|(?P<close>\))|'
+    r'(?P<move>O-O(?:-O)?|0-0(?:-0)?|--|Z0|0000|@@@@|'
+    r'[PNBRQK]?@[a-h][1-8]|[NBKRQ]?[a-h]?[1-8]?[\-x]?[a-h][1-8](?:=?[nbrqkNBRQK])?)',
+    re.MULTILINE)
+
+
+def chapter_index(pgn):
+    """Locate chapters using the PGN parser's header-only, comment-aware reader."""
+    source = io.StringIO(pgn)
+
+    class Headers(chess.pgn.HeadersBuilder):
+        def visit_header(self, name, value):
+            super().visit_header(name, value)
+            self.header_end = source.tell()
+
+    chapters = []
+    while True:
+        start = source.tell()
+        visitor = Headers()
+        visitor.header_end = start
+        headers = chess.pgn.read_game(source, Visitor=lambda: visitor)
+        if headers is None:
+            break
+        end = source.tell()
+        moves = depth = 0
+        for token in MAINLINE_TOKENS.finditer(pgn, visitor.header_end, end):
+            if token.lastgroup == 'open':
+                depth += 1
+            elif token.lastgroup == 'close':
+                depth = max(0, depth - 1)
+            elif token.lastgroup == 'move' and depth == 0:
+                moves += 1
+        chapters.append({'headers': headers, 'start': start, 'end': end,
+                         'header_end': visitor.header_end, 'moves': moves})
+    if not chapters:
+        raise ValueError('The study contains no chapters.')
+    return chapters
+
+
+def selected_chapter(chapters, index):
+    if type(index) is not int or not 0 <= index < len(chapters):
+        raise ValueError('Choose an existing chapter.')
+    return chapters[index]
+
+
+class EditorGameBuilder(chess.pgn.GameBuilder):
+    """Enforce editor limits before allocating an oversized chapter tree."""
+    def begin_game(self):
+        super().begin_game()
+        self.count = 0
+        self.initial_ply = None
+
+    def visit_board(self, board):
+        if self.initial_ply is None:
+            self.initial_ply = board.ply()
+
+    def visit_move(self, board, move):
+        self.count += 1
+        if self.count > MAX_NODES:
+            raise ValueError('This chapter is too large for the editor.')
+        if board.ply() - self.initial_ply >= MAX_DEPTH:
+            raise ValueError('This chapter is too deep for the editor.')
+        if not move:
+            raise ValueError('The editor does not support null moves.')
+        super().visit_move(board, move)
+
+    def handle_error(self, error):
+        raise ValueError(str(error)) from error
+
+
+def validate_editor_headers(headers):
+    board = headers.board()
+    if type(board) is not chess.Board or board.chess960:
+        raise ValueError('The editor currently supports standard chess only.')
+    if not board.is_valid():
+        raise ValueError('The chapter contains an invalid starting position.')
+
+
+def patch_headers(pgn, chapter, changes):
+    """Change selected header tags while retaining the exact source movetext."""
+    remaining = dict(changes)
+    lines = []
+    for line in pgn[chapter['start']:chapter['header_end']].splitlines(keepends=True):
+        tag = chess.pgn.TAG_REGEX.match(line)
+        if tag and tag.group(1) in changes:
+            name = tag.group(1)
+            value = changes[name]
+            remaining.pop(name, None)
+            if value is not None:
+                lines.append(line if tag.group(2) == value else f'[{name} "{value}"]\n')
+        else:
+            lines.append(line)
+    for name, value in remaining.items():
+        if value is not None:
+            if lines and not lines[-1].endswith(('\n', '\r')):
+                lines.append('\n')
+            lines.append(f'[{name} "{value}"]\n')
+    return ''.join(lines) + pgn[chapter['header_end']:chapter['end']]
 
 
 def collection_study(payload):
@@ -47,26 +147,29 @@ def collection_study(payload):
 
 def maintenance_data(payload):
     chapters = []
+    sites = set()
     seen = set()
-    for index, (game, _, _) in enumerate(chapters_with_spans(payload['pgn'])):
-        identity = game.headers.get(CHAPTER_ID, '')
+    for index, chapter in enumerate(chapter_index(payload['pgn'])):
+        if chapter['headers'].get('Site'):
+            sites.add(chapter['headers']['Site'])
+        identity = chapter['headers'].get(CHAPTER_ID, '')
         if not re.fullmatch(r'[a-f0-9]{32}', identity) or identity in seen:
             identity = uuid.uuid4().hex
         seen.add(identity)
         chapters.append({'id': identity, 'source_index': index,
-                         'title': game.headers.get('Event') or f'Chapter {index + 1}',
-                         'moves': sum(1 for _ in game.mainline_moves())})
-    return {'chapters': chapters}
+                         'title': chapter['headers'].get('Event') or f'Chapter {index + 1}',
+                         'moves': chapter['moves']})
+    return {'chapters': chapters, 'sites': sorted(sites)}
 
 
 def manage_chapters(payload):
-    originals = chapters_with_spans(payload['pgn'])
+    originals = chapter_index(payload['pgn'])
     entries = payload.get('chapters')
     if not isinstance(entries, list) or not 1 <= len(entries) <= 1000:
         raise ValueError('Keep at least one chapter; a study supports up to 1000 chapters.')
     seen = set()
     original_seen = set()
-    original_ids = {g.headers.get(CHAPTER_ID) for g, _, _ in originals}
+    original_ids = {chapter['headers'].get(CHAPTER_ID) for chapter in originals}
     output = []
     for entry in entries:
         if not isinstance(entry, dict):
@@ -76,17 +179,23 @@ def manage_chapters(payload):
             raise ValueError('Invalid or repeated chapter identity.')
         if not isinstance(title, str) or not title.strip() or len(title) > 200:
             raise ValueError('Each chapter needs a title of up to 200 characters.')
+        if any(character in title for character in ['"', '\\', '\n', '\r']):
+            raise ValueError('Chapter titles cannot contain quotes, backslashes or line breaks.')
         seen.add(identity)
         index = entry.get('source_index')
         if index is None:
             if identity in original_ids:
                 raise ValueError('A new chapter needs its own identity.')
             game = chess.pgn.Game()
+            game.headers[CHAPTER_ID] = identity
+            game.headers['Event'] = title.strip()
+            output.append(str(game) + '\n\n')
+            continue
         else:
             if type(index) is not int or not 0 <= index < len(originals):
                 raise ValueError('Choose an existing chapter.')
-            original = originals[index][0]
-            original_id = original.headers.get(CHAPTER_ID, '')
+            original = originals[index]
+            original_id = original['headers'].get(CHAPTER_ID, '')
             duplicate = entry.get('duplicate') is True
             if duplicate:
                 if identity in original_ids:
@@ -95,14 +204,12 @@ def manage_chapters(payload):
                 if index in original_seen or (re.fullmatch(r'[a-f0-9]{32}', original_id) and identity != original_id):
                     raise ValueError('An existing chapter must keep its identity.')
                 original_seen.add(index)
-            game = copy.deepcopy(original)
+            changes = {CHAPTER_ID: identity, 'Event': title.strip()}
             if duplicate:
-                game.headers.pop(ORIGINAL_INDEX, None)
-            elif not re.fullmatch(r'[a-f0-9]{32}', original_id) and game.variations:
-                game.headers[ORIGINAL_INDEX] = str(sum(bool(g.variations) for g, _, _ in originals[:index]))
-        game.headers[CHAPTER_ID] = identity
-        game.headers['Event'] = title.strip()
-        output.append(game.accept(chess.pgn.StringExporter(headers=True, variations=True, comments=True)))
+                changes[ORIGINAL_INDEX] = None
+            elif not re.fullmatch(r'[a-f0-9]{32}', original_id) and original['moves']:
+                changes[ORIGINAL_INDEX] = str(sum(bool(chapter['moves']) for chapter in originals[:index]))
+            output.append(patch_headers(payload['pgn'], original, changes))
     return {'pgn': '\n\n'.join(output) + '\n'}
 
 
@@ -142,27 +249,42 @@ def editor_data(payload):
                            'nags': sorted(child.nags), 'children': children(child, depth + 1)})
         return result
 
-    for index, (game, _, _) in enumerate(chapters_with_spans(payload['pgn'])):
+    selected = payload.get('chapter_index')
+    if 'chapter_index' in payload:
+        index_data = chapter_index(payload['pgn'])
+        chapter = selected_chapter(index_data, selected)
+        validate_editor_headers(chapter['headers'])
+        game = chess.pgn.read_game(io.StringIO(payload['pgn'][chapter['start']:chapter['end']]), Visitor=EditorGameBuilder)
+        games = [(selected, game)]
+    else:
+        games = [(index, game) for index, (game, _, _) in enumerate(chapters_with_spans(payload['pgn']))]
+
+    for index, game in games:
+        count = 0
         if type(game.board()) is not chess.Board or game.board().chess960:
             raise ValueError('The editor currently supports standard chess only.')
         chapters.append({'title': game.headers.get('Event') or f'Chapter {index + 1}',
                          'headers': dict(game.headers),
                          'fen': game.board().fen(), 'comment': game.comment,
                          'root': children(game)})
+    if 'chapter_index' in payload:
+        return {'editor': {'chapters': [
+            {'title': chapter['headers'].get('Event') or f'Chapter {index + 1}', 'source_index': index}
+            for index, chapter in enumerate(index_data)], 'chapter_index': selected, 'chapter': chapters[0]}}
     return {'editor': {'chapters': chapters}}
 
 
 def replace_chapter(payload):
     pgn = payload['pgn']
-    chapters = chapters_with_spans(pgn)
+    chapters = chapter_index(pgn)
     index = payload.get('chapter_index')
-    if type(index) is not int or not 0 <= index < len(chapters):
-        raise ValueError('Choose an existing chapter.')
-    game, start, end = chapters[index]
+    chapter = selected_chapter(chapters, index)
+    validate_editor_headers(chapter['headers'])
+    start, end = chapter['start'], chapter['end']
     tree = payload.get('tree')
     if not isinstance(tree, dict):
         raise ValueError('Invalid chapter data.')
-    edited = chess.pgn.Game(headers=dict(game.headers))
+    edited = chess.pgn.Game(headers=dict(chapter['headers']))
     if 'title' in tree:
         title = tree['title']
         if not isinstance(title, str) or not title.strip() or len(title) > 200:
@@ -208,4 +330,4 @@ def replace_chapter(payload):
     append(edited, tree.get('root'), edited.board())
     replacement = edited.accept(chess.pgn.StringExporter(headers=True, variations=True, comments=True))
     return {'pgn': pgn[:start] + replacement + '\n\n' + pgn[end:],
-            'playback_index': sum(bool(previous.variations) for previous, _, _ in chapters[:index])}
+            'playback_index': sum(bool(previous['moves']) for previous in chapters[:index])}

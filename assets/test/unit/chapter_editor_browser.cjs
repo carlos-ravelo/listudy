@@ -16,8 +16,8 @@ const promotionPicker = fs.readFileSync(path.join(__dirname, '../../../lib/listu
 const html = `<!doctype html><html class="blue cburnett"><head>
 <meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/chessground.css"></head><body><main class="container">
-<section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)" data-editor="${escape(JSON.stringify(data))}"
-data-revision="original" data-save-url="/save" data-color="white" data-start="Start"
+<section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)" data-editor="${escape(JSON.stringify({chapters: data.chapters.map(({title}) => ({title})), chapter_index: 0, chapter: data.chapters[0]}))}"
+data-revision="original" data-save-url="/save" data-load-url="/chapter" data-loading="Loading" data-load-error="Load failed" data-color="white" data-start="Start"
 data-variation="Variation" data-discard-prompt="Discard?" data-saving="Saving"
 data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-invalid-move="Illegal">
 <select id="editor_chapter" :disabled="saving" :value="chapter" @change="changeChapter($event)">
@@ -39,6 +39,14 @@ data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-inv
             return response.end(html);
         }
         if (request.url === '/saved') return response.end('Saved');
+        if (request.url.startsWith('/chapter?')) {
+            const query = new URL(request.url, 'http://localhost').searchParams;
+            const index = Number(query.get('chapter_index'));
+            response.setHeader('Content-Type', 'application/json');
+            return response.end(JSON.stringify({revision: query.get('revision'), editor: {
+                chapters: data.chapters.map(({title}) => ({title})), chapter_index: index, chapter: data.chapters[index]
+            }}));
+        }
         if (request.url === '/save') {
             let body = '';
             request.on('data', chunk => body += chunk);
@@ -102,6 +110,7 @@ data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-inv
         await page.waitForFunction(() => document.getElementById('editor_status').textContent === 'Saved');
         assert.equal(await page.locator('#editor_save').isDisabled(), true);
         await page.selectOption('#editor_chapter', '1');
+        await page.waitForFunction(() => Alpine.$data(document.getElementById('chapter_editor')).chapter === 1);
         await square('a7'); await square('a8');
         await page.waitForSelector('[data-promotion-picker]', { state: 'visible' });
         await page.keyboard.press('Escape');

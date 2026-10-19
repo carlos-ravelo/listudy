@@ -21,6 +21,10 @@ defmodule Listudy.Games.ChessEngine do
   end
 
   def editor(pgn), do: run("editor", Jason.encode!(%{pgn: pgn}))
+
+  def editor(pgn, chapter_index),
+    do: run("editor", Jason.encode!(%{pgn: pgn, chapter_index: chapter_index}))
+
   def maintenance(pgn), do: run("maintenance", Jason.encode!(%{pgn: pgn}))
   def collection_study(items), do: run("collection_study", Jason.encode!(%{items: items}))
 

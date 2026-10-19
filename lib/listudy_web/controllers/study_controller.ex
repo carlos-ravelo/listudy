@@ -289,19 +289,25 @@ defmodule ListudyWeb.StudyController do
     show(conn, id, study)
   end
 
-  def editor(conn, %{"id" => id}) do
+  def editor(conn, %{"id" => id} = params) do
     study = Studies.get_study_by_slug!(id)
     user = Pow.Plug.current_user(conn)
 
     if study && user && allowed(study, user) do
       with {:ok, pgn} <- File.read(get_path(id_from_slug(study.slug) <> ".pgn")),
-           {:ok, %{"editor" => editor}} <- Listudy.Games.ChessEngine.editor(pgn) do
+           {:ok, %{"editor" => editor}} <-
+             chapter_editor_data(pgn, params["chapter_index"] || "0") do
         render(conn, "editor.html",
           study: study,
           editor_json: Jason.encode!(editor),
           revision: Listudy.StudyPgn.revision(pgn)
         )
       else
+        {:error, reason} when is_binary(reason) ->
+          conn
+          |> put_flash(:error, reason)
+          |> redirect(to: Routes.study_path(conn, :edit, conn.assigns.locale, study))
+
         _ ->
           conn
           |> put_flash(:error, dgettext("study", "This study could not be opened in the editor."))
@@ -311,6 +317,56 @@ defmodule ListudyWeb.StudyController do
       conn |> put_status(:forbidden) |> text("Forbidden")
     end
   end
+
+  def load_chapter(conn, %{"id" => id} = params) do
+    study = Studies.get_study_by_slug!(id)
+    user = Pow.Plug.current_user(conn)
+
+    if study && user && allowed(study, user) do
+      with {:ok, pgn} <- File.read(get_path(id_from_slug(study.slug) <> ".pgn")),
+           revision = Listudy.StudyPgn.revision(pgn),
+           true <- params["revision"] == revision,
+           {:ok, %{"editor" => editor}} <- chapter_editor_data(pgn, params["chapter_index"]) do
+        json(conn, %{editor: editor, revision: revision})
+      else
+        false ->
+          conn
+          |> put_status(:conflict)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "This study changed while you were editing. Reload it before saving."
+              )
+          })
+
+        {:error, reason} when is_binary(reason) ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: reason})
+
+        _ ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "This chapter could not be opened. Your changes are still in the editor."
+              )
+          })
+      end
+    else
+      conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    end
+  end
+
+  defp chapter_editor_data(pgn, index) when is_binary(index) do
+    case Integer.parse(index) do
+      {value, ""} when value >= 0 -> Listudy.Games.ChessEngine.editor(pgn, value)
+      _ -> {:error, "Choose an existing chapter."}
+    end
+  end
+
+  defp chapter_editor_data(_, _), do: {:error, "Choose an existing chapter."}
 
   def save_chapter(conn, %{"id" => id} = params) do
     study = Studies.get_study_by_slug!(id)
@@ -439,14 +495,15 @@ defmodule ListudyWeb.StudyController do
         _ -> ""
       end
 
-    {chapters, error} =
+    {chapters, sites, error} =
       case Listudy.Games.ChessEngine.maintenance(pgn) do
-        {:ok, %{"chapters" => chapters}} -> {chapters, nil}
-        _ -> {[], dgettext("study", "This study could not be opened in the editor.")}
+        {:ok, %{"chapters" => chapters, "sites" => sites}} -> {chapters, sites, nil}
+        _ -> {[], [], dgettext("study", "This study could not be opened in the editor.")}
       end
 
     render(conn, "edit.html",
-      study: Map.put(study, :pgn, pgn),
+      study: study,
+      source_sites: Enum.map_join(sites, "\n", fn site -> "[Site \"#{site}\"]" end),
       changeset: changeset,
       openings: Listudy.Openings.list_openings_study_form(),
       chapters_json: Jason.encode!(chapters),

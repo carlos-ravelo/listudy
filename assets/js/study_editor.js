@@ -12,11 +12,13 @@ const Chess = ChessModule.Chess || ChessModule;
 import Alpine from 'alpinejs';
 
 Alpine.data('chapterEditor', () => {
-    let chapters, editor, ground, moveTree, config, pgnSnapshot, promotionPicker, engine, analysisId = 0;
+    let currentChapter, editor, ground, moveTree, config, pgnSnapshot, promotionPicker, engine, analysisId = 0;
+
+    let chapterRequest = 0, chapterAbort;
 
     return {
         exportPgn: '', pgnEdited: false, options: [], chapter: 0, title: '', comment: '', pendingPromotion: null, analysisUrl: '',
-        editingTitle: false, titleBeforeEdit: '', saving: false, dirty: false, hasPrevious: false, hasNext: false, status: '',
+        editingTitle: false, titleBeforeEdit: '', saving: false, loading: false, dirty: false, hasPrevious: false, hasNext: false, status: '',
         draft: false, trainingKind: 'repertoire', studyColor: 'white', privateStudy: true,
         setupMode: false, selectedPiece: 'wP', positionTurn: 'w', setupPieces: [],
         analysisEnabled: false, analysisText: '',
@@ -29,13 +31,14 @@ Alpine.data('chapterEditor', () => {
             this.setupPieces = ['♙♘♗♖♕♔', '♟♞♝♜♛♚'].flatMap((symbols, i) => [...symbols].map((symbol, j) => ({
                 code: (i ? 'b' : 'w') + 'PNBRQK'[j], symbol, label: (i ? config.black : config.white) + ' ' + (config.pieceNames || 'Pawn,Knight,Bishop,Rook,Queen,King').split(',')[j]
             }))).concat([{code: 'erase', symbol: '×', label: config.removePiece}]);
-            chapters = JSON.parse(config.editor).chapters;
-            this.options = chapters.map(({ title }) => ({ title }));
+            const initial = JSON.parse(config.editor);
+            delete config.editor;
+            this.options = initial.chapters.map(({ title }) => ({ title }));
             const requested = new URLSearchParams(window.location.search).get('chapter_index');
-            if (requested !== null && /^\d+$/.test(requested) && Number(requested) < chapters.length) {
-                this.chapter = Number(requested);
-            }
-            editor = createChapterEditor(chapters[this.chapter]);
+            this.chapter = initial.chapter_index ?? (requested !== null && /^\d+$/.test(requested) && Number(requested) < initial.chapters.length
+                ? Number(requested) : 0);
+            currentChapter = initial.chapter || initial.chapters[this.chapter];
+            editor = createChapterEditor(currentChapter);
             promotionPicker = createPromotionPicker({ element: this.$refs.promotionPicker,
                 onChoose: role => this.choosePromotion(role), onCancel: () => this.cancelPromotion() });
             ground = Chessground(this.$refs.board, {
@@ -53,7 +56,7 @@ Alpine.data('chapterEditor', () => {
             this.refresh();
         },
 
-        destroy() { ++analysisId; engine?.dispose(); promotionPicker?.destroy(); ground?.destroy(); },
+        destroy() { ++chapterRequest; chapterAbort?.abort(); ++analysisId; engine?.dispose(); promotionPicker?.destroy(); ground?.destroy(); },
 
         beginSetup() {
             if ((this.dirty || this.pgnEdited) && !window.confirm(config.discardPrompt)) return;
@@ -81,8 +84,8 @@ Alpine.data('chapterEditor', () => {
         finishSetup() {
             try {
                 const fen = setupPositionFen(ground.getFen(), this.positionTurn);
-                const initial = {...chapters[this.chapter], fen, root: [], comment: '', headers: {SetUp: '1', FEN: fen, Result: '*'}};
-                chapters[this.chapter] = initial;
+                const initial = {...currentChapter, fen, root: [], comment: '', headers: {SetUp: '1', FEN: fen, Result: '*'}};
+                currentChapter = initial;
                 editor = createChapterEditor(initial);
                 this.setupMode = false;
                 ground.set({draggable: {enabled: true}});
@@ -98,12 +101,12 @@ Alpine.data('chapterEditor', () => {
         async analyzePosition() {
             const id = ++analysisId;
             engine?.cancel();
-            if (!this.analysisEnabled || this.setupMode) return;
+            if (!this.analysisEnabled || this.setupMode || this.loading) return;
             const position = editor.position();
             this.analysisText = config.analysing;
             try {
                 engine ||= createSparringEngine();
-                const result = await engine.analyze(enginePosition(chapters[this.chapter].fen, position), {movetime: 800});
+                const result = await engine.analyze(enginePosition(currentChapter.fen, position), {movetime: 800});
                 if (id !== analysisId || !this.analysisEnabled) return;
                 const score = result.score;
                 const white = score?.value * (position.turn() === 'w' ? 1 : -1);
@@ -140,7 +143,7 @@ Alpine.data('chapterEditor', () => {
             ground.set({
                 fen: position.fen(), turnColor: color, check: position.in_check(),
                 lastMove: move ? [move.from, move.to] : undefined,
-                movable: { color: (this.saving || this.pendingPromotion) ? undefined : color, dests: (this.saving || this.pendingPromotion) ? new Map() : ground_legal_moves(position) }
+                movable: { color: (this.saving || this.loading || this.pendingPromotion) ? undefined : color, dests: (this.saving || this.loading || this.pendingPromotion) ? new Map() : ground_legal_moves(position) }
             });
             const orientation = ground.state.orientation;
             const customStart = position.header().SetUp !== undefined;
@@ -148,12 +151,12 @@ Alpine.data('chapterEditor', () => {
                 ? `https://lichess.org/analysis/${position.fen()}?color=${orientation}`
                 : `https://lichess.org/analysis/pgn/${encodeURIComponent(position.pgn())}?color=${orientation}`;
             moveTree.update({ reading: true, chapter: this.chapter, root: editor.tree.root,
-                fen: chapters[this.chapter].fen, path: editor.path });
+                fen: currentChapter.fen, path: editor.path });
             if (this.analysisEnabled) this.analyzePosition();
         },
 
         play(from, to, promotion) {
-            if (this.setupMode || this.saving || this.pendingPromotion) return;
+            if (this.setupMode || this.saving || this.loading || this.pendingPromotion) return;
             const position = editor.position();
             const choices = position.moves({ verbose: true }).filter(move => move.from === from && move.to === to && move.promotion);
             if (choices.length && !promotion) {
@@ -189,7 +192,7 @@ Alpine.data('chapterEditor', () => {
         },
 
         selectPosition(path) {
-            if (this.setupMode || this.saving || this.pendingPromotion) return;
+            if (this.setupMode || this.saving || this.loading || this.pendingPromotion) return;
             editor.select(path);
             this.refresh();
         },
@@ -214,7 +217,7 @@ Alpine.data('chapterEditor', () => {
                 }
                 return;
             }
-            if (this.saving || event.defaultPrevented || event.isComposing ||
+            if (this.saving || this.loading || event.defaultPrevented || event.isComposing ||
                 event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
             if (event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
             if (event.key === 'ArrowLeft' && this.hasPrevious) {
@@ -234,7 +237,7 @@ Alpine.data('chapterEditor', () => {
         },
 
         beginTitleEdit() {
-            if (this.saving || this.pendingPromotion) return;
+            if (this.saving || this.loading || this.pendingPromotion) return;
             this.titleBeforeEdit = this.title;
             this.editingTitle = true;
             this.$nextTick(() => {
@@ -257,7 +260,7 @@ Alpine.data('chapterEditor', () => {
         },
 
         applyChapterPgn() {
-            if (this.setupMode || this.saving || this.pendingPromotion) return;
+            if (this.setupMode || this.saving || this.loading || this.pendingPromotion) return;
             try {
                 editor.loadPgn(this.exportPgn);
                 this.syncPgn(true);
@@ -270,16 +273,18 @@ Alpine.data('chapterEditor', () => {
         },
 
         discard() {
-            if (this.setupMode || this.pendingPromotion) return;
+            if (this.setupMode || this.saving || this.loading || this.pendingPromotion) return;
             if (!window.confirm(config.discardPrompt)) return;
-            editor = createChapterEditor(chapters[this.chapter]);
+            editor = createChapterEditor(currentChapter);
             this.syncPgn(true);
             this.status = '';
             this.refresh();
         },
 
-        changeChapter(event) {
-            if (this.setupMode || this.pendingPromotion) {
+        async changeChapter(event) {
+            const index = Number(event.target.value);
+            if (this.setupMode || this.pendingPromotion || this.saving || this.draft ||
+                !Number.isInteger(index) || index < 0 || index >= this.options.length) {
                 event.target.value = String(this.chapter);
                 return;
             }
@@ -287,12 +292,46 @@ Alpine.data('chapterEditor', () => {
                 event.target.value = String(this.chapter);
                 return;
             }
-            this.editingTitle = false;
-            this.chapter = Number(event.target.value);
-            editor = createChapterEditor(chapters[this.chapter]);
-            this.syncPgn(true);
-            this.status = '';
+            chapterAbort?.abort();
+            const request = ++chapterRequest;
+            if (index === this.chapter) {
+                this.loading = false;
+                this.status = '';
+                this.refresh();
+                return;
+            }
+            chapterAbort = new AbortController();
+            this.loading = true;
+            ++analysisId; engine?.cancel();
+            this.status = config.loading;
             this.refresh();
+            try {
+                const url = new URL(config.loadUrl, window.location.href);
+                url.searchParams.set('chapter_index', String(index));
+                url.searchParams.set('revision', config.revision);
+                const response = await fetch(url, {credentials: 'same-origin', signal: chapterAbort.signal});
+                const result = await response.json();
+                if (request !== chapterRequest) return;
+                if (!response.ok) throw new Error(result.error || config.loadError);
+                if (result.revision !== config.revision || result.editor?.chapter_index !== index) throw new Error(config.loadError);
+                const next = createChapterEditor(result.editor.chapter);
+                currentChapter = result.editor.chapter;
+                editor = next;
+                this.chapter = index;
+                this.options = result.editor.chapters.map(({title}) => ({title}));
+                this.editingTitle = false;
+                this.syncPgn(true);
+                this.status = '';
+            } catch (error) {
+                if (request !== chapterRequest) return;
+                this.status = error.message || config.loadError;
+                event.target.value = String(this.chapter);
+            } finally {
+                if (request === chapterRequest) {
+                    this.loading = false;
+                    this.refresh();
+                }
+            }
         },
 
         beforeLeave(event) {
@@ -302,7 +341,7 @@ Alpine.data('chapterEditor', () => {
         },
 
         async save() {
-            if (this.setupMode || this.saving || this.pendingPromotion || !this.dirty) return;
+            if (this.setupMode || this.saving || this.loading || this.pendingPromotion || !this.dirty) return;
             this.saving = true;
             this.status = config.saving;
             this.refresh();
@@ -323,10 +362,10 @@ Alpine.data('chapterEditor', () => {
                 if (this.draft) { this.dirty = false; this.pgnEdited = false; window.location.assign(result.url); return; }
                 const path = editor.path;
                 config.revision = result.revision;
-                chapters[this.chapter] = { ...chapters[this.chapter], ...editor.tree };
-                editor = createChapterEditor(chapters[this.chapter]);
+                currentChapter = { ...currentChapter, ...editor.tree };
+                editor = createChapterEditor(currentChapter);
                 editor.select(path);
-                this.options[this.chapter].title = chapters[this.chapter].title;
+                this.options[this.chapter].title = currentChapter.title;
                 this.saving = false;
                 this.status = config.saved;
                 this.refresh();

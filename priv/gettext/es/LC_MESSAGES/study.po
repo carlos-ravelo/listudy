@@ -1534,3 +1534,6 @@ msgstr "Importar PGN"
 
 msgid "No moves to practice before the main line's error annotation. Explore this chapter in reading mode."
 msgstr "No hay jugadas para practicar antes de la marca de error de la línea principal. Explora este capítulo en el modo lectura."
+
+msgid "This chapter could not be opened. Your changes are still in the editor."
+msgstr "No se pudo abrir este capítulo. Tus cambios siguen en el editor."

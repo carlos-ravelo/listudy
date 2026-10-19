@@ -224,6 +224,7 @@ defmodule ListudyWeb.Router do
 
     post "/studies/:id/clone", StudyController, :clone
     get "/studies/:id/editor", StudyController, :editor
+    get "/studies/:id/editor/chapter", StudyController, :load_chapter
     post "/studies/:id/editor", StudyController, :save_chapter
     post "/studies/:id/chapters", StudyController, :manage_chapters
     resources "/studies", StudyController

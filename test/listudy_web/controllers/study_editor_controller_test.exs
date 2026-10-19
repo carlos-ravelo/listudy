@@ -134,6 +134,48 @@ defmodule ListudyWeb.StudyEditorControllerTest do
     assert File.read!(path) == pgn
   end
 
+  test "editor sends one chapter and loads other chapters with revision and ownership checks", %{
+    conn: conn,
+    owner_conn: owner,
+    other_conn: other,
+    study: study,
+    pgn: pgn
+  } do
+    page =
+      owner
+      |> get(Routes.study_path(conn, :editor, "en", study, chapter_index: 1))
+      |> html_response(200)
+
+    assert page =~ "&quot;chapter_index&quot;:1"
+    assert page =~ "&quot;move&quot;:&quot;d4&quot;"
+    refute page =~ "&quot;move&quot;:&quot;e4&quot;"
+
+    url = Routes.study_path(conn, :load_chapter, "en", study)
+    params = %{chapter_index: "1", revision: Listudy.StudyPgn.revision(pgn)}
+    assert conn |> get(url, params) |> json_response(403) == %{"error" => "Forbidden"}
+    assert other |> get(url, params) |> json_response(403) == %{"error" => "Forbidden"}
+    result = owner |> get(url, params) |> json_response(200)
+    assert result["editor"]["chapter_index"] == 1
+    assert result["editor"]["chapter"]["title"] == "Other"
+    assert Enum.map(result["editor"]["chapters"], & &1["title"]) == ["Chapter (A)", "Other"]
+    refute Enum.any?(result["editor"]["chapters"], &Map.has_key?(&1, "root"))
+    assert owner |> get(url, %{params | revision: "stale"}) |> json_response(409)
+    assert owner |> get(url, Map.delete(params, :revision)) |> json_response(409)
+
+    for index <- ["-1", "100", "invalid"] do
+      assert owner |> get(url, %{params | chapter_index: index}) |> json_response(422)
+    end
+
+    assert owner |> get(url, %{revision: params.revision}) |> json_response(422)
+  end
+
+  test "maintenance page does not embed study movetext", %{owner_conn: owner, study: study} do
+    page = owner |> get(Routes.study_path(owner, :edit, "en", study)) |> html_response(200)
+    assert page =~ "Chapter (A)"
+    refute page =~ "1. e4 e5 *"
+    refute page =~ "1. d4 d5 *"
+  end
+
   test "maintenance is owner-only and saves reordered chapters", %{
     conn: conn,
     owner_conn: owner,
