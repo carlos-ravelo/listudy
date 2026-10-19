@@ -343,10 +343,18 @@
 .study-list-author { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--secondary-color); font-size: 11px; }
 .study-list-favorites { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; min-width: 30px; color: var(--secondary-color); font-size: 12px; font-variant-numeric: tabular-nums; }
 @media (max-width: 600px) {
-  .repertoire-library [data-study-entry] { padding: 4px 6px; gap: 4px; }
-  .repertoire-library [data-study-entry] .study-library-content { min-height: 36px; }
+  .repertoire-library [data-study-entry] { padding: 2px 5px; gap: 2px; }
+  .repertoire-library [data-study-entry] .study-library-content { flex-direction: row; align-items: center; justify-content: flex-start; min-height: 28px; gap: 6px; }
+  .repertoire-library [data-study-entry] .study-library-title-line { flex: 1; }
+  .repertoire-library [data-study-entry] .study-library-title { font-size: 12px; }
+  .repertoire-library [data-study-entry] .study-library-description { display: none; }
   .repertoire-library [data-study-entry] :is(.study-library-type, .study-library-visibility, .study-list-author, .study-library-group-label) { display: none; }
-  .repertoire-library [data-study-entry] .study-library-color { flex-basis: 18px; }
-  .repertoire-library [data-study-entry] .study-library-color > span:first-child { font-size: 16px; }
-  .repertoire-library [data-study-entry] :is(.study-library-favorite, .study-library-menu > summary) { width: 32px; min-height: 44px; box-sizing: border-box; }
+  .repertoire-library [data-study-entry] .study-library-color { flex-basis: 16px; }
+  .repertoire-library [data-study-entry] .study-library-color > span:first-child { font-size: 14px; }
+  .repertoire-library [data-study-entry] :is(.study-library-favorite, .study-library-menu > summary) { width: 24px; height: 28px; min-height: 28px; padding: 0; border: 0; background: transparent; box-sizing: border-box; }
+  .repertoire-library [data-study-entry] .study-library-menu { flex-basis: 24px; }
+  .repertoire-library [data-study-entry] .study-library-menu > summary { font-size: 18px; }
+  .repertoire-library [data-study-entry] .study-library-favorite svg { width: 14px; height: 14px; }
+  .repertoire-library [data-study-entry] .study-list-favorites { min-width: 24px; gap: 2px; font-size: 11px; }
+  .repertoire-library [data-study-entry] .study-list-favorites svg { width: 14px; height: 14px; }
 }
