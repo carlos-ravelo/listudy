@@ -50,8 +50,8 @@
     <%= error_tag f, :training_kind %>
   </div>
   <div class="study-metadata-opening" x-show="kind === 'repertoire'" x-cloak>
-  <%= label f, :opening_id, dgettext("study", "Opening") %>
-  <%= select(f, :opening_id, Enum.map(@assigns.openings, fn %{name: name, id: id} -> [key: name, value: id] end), selected: selected_opening(@assigns), class: "study_opening_id big_input") %>
+    <%= render "_opening_picker.html", f: f, openings: @assigns.openings,
+          selected: Ecto.Changeset.get_field(@assigns.changeset, :opening_id) || selected_opening(@assigns) %>
 
   </div>
     <div class="study-management-side" x-show="kind === 'repertoire'" x-cloak>

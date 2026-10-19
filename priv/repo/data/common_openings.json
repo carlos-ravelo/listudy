@@ -1,0 +1,96 @@
+{
+  "source": "https://github.com/lichess-org/chess-openings",
+  "license": "CC0-1.0",
+  "openings": [
+    {
+      "name": "Caro-Kann Defense",
+      "slug": "caro-kann-defense",
+      "eco": "B10",
+      "moves": "1. e4 c6",
+      "uci_moves": "e2e4 c7c6",
+      "fen": "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "description": "Caro-Kann Defense, starting with 1. e4 c6."
+    },
+    {
+      "name": "English Opening",
+      "slug": "english-opening",
+      "eco": "A10",
+      "moves": "1. c4",
+      "uci_moves": "c2c4",
+      "fen": "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq - 0 1",
+      "description": "English Opening, starting with 1. c4."
+    },
+    {
+      "name": "French Defense",
+      "slug": "french-defense",
+      "eco": "C00",
+      "moves": "1. e4 e6",
+      "uci_moves": "e2e4 e7e6",
+      "fen": "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "description": "French Defense, starting with 1. e4 e6."
+    },
+    {
+      "name": "Italian Game",
+      "slug": "italian-game",
+      "eco": "C50",
+      "moves": "1. e4 e5 2. Nf3 Nc6 3. Bc4",
+      "uci_moves": "e2e4 e7e5 g1f3 b8c6 f1c4",
+      "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",
+      "description": "Italian Game, starting with 1. e4 e5 2. Nf3 Nc6 3. Bc4."
+    },
+    {
+      "name": "King's Indian Defense",
+      "slug": "kings-indian-defense",
+      "eco": "E61",
+      "moves": "1. d4 Nf6 2. c4 g6 3. Nc3",
+      "uci_moves": "d2d4 g8f6 c2c4 g7g6 b1c3",
+      "fen": "rnbqkb1r/pppppp1p/5np1/8/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq - 1 3",
+      "description": "King's Indian Defense, starting with 1. d4 Nf6 2. c4 g6 3. Nc3."
+    },
+    {
+      "name": "Queen's Gambit",
+      "slug": "queens-gambit",
+      "eco": "D06",
+      "moves": "1. d4 d5 2. c4",
+      "uci_moves": "d2d4 d7d5 c2c4",
+      "fen": "rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq - 0 2",
+      "description": "Queen's Gambit, starting with 1. d4 d5 2. c4."
+    },
+    {
+      "name": "Ruy Lopez",
+      "slug": "ruy-lopez",
+      "eco": "C60",
+      "moves": "1. e4 e5 2. Nf3 Nc6 3. Bb5",
+      "uci_moves": "e2e4 e7e5 g1f3 b8c6 f1b5",
+      "fen": "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",
+      "description": "Ruy Lopez, starting with 1. e4 e5 2. Nf3 Nc6 3. Bb5."
+    },
+    {
+      "name": "Scandinavian Defense",
+      "slug": "scandinavian-defense",
+      "eco": "B01",
+      "moves": "1. e4 d5",
+      "uci_moves": "e2e4 d7d5",
+      "fen": "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "description": "Scandinavian Defense, starting with 1. e4 d5."
+    },
+    {
+      "name": "Sicilian Defense",
+      "slug": "sicilian-defense",
+      "eco": "B20",
+      "moves": "1. e4 c5",
+      "uci_moves": "e2e4 c7c5",
+      "fen": "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "description": "Sicilian Defense, starting with 1. e4 c5."
+    },
+    {
+      "name": "Slav Defense",
+      "slug": "slav-defense",
+      "eco": "D10",
+      "moves": "1. d4 d5 2. c4 c6",
+      "uci_moves": "d2d4 d7d5 c2c4 c7c6",
+      "fen": "rnbqkbnr/pp2pppp/2p5/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3",
+      "description": "Slav Defense, starting with 1. d4 d5 2. c4 c6."
+    }
+  ]
+}

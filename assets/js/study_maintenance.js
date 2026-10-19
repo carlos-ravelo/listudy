@@ -1,5 +1,30 @@
 import Alpine from 'alpinejs';
 
+Alpine.data('studyOpeningPicker', () => ({
+    name: '', selected: '', query: '', names: [],
+    init() {
+        this.name = this.$el.dataset.selectedName;
+        this.selected = this.$el.dataset.selectedId;
+        this.names = JSON.parse(this.$el.dataset.openingNames);
+    },
+    matches(value) {
+        const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
+        return normalize(value).includes(normalize(this.query.trim()));
+    },
+    open() {
+        this.query = '';
+        this.$refs.dialog.showModal();
+        this.$nextTick(() => this.$refs.search.focus());
+    },
+    choose(id, name) {
+        this.selected = id;
+        this.name = name;
+        this.$refs.value.value = id;
+        this.$refs.value.dispatchEvent(new Event('change', { bubbles: true }));
+        this.$refs.dialog.close();
+    }
+}));
+
 Alpine.data('studyMetadata', () => ({
     changed: false, saving: false, status: '',
     async save(event) {
