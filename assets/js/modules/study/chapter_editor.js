@@ -93,6 +93,15 @@ export function createChapterEditor(chapter) {
         },
         setComment(comment) { node().comment = comment; },
         setTitle(title) { tree.title = title; },
+        deleteFromHere() {
+            if (!path.length) return false;
+            const parentPath = path.slice(0, -1);
+            const children = parentPath.length ? node(parentPath).children : tree.root;
+            children.splice(path[path.length - 1], 1);
+            tree.root = [...tree.root];
+            path = parentPath;
+            return true;
+        },
         play(from, to, promotion = 'q') {
             const board = position();
             const move = board.move({ from, to, promotion });

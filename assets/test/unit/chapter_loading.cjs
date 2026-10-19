@@ -90,6 +90,19 @@ const respond = (request, index, revision = 'original') => request.resolve({ok: 
     assert.equal(controller.comment, 'Saved third chapter');
     assert.equal(controller.status, 'Study changed');
 
+    controller.play('e2', 'e4');
+    const beforeDelete = controller.exportPgn;
+    for (const [state, busy] of [['saving', true], ['loading', true], ['setupMode', true], ['pendingPromotion', {}]]) {
+        controller[state] = busy;
+        controller.deleteFromHere();
+        assert.equal(controller.exportPgn, beforeDelete);
+        controller[state] = state === 'pendingPromotion' ? null : false;
+    }
+    controller.deleteFromHere();
+    assert.equal(controller.hasPrevious, false);
+    assert.equal(controller.dirty, false);
+    assert.ok(!controller.exportPgn.includes('e4'));
+
     const cancelled = change(1);
     await change(2);
     assert.equal(requests[5].options.signal.aborted, true);

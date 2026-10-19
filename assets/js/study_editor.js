@@ -199,6 +199,14 @@ Alpine.data('chapterEditor', () => {
         previous() { this.selectPosition(editor.path.slice(0, -1)); },
         next() { this.selectPosition([...editor.path, 0]); },
 
+        deleteFromHere() {
+            if (this.setupMode || this.saving || this.loading || this.pendingPromotion) return;
+            if (!editor.deleteFromHere()) return;
+            this.syncPgn(true);
+            this.status = editor.dirty ? config.unsaved : '';
+            this.refresh();
+        },
+
         copyCurrentMove(event) {
             if (event.defaultPrevented || !event.clipboardData || window.getSelection()?.toString()) return;
             if (event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;

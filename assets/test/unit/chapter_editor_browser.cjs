@@ -13,6 +13,9 @@ const data = { chapters: [
 ] };
 const promotionPicker = fs.readFileSync(path.join(__dirname, '../../../lib/listudy_web/templates/component/promotion_picker.html.eex'), 'utf8')
     .replace(/<%=\s*dgettext[^%]*%>/g, expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
+const deleteButton = fs.readFileSync(path.join(__dirname, '../../../lib/listudy_web/templates/study/editor.html.eex'), 'utf8')
+    .match(/<button[^>]+id="editor_delete_move"[\s\S]*?<\/button>/)[0]
+    .replace(/<%=\s*dgettext[^%]*%>/g, expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
 const html = `<!doctype html><html class="blue cburnett"><head>
 <meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/chessground.css"></head><body><main class="container">
@@ -26,6 +29,7 @@ data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-inv
 <button id="editor_discard" :disabled="saving || !dirty" @click="discard()">Discard</button>
 <div class="chapter-editor-layout"><div><div class="chapter-editor-board"><div id="editor_board" class="cg-wrap" x-ref="board"></div>${promotionPicker}</div>
 <button id="editor_previous" :disabled="saving || !hasPrevious" @click="previous()">Previous</button><button id="editor_next" :disabled="saving || !hasNext" @click="next()">Next</button>
+${deleteButton}
 </div>
 <div><div id="editor_moves" x-ref="moves"></div><textarea id="editor_comment" x-model="comment" :disabled="saving" @input="updateComment($event.target.value)"></textarea></div></div>
 <p id="editor_status" role="status" x-text="status"></p></section></main><script src="/js/study_editor.js"></script></body></html>`;
@@ -80,6 +84,26 @@ data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-inv
             await page.mouse.click(box.x + (name.charCodeAt(0) - 97 + .5) * box.width / 8,
                 box.y + (8 - Number(name[1]) + .5) * box.height / 8);
         }
+        assert.equal(await page.locator('#editor_delete_move').isDisabled(), true);
+        await square('e2'); await square('e4');
+        await page.click('#editor_delete_move');
+        assert.equal(await page.locator('#editor_moves').textContent(), 'Start');
+        assert.equal(await page.locator('#editor_delete_move').isDisabled(), true);
+        assert.equal(await page.locator('#editor_save').isDisabled(), false);
+        page.once('dialog', dialog => dialog.accept());
+        await page.click('#editor_discard');
+        assert.ok((await page.locator('#editor_moves').textContent()).includes('e5'));
+        await square('e2'); await square('e4');
+        await square('c7'); await square('c5');
+        await square('g1'); await square('f3');
+        await page.locator('#editor_moves button').filter({hasText: /^c5$/}).click();
+        await page.click('#editor_delete_move');
+        const survivingMoves = await page.locator('#editor_moves').textContent();
+        assert.ok(survivingMoves.includes('e5'));
+        assert.ok(!survivingMoves.includes('c5'));
+        assert.ok(!survivingMoves.includes('Nf3'));
+        assert.equal(await page.locator('#editor_save').isDisabled(), true);
+        await page.click('#editor_previous');
         await square('e2');
         await square('e4');
         assert.equal(await page.locator('#editor_save').isDisabled(), true);
@@ -113,6 +137,7 @@ data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-inv
         await page.waitForFunction(() => Alpine.$data(document.getElementById('chapter_editor')).chapter === 1);
         await square('a7'); await square('a8');
         await page.waitForSelector('[data-promotion-picker]', { state: 'visible' });
+        assert.equal(await page.locator('#editor_delete_move').isDisabled(), true);
         await page.keyboard.press('Escape');
         assert.equal(await page.locator('[data-promotion-picker]').isHidden(), true);
         assert.equal(await page.locator('#editor_save').isDisabled(), true);
@@ -120,6 +145,14 @@ data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-inv
         await page.click('[data-promotion="n"]');
         await page.waitForFunction(() => document.getElementById('editor_moves').textContent.includes('a8=N'));
         assert.equal(await page.locator('#editor_save').isDisabled(), false);
+        await page.click('#editor_save');
+        await page.waitForFunction(() => document.getElementById('editor_status').textContent === 'Saved');
+        await page.click('#editor_delete_move');
+        assert.equal(await page.locator('#editor_moves').textContent(), 'Start');
+        await page.click('#editor_save');
+        await page.waitForFunction(() => document.getElementById('editor_status').textContent === 'Saved');
+        assert.equal(saved.chapter_index, 1);
+        assert.deepEqual(saved.tree.root, []);
         assert.deepEqual(errors, []);
         console.log('Chapter editor browser checks passed.');
     } finally {

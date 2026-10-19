@@ -116,7 +116,10 @@
            aria-label="<%= dgettext "study", "Analyze position" %>" title="<%= dgettext "study", "Analyze position" %>">
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
         </a>
-
+        <button type="button" id="editor_delete_move" class="chapter-editor-icon" :disabled="setupMode || pendingPromotion || saving || loading || !hasPrevious" @click="deleteFromHere()" disabled
+                aria-label="<%= dgettext("study", "Delete from here") %>" title="<%= dgettext("study", "Delete from here") %>">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6m4-6v6"/></svg>
+        </button>
       </div>
       <div id="editor_moves" class="study-move-tree" x-ref="moves" aria-label="<%= dgettext "study", "Moves and variations" %>"></div>
       <label for="editor_comment"><%= dgettext "study", "Comment" %></label>

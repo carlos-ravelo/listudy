@@ -1537,3 +1537,6 @@ msgstr "No hay jugadas para practicar antes de la marca de error de la línea pr
 
 msgid "This chapter could not be opened. Your changes are still in the editor."
 msgstr "No se pudo abrir este capítulo. Tus cambios siguen en el editor."
+
+msgid "Delete from here"
+msgstr "Borrar desde aquí"
