@@ -1240,12 +1240,6 @@ function show_suggestions() {
     let suggestions = [
         {expr: function(){ return show_pgn_arrow_hints() },           text: i18n.suggestion_first_pgn_arrow, once: false, key: TextOverlayId.FIRST_PGN_ARROW},
         {expr: function(){ return show_neglected_move_hints() },      text: i18n.suggestion_first_neglected_move, once: false, key: TextOverlayId.FIRST_NEGLECTED_MOVE},
-        {expr: function(){ return total_moves >= 15 },                text: i18n.suggestion_share, once: true, key: "share"},
-        {expr: function(){ return total_moves >= 30 && logged_in },   text: i18n.suggestion_favorite, once: true, key: "favorite"},
-        {expr: function(){ return total_moves >= 30 && !logged_in },  text: i18n.suggestion_account, once: false, key: "account"},
-        {expr: function(){ return total_moves >= 50 && logged_in },   text: i18n.suggestion_comment, once: true, key: "comment"},
-        {expr: function(){ return total_moves >= 100 },               text: i18n.suggestion_100moves, once: false, key: "100moves"},
-        {expr: function(){ return total_moves >= 250 },               text: i18n.suggestion_250moves, once: false, key: "250moves"}
     ]
     for (let suggestion of suggestions) {
         let seen = has_seen_suggestion(suggestion.key, suggestion.once);
@@ -1255,17 +1249,6 @@ function show_suggestions() {
             mark_suggestion_seen(suggestion.key);
             break;  // only show one suggestion at a time
         }
-    }
-}
-
-function setup_intro() {
-    set_text(info_div, i18n.info_intro);
-
-    let roots = trees.map(x => x.root[0]);
-    let max = Math.max(...roots.map(x => tree_value(x, Math.max)));
-
-    if (max == 0 && show_arrows != i18n.arrows_hidden) {
-        set_text(suggestion_div, i18n.info_arrows);
     }
 }
 
@@ -1874,7 +1857,6 @@ async function main() {
 
     resize_ground();
 
-    setup_intro();
 
     start_training();
     studyMoveNavigation = setupStudyMoveNavigation({

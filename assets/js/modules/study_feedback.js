@@ -30,7 +30,7 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
         region.style.left = `${beside ? board.right + 12 : Math.max(12, Math.min(board?.left || 12, innerWidth - region.getBoundingClientRect().width - 12))}px`;
         const rect = region.getBoundingClientRect();
         const desiredTop = board ? (beside ? Math.max(12, board.top + 16) : board.bottom + 8) : 12;
-        const height = Math.min(region.scrollHeight, 160, innerHeight / 4);
+        const height = Math.min(region.scrollHeight, innerHeight - 24);
         // Find a viewport gap beside the board and the active game controls.
         const obstacles = [...document.querySelectorAll('#chessground, #study_board_actions, .study-session-controls, .study-chapter-navigation, .sparring-actions, .sparring-navigation, #hints, #reset_line, #study_previous_move, #study_next_move, #open_study_settings, #study_more_actions, .study-tree-move, #endgame_actions, .endgame-feedback-toggle, .endgame-review, .endgame-position-details, .endgame-goal-heading, .endgame-live-assessment, .endgame-live-comment, #endgame_engine_status, .popup')]
             .map(element => element.getBoundingClientRect())
@@ -43,14 +43,17 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
             top = Math.max(top, end);
         }
         if (top < innerHeight - 12) gaps.push([top, innerHeight - 12]);
-        const candidates = gaps.filter(([start, end]) => end - start >= Math.min(height, 64))
-            .map(([start, end]) => ({ start, end, top: Math.max(start, Math.min(desiredTop, end - Math.min(height, end - start))) }));
+        const candidates = gaps.filter(([start, end]) => end - start >= height)
+            .map(([start, end]) => ({ start, end, top: Math.max(start, Math.min(desiredTop, end - height)) }));
         const gap = candidates.sort((a, b) => Math.abs(a.top - desiredTop) - Math.abs(b.top - desiredTop))[0];
         if (gap) {
             region.style.bottom = 'auto';
             region.style.top = `${gap.top}px`;
-            region.style.maxHeight = `${Math.min(160, gap.end - gap.top)}px`;
-        } else { region.style.top = '12px'; region.style.bottom = 'auto'; }
+            region.style.maxHeight = `${gap.end - gap.top}px`;
+        } else {
+            region.style.top = `${Math.max(12, Math.min(desiredTop, innerHeight - height - 12))}px`;
+            region.style.bottom = 'auto';
+        }
     }
     function schedulePosition() { if (!frame) frame = requestAnimationFrame(position); }
     for (const close of region.querySelectorAll('.close_button')) {
@@ -68,6 +71,7 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
         for (const other of region.querySelectorAll('.infoBox')) if (other !== box) other.classList.add('hidden');
         if (!region.contains(document.activeElement)) returnFocus = document.activeElement;
         current = box; transient = temporary; remaining = durationMs;
+        region.scrollTop = 0;
         schedulePosition(); resume();
     });
     region.addEventListener('click', event => {
