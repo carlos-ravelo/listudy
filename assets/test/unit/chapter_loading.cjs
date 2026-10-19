@@ -71,16 +71,24 @@ const respond = (request, index, revision = 'original') => request.resolve({ok: 
     assert.equal(controller.comment, 'Third');
     assert.equal(controller.dirty, false);
     assert.equal(controller.pgnEdited, false);
+    assert.equal(controller.canUndo, false, 'Chapter changes start a fresh history');
 
     comment('Saved third chapter');
     const save = controller.save();
     assert.equal(JSON.parse(requests[3].options.body).chapter_index, 2);
     requests[3].resolve({ok: true, json: async () => ({revision: 'saved'})});
     await save;
+    controller.undo();
+    assert.equal(controller.comment, 'Third');
+    assert.equal(controller.dirty, true);
+    controller.redo();
+    assert.equal(controller.comment, 'Saved third chapter');
+    assert.equal(controller.dirty, false);
     comment('Discard me');
     controller.discard();
     assert.equal(controller.comment, 'Saved third chapter');
     assert.equal(controller.dirty, false);
+    assert.equal(controller.canUndo, false, 'Discard resets history to the saved baseline');
 
     const conflict = change(0);
     assert.equal(new URL(requests[4].url).searchParams.get('revision'), 'saved');
@@ -94,10 +102,24 @@ const respond = (request, index, revision = 'original') => request.resolve({ok: 
     const beforeDelete = controller.exportPgn;
     for (const [state, busy] of [['saving', true], ['loading', true], ['setupMode', true], ['pendingPromotion', {}]]) {
         controller[state] = busy;
+        controller.undo();
+        controller.redo();
+        controller.promoteVariation();
+        controller.setAnnotation(4);
         controller.deleteFromHere();
         assert.equal(controller.exportPgn, beforeDelete);
         controller[state] = state === 'pendingPromotion' ? null : false;
     }
+    let prevented = false;
+    const key = {key: 'z', ctrlKey: true, target: {closest: () => null}, preventDefault() { prevented = true; }};
+    controller.navigateKey(key);
+    assert.equal(prevented, true);
+    assert.equal(controller.hasPrevious, false);
+    controller.navigateKey({...key, shiftKey: true});
+    assert.equal(controller.hasPrevious, true);
+    prevented = false;
+    controller.navigateKey({...key, target: {closest: () => ({})}});
+    assert.equal(prevented, false, 'Text inputs retain native undo');
     controller.deleteFromHere();
     assert.equal(controller.hasPrevious, false);
     assert.equal(controller.dirty, false);

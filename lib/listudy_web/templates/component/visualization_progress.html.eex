@@ -32,6 +32,5 @@
     <% end %>
     <label class="training-destination-option"><input type="checkbox" data-visualization-destinations> <%= dgettext("tactics", "Show legal destinations (help)") %></label>
     <p><%= dgettext("tactics", "Difficulty changes apply to the next attempt. Three solves without mistakes or help increase adaptive difficulty.") %></p>
-    <small><%= dgettext("tactics", "Progress is saved on this device. Immediate retries count as rehearsal.") %></small>
   </details>
 </section>

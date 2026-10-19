@@ -551,9 +551,6 @@ msgstr ""
 msgid "Difficulty changes apply to the next attempt. Three solves without mistakes or help increase adaptive difficulty."
 msgstr ""
 
-msgid "Progress is saved on this device. Immediate retries count as rehearsal."
-msgstr ""
-
 msgid "Picture the missing pieces using the list, then play the winning moves."
 msgstr ""
 

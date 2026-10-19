@@ -1096,9 +1096,6 @@ msgstr "Esa jugada está en tu repertorio. Prueba otra continuación para esta c
 msgid "Practice chain complete!"
 msgstr "¡Cadena de práctica completada!"
 
-msgid "Progress is saved on this device. Cloud sync will retry when a connection is available."
-msgstr "El progreso está guardado en este dispositivo. Se reintentará la sincronización cuando haya conexión."
-
 msgid "Best move"
 msgstr "Mejor jugada"
 
@@ -1540,3 +1537,21 @@ msgstr "No se pudo abrir este capítulo. Tus cambios siguen en el editor."
 
 msgid "Delete from here"
 msgstr "Borrar desde aquí"
+
+msgid "Undo"
+msgstr "Deshacer"
+
+msgid "Redo"
+msgstr "Rehacer"
+
+msgid "Promote to main line"
+msgstr "Convertir en línea principal"
+
+msgid "Move annotation"
+msgstr "Anotación de la jugada"
+
+msgid "None"
+msgstr "Ninguna"
+
+msgid "Waiting for a connection to sync your progress."
+msgstr "Esperando conexión para sincronizar tu progreso."

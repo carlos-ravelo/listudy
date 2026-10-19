@@ -13,13 +13,15 @@ const data = { chapters: [
 ] };
 const promotionPicker = fs.readFileSync(path.join(__dirname, '../../../lib/listudy_web/templates/component/promotion_picker.html.eex'), 'utf8')
     .replace(/<%=\s*dgettext[^%]*%>/g, expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
-const deleteButton = fs.readFileSync(path.join(__dirname, '../../../lib/listudy_web/templates/study/editor.html.eex'), 'utf8')
-    .match(/<button[^>]+id="editor_delete_move"[\s\S]*?<\/button>/)[0]
-    .replace(/<%=\s*dgettext[^%]*%>/g, expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
+const editorTemplate = fs.readFileSync(path.join(__dirname, '../../../lib/listudy_web/templates/study/editor.html.eex'), 'utf8');
+const translate = source => source.replace(/<%=\s*dgettext[^%]*%>/g, expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
+const editorControls = ['editor_delete_move', 'editor_undo', 'editor_redo', 'editor_promote'].map(id =>
+    translate(editorTemplate.match(new RegExp('<button[^>]+id="' + id + '"[\\s\\S]*?</button>'))[0])).join('');
+const annotationControl = translate(editorTemplate.match(/<select id="editor_annotation"[\s\S]*?<\/select>/)[0]);
 const html = `<!doctype html><html class="blue cburnett"><head>
 <meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/chessground.css"></head><body><main class="container">
-<section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)" data-editor="${escape(JSON.stringify({chapters: data.chapters.map(({title}) => ({title})), chapter_index: 0, chapter: data.chapters[0]}))}"
+<section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)" @keydown.window="navigateKey($event)" data-editor="${escape(JSON.stringify({chapters: data.chapters.map(({title}) => ({title})), chapter_index: 0, chapter: data.chapters[0]}))}"
 data-revision="original" data-save-url="/save" data-load-url="/chapter" data-loading="Loading" data-load-error="Load failed" data-color="white" data-start="Start"
 data-variation="Variation" data-discard-prompt="Discard?" data-saving="Saving"
 data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-invalid-move="Illegal">
@@ -29,7 +31,7 @@ data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-inv
 <button id="editor_discard" :disabled="saving || !dirty" @click="discard()">Discard</button>
 <div class="chapter-editor-layout"><div><div class="chapter-editor-board"><div id="editor_board" class="cg-wrap" x-ref="board"></div>${promotionPicker}</div>
 <button id="editor_previous" :disabled="saving || !hasPrevious" @click="previous()">Previous</button><button id="editor_next" :disabled="saving || !hasNext" @click="next()">Next</button>
-${deleteButton}
+${editorControls}${annotationControl}
 </div>
 <div><div id="editor_moves" x-ref="moves"></div><textarea id="editor_comment" x-model="comment" :disabled="saving" @input="updateComment($event.target.value)"></textarea></div></div>
 <p id="editor_status" role="status" x-text="status"></p></section></main><script src="/js/study_editor.js"></script></body></html>`;
@@ -78,21 +80,53 @@ ${deleteButton}
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
         await page.goto(`http://127.0.0.1:${server.address().port}`);
+        const state = () => page.evaluate(() => { const c = Alpine.$data(document.getElementById('chapter_editor')); return {pgn: c.exportPgn, dirty: c.dirty, canUndo: c.canUndo, canRedo: c.canRedo, canPromote: c.canPromote}; });
         await page.waitForSelector('cg-board');
         async function square(name) {
             const box = await page.locator('cg-board').boundingBox();
             await page.mouse.click(box.x + (name.charCodeAt(0) - 97 + .5) * box.width / 8,
                 box.y + (8 - Number(name[1]) + .5) * box.height / 8);
         }
+        assert.equal(await page.locator('#editor_undo').isDisabled(), true);
+        assert.equal(await page.locator('#editor_redo').isDisabled(), true);
+        assert.equal(await page.locator('#editor_annotation').isDisabled(), true);
         assert.equal(await page.locator('#editor_delete_move').isDisabled(), true);
         await square('e2'); await square('e4');
         await page.click('#editor_delete_move');
         assert.equal(await page.locator('#editor_moves').textContent(), 'Start');
         assert.equal(await page.locator('#editor_delete_move').isDisabled(), true);
         assert.equal(await page.locator('#editor_save').isDisabled(), false);
+        await page.click('#editor_undo');
+        assert.ok((await page.locator('#editor_moves').textContent()).includes('e5'));
+        await page.click('#editor_redo');
+        assert.equal(await page.locator('#editor_moves').textContent(), 'Start');
         page.once('dialog', dialog => dialog.accept());
         await page.click('#editor_discard');
         assert.ok((await page.locator('#editor_moves').textContent()).includes('e5'));
+        assert.equal(await page.locator('#editor_undo').isDisabled(), true);
+        await square('e2'); await square('e4'); await square('c7'); await square('c5');
+        await page.selectOption('#editor_annotation', '6');
+        assert.ok((await page.locator('#editor_moves').textContent()).includes('c5?!'));
+        await page.click('#editor_undo');
+        assert.equal(await page.inputValue('#editor_annotation'), '0');
+        await page.click('#editor_redo');
+        assert.equal(await page.inputValue('#editor_annotation'), '6');
+        await page.click('#editor_promote');
+        const main = await state();
+        assert.ok(main.pgn.indexOf('c5') < main.pgn.indexOf('e5'));
+        assert.equal(main.canPromote, false);
+        await page.click('#editor_undo');
+        assert.equal((await state()).canPromote, true);
+        await page.evaluate(() => document.activeElement.blur());
+        await page.keyboard.press('Control+Shift+z');
+        assert.equal((await state()).canPromote, false);
+        await page.keyboard.press('Control+z');
+        assert.equal((await state()).canPromote, true);
+        await page.evaluate(() => window.addEventListener('keydown', e => {if (e.key.toLowerCase() === 'z') window.nativeUndoPrevented = e.defaultPrevented;}));
+        await page.locator('#editor_comment').press('Control+z');
+        assert.equal(await page.evaluate(() => window.nativeUndoPrevented), false);
+        page.once('dialog', dialog => dialog.accept());
+        await page.click('#editor_discard');
         await square('e2'); await square('e4');
         await square('c7'); await square('c5');
         await square('g1'); await square('f3');
@@ -130,11 +164,21 @@ ${deleteButton}
         await square('c5');
         await page.fill('#editor_comment', 'New Sicilian comment');
         conflict = false;
+        await page.selectOption('#editor_annotation', '6');
+        await page.click('#editor_promote');
         await page.click('#editor_save');
         await page.waitForFunction(() => document.getElementById('editor_status').textContent === 'Saved');
+        assert.equal(saved.tree.root[0].children[0].move, 'c5');
+        assert.equal(saved.tree.root[0].children[0].nags[0], 6);
+        assert.equal(saved.tree.root[0].children[1].move, 'e5');
         assert.equal(await page.locator('#editor_save').isDisabled(), true);
+        await page.click('#editor_undo');
+        assert.equal((await state()).dirty, true);
+        await page.click('#editor_redo');
+        assert.equal((await state()).dirty, false);
         await page.selectOption('#editor_chapter', '1');
         await page.waitForFunction(() => Alpine.$data(document.getElementById('chapter_editor')).chapter === 1);
+        assert.equal(await page.locator('#editor_undo').isDisabled(), true);
         await square('a7'); await square('a8');
         await page.waitForSelector('[data-promotion-picker]', { state: 'visible' });
         assert.equal(await page.locator('#editor_delete_move').isDisabled(), true);

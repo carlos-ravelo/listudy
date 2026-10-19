@@ -537,9 +537,6 @@ msgstr "Mostrar destinos legales (ayuda)"
 msgid "Difficulty changes apply to the next attempt. Three solves without mistakes or help increase adaptive difficulty."
 msgstr "Los cambios de dificultad se aplican al próximo intento. Tres ejercicios resueltos sin errores ni ayuda aumentan la dificultad adaptativa."
 
-msgid "Progress is saved on this device. Immediate retries count as rehearsal."
-msgstr "El progreso se guarda en este dispositivo. Los reintentos inmediatos cuentan como repaso."
-
 msgid "Picture the missing pieces using the list, then play the winning moves."
 msgstr "Imagina las piezas que faltan con ayuda de la lista y encuentra las jugadas ganadoras."
 

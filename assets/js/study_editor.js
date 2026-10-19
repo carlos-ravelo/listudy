@@ -22,6 +22,7 @@ Alpine.data('chapterEditor', () => {
         draft: false, trainingKind: 'repertoire', studyColor: 'white', privateStudy: true,
         setupMode: false, selectedPiece: 'wP', positionTurn: 'w', setupPieces: [],
         analysisEnabled: false, analysisText: '',
+        canUndo: false, canRedo: false, canPromote: false, annotation: 0,
 
         init() {
             config = this.$el.dataset;
@@ -122,6 +123,9 @@ Alpine.data('chapterEditor', () => {
         },
 
         syncPgn(force = false) {
+            this.canUndo = editor.canUndo;
+            this.canRedo = editor.canRedo;
+            this.canPromote = editor.canPromote;
             const snapshot = JSON.stringify([this.chapter, editor.tree]);
             if (force || snapshot !== pgnSnapshot) {
                 this.exportPgn = editor.pgn();
@@ -139,6 +143,7 @@ Alpine.data('chapterEditor', () => {
             this.title = editor.tree.title;
             this.dirty = editor.dirty;
             this.hasPrevious = editor.path.length > 0;
+            this.annotation = this.hasPrevious ? (editor.node().nags || []).find(nag => nag >= 1 && nag <= 6) || 0 : 0;
             this.hasNext = (this.hasPrevious ? editor.node().children : editor.tree.root).length > 0;
             ground.set({
                 fen: position.fen(), turnColor: color, check: position.in_check(),
@@ -199,13 +204,20 @@ Alpine.data('chapterEditor', () => {
         previous() { this.selectPosition(editor.path.slice(0, -1)); },
         next() { this.selectPosition([...editor.path, 0]); },
 
-        deleteFromHere() {
+        applyEdit(operation, ...args) {
             if (this.setupMode || this.saving || this.loading || this.pendingPromotion) return;
-            if (!editor.deleteFromHere()) return;
+            if (this.pgnEdited && !window.confirm(config.discardPrompt)) return;
+            if (!editor[operation](...args)) return;
+            this.editingTitle = false;
             this.syncPgn(true);
             this.status = editor.dirty ? config.unsaved : '';
             this.refresh();
         },
+        deleteFromHere() { this.applyEdit('deleteFromHere'); },
+        undo() { this.applyEdit('undo'); },
+        redo() { this.applyEdit('redo'); },
+        promoteVariation() { this.applyEdit('promoteVariation'); },
+        setAnnotation(value) { this.applyEdit('setAnnotation', Number(value)); },
 
         copyCurrentMove(event) {
             if (event.defaultPrevented || !event.clipboardData || window.getSelection()?.toString()) return;
@@ -225,9 +237,18 @@ Alpine.data('chapterEditor', () => {
                 }
                 return;
             }
-            if (this.saving || this.loading || event.defaultPrevented || event.isComposing ||
-                event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+            if (this.setupMode || this.saving || this.loading || event.defaultPrevented || event.isComposing || event.altKey) return;
             if (event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+            if (event.ctrlKey || event.metaKey) {
+                const key = event.key.toLowerCase();
+                if (key === 'z' || key === 'y') {
+                    event.preventDefault();
+                    if (key === 'y' || event.shiftKey) this.redo();
+                    else this.undo();
+                }
+                return;
+            }
+            if (event.shiftKey) return;
             if (event.key === 'ArrowLeft' && this.hasPrevious) {
                 event.preventDefault();
                 this.previous();
@@ -368,11 +389,9 @@ Alpine.data('chapterEditor', () => {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || config.saveError);
                 if (this.draft) { this.dirty = false; this.pgnEdited = false; window.location.assign(result.url); return; }
-                const path = editor.path;
                 config.revision = result.revision;
-                currentChapter = { ...currentChapter, ...editor.tree };
-                editor = createChapterEditor(currentChapter);
-                editor.select(path);
+                currentChapter = JSON.parse(JSON.stringify({ ...currentChapter, ...editor.tree }));
+                editor.markSaved();
                 this.options[this.chapter].title = currentChapter.title;
                 this.saving = false;
                 this.status = config.saved;

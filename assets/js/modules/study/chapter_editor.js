@@ -3,8 +3,39 @@ const Chess = ChessModule.Chess || ChessModule;
 
 export function createChapterEditor(chapter) {
     const tree = JSON.parse(JSON.stringify({ title: chapter.title, root: chapter.root, comment: chapter.comment }));
-    const original = JSON.stringify(tree);
+    let original = JSON.stringify(tree);
     let path = [];
+    const undoStack = [], redoStack = [];
+    let typing;
+
+    function restore(change, direction) {
+        for (const field of change.fields) {
+            const value = field[direction];
+            if (value === undefined) delete field.target[field.key];
+            else field.target[field.key] = value;
+        }
+        path = [...(direction === 'before' ? change.beforePath : change.afterPath)];
+        if (change.structural) tree.root = [...tree.root];
+    }
+
+    function edit(fields, nextPath = path, structural = false, coalesce = false) {
+        fields = fields.filter(field => field.target[field.key] !== field.after);
+        if (!fields.length) return false;
+        const previous = undoStack[undoStack.length - 1];
+        if (coalesce && previous && typing === previous && fields.length === 1 &&
+            previous.fields[0].target === fields[0].target && previous.fields[0].key === fields[0].key) {
+            previous.fields[0].after = fields[0].after;
+            restore(previous, 'after');
+        } else {
+            const change = {fields: fields.map(field => ({...field, before: field.target[field.key]})),
+                beforePath: [...path], afterPath: [...nextPath], structural};
+            restore(change, 'after');
+            undoStack.push(change);
+        }
+        redoStack.length = 0;
+        typing = coalesce ? undoStack[undoStack.length - 1] : null;
+        return true;
+    }
 
     function node(at = path) {
         let current = tree;
@@ -47,16 +78,16 @@ export function createChapterEditor(chapter) {
                 if (!move) throw new Error('invalidPgn');
                 const main = { move: move.san, comment: comments(first.comments),
                     starting_comment: startingComment,
-                    nags: (first.nags || []).map(nag => Number(nag.replace('$', ''))),
+                    nags: [...new Set([...(first.nags || []).map(nag => Number(nag.replace('$', ''))),
+                        ...({'!': [1], '?': [2], '!!': [3], '??': [4], '!?': [5], '?!': [6]}[first.move.match(/[!?]+$/)?.[0]] || [])])],
                     children: line(rest, board.fen()) };
                 return [main, ...(first.ravs || []).flatMap(variation =>
                     line(variation.moves, fen, comments(variation.comments)))];
             }
             const root = line(game.moves, initial.fen());
-            tree.title = headers.Event || tree.title;
-            tree.comment = comments(game.comments);
-            tree.root = root;
-            path = [];
+            edit([{target: tree, key: 'title', after: headers.Event || tree.title},
+                {target: tree, key: 'comment', after: comments(game.comments)},
+                {target: tree, key: 'root', after: root}], [], true);
         },
         pgn() {
             const headers = { ...(chapter.headers || {}), Event: tree.title || '', Result: chapter.headers?.Result || '*' };
@@ -85,22 +116,64 @@ export function createChapterEditor(chapter) {
         },
         get path() { return [...path]; },
         get dirty() { return JSON.stringify(tree) !== original; },
+        get canUndo() { return undoStack.length > 0; },
+        get canRedo() { return redoStack.length > 0; },
+        get canPromote() { return path.some(index => index > 0); },
+        markSaved() { original = JSON.stringify(tree); typing = null; },
+        undo() {
+            const change = undoStack.pop();
+            if (!change) return false;
+            restore(change, 'before');
+            redoStack.push(change);
+            typing = null;
+            return true;
+        },
+        redo() {
+            const change = redoStack.pop();
+            if (!change) return false;
+            restore(change, 'after');
+            undoStack.push(change);
+            typing = null;
+            return true;
+        },
         node,
         position,
         select(at) {
             position(at);
             path = [...at];
+            typing = null;
         },
-        setComment(comment) { node().comment = comment; },
-        setTitle(title) { tree.title = title; },
+        setComment(comment) { edit([{target: node(), key: 'comment', after: comment}], path, false, true); },
+        setTitle(title) { edit([{target: tree, key: 'title', after: title}], path, false, true); },
+        setAnnotation(value) {
+            if (!path.length || !Number.isInteger(value) || value < 0 || value > 6) return false;
+            const current = node();
+            const nags = (current.nags || []).filter(nag => nag < 1 || nag > 6);
+            if (value) nags.unshift(value);
+            if (JSON.stringify(nags) === JSON.stringify(current.nags || [])) return false;
+            return edit([{target: current, key: 'nags', after: nags}], path, true);
+        },
+        promoteVariation() {
+            if (!path.some(index => index > 0)) return false;
+            const fields = [];
+            let parent = tree;
+            for (let depth = 0; depth < path.length; depth++) {
+                const key = depth ? 'children' : 'root';
+                const siblings = parent[key];
+                const selected = siblings[path[depth]];
+                if (path[depth]) fields.push({target: parent, key,
+                    after: [selected, ...siblings.filter((_, index) => index !== path[depth])]});
+                parent = selected;
+            }
+            return edit(fields, path.map(() => 0), true);
+        },
         deleteFromHere() {
             if (!path.length) return false;
             const parentPath = path.slice(0, -1);
-            const children = parentPath.length ? node(parentPath).children : tree.root;
-            children.splice(path[path.length - 1], 1);
-            tree.root = [...tree.root];
-            path = parentPath;
-            return true;
+            const parent = node(parentPath);
+            const key = parentPath.length ? 'children' : 'root';
+            return edit([{target: parent, key,
+                after: parent[key].filter((_, index) => index !== path[path.length - 1])}], parentPath, true);
         },
         play(from, to, promotion = 'q') {
             const board = position();
@@ -111,10 +184,13 @@ export function createChapterEditor(chapter) {
             let index = children.findIndex(child => child.move === move.san);
             if (index < 0) {
                 index = children.length;
-                children.push({ move: move.san, comment: '', starting_comment: '', nags: [], children: [] });
-                tree.root = [...tree.root];
+                edit([{target: parent, key: path.length ? 'children' : 'root',
+                    after: [...children, { move: move.san, comment: '', starting_comment: '', nags: [], children: [] }]}],
+                [...path, index], true);
+            } else {
+                path = [...path, index];
+                typing = null;
             }
-            path = [...path, index];
             return true;
         }
     };

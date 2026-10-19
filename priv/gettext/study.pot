@@ -1095,9 +1095,6 @@ msgstr ""
 msgid "Practice chain complete!"
 msgstr ""
 
-msgid "Progress is saved on this device. Cloud sync will retry when a connection is available."
-msgstr ""
-
 #, elixir-autogen, elixir-format
 msgid "Import repertoire"
 msgstr ""

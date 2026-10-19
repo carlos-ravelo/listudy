@@ -253,7 +253,7 @@
   i18n.smart_chain_complete = "<%= dgettext "study", "Practice chain complete!" %>";
   i18n.progress_storage_error = "<%= dgettext "study", "Progress could not be saved on this device. Keep this page open and connect to synchronize your progress." %>";
   i18n.progress_sync_error = "<%= dgettext "study", "Progress could not be synchronized. Your local copy is retained; check that you are signed in to the correct account." %>";
-  i18n.progress_sync_offline = "<%= dgettext "study", "Progress is saved on this device. Cloud sync will retry when a connection is available." %>";
+  i18n.progress_sync_offline = "<%= dgettext "study", "Waiting for a connection to sync your progress." %>";
   i18n.smart_review = "<%= dgettext "study", "Smart: reviewing a due position" %>";
   i18n.smart_long_review = "<%= dgettext "study", "Smart: checking a longer line" %>";
   i18n.smart_complete = "<%= dgettext "study", "Smart session complete for now" %>";
