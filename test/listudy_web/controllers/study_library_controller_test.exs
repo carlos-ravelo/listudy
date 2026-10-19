@@ -146,6 +146,60 @@ defmodule ListudyWeb.StudyLibraryControllerTest do
            |> response(403)
   end
 
+  test "bulk visibility updates owned studies and preserves library organization", %{
+    owner: owner,
+    studies: [first, second, third]
+  } do
+    operation(owner, %{action: "move", study_ids: [first.id], location: "library"})
+    |> json_response(200)
+
+    before = StudyLibrary.fetch(owner.id)
+
+    for private <- [false, true] do
+      result =
+        operation(owner, %{
+          action: "set_privacy",
+          study_ids: ["#{first.id}", second.id, first.id],
+          private: private
+        })
+        |> json_response(200)
+
+      assert result["data"] == before
+      assert Repo.get!(Listudy.Studies.Study, first.id).private == private
+      assert Repo.get!(Listudy.Studies.Study, second.id).private == private
+      assert Repo.get!(Listudy.Studies.Study, third.id).private
+      assert Repo.get!(Listudy.Studies.Study, first.id).title == first.title
+    end
+  end
+
+  test "bulk visibility rejects favorites and invalid input without partial writes", %{
+    owner: owner,
+    studies: [first | _],
+    foreign: foreign
+  } do
+    Repo.insert!(%Listudy.StudyFavorites.StudyFavorite{user_id: owner.id, study_id: foreign.id})
+
+    for ids <- [[first.id, foreign.id], [first.id, 0], [first.id, "invalid"], [first.id, -1]] do
+      assert operation(owner, %{action: "set_privacy", study_ids: ids, private: false})
+             |> response(403)
+
+      assert Repo.get!(Listudy.Studies.Study, first.id).private
+      refute Repo.get!(Listudy.Studies.Study, foreign.id).private
+    end
+
+    for params <- [
+          %{study_ids: [], private: false},
+          %{study_ids: List.duplicate(first.id, 501), private: false},
+          %{study_ids: [first.id], private: "false"},
+          %{study_ids: [first.id], private: nil},
+          %{study_ids: [first.id]},
+          %{study_ids: "invalid", private: false}
+        ] do
+      assert operation(owner, Map.put(params, :action, "set_privacy")) |> response(422)
+      assert Repo.get!(Listudy.Studies.Study, first.id).private
+    end
+  end
+
   test "library page renders organization and avoids duplicating owned favorites", %{
     owner: owner,
     studies: [first | _]

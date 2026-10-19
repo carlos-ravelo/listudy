@@ -79,6 +79,11 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         library.querySelectorAll('[data-library-bulk-location], [data-library-bulk-group]').forEach(button => {
             button.disabled = busy || selected.size === 0;
         });
+        const ownsSelection = rows.filter(row => selected.has(row.dataset.studyId)).every(row => row.dataset.editable === 'true');
+        library.querySelectorAll('[data-library-bulk-privacy]').forEach(button => {
+            button.disabled = busy || selected.size === 0 || !ownsSelection;
+        });
+        library.querySelector('[data-library-bulk-edit-help]').hidden = ownsSelection;
         rows.forEach(row => { row.querySelector('[data-library-check]').checked = selected.has(row.dataset.studyId); });
     }
     function filter(writeUrl = true) {
@@ -173,11 +178,17 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             if (!response.ok || !result.data) throw new Error(result.error || labels.failed);
             state = result.data;
             library.dataset.libraryState = JSON.stringify(state);
+            if (operation.action === 'set_privacy') {
+                rows.filter(row => operation.study_ids.includes(row.dataset.studyId)).forEach(row => {
+                    row.dataset.private = String(operation.private);
+                    row.querySelector('[data-library-visibility]').textContent = operation.private ? labels.private : labels.public;
+                });
+            }
             selected.clear();
             groupOptions();
             renderGroups();
             filter();
-            message(labels.saved);
+            message(operation.action === 'set_privacy' ? labels.updated : labels.saved);
             return true;
         } catch (error) {
             message(error instanceof TypeError ? labels.failed : error.message || labels.failed, true);
@@ -299,6 +310,14 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         if (await mutate({ action: 'move', study_ids: [...selected], location: button.dataset.libraryBulkLocation })) library.querySelector('.study-library-manage > summary').focus();
     });
     library.querySelector('[data-library-bulk-group]').onclick = () => showMove(selected);
+    const bulkEdit = library.querySelector('.study-library-bulk-edit');
+    bulkEdit.querySelector('summary').onclick = () => closeMenus(bulkEdit);
+    library.querySelectorAll('[data-library-bulk-privacy]').forEach(button => button.onclick = async () => {
+        if (await mutate({ action: 'set_privacy', study_ids: [...selected], private: button.dataset.libraryBulkPrivacy === 'true' })) {
+            closeMenus();
+            bulkEdit.querySelector('summary').focus();
+        }
+    });
     library.querySelector('[data-library-manage-groups]').onclick = showGroups;
     library.querySelector('[data-library-create-group]').onsubmit = async event => {
         event.preventDefault();

@@ -142,6 +142,40 @@ defmodule Listudy.StudyLibrary do
     end
   end
 
+  defp apply_operation(
+         data,
+         %{"action" => "set_privacy", "study_ids" => ids, "private" => private},
+         user_id
+       )
+       when is_list(ids) and length(ids) in 1..500 and is_boolean(private) do
+    ids = Enum.map(ids, &study_id/1) |> Enum.uniq()
+
+    if Enum.any?(ids, &is_nil/1) do
+      {:error, :forbidden}
+    else
+      studies =
+        Repo.all(
+          from s in Studies.Study,
+            where: s.user_id == ^user_id and s.id in ^ids,
+            order_by: s.id,
+            lock: "FOR UPDATE"
+        )
+
+      if length(studies) == length(ids) do
+        Enum.each(studies, fn study ->
+          case Studies.update_study(study, %{private: private}) do
+            {:ok, _} -> :ok
+            {:error, _} -> Repo.rollback(:invalid)
+          end
+        end)
+
+        {:ok, data}
+      else
+        {:error, :forbidden}
+      end
+    end
+  end
+
   defp apply_operation(data, %{"action" => "create_group", "name" => name}, _) do
     if map_size(data["groups"]) < 50 and valid_name?(data["groups"], name) do
       {:ok, put_in(data, ["groups", Ecto.UUID.generate()], String.trim(name))}

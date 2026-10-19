@@ -26,6 +26,7 @@ ids.forEach((id, i) => state.studies[id] = { location: 'daily', group: ['white',
 references.forEach((_, i) => state.studies[2000+i] = { location: 'library', group: i % 2 ? 'black' : 'white' });
 const initial = structuredClone(state);
 let failNext = false;
+const visibility = {};
 const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 (async () => {
  const server = http.createServer((req, res) => {
@@ -53,6 +54,7 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
             if('location' in op)state.studies[id].location=op.location;
             if('group' in op)state.studies[id].group=op.group;
         }
+        if(op.action==='set_privacy') for(const id of op.study_ids) visibility[id] = op.private;
         if(op.action==='create_group')state.groups['group-'+Object.keys(state.groups).length]=op.name;
         if(op.action==='rename_group')state.groups[op.group]=op.name;
         if(op.action==='delete_group'){
@@ -88,6 +90,30 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     await page.locator('[data-library-view="daily"]').click();
     await page.locator('.study-library-manage > summary').click();
     await page.locator('[data-library-organize]').click();
+    await page.locator('[data-library-select-all]').check();
+    await page.locator('.study-library-bulk-edit > summary').click();
+    await page.locator('[data-library-bulk-privacy="false"]').click();
+    await page.waitForFunction(()=>document.querySelector('[data-library-save-status]').textContent==='Studies updated.');
+    assert(ids.every(id=>visibility[id]===false));
+    assert.equal(await visible.locator('[data-library-visibility]').allTextContents().then(labels=>labels.every(label=>label==='Public')),true);
+    await page.locator('[data-library-select-all]').check();
+    await visible.last().evaluate(row=>row.dataset.editable='false');
+    await visible.first().locator('[data-library-check]').uncheck();
+    assert.equal(await page.locator('[data-library-bulk-privacy="true"]').isDisabled(),true);
+    assert.equal(await page.locator('[data-library-bulk-edit-help]').isVisible(),true);
+    await visible.last().evaluate(row=>row.dataset.editable='true');
+    await visible.first().locator('[data-library-check]').check();
+    await page.locator('.study-library-bulk-edit > summary').click();
+    failNext=true;
+    await page.locator('[data-library-bulk-privacy="true"]').click();
+    await page.waitForFunction(()=>document.querySelector('[data-library-save-status]').classList.contains('is-error'));
+    assert(ids.every(id=>visibility[id]===false));
+    assert((await page.locator('[data-library-selected]').textContent()).startsWith('3 '));
+    await page.locator('[data-library-bulk-privacy="true"]').click();
+    await page.waitForFunction(()=>document.querySelector('[data-library-save-status]').textContent==='Studies updated.');
+    assert(ids.every(id=>visibility[id]===true));
+    assert.equal(await visible.locator('[data-library-visibility]').allTextContents().then(labels=>labels.every(label=>label==='Private')),true);
+
     await page.locator('[data-library-select-all]').check();
     await visible.first().locator('[data-library-check]').uncheck();
     assert((await page.locator('[data-library-selected]').textContent()).startsWith('2 '));

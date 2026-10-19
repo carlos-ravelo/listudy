@@ -115,3 +115,8 @@
 @media (max-width: 600px) {
   .study-library-manage > summary { width: 44px; padding: 0; }
 }
+
+.study-library-bulk-edit { flex: 0 0 auto; margin-inline-start: auto; }
+.study-library-bulk-edit > summary { width: auto; padding: 0 10px; border: 1px solid var(--library-divider); font-size: 13px; }
+.study-library-bulk-edit-help { flex-basis: 100%; color: var(--secondary-color); }
+.study-library-visibility { font-size: 11px; line-height: 1.5; color: var(--secondary-color); }

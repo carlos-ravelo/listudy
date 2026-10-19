@@ -1,7 +1,7 @@
 <% organizable = Map.get(assigns, :organizable, true) %>
 <ul class="study-library-list">
   <%= for study <- @studies do %>
-    <li class="study-library-row" data-library-row data-study-id="<%= study.id %>" data-kind="<%= study.training_kind %>" data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>">
+    <li class="study-library-row" data-library-row data-editable="<%= @editable %>" data-private="<%= study.private %>" data-study-id="<%= study.id %>" data-kind="<%= study.training_kind %>" data-color="<%= study.color %>" data-search="<%= study.title %> <%= study.description %>">
 <%= if organizable do %>
       <label class="study-library-select" data-library-select hidden><input type="checkbox" data-library-check aria-label="<%= dgettext("study", "Select study") %>: <%= study.title %>"></label>
 <% end %>
@@ -14,6 +14,7 @@
 <%= if organizable do %>
         <span class="study-library-description"><%= study.description %></span>
         <span class="study-library-group-label" data-library-row-group hidden></span>
+        <%= if @editable do %><span class="study-library-visibility" data-library-visibility><%= if study.private, do: dgettext("study", "Private"), else: dgettext("study", "Public") %></span><% end %>
 <% end %>
         <span class="study-library-practice"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M5 3l8 5-8 5z"/></svg><%= gettext("Practice") %></span>
       </a>

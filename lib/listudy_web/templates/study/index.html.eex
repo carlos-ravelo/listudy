@@ -9,6 +9,7 @@
        edit: dgettext("study", "Edit"), cancel: dgettext("study", "Cancel"),
        rename: dgettext("study", "Group name"), organize: dgettext("study", "Organize"), done: dgettext("study", "Done organizing"),
        toLibrary: dgettext("study", "Move to Library"), toDaily: dgettext("study", "Use daily"),
+       updated: dgettext("study", "Studies updated."), private: dgettext("study", "Private"), public: dgettext("study", "Public"),
        saved: dgettext("study", "Organization saved."), saving: dgettext("study", "Saving…"),
        failed: dgettext("study", "Could not save your organization. Try again."),
        removeGroup: copy.remove_group,
@@ -91,6 +92,14 @@
       <button type="button" data-library-bulk-location="library" disabled><%= dgettext("study", "Move to Library") %></button>
       <button type="button" data-library-bulk-location="daily" disabled><%= dgettext("study", "Use daily") %></button>
       <button type="button" data-library-bulk-group disabled><%= dgettext("study", "Move to group…") %></button>
+      <details class="study-library-menu study-library-bulk-edit">
+        <summary><%= dgettext("study", "Edit selected") %></summary>
+        <div class="study-library-menu-content">
+          <button type="button" data-library-bulk-privacy="true" disabled><%= dgettext("study", "Make private") %></button>
+          <button type="button" data-library-bulk-privacy="false" disabled><%= dgettext("study", "Make public") %></button>
+        </div>
+      </details>
+      <span class="study-library-bulk-edit-help" data-library-bulk-edit-help hidden><%= dgettext("study", "Select only your own studies to change visibility.") %></span>
     </div>
     <p class="study-library-save-status" data-library-save-status role="status" aria-live="polite"></p>
     <% end %>
