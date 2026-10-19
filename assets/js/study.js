@@ -1067,7 +1067,9 @@ function start_training() {
     const start_base_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
     
     // Sync color dynamically for custom positions (e.g., tactical puzzles)
-    if (base_fen !== start_base_fen) {
+    if (tacticsCollection && trees[chapter].user_color) {
+        color = trees[chapter].user_color;
+    } else if (base_fen !== start_base_fen) {
         color = turn_color(chess);
     }
     
@@ -1123,7 +1125,7 @@ function setup_trees() {
     try {
         const parsedpgn = pgnParser.parse(pgn);
         annotate_pgn(parsedpgn);
-        trees = generate_move_trees(parsedpgn);
+        trees = generate_move_trees(parsedpgn, { tactics: tacticsCollection });
     } catch(caught_error) {
         console.log(caught_error);
         if (caught_error.location) {
@@ -1143,7 +1145,8 @@ function setup_trees() {
     chapterMoveCatalogs = trees.map(tree => {
         const fen = tree.headers.FEN || standardFen;
         const customPosition = fen.split(" ").slice(0, 4).join(" ") !== standardFen;
-        return chapterMoveCatalog(tree.root, customPosition || studyColor === "white");
+        const playerStarts = tree.user_color ? !tree.has_introductory_move : customPosition || studyColor === "white";
+        return chapterMoveCatalog(tree.root, playerStarts);
     });
 }
 
@@ -1747,7 +1750,7 @@ async function main() {
     chapterReviews = readChapterReviews(StorageAdapter.getItem(chapter_reviews_key()));
     if (bindChapterIdentities(chapterStats, trees)) StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     if (bindChapterIdentities(chapterReviews, trees)) StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
-    smartCatalog = cachedPositionCatalog(trees, studyColor, tacticsCollection ? 'tactics-mainline-v1|' + pgn : pgn);
+    smartCatalog = cachedPositionCatalog(trees, studyColor, tacticsCollection ? 'tactics-mainline-v2|' + pgn : pgn);
     let previousTrees = [];
     try { previousTrees = JSON.parse(await StorageAdapter.legacyTree(study_id + '_tree') || '[]'); } catch (_) {}
     if (!Array.isArray(previousTrees)) previousTrees = [];

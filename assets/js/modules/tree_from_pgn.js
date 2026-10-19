@@ -62,7 +62,7 @@ function generateNodes(moveLine) {
 
 // creates a tree from a parsed pgn from
 // https://github.com/kevinludwig/pgn-parser
-function generate_move_trees(parsedPGN) {
+function generate_move_trees(parsedPGN, { tactics = false } = {}) {
     console.log("parsedPGN:", parsedPGN);
     let trees = []
     for (const [sourceIndex, game] of parsedPGN.entries()) {
@@ -77,6 +77,15 @@ function generate_move_trees(parsedPGN) {
         tree.first_variation = game.first_variation;
         for (let header of game.headers) {
             tree.headers[header.name] = header.value;
+        }
+        if (tactics) {
+            const active = tree.headers.FEN?.trim().split(/\s+/)[1] === 'b' ? 'black' : 'white';
+            const declared = tree.headers.PlyCount;
+            const count = /^\d+$/.test(declared || '') && Number.isSafeInteger(Number(declared)) && Number(declared) > 0
+                ? Number(declared) : game.moves.length;
+            // Puzzle convention: the solver makes the last mainline move.
+            tree.user_color = count % 2 === 1 ? active : active === 'white' ? 'black' : 'white';
+            tree.has_introductory_move = tree.user_color !== active;
         }
         trees.push(tree);
     }

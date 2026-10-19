@@ -40,7 +40,8 @@ function positionCatalog(trees, studyColor) {
         const initialFen = chess.fen();
         const custom = initialFen.split(' ').slice(0, 4).join(' ') !==
             'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
-        const player = custom ? chess.turn() : studyColor === 'white' ? 'w' : 'b';
+        const player = tree.user_color ? tree.user_color === 'white' ? 'w' : 'b'
+            : custom ? chess.turn() : studyColor === 'white' ? 'w' : 'b';
         function visit(nodes, path, moves, fen) {
             if (!nodes?.length) return;
             if (fen.split(' ')[1] === player) catalog.push({
