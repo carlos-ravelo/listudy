@@ -117,4 +117,41 @@ assert.ok(full.length > main.length);
 assert.equal(main.length, 2);
 assert.equal(context.cachedPositionCatalog(practice, 'white', 'tactics-mainline-v1|' + source, storage).length, 2);
 assert.equal(context.cachedPositionCatalog(reading, 'white', source, storage).length, full.length);
+// Classification must not leak to the parser or mutate its PGN input.
+const annotatedPgn = pgnParser.parse('[Event "Annotations"]\n1. e4! (1. d4 { $2 is just explanatory text }) e5 2. Nf3 *');
+context.annotate_pgn(annotatedPgn);
+const beforeParse = JSON.stringify(annotatedPgn);
+const repertoire = context.generate_move_trees(annotatedPgn);
+assert.equal(JSON.stringify(annotatedPgn), beforeParse);
+assert.equal(repertoire[0].root[1].is_alternative, undefined);
+assert.equal(repertoire[0].tactics_root, undefined);
+assert.equal(repertoire[0].root.length, 2, 'Keep all repertoire continuations');
+const classified = context.tacticsMainline(repertoire, 'white')[0];
+assert.equal(context.classifyTacticsMove(classified.tactics_root, 'e4').kind, 'mainline');
+assert.equal(context.classifyTacticsMove(classified.tactics_root, 'd4').kind, 'alternative');
+assert.equal(context.classifyTacticsMove(classified.tactics_root, 'c4').kind, 'invalid');
+assert.equal(classified.root.length, 1, 'Only the main line supplies hints and progress');
+assert.equal(repertoire[0].root[1].is_alternative, undefined, 'Reading remains untouched');
+
+for (const annotation of ['?', '??', '?!', ' $2', ' $4', ' $6']) {
+    const tree = context.tacticsMainline(parse(`1. e4 (1. d4${annotation} d5 2. c4) e5 2. Nf3 *`), 'white')[0];
+    const trap = context.classifyTacticsMove(tree.tactics_root, 'd4');
+    assert.equal(trap.kind, 'trap', annotation);
+    assert.equal(trap.node.is_alternative, false);
+    assert.equal(trap.node.children[0].is_bad_line, true);
+    assert.equal(trap.node.children[0].children[0].is_bad_line, true);
+    const badMain = context.tacticsMainline(parse(`1. e4${annotation} (1. d4 d5) e5 *`), 'white')[0];
+    assert.equal(context.classifyTacticsMove(badMain.tactics_root, 'e4').kind, 'trap', 'NAG overrides main line');
+}
+const delayed = context.tacticsMainline(parse('1. e4 (1. d4 d5 2. c4? e6) e5 2. Nf3 *'), 'white')[0];
+assert.equal(delayed.tactics_root[1].is_alternative, true, 'A later error must not condemn the initial move');
+assert.equal(delayed.tactics_root[1].children[0].is_bad_line, false);
+assert.equal(delayed.tactics_root[1].children[0].children[0].is_bad_line, true);
+assert.equal(context.tacticsCandidates(delayed, [0, 0])[0].move, 'Nf3');
+assert.equal(context.tacticsCandidates(delayed, [99]).length, 0);
+const blackTrap = context.tacticsMainline(parse('1. e4 e5 (1... c5? 2. Nf3) 2. Nf3 *'), 'black')[0];
+assert.equal(context.classifyTacticsMove(context.tacticsCandidates(blackTrap, [0]), 'c5').kind, 'trap');
+const opponentError = context.tacticsMainline(parse('1. e4 e5? 2. Nf3 *'), 'white')[0];
+assert.equal(opponentError.tactics_root[0].children[0].is_bad_line, false);
+
 console.log('Tactics main line, PGN annotations, reading, progress and catalog cache passed');

@@ -20,6 +20,7 @@ export function setupStudyVisualization({ storage, getStats, persist, assist, re
     const status = panel.querySelector('[role="status"]');
     const history = panel.querySelector('[data-visualization-history]');
     const frame = document.querySelector('.study-board-frame');
+    let presentingFailure = false;
     let reading = false, blocked = false, complete = false, run = null, opponent = '', previousActive = null;
     enabled.checked = storage.getItem('tactics_visualization') === 'true';
     const saved = storage.getItem('tactics_visualization_length');
@@ -34,9 +35,9 @@ export function setupStudyVisualization({ storage, getStats, persist, assist, re
         persist();
     }
     function render() {
-        const hidden = active() && !!run;
+        const hidden = active() && !!run && !presentingFailure;
         frame.classList.toggle('study-visualization-hidden', hidden);
-        panel.hidden = reading || blocked;
+        panel.hidden = reading || blocked || presentingFailure;
         difficulty.hidden = !active();
         action.hidden = !active();
         action.disabled = complete;
@@ -92,10 +93,13 @@ export function setupStudyVisualization({ storage, getStats, persist, assist, re
     window.addEventListener('pagehide', () => save(false));
     return {
         get active() { return active(); },
-        get hidden() { return active() && !!run; },
+        get hidden() { return active() && !!run && !presentingFailure; },
         render,
         reveal,
-        reset() { save(false); complete = false; opponent = ''; render(); },
+        previewFailure() { presentingFailure = true; render(); },
+        finishFailure() { save(false); render(); },
+        endFailure() { presentingFailure = false; render(); },
+        reset() { presentingFailure = false; save(false); complete = false; opponent = ''; render(); },
         block(value) { if (value) reveal(); blocked = value; render(); },
         decision(correct, assisted) {
             if (!run) return;

@@ -1,6 +1,7 @@
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
 import { chapterLearningProgress } from './modules/study/learning_progress.js';
-import { tacticsMainline } from './modules/study/tactics_mainline.js';
+import { presentTacticsTrap } from './modules/study/tactics_trap.js';
+import { tacticsMainline, tacticsCandidates, classifyTacticsMove } from './modules/study/tactics_mainline.js';
 import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { setupStudySessions } from './modules/study_sessions.js';
@@ -62,6 +63,7 @@ let spacedReviewQueue = [];
 let lineReviewRecorded = false;
 let lineEligibleForReview = true;
 let trainingSessionId = 0;
+let tacticsTrap = null;
 let reviewRefreshTimer;
 const studyColor = color;
 let weakChapterRunActive = false;
@@ -117,7 +119,7 @@ async function presentPracticePosition(path, count = 0) {
 }
 
 function replayContextFromStart() {
-    if (contextReplayActive || readMode || smartSession && !smartTarget ||
+    if (currentTacticsTrap() || contextReplayActive || readMode || smartSession && !smartTarget ||
         failedPositionRun?.transitioning || !smartSession && !failedPositionRun) return;
     const path = curr_move.slice(1);
     presentPracticePosition(path, path.length);
@@ -356,7 +358,46 @@ function possible_promotion(moves, san) {
     return "";
 }
 
+function currentTacticsTrap() {
+    if (tacticsTrap && (tacticsTrap.sessionId !== trainingSessionId || readMode || sparring?.active)) {
+        tacticsTrap = null;
+        visualization?.endFailure();
+        updateTacticsTrapUi();
+    }
+    return tacticsTrap;
+}
+
+function updateTacticsTrapUi() {
+    const actions = document.getElementById('study_tactics_failure');
+    if (actions) actions.hidden = !tacticsTrap?.failed;
+    document.getElementById('hints').disabled = !!tacticsTrap;
+}
+
+function renderTacticsTrap(board, move) {
+    ground.set({ animation: { enabled: true } });
+    ground_move(move, board);
+    ground.set({ fen: board.fen(), turnColor: turn_color(board), check: board.in_check(),
+        lastMove: [move.from, move.to], movable: { dests: new Map() } });
+}
+
+function retryTacticsTrap() {
+    if (!currentTacticsTrap()?.failed) return;
+    tacticsTrap = null;
+    visualization?.endFailure();
+    updateTacticsTrapUi();
+    clear_all_text();
+    setup_move();
+}
+
+function showTacticsSolution() {
+    if (!currentTacticsTrap()?.failed) return;
+    const path = curr_move.slice(1);
+    set_read_mode(true);
+    seek_read_move(path);
+}
+
 async function handle_move(orig, dest) {
+    if (currentTacticsTrap()) return;
     if (sparring?.active) { await sparring.move(orig, dest); return; }
     if (contextReplayActive) return;
     if (readMode) {
@@ -375,23 +416,45 @@ async function handle_move(orig, dest) {
 
     clear_all_text();
 
-    overlay_manager.mark_current_overlays_seen();
-
-    const introduction = smartIntroductionMove();
-    if (!introduction) total_moves += 1;
-
     let san = uci_to_san(chess, orig, dest);
 
     let possible_moves = tree_possible_moves(curr_move).map(m => m.move);
 
-    let possible_promotion_san = possible_promotion(possible_moves, san);
+    const candidates = tacticsCollection ? tacticsCandidates(practiceTrees[chapter], curr_move.slice(1)) : [];
+    let possible_promotion_san = possible_promotion(tacticsCollection ? candidates.map(node => node.move) : possible_moves, san);
     // the move automatically promoted to a queen, above we checked if it was
     // also possible to underpromote, if so we returned that san instead
     if (possible_promotion_san != "") {
         san = possible_promotion_san;
     }
 
-    const wasCorrect = possible_moves.indexOf(san) != -1;
+    const result = tacticsCollection ? classifyTacticsMove(candidates, san) : null;
+    if (result?.kind === 'alternative') {
+        ground_undo_last_move();
+        setup_move();
+        set_text(info_div, i18n.tactics_commented_variation);
+        return;
+    }
+    let trap = null;
+    if (result?.kind === 'trap') {
+        trap = { sessionId, failed: false, board: new Chess(chess.fen()) };
+        tacticsTrap = trap;
+        updateTacticsTrapUi();
+        ground.set({ movable: { dests: new Map() } });
+        ground.setShapes([]);
+        overlay_manager.clear_overlays();
+        document.getElementById(comments_div).innerHTML = '';
+        studyMoveNavigation.update();
+        visualization?.previewFailure();
+        const board = await presentTacticsTrap({ board: trap.board, node: result.node,
+            render: renderTacticsTrap, wait: sleep,
+            isCurrent: () => currentTacticsTrap() === trap });
+        if (!board || currentTacticsTrap() !== trap) return;
+    }
+    overlay_manager.mark_current_overlays_seen();
+    const introduction = trap ? null : smartIntroductionMove();
+    if (!introduction) total_moves += 1;
+    const wasCorrect = !trap && possible_moves.indexOf(san) != -1;
     visualization?.decision(wasCorrect, assistedPositions.has(currentPositionId()) || positionAttempts.has(currentPositionId()));
     if (wasCorrect && smartTarget && (smartTarget.route || smartTarget.expectedMove)) {
         const nextIndex = smartTarget.route?.[curr_move.length - 1];
@@ -459,6 +522,21 @@ async function handle_move(orig, dest) {
         recordPositionResult(currentFailures(), positionId, {
             path: curr_move.slice(1), fen: chess.fen(), played: san, expected: possible_moves
         }, wasCorrect, gradedRecovery && { ...gradedRecovery, recovered: gradedRecovery.recovered && !unresolvedContinuation });
+        if (trap) {
+            record_chapter_attempt(false, null, positionId, assisted);
+            update_value(curr_move, 0);
+            combo_count = 0;
+            if (!lineReviewRecorded && lineEligibleForReview) record_line_review(false);
+            trap.failed = true;
+            visualization?.finishFailure();
+            updateTacticsTrapUi();
+            set_text(error_div, i18n.tactics_trap_failed);
+            setup_move();
+            document.getElementById('study_tactics_retry')?.focus();
+            updateFailedPositionsUi();
+            update_progress();
+            return;
+        }
         if (smartTarget?.type === 'position') {
             record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
             if (wasCorrect) {
@@ -783,6 +861,7 @@ function give_hints(once) {
  * @param  once  Pass true to override any value of variable show_arrows and display hints temporarily.
  */
 function display_arrows(once) {
+    if (currentTacticsTrap()) { ground.setShapes([]); return; }
     if (visualization?.hidden) { ground.setShapes([]); overlay_manager.clear_overlays(); return; }
     if (contextReplayActive) { ground.setShapes([]); return; }
     let shapes = [];
@@ -896,6 +975,7 @@ function create_comment_list(container_id, current_move, response_moves) {
  * if that option is turned on.
  */
 function display_comments(once) {
+    if (currentTacticsTrap()) return;
     if (visualization?.hidden) { document.getElementById(comments_div).innerHTML = ''; return; }
     const introduction = smartIntroductionMove();
     if (contextReplayActive || smartSession && !once && !introduction) { document.getElementById(comments_div).innerHTML = ""; return; }
@@ -955,6 +1035,15 @@ function change_analysis_board() {
 }
 
 function setup_move() {
+    const trap = currentTacticsTrap();
+    if (trap) {
+        ground.set({ fen: trap.board.fen(), turnColor: turn_color(trap.board),
+            check: trap.board.in_check(), movable: { dests: new Map() } });
+        ground.setShapes([]);
+        overlay_manager.clear_overlays();
+        studyMoveNavigation.update();
+        return;
+    }
     if (sparring?.active) { sparring.render(); return; }
     visualization?.block(contextReplayActive || !!failedPositionRun || spacedReviewRunActive || weakChapterRunActive || !!smartSession);
     updateContextReplayUi();
@@ -1040,6 +1129,8 @@ function play_move(san) {
 }
 
 function start_training() {
+    tacticsTrap = null;
+    updateTacticsTrapUi();
     if (tacticsCollection) window.trees = readMode ? readingTrees : practiceTrees;
     visualization?.reset();
     if (sparring?.active) { sparring.stop(); studySessions.end(); }
@@ -1271,7 +1362,7 @@ function show_suggestions() {
 
 function turn_on_hints_for_current_move() {
     if (sparring?.active) { sparring.hint(); return; }
-    if (readMode || contextReplayActive) return;
+    if (currentTacticsTrap() || readMode || contextReplayActive) return;
     visualization?.reveal();
     assistedPositions.add(currentPositionId());
     display_arrows(true);
@@ -1653,12 +1744,17 @@ function set_options_values_for_max_depth() {
 }
 
 async function handle_click() {
+    if (currentTacticsTrap()) return;
     // Clearing the overlays here emulates the behaviour of normal arrows in chessground,
     // which disappear when you click on the chess board.
     overlay_manager.clear_overlays();
 }
 
 function setup_configs() {
+    const trapRetry = document.getElementById('study_tactics_retry');
+    const trapSolution = document.getElementById('study_tactics_solution');
+    if (trapRetry) trapRetry.onclick = retryTacticsTrap;
+    if (trapSolution) trapSolution.onclick = showTacticsSolution;
 
     document.getElementById('replay_position_context').onclick = replayContextFromStart;
     document.getElementById("hints").onclick = turn_on_hints_for_current_move;
@@ -1883,8 +1979,8 @@ async function main() {
         goBack: go_back,
         goForward: go_forward,
         getState: () => sparring?.active ? sparring.navigation() : ({
-            canGoBack: !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && curr_move.length > 1,
-            canGoForward: !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && tree_children(curr_move).length > 0
+            canGoBack: !currentTacticsTrap() && !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && curr_move.length > 1,
+            canGoForward: !currentTacticsTrap() && !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && tree_children(curr_move).length > 0
         })
     });
     if (hasGamePosition) {
@@ -1982,7 +2078,7 @@ function refresh_manual_navigation() {
 
 function go_back() {
     if (sparring?.active) { sparring.back(); return; }
-    if (contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession || curr_move.length <= 1) return;
+    if (currentTacticsTrap() || contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession || curr_move.length <= 1) return;
     chess.undo();
     curr_move.pop();
     refresh_manual_navigation();
@@ -1990,7 +2086,7 @@ function go_back() {
 
 function go_forward() {
     if (sparring?.active) { sparring.forward(); return; }
-    if (contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession) return;
+    if (currentTacticsTrap() || contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession) return;
     const nextNode = tree_children(curr_move)[0];
     if (!nextNode) return;
     play_move(nextNode.move);

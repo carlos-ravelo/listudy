@@ -123,6 +123,7 @@
 .study-workspace .study-session-controls #progress { margin-left: 0; text-decoration: underline; text-underline-offset: 3px; }
 .study-workspace .study-session-controls .option_item { margin: 0; }
 .study-workspace .study-primary-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.study-workspace #study_tactics_failure[hidden] { display: none; }
 .study-workspace .study-session-controls [hidden],
 .study-workspace .study-tools-content [hidden] { display: none !important; }
 .study-workspace button:focus-visible,

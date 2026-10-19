@@ -1555,3 +1555,23 @@ msgstr "Ninguna"
 
 msgid "Waiting for a connection to sync your progress."
 msgstr "Esperando conexión para sincronizar tu progreso."
+
+#: lib/listudy_web/templates/study/show.html.eex
+#, elixir-autogen, elixir-format
+msgid "This variation is annotated. Find the main continuation."
+msgstr "Esta variante está comentada. Busca la continuación principal"
+
+#: lib/listudy_web/templates/study/show.html.eex
+#, elixir-autogen, elixir-format
+msgid "Incorrect move. Try again or view the solution."
+msgstr "Jugada incorrecta. Reintenta o consulta la solución."
+
+#: lib/listudy_web/templates/study/show.html.eex
+#, elixir-autogen, elixir-format
+msgid "Try again"
+msgstr "Reintentar"
+
+#: lib/listudy_web/templates/study/show.html.eex
+#, elixir-autogen, elixir-format
+msgid "View solution"
+msgstr "Ver solución"

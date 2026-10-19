@@ -78,6 +78,12 @@
     <a data-icon="/" id="analysis_board" href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
   </div>
 </div>
+    <%= if @study.training_kind == "tactics" do %>
+      <div id="study_tactics_failure" class="study-primary-actions" hidden>
+        <button type="button" id="study_tactics_retry"><%= dgettext("study", "Try again") %></button>
+        <button type="button" id="study_tactics_solution" class="secondary"><%= dgettext("study", "View solution") %></button>
+      </div>
+    <% end %>
     <nav id="study_move_navigation" class="study-move-navigation" :class="{ 'study-move-navigation--reading': reading }" aria-label="<%= dgettext("study", "Move navigation") %>">
       <button type="button" id="study_previous_move" disabled aria-label="<%= dgettext("study", "Previous move") %>" title="<%= dgettext("study", "Previous move") %>">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6" /></svg>
@@ -221,6 +227,8 @@
   i18n.read_choose_continuation = "<%= dgettext "study", "Choose a continuation from this chapter." %>";
   i18n.read_start_position = "<%= dgettext "study", "Starting position" %>";
   i18n.read_variation = "<%= dgettext "study", "Variation" %>";
+  i18n.tactics_commented_variation = "<%= dgettext "study", "This variation is annotated. Find the main continuation." %>";
+  i18n.tactics_trap_failed = "<%= dgettext "study", "Incorrect move. Try again or view the solution." %>";
   i18n.tactics_no_mainline_moves = "<%= dgettext "study", "No moves to practice before the main line's error annotation. Explore this chapter in reading mode." %>";
   i18n.info_arrows = "<%= dgettext "study", "By default arrows will provide hints to show which moves are in this study. Using the options below you can control for how many moves the arrows/hints should stay visible. By default they stay visible until all moves in a position has been played twice. Any non-playable arrow annotations from the study or PGN file will appear as transparent arrows." %>";
   i18n.error_wrong_move = "<%= dgettext "study", "This move is not in the study, try again." %>";

@@ -1326,3 +1326,23 @@ msgstr ""
 
 msgid "Import PGN"
 msgstr ""
+
+#: lib/listudy_web/templates/study/show.html.eex
+#, elixir-autogen, elixir-format
+msgid "This variation is annotated. Find the main continuation."
+msgstr ""
+
+#: lib/listudy_web/templates/study/show.html.eex
+#, elixir-autogen, elixir-format
+msgid "Incorrect move. Try again or view the solution."
+msgstr ""
+
+#: lib/listudy_web/templates/study/show.html.eex
+#, elixir-autogen, elixir-format
+msgid "Try again"
+msgstr ""
+
+#: lib/listudy_web/templates/study/show.html.eex
+#, elixir-autogen, elixir-format
+msgid "View solution"
+msgstr ""
