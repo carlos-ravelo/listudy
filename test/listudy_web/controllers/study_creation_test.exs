@@ -9,6 +9,11 @@ defmodule ListudyWeb.StudyCreationTest do
   end
 
   test "creation offers a board first and retains import", %{conn: conn} do
+    catalog = File.read!("priv/repo/data/common_openings.json") |> Jason.decode!(keys: :atoms)
+    attributes = hd(catalog.openings)
+    Repo.get_by(Listudy.Openings.Opening, name: attributes.name) ||
+      Repo.insert!(Listudy.Openings.Opening.changeset(%Listudy.Openings.Opening{}, attributes))
+
     for kind <- ["repertoire", "tactics"] do
       html = conn |> get("/en/studies/new?kind=#{kind}") |> html_response(200)
       assert html =~ "Start on the board"
@@ -19,6 +24,9 @@ defmodule ListudyWeb.StudyCreationTest do
       assert [_] = Floki.find(html, ".study-create-card .study-create-legal")
       assert [_] = Floki.find(html, ".study-create-fields #study_title")
       assert [_] = Floki.find(html, ".study-form-actions a[href='/en/studies']")
+      assert [_] = Floki.find(html, "dialog#study_opening_picker")
+      assert [_] = Floki.find(html, "input#study_opening_id[type='hidden']")
+      assert [] = Floki.find(html, "select#study_opening_id")
       assert [] = Floki.find(html, ".study-create details, .study-create .one-third")
       if dir = System.get_env("LISTUDY_CREATE_FORM_PREVIEW") do
         File.mkdir_p!(dir)
