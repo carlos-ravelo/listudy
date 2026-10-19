@@ -50,23 +50,41 @@
     <div class="study-library-toolbar" data-library-controls hidden>
       <input type="search" data-library-search aria-label="<%= dgettext("study", "Search this list") %>" placeholder="<%= dgettext("study", "Search this list…") %>" autocomplete="off">
       <%= unless tactics do %>
-      <select data-library-kind name="kind" aria-label="<%= gettext("Study type") %>">
-        <option value="all"><%= gettext("All types") %></option>
-        <option value="repertoire"><%= gettext("Repertoires") %></option>
-        <option value="tactics"><%= gettext("Tactics") %></option>
-      </select>
-      <select data-library-color <%= if tactics, do: "hidden" %> aria-label="<%= dgettext("study", "Study color") %>">
-        <option value="all"><%= dgettext("study", "Both colors") %></option>
-        <option value="white"><%= dgettext("study", "White") %></option>
-        <option value="black"><%= dgettext("study", "Black") %></option>
-      </select>
-      <select data-library-group aria-label="<%= dgettext("study", "Study group") %>"><option value="all"><%= dgettext("study", "All groups") %></option></select>
-      <button type="button" data-library-organize aria-pressed="false"><%= dgettext("study", "Organize") %></button>
-      <button type="button" data-library-manage-groups><%= dgettext("study", "Groups") %></button>
+      <button type="button" data-library-toggle-filters aria-expanded="false" aria-controls="library-filters-panel">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
+        <%= dgettext("study", "Filters") %><span data-library-filter-count hidden></span>
+      </button>
+      <details class="study-library-menu study-library-manage">
+        <summary><span aria-hidden="true">⚙</span><span><%= dgettext("study", "Manage") %></span></summary>
+        <div class="study-library-menu-content">
+          <button type="button" data-library-organize aria-pressed="false"><%= dgettext("study", "Organize") %></button>
+          <button type="button" data-library-manage-groups><%= dgettext("study", "Groups") %></button>
+        </div>
+      </details>
       <% end %>
       <span class="study-library-count" data-library-count role="status" aria-live="polite"></span>
     </div>
     <%= unless tactics do %>
+    <div id="library-filters-panel" class="study-library-filter-panel" data-library-filter-panel hidden>
+      <label><%= gettext("Study type") %>
+        <select data-library-kind name="kind">
+          <option value="all"><%= gettext("All types") %></option>
+          <option value="repertoire"><%= gettext("Repertoires") %></option>
+          <option value="tactics"><%= gettext("Tactics") %></option>
+        </select>
+      </label>
+      <div class="study-library-color-filter" role="group" aria-label="<%= dgettext("study", "Study color") %>">
+        <span><%= dgettext("study", "Study color") %></span>
+        <div class="study-library-color-toggles">
+          <%= for {color, icon, label} <- [{"white", "♔", dgettext("study", "White")}, {"black", "♚", dgettext("study", "Black")}] do %>
+            <button type="button" data-library-color="<%= color %>" aria-pressed="false" aria-label="<%= label %>"><span aria-hidden="true"><%= icon %></span> <%= label %></button>
+          <% end %>
+        </div>
+      </div>
+      <label><%= dgettext("study", "Study group") %>
+        <select data-library-group><option value="all"><%= dgettext("study", "All groups") %></option></select>
+      </label>
+    </div>
     <div class="study-library-bulk" data-library-bulk hidden>
       <label class="study-library-select-all"><input type="checkbox" data-library-select-all> <%= dgettext("study", "Select visible") %></label>
       <span data-library-selected></span>

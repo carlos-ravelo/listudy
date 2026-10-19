@@ -66,9 +66,17 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     const saved=()=>page.waitForFunction(()=>document.querySelector('[data-library-save-status]').textContent==='Organization saved.');
     await goto();
     assert.equal(await visible.count(),3);
-    await page.locator('[data-library-color]').selectOption('black');
+    assert.equal(await page.locator('[data-library-filter-panel]').isVisible(),false);
+    await page.locator('[data-library-toggle-filters]').click();
+    assert.equal(await page.locator('[data-library-toggle-filters]').getAttribute('aria-expanded'),'true');
+    await page.locator('[data-library-color="black"]').click();
+    assert.equal(await page.locator('[data-library-color="black"]').getAttribute('aria-pressed'),'true');
+    assert.equal(await page.locator('[data-library-filter-count]').textContent(),'1');
     assert.equal(await visible.count(),1);
-    await page.locator('[data-library-color]').selectOption('all');
+    await page.locator('[data-library-color="black"]').click();
+    assert.equal(await page.locator('[data-library-filter-count]').isVisible(),false);
+    await page.locator('[data-library-toggle-filters]').click();
+    assert.equal(await page.locator('[data-library-filter-panel]').isVisible(),false);
     await page.screenshot({path:'/tmp/listudy-library-desktop.png',fullPage:true});
     await page.locator('[data-library-view="library"]').click();
     assert.equal(await visible.count(),27);
@@ -78,6 +86,7 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     assert(page.url().includes('q=grunfeld'));
     await page.locator('[data-library-search]').fill('');
     await page.locator('[data-library-view="daily"]').click();
+    await page.locator('.study-library-manage > summary').click();
     await page.locator('[data-library-organize]').click();
     await page.locator('[data-library-select-all]').check();
     await visible.first().locator('[data-library-check]').uncheck();
@@ -93,6 +102,7 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     assert.equal(await visible.count(),28);
     await page.locator('[data-library-view="daily"]').click();
     assert.equal(await visible.count(),2);
+    await page.locator('.study-library-manage > summary').click();
     await page.locator('[data-library-manage-groups]').click();
     await page.locator('#library_group_name').fill('Tournament preparation');
     await page.locator('[data-library-create-group] button').click();
@@ -108,8 +118,10 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     await page.locator('[data-library-move-form] button').click();
     await saved();
     assert.equal(await visible.first().locator('[data-library-row-group]').textContent(),'Tournament preparation');
+    await page.locator('[data-library-toggle-filters]').click();
     await page.locator('[data-library-group]').selectOption('group-3');
     assert.equal(await visible.count(),1);
+    await page.locator('.study-library-manage > summary').click();
     await page.locator('[data-library-manage-groups]').click();
     await page.locator('.study-library-group-row').filter({hasText:'Tournament preparation'}).getByRole('button',{name:'Edit: Tournament preparation',exact:true}).click();
     const rename=page.getByRole('textbox',{name:'Group name: Tournament preparation',exact:true});
@@ -126,6 +138,7 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     await page.reload();
     await page.waitForSelector('[data-study-library][data-initialized]');
     assert.equal(await visible.count(),1);
+    await page.locator('.study-library-manage > summary').click();
     await page.locator('[data-library-manage-groups]').click();
     page.once('dialog',dialog=>dialog.accept());
     await page.locator('.study-library-group-row').filter({hasText:'Main repertoire'}).getByRole('button',{name:'Remove group: Main repertoire',exact:true}).click();
@@ -163,6 +176,7 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     await visible.first().locator('summary').click();
     await page.screenshot({path:'/tmp/listudy-library-menu.png',fullPage:true});
     await page.keyboard.press('Escape');
+    await page.locator('.study-library-manage > summary').click();
     await page.locator('[data-library-manage-groups]').click();
     await page.screenshot({path:'/tmp/listudy-library-groups.png',fullPage:true});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);

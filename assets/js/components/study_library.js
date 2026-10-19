@@ -32,7 +32,14 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         return;
     }
     let state = JSON.parse(library.dataset.libraryState);
-    const color = library.querySelector('[data-library-color]');
+    const color = { value: 'all' };
+    const colorButtons = [...library.querySelectorAll('[data-library-color]')];
+    const filtersToggle = library.querySelector('[data-library-toggle-filters]');
+    const filtersPanel = library.querySelector('[data-library-filter-panel]');
+    filtersToggle.onclick = () => {
+        filtersPanel.hidden = !filtersPanel.hidden;
+        filtersToggle.setAttribute('aria-expanded', String(!filtersPanel.hidden));
+    };
     const group = library.querySelector('[data-library-group]');
     const kind = library.querySelector('[data-library-kind]');
     const organize = library.querySelector('[data-library-organize]');
@@ -119,6 +126,11 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         });
         organize.setAttribute('aria-pressed', String(organizing));
         organize.textContent = organizing ? labels.done : labels.organize;
+        colorButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.libraryColor === color.value)));
+        const activeFilters = Number(color.value !== 'all') + Number(group.value !== 'all') + Number(Boolean(kind && kind.value !== 'all'));
+        const filterCount = library.querySelector('[data-library-filter-count]');
+        filterCount.hidden = activeFilters === 0;
+        filterCount.textContent = String(activeFilters);
         selection();
         if (writeUrl) {
             const url = new URL(window.location.href);
@@ -269,9 +281,14 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         selected.clear(); view = button.dataset.libraryView; closeMenus(); filter();
     });
     search.oninput = () => { selected.clear(); filter(); };
-    color.onchange = group.onchange = () => { selected.clear(); filter(); };
+    group.onchange = () => { selected.clear(); filter(); };
+    colorButtons.forEach(button => button.onclick = () => {
+        color.value = color.value === button.dataset.libraryColor ? 'all' : button.dataset.libraryColor;
+        selected.clear();
+        filter();
+    });
     if (kind) kind.onchange = () => { selected.clear(); filter(); };
-    organize.onclick = () => { organizing = !organizing; selected.clear(); filter(); };
+    organize.onclick = () => { organizing = !organizing; selected.clear(); closeMenus(); filter(); search.focus(); };
     selectAll.onchange = () => {
         rows.filter(row => !row.hidden).forEach(row => {
             if (selectAll.checked) selected.add(row.dataset.studyId); else selected.delete(row.dataset.studyId);
@@ -279,7 +296,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         selection();
     };
     library.querySelectorAll('[data-library-bulk-location]').forEach(button => button.onclick = async () => {
-        if (await mutate({ action: 'move', study_ids: [...selected], location: button.dataset.libraryBulkLocation })) organize.focus();
+        if (await mutate({ action: 'move', study_ids: [...selected], location: button.dataset.libraryBulkLocation })) library.querySelector('.study-library-manage > summary').focus();
     });
     library.querySelector('[data-library-bulk-group]').onclick = () => showMove(selected);
     library.querySelector('[data-library-manage-groups]').onclick = showGroups;
@@ -314,6 +331,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             if (menu) { menu.open = false; menu.querySelector('summary').focus(); }
         }
     });
+    library.querySelector('.study-library-manage > summary').onclick = () => closeMenus(library.querySelector('.study-library-manage'));
     groupOptions();
     const url = new URL(window.location.href);
     view = hasViews && ['daily', 'library', 'all'].includes(url.searchParams.get('library_view'))
