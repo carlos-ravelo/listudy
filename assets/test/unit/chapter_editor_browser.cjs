@@ -17,6 +17,7 @@ const editorTemplate = fs.readFileSync(path.join(__dirname, '../../../lib/listud
 const translate = source => source.replace(/<%=\s*dgettext[^%]*%>/g, expression => expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1));
 const editorControls = ['editor_delete_move', 'editor_undo', 'editor_redo', 'editor_promote'].map(id =>
     translate(editorTemplate.match(new RegExp('<button[^>]+id="' + id + '"[\\s\\S]*?</button>'))[0])).join('');
+const chapterPicker = translate(editorTemplate.match(/<div class="study-chapter-navigation chapter-editor-picker">[\s\S]*?<\/div>\s*<\/div>/)[0]);
 const annotationControl = translate(editorTemplate.match(/<select id="editor_annotation"[\s\S]*?<\/select>/)[0]);
 const html = `<!doctype html><html class="blue cburnett"><head>
 <meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/app.css">
@@ -25,8 +26,7 @@ const html = `<!doctype html><html class="blue cburnett"><head>
 data-revision="original" data-save-url="/save" data-load-url="/chapter" data-loading="Loading" data-load-error="Load failed" data-color="white" data-start="Start"
 data-variation="Variation" data-discard-prompt="Discard?" data-saving="Saving"
 data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-invalid-move="Illegal">
-<select id="editor_chapter" :disabled="saving" :value="chapter" @change="changeChapter($event)">
-<template x-for="(option, index) in options" :key="index"><option :value="index" x-text="option.title" :selected="index === chapter"></option></template></select>
+${chapterPicker}
 <button id="editor_save" :disabled="saving || !dirty" @click="save()">Save</button>
 <button id="editor_discard" :disabled="saving || !dirty" @click="discard()">Discard</button>
 <div class="chapter-editor-layout"><div><div class="chapter-editor-board"><div id="editor_board" class="cg-wrap" x-ref="board"></div>${promotionPicker}</div>
@@ -82,10 +82,18 @@ ${editorControls}${annotationControl}
         await page.goto(`http://127.0.0.1:${server.address().port}`);
         const state = () => page.evaluate(() => { const c = Alpine.$data(document.getElementById('chapter_editor')); return {pgn: c.exportPgn, dirty: c.dirty, canUndo: c.canUndo, canRedo: c.canRedo, canPromote: c.canPromote}; });
         await page.waitForSelector('cg-board');
+        assert.equal(await page.locator('#editor_chapter .chapter-current-label').textContent(), '1 / 2 · First');
+        await page.click('#editor_chapter');
+        assert.equal(await page.locator('#editor_chapter_list [aria-current="true"]').textContent(), '1. First');
+        await page.fill('#editor_chapter_list .chapter-search', 'Second');
+        assert.equal(await page.locator('#editor_chapter_list .chapter-choice:visible').count(), 1);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#editor_chapter_list').isHidden(), true);
         async function square(name) {
             const box = await page.locator('cg-board').boundingBox();
             await page.mouse.click(box.x + (name.charCodeAt(0) - 97 + .5) * box.width / 8,
                 box.y + (8 - Number(name[1]) + .5) * box.height / 8);
+            await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         }
         assert.equal(await page.locator('#editor_undo').isDisabled(), true);
         assert.equal(await page.locator('#editor_redo').isDisabled(), true);
@@ -106,7 +114,7 @@ ${editorControls}${annotationControl}
         assert.equal(await page.locator('#editor_undo').isDisabled(), true);
         await square('e2'); await square('e4'); await square('c7'); await square('c5');
         await page.selectOption('#editor_annotation', '6');
-        assert.ok((await page.locator('#editor_moves').textContent()).includes('c5?!'));
+        assert.ok((await page.locator('#editor_moves').textContent()).includes('c5?!'), JSON.stringify(await state()));
         await page.click('#editor_undo');
         assert.equal(await page.inputValue('#editor_annotation'), '0');
         await page.click('#editor_redo');
@@ -146,8 +154,9 @@ ${editorControls}${annotationControl}
         await page.waitForFunction(() => document.getElementById('editor_moves').textContent.includes('c5'));
         await page.fill('#editor_comment', 'New Sicilian comment');
         page.once('dialog', dialog => dialog.dismiss());
-        await page.selectOption('#editor_chapter', '1');
-        assert.equal(await page.inputValue('#editor_chapter'), '0');
+        await page.click('#editor_chapter');
+        await page.locator('#editor_chapter_list .chapter-choice').nth(1).click();
+        assert.equal(await page.locator('#editor_chapter .chapter-current-label').textContent(), '1 / 2 · First');
         await page.click('#editor_save');
         await page.waitForFunction(() => document.getElementById('editor_status').textContent === 'Study changed');
         assert.equal(await page.inputValue('#editor_comment'), 'New Sicilian comment');
@@ -176,8 +185,13 @@ ${editorControls}${annotationControl}
         assert.equal((await state()).dirty, true);
         await page.click('#editor_redo');
         assert.equal((await state()).dirty, false);
-        await page.selectOption('#editor_chapter', '1');
+        await page.click('#editor_chapter');
+        await page.locator('#editor_chapter_list .chapter-choice').nth(1).click();
         await page.waitForFunction(() => Alpine.$data(document.getElementById('chapter_editor')).chapter === 1);
+        assert.equal(await page.locator('#editor_chapter .chapter-current-label').textContent(), '2 / 2 · Second');
+        await page.click('#editor_chapter');
+        assert.equal(await page.locator('#editor_chapter_list [aria-current="true"]').textContent(), '2. Second');
+        await page.keyboard.press('Escape');
         assert.equal(await page.locator('#editor_undo').isDisabled(), true);
         await square('a7'); await square('a8');
         await page.waitForSelector('[data-promotion-picker]', { state: 'visible' });

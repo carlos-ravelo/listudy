@@ -78,6 +78,7 @@
 .chapter-choice-status--solid { background: var(--success-bg); color: var(--success-color); }
 .chapter-choice-status--new { background: var(--bg-highlight-color); color: var(--font-color); }
 .chapter-active { font-weight: bold; background: var(--bg-highlight-color, #e2e8f0); }
+.chapter-choice[aria-current="true"] .chapter-choice-label::before { content: '✓ '; }
 .chapter-choice:hover { background: var(--bg-highlight-color, #cbd5e1); }
 .collection-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 9999; display: flex; align-items: center; justify-content: center; }
 .collection-dialog { background: var(--bg-color, #fff); color: var(--font-color, #333); width: 90%; max-width: 600px; max-height: 85vh; border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,.2); }

@@ -5,6 +5,7 @@
          data-editor="<%= @editor_json %>" data-revision="<%= @revision %>"
          data-load-url="<%= if draft, do: "", else: Routes.study_path(@conn, :load_chapter, @locale, @study) %>"
          data-loading="<%= dgettext("study", "Loading…") %>"
+         data-search-chapter="<%= dgettext("study", "Search chapter") %>"
          data-load-error="<%= dgettext("study", "This chapter could not be opened. Your changes are still in the editor.") %>"
          data-save-url="<%= if draft, do: Routes.study_path(@conn, :create, @locale), else: Routes.study_path(@conn, :save_chapter, @locale, @study) %>"
          data-draft="<%= draft %>" data-kind="<%= @study.training_kind %>"
@@ -26,14 +27,8 @@
          data-same-position="<%= dgettext "study", "The PGN must use this chapter's starting position." %>"
          data-save-error="<%= dgettext "study", "The chapter could not be saved. Your changes are still in the editor." %>">
   <div class="chapter-editor-topbar">
-    <span class="chapter-editor-context"><%= if draft, do: dgettext("study", "Create on the board"), else: dgettext("study", "Edit chapter") %><%= unless draft, do: ": " <> @study.title %></span>
-    <nav class="chapter-editor-switcher" aria-label="<%= dgettext "study", "Chapter" %>">
-      <label for="editor_chapter"><%= dgettext "study", "Chapter" %></label>
-      <select id="editor_chapter" :disabled="pendingPromotion || saving" :value="chapter" @change="changeChapter($event)">
-        <template x-for="(option, index) in options" :key="index">
-          <option :value="index" x-text="option.title" :selected="index === chapter"></option>
-        </template>
-      </select>
+    <span class="chapter-editor-context"><%= if draft, do: dgettext("study", "Create on the board"), else: @study.title %></span>
+    <nav class="chapter-editor-exit">
       <%= if draft do %>
         <%= link dgettext("study", "Back"), to: Routes.study_path(@conn, :new, @locale, kind: @study.training_kind), class: "study-edit-link" %>
       <% else %>
@@ -41,18 +36,27 @@
       <% end %>
     </nav>
   </div>
-  <div class="chapter-editor-title">
-    <h1 x-show="!draft && !editingTitle">
-      <button type="button" class="chapter-editor-title-button" :disabled="pendingPromotion || saving || loading" @click="beginTitleEdit()"
-              aria-label="<%= dgettext "study", "Edit chapter title" %>">
-        <span x-text="title"></span>
-        <svg class="chapter-editor-pencil" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m16 3 5 5L8 21H3v-5L16 3Z"/><path d="m14 5 5 5"/></svg>
-      </button>
-    </h1>
-    <input x-cloak x-show="draft || editingTitle" x-ref="titleInput" type="text" id="editor_title" maxlength="<%= if draft, do: 100, else: 200 %>" required
-           aria-label="<%= dgettext "study", "Chapter title" %>" x-model="title" :disabled="pendingPromotion || saving || loading"
-           @input="updateTitle($event.target.value)" @blur="editingTitle = false"
-           @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="cancelTitleEdit()" />
+  <div class="chapter-editor-heading">
+    <div class="chapter-editor-title">
+      <h1 x-show="!draft && !editingTitle">
+        <button type="button" class="chapter-editor-title-button" :disabled="pendingPromotion || saving || loading" @click="beginTitleEdit()"
+                aria-label="<%= dgettext "study", "Edit chapter title" %>">
+          <span x-text="title"></span>
+          <svg class="chapter-editor-pencil" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m16 3 5 5L8 21H3v-5L16 3Z"/><path d="m14 5 5 5"/></svg>
+        </button>
+      </h1>
+      <input x-cloak x-show="draft || editingTitle" x-ref="titleInput" type="text" id="editor_title" maxlength="<%= if draft, do: 100, else: 200 %>" required
+             aria-label="<%= dgettext "study", "Chapter title" %>" x-model="title" :disabled="pendingPromotion || saving || loading"
+             @input="updateTitle($event.target.value)" @blur="editingTitle = false"
+             @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="cancelTitleEdit()" />
+    </div>
+    <nav class="chapter-editor-switcher" aria-label="<%= dgettext "study", "Chapter" %>">
+      <div class="study-chapter-navigation chapter-editor-picker">
+        <button type="button" id="editor_chapter" x-ref="chapterTitle" class="secondary" aria-expanded="false"
+                aria-controls="editor_chapter_list" aria-label="<%= dgettext "study", "Chapter" %>"></button>
+        <div id="editor_chapter_list" x-ref="chapterList" class="study-chapter-list" hidden></div>
+      </div>
+    </nav>
   </div>
   <div class="chapter-editor-toolbar chapter-editor-actions">
     <button type="button" id="editor_save" class="button" :class="{ 'button-primary': dirty }" :disabled="pendingPromotion || saving || loading || setupMode || !dirty" @click="save()" disabled><%= if draft, do: dgettext("study", "Create study"), else: dgettext("study", "Save chapter") %></button>

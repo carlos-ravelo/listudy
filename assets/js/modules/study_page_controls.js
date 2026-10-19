@@ -1,3 +1,5 @@
+import { setupChapterPicker } from './chapter_picker.js';
+
 export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, progressLabels = { unpracticed: 'Not practiced', practiced: 'Moves practiced', needsPractice: 'Needs practice', reviewDue: 'Review due' } }) {
     const select = document.getElementById('chapter_select');
     const previous = document.getElementById('prev_chapter_btn');
@@ -6,82 +8,31 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
     const list = document.getElementById('custom_chapter_list');
     const copy = document.getElementById('copy_line_to_clipboard');
     if (!select || !title || !list) return { update() {} };
-    const currentLabel = document.createElement('span');
-    currentLabel.className = 'chapter-current-label';
-    const currentBadge = document.createElement('span');
-    title.replaceChildren(currentLabel, currentBadge);
     let summaries = new Map();
-    function renderBadge(badge, chapter) {
-        const tone = chapter ? chapter.pickerTone : 'new';
-        badge.className = `chapter-choice-status chapter-choice-status--${tone}` +
-            (badge === currentBadge ? ' chapter-current-status' : '');
+    function renderBadge(badge, index) {
+        const chapter = summaries.get(index);
+        badge.className = `chapter-choice-status chapter-choice-status--${chapter?.pickerTone || 'new'}`;
         badge.textContent = chapter
             ? (chapter.reviewDue && !chapter.dueContinuations ? progressLabels.reviewDue + ' · ' : '') + chapter.pickerMetrics
             : progressLabels.unpracticed;
         badge.title = chapter ? chapter.progressTooltip || chapter.metrics + ' · ' + chapter.recovery : '';
-        badge.hidden = false;
     }
-    const search = document.createElement('input');
-    search.type = 'search';
-    search.placeholder = 'Search chapter...';
-    search.className = 'chapter-search';
-    search.setAttribute('aria-label', 'Search chapter');
-    list.replaceChildren(search);
-    const items = Array.from(select.options).map((option, index) => {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'chapter-choice';
-        const label = document.createElement('span');
-        label.className = 'chapter-choice-label';
-        label.textContent = `${index + 1}. ${option.text}`;
-        const status = document.createElement('span');
-        status.className = 'chapter-choice-status';
-        status.hidden = true;
-        item.append(label, status);
-        item.onclick = () => { choose(index); close(); title.focus(); };
-        list.appendChild(item);
-        return item;
+    const picker = setupChapterPicker({
+        title, list, previous, next,
+        getOptions: () => Array.from(select.options, option => option.text),
+        getSelectedIndex: () => select.selectedIndex,
+        onSelect: choose, renderBadge
     });
+    const update = () => picker.update();
     window.addEventListener('study-progress-updated', event => {
         summaries = new Map(event.detail.map(chapter => [chapter.index, chapter]));
-        items.forEach((item, index) => {
-            const badge = item.querySelector('.chapter-choice-status');
-            renderBadge(badge, summaries.get(index));
-        });
-        renderBadge(currentBadge, summaries.get(select.selectedIndex));
+        update();
     });
     function choose(index) {
         if (index < 0 || index >= select.options.length) return;
         select.selectedIndex = index;
         select.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    function close() { list.hidden = true; title.setAttribute('aria-expanded', 'false'); }
-    function update() {
-        const selected = select.options[select.selectedIndex];
-        currentLabel.textContent = selected
-            ? `${select.selectedIndex + 1} / ${select.options.length} · ${selected.text}`
-            : 'No chapters';
-        renderBadge(currentBadge, summaries.get(select.selectedIndex));
-        currentBadge.hidden = !selected;
-        items.forEach((item, index) => item.classList.toggle('chapter-active', index === select.selectedIndex));
-        previous.disabled = select.selectedIndex <= 0;
-        next.disabled = select.selectedIndex >= select.options.length - 1;
-    }
-    search.oninput = () => items.forEach(item => {
-        item.hidden = !item.querySelector('.chapter-choice-label').textContent.toLowerCase().includes(search.value.toLowerCase());
-    });
-    title.onclick = event => {
-        event.preventDefault();
-        if (!list.hidden) { close(); return; }
-        list.hidden = false;
-        title.setAttribute('aria-expanded', 'true');
-        search.value = '';
-        search.oninput();
-        items[select.selectedIndex]?.scrollIntoView({ block: 'nearest' });
-        search.focus();
-    };
-    previous.onclick = event => { event.preventDefault(); choose(select.selectedIndex - 1); };
-    next.onclick = event => { event.preventDefault(); choose(select.selectedIndex + 1); };
     document.getElementById('btn_random_chapter').onclick = event => {
         event.preventDefault();
         const count = select.options.length;
@@ -100,11 +51,7 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
             copyTimer = setTimeout(() => { copy.textContent = originalCopyText; }, 2500);
         } catch (error) { console.error('Clipboard copy failed:', error); }
     };
-    document.addEventListener('click', event => {
-        if (!title.contains(event.target) && !list.contains(event.target)) close();
-    });
     document.addEventListener('keydown', event => {
-        if (event.key === 'Escape' && !list.hidden) { close(); title.focus(); return; }
         if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
             document.querySelector?.('dialog[open]') ||
             event.target.closest('input, textarea, select, [contenteditable="true"]') ||
@@ -112,7 +59,6 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
         if (event.key === 'ArrowLeft') { event.preventDefault(); goBack(); }
         else if (event.key === 'ArrowRight') { event.preventDefault(); goForward(); }
     });
-    close();
     update();
     return { update };
 }

@@ -6,6 +6,7 @@ import { createPromotionPicker } from './modules/promotion_picker.js';
 import { setupPositionFen } from './modules/study/position_setup.js';
 import { createSparringEngine } from './modules/sparring/uci_engine.js';
 import { enginePosition } from './modules/engine_position.js';
+import { setupChapterPicker } from './modules/chapter_picker.js';
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 
@@ -14,7 +15,7 @@ import Alpine from 'alpinejs';
 Alpine.data('chapterEditor', () => {
     let currentChapter, editor, ground, moveTree, config, pgnSnapshot, promotionPicker, engine, analysisId = 0;
 
-    let chapterRequest = 0, chapterAbort;
+    let chapterRequest = 0, chapterAbort, chapterPicker;
 
     return {
         exportPgn: '', pgnEdited: false, options: [], chapter: 0, title: '', comment: '', pendingPromotion: null, analysisUrl: '',
@@ -54,16 +55,25 @@ Alpine.data('chapterEditor', () => {
                 variationLabel: config.variation,
                 onSelect: path => this.selectPosition(path)
             });
+            if (this.$refs.chapterTitle) chapterPicker = setupChapterPicker({
+                title: this.$refs.chapterTitle, list: this.$refs.chapterList,
+                getOptions: () => this.options.map(option => option.title),
+                getSelectedIndex: () => this.chapter,
+                isDisabled: () => this.draft || this.setupMode || this.pendingPromotion || this.saving || this.loading,
+                searchLabel: config.searchChapter,
+                onSelect: index => this.changeChapter({ target: { value: String(index) } })
+            });
             this.refresh();
         },
 
-        destroy() { ++chapterRequest; chapterAbort?.abort(); ++analysisId; engine?.dispose(); promotionPicker?.destroy(); ground?.destroy(); },
+        destroy() { ++chapterRequest; chapterAbort?.abort(); ++analysisId; chapterPicker?.destroy(); engine?.dispose(); promotionPicker?.destroy(); ground?.destroy(); },
 
         beginSetup() {
             if ((this.dirty || this.pgnEdited) && !window.confirm(config.discardPrompt)) return;
             ++analysisId; engine?.cancel();
             this.analysisEnabled = false;
             this.setupMode = true;
+            chapterPicker?.update();
             this.positionTurn = editor.position().turn();
             ground.set({movable: {color: undefined, dests: new Map()}, draggable: {enabled: false}, lastMove: undefined, check: false});
         },
@@ -157,6 +167,7 @@ Alpine.data('chapterEditor', () => {
                 : `https://lichess.org/analysis/pgn/${encodeURIComponent(position.pgn())}?color=${orientation}`;
             moveTree.update({ reading: true, chapter: this.chapter, root: editor.tree.root,
                 fen: currentChapter.fen, path: editor.path });
+            chapterPicker?.update();
             if (this.analysisEnabled) this.analyzePosition();
         },
 
