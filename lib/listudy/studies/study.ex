@@ -8,6 +8,7 @@ defmodule Listudy.Studies.Study do
     field :title, :string
     field :slug, :string
     field :color, :string
+    field :training_kind, :string, default: "repertoire"
     field :private, :boolean
     field :opening_id, :id
 
@@ -19,9 +20,19 @@ defmodule Listudy.Studies.Study do
   @doc false
   def changeset(study, attrs) do
     study
-    |> cast(attrs, [:title, :description, :slug, :private, :user_id, :color, :opening_id])
-    |> validate_required([:title, :description, :slug])
+    |> cast(attrs, [
+      :title,
+      :description,
+      :slug,
+      :private,
+      :user_id,
+      :color,
+      :opening_id,
+      :training_kind
+    ])
+    |> validate_inclusion(:training_kind, ["repertoire", "tactics"])
+    |> validate_required([:title, :slug, :training_kind])
     |> validate_length(:title, min: 3, max: 100)
-    |> validate_length(:description, min: 10, max: 1000)
+    |> validate_length(:description, max: 1000)
   end
 end

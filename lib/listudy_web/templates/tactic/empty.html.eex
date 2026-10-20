@@ -1,0 +1,5 @@
+<div class="training-workspace">
+  <h1><%= gettext("Tactics") %></h1>
+  <p><%= gettext("No puzzles are available yet.") %></p>
+  <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale) %>
+</div>

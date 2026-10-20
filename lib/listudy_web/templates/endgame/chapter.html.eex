@@ -1,37 +1,49 @@
-<ul class="breadcrumb">
-  <li><a href="<%= Routes.endgame_path(@conn, :index, @locale) %>"><%= gettext("Endgames") %></a></li>
-  <li><%= @chapter.name %></li>
-</ul> 
+<div class="endgame-library practice-page">
+  <%= render "_breadcrumbs.html", items: [
+    %{label: dgettext("endgame", "Endgames"), to: Routes.endgame_path(@conn, :index, @locale)},
+    %{label: @chapter.name, to: nil}
+  ] %>
+  <% games = practice_games(@conn, @locale, [{@slug, @chapter}]) %>
+  <header class="endgame-library-heading">
+    <div>
+      <h1><%= @chapter.name %></h1>
+      <p><%= @chapter.description %></p>
+    </div>
+    <%= render "_start.html", games: games, conn: @conn %>
+  </header>
 
-<h1><%= @chapter.name %></h1>
-<p><%= @chapter.description %></p>
+  <div class="endgame-exercise-groups">
+    <%= for {slug, type} <- @chapter.endgames do %>
+      <% group_games = practice_games(@conn, @locale, [{@slug, %{endgames: [{slug, type}]}}]) %>
+      <section class="endgame-exercise-group" aria-labelledby="endgame_group_<%= slug %>">
+        <header>
+          <h2 id="endgame_group_<%= slug %>" class="endgame-category-title">
+            <%= render "_pieces.html", conn: @conn, pieces: material_icons(@slug, slug) %>
+            <span><%= type.name %></span>
+          </h2>
+          <%= render "_progress.html", games: group_games %>
+        </header>
+        <%= if Map.get(type, :description) do %>
+          <p><%= type.description %></p>
+        <% end %>
+        <ol class="endgame-exercises">
+          <%= for {game, index} <- Enum.with_index(group_games, 1) do %>
+            <% label = dgettext("endgame", "Exercise %{number}", number: index) %>
+            <li>
+              <a id="<%= game.id %>" class="endgame-exercise" href="<%= game.url %>" data-endgame-exercise
+                 data-exercise-label="<%= label %>" data-solved-label="<%= dgettext("endgame", "Solved") %>" aria-label="<%= label %>">
+                <span><%= index %></span>
+                <svg class="endgame-solved-mark" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+              </a>
+            </li>
+          <% end %>
+        </ol>
+      </section>
+    <% end %>
+  </div>
 
-<%= for {slug, type} <- @chapter.endgames do %>
-  <h2 class="endgame_fix"><%= type.name %></h2>
-
-  <%= if Map.has_key?(type, :description) do %>
-  <p><%= type.description %></p>
-  <%end %>
-  <%= for {_, index} <- Enum.with_index(type.games) do %>
-    <% id = "#{@slug}_#{slug}_#{index+1}" %>
-    <a class="endgame_chapter_link" href="<%= Routes.endgame_path(@conn, :game, @locale, @slug, slug, index+1) %>">
-      <span id="<%= id %>" class="endgame_chapter_span"><%= index+1 %></span>
-    </a>
-  <% end %>
-<% end %>
-
-<hr>
-<p class="endgame_fix"><%= @chapter.body %></p>
-
-
-<script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
-    let ls_key = "solved_endgames";
-    let solves = JSON.parse(localStorage.getItem(ls_key)) || [];
-    for (let i of solves) {
-      let d = document.getElementById(i);
-      // the id might not be on this chapter page so we have to check
-      if (d != null) {
-        d.classList.add("endgame_solved");
-      }
-    }
-</script>
+  <details class="endgame-about">
+    <summary><%= dgettext("endgame", "About this category") %></summary>
+    <p><%= @chapter.body %></p>
+  </details>
+</div>

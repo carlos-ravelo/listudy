@@ -1,0 +1,56 @@
+<% result = @group.result %>
+<% {state, feedback} = comparison_feedback(result, @group.color) %>
+<section id="analysis-outcome-<%= @index %>" class="analysis-outcome analysis-outcome-<%= state %>" data-outcome="<%= @index %>" aria-labelledby="analysis-feedback-<%= @index %>" <%= if @index != 0, do: "hidden" %>>
+  <div class="analysis-outcome-header">
+    <strong id="analysis-feedback-<%= @index %>" class="analysis-outcome-badge analysis-outcome-badge-<%= state %>"><%= feedback %></strong>
+    <span class="analysis-position-label">Position <%= move_label(result["fen"]) %></span>
+  </div>
+
+  <%= if result["deviation"] do %>
+    <dl class="analysis-move-comparison">
+      <div>
+        <dt>Played in game</dt>
+        <dd><strong class="analysis-played-move"><%= result["played"] %></strong><span class="analysis-move-actor"><%= comparison_actor(result["fen"], @group.color) %></span></dd>
+      </div>
+      <div>
+        <dt>Repertoire moves</dt>
+        <dd class="analysis-expected-moves">
+          <%= for expected <- result["expected"] do %>
+            <strong class="analysis-expected-move"><%= expected %></strong>
+          <% end %>
+        </dd>
+      </div>
+    </dl>
+    <div class="analysis-arrow-legend" aria-label="Board arrows">
+      <span><i class="analysis-legend-mark analysis-legend-played" aria-hidden="true"></i> Red: played move</span>
+      <span><i class="analysis-legend-mark analysis-legend-expected" aria-hidden="true"></i> Green: repertoire</span>
+    </div>
+    <%= if state == :player do %>
+      <% {study, chapter} = hd(@group.chapters) %>
+      <p><%= link "Practice this line", to: practice_path(@conn, study, chapter), class: "button button-primary" %></p>
+    <% end %>
+  <% else %>
+    <p class="analysis-outcome-note"><%= if result["reason"] == "book_ended",
+      do: "The game continued beyond this chapter’s saved line.",
+      else: "The game ended in a position saved in this chapter." %></p>
+  <% end %>
+
+  <%= if result["transposed"] do %>
+    <p class="analysis-transposition">↪ Reached this position by a different move order.</p>
+  <% end %>
+  <%= if (result["earlier_departures"] || []) != [] do %>
+    <details class="analysis-earlier-departures">
+      <summary>Earlier move orders (<%= length(result["earlier_departures"]) %>)</summary>
+      <ul>
+        <%= for departure <- result["earlier_departures"] do %>
+          <li>
+            <button type="button" class="analysis-departure" data-jump-ply="<%= departure["ply"] %>" disabled>
+              <%= move_label(departure["fen"]) %> <%= departure["played"] %>
+            </button>
+            <span>Repertoire: <strong><%= Enum.join(departure["expected"], " / ") %></strong></span>
+          </li>
+        <% end %>
+      </ul>
+    </details>
+  <% end %>
+</section>

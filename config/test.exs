@@ -20,3 +20,5 @@ config :listudy, ListudyWeb.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+config :listudy, :puzzle_import_worker, false

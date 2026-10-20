@@ -346,3 +346,27 @@ msgstr ""
 #: lib/listudy_web/templates/page/play_stockfish.html.eex:9
 msgid "white"
 msgstr ""
+
+msgid "Main navigation"
+msgstr "Navegación principal"
+
+msgid "Menu"
+msgstr "Menú"
+
+msgid "Practice"
+msgstr "Practicar"
+
+msgid "Explore"
+msgstr "Explorar"
+
+msgid "Preferences"
+msgstr "Preferencias"
+
+msgid "Footer"
+msgstr "Pie de página"
+
+msgid "Contact"
+msgstr "Contacto"
+
+msgid "More"
+msgstr "Más"

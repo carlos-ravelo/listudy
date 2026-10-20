@@ -47,3 +47,23 @@ scripts/prod/env.sh
 
 # npm lock files
 assets/package-lock.json
+
+# Python analysis artifacts
+__pycache__/
+*.pyc
+docs/project-context/*
+docs/architecture.md
+
+# Private puzzle import files (never served or committed)
+/var/puzzle_imports/
+
+# Private environment files and runtime dumps
+.env
+.env.*
+!.env.example
+!.env.sample
+.aws/
+MnesiaCore.*
+*.pem
+*.p12
+*.pfx

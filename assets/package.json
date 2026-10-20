@@ -2,12 +2,16 @@
   "repository": {},
   "description": " ",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "deploy": "webpack --mode production",
     "watch": "webpack --mode development --watch",
     "test": "npx codeceptjs run-workers 5 -c test/codecept.conf.js"
   },
   "dependencies": {
+    "alpinejs": "^3.17.4",
     "chess.js": "^0.10.3",
     "chessground": "^9.2.1",
     "pgn-parser": "^2.1.1",
@@ -16,7 +20,8 @@
     "phoenix_live_view": "file:../deps/phoenix_live_view",
     "playwright": "^1.9.1",
     "regenerator-runtime": "^0.14.1",
-    "stockfish.wasm": "^0.10.0"
+    "stockfish": "19.0.1",
+    "ts-fsrs": "5.4.2"
   },
   "devDependencies": {
     "@babel/core": "^7.13.8",
@@ -26,6 +31,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
     "css-minimizer-webpack-plugin": "^7.0.0",
+    "glob": "^7.2.3",
     "mini-css-extract-plugin": "^2.6.1",
     "sass": "^1.53.0",
     "sass-loader": "^13.0.1",

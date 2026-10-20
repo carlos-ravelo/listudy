@@ -1,0 +1,7 @@
+<header class="training-header">
+  <nav class="training-breadcrumb" aria-label="<%= gettext("Main navigation") %>">
+    <%= link gettext("Tactics"), to: Routes.tactics_library_path(@conn, :tactics, @locale) %>
+    <span aria-hidden="true">/</span><span aria-current="page"><%= @title %></span>
+  </nav>
+  <h1><%= @title %></h1>
+</header>

@@ -1,0 +1,59 @@
+[Event "The Italian Game-First 7 moves"]
+[Site "?"]
+[Date "2023.12.12"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C54"]
+[Opening "Italian Game: Classical Variation, Giuoco Pianissimo"]
+[StudyName "The Italian Game"]
+[ChapterName "The Italian Game-First 7 moves"]
+[ChapterURL "https://lichess.org/study/pPHITVvn/xrsUvjW3"]
+[Annotator "https://lichess.org/@/BobbyMen"]
+[UTCDate "2023.12.12"]
+[UTCTime "04:45:14"]
+[ListudyChapterId "ec6eb5c97792fc1fa37b8d2a4bf16ce1"]
+[Orientation "white"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4
+{ This is by far the most common start to an Italian Game.
+Both White and Black have developed their pieces naturally and are eyeing the f7 and f2 squares while fighting for the center.The most common continuation is 4.c3. }
+3... Bc5 4. O-O Nf6 5. d3 d6 6. c3 a6 7. a4 *
+
+[Event "The Italian Game"]
+[Site "?"]
+[Date "2023.12.28"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C54"]
+[Opening "Italian Game: Classical Variation, Giuoco Pianissimo"]
+[StudyName "The Italian Game"]
+[ChapterName "The Italian Game"]
+[ChapterURL "https://lichess.org/study/pPHITVvn/e3kXCH1d"]
+[Annotator "https://lichess.org/@/BobbyMen"]
+[UTCDate "2023.12.28"]
+[UTCTime "01:17:36"]
+[ListudyChapterId "ee6a251397a6d2263c92ae721ff1366d"]
+[Orientation "white"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3
+{ This is by far the most common start to an Italian Game.
+Both White and Black have developed their pieces naturally and are eyeing the f7 and f2 squares while fighting for the center.The most common continuation is 4.c3. }
+4... Nf6 5. d3
+{ With the move 4.c3, White is attempting to quickly consolidate the center by playing d4 soon if Black allows it.
+It’s a super solid choice that guarantees strong play for White.A typical Italian Game with 4.c3 usually continues with 4...Nf6 5.d3 d6. }
+5... d6 6. O-O
+{ This is called Giuoco Pianissimo. White is taking things slow and doesn’t want to play d4 just yet.The natural moves keep coming. Both sides are ready to castle and almost all of their minor pieces are either developed or about to be developed. }
+6... a6 7. a4 Ba7
+{ Both a6 and a4 allow the bishops to retreat while still putting pressure on the center. In particular, the move Ba7 by Black is an extremely flexible move that:
+Prepares the b5 expansion.
+Discourages White to play d4.
+Maintains a decent pressure on the a7-g1 diagonal. }
+8. Re1
+{ After this, the most played moves are 8.Re1 O-O 9.h3 Ne7 10.d4 Ng6 11.Nbd2 c6: }
+8... O-O 9. h3 h6 ( 9... Re8 10. Nfd2 ) 10. Nbd2 *

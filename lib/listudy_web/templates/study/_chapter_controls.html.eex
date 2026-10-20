@@ -1,0 +1,9 @@
+<div class="study-chapter-navigation">
+  <select id="chapter_select" hidden aria-label="Chapter"></select>
+  <div class="study-chapter-buttons">
+    <button type="button" id="prev_chapter_btn" class="secondary" aria-label="<%= dgettext("study", "Previous chapter") %>" title="<%= dgettext("study", "Previous chapter") %>"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg></button>
+    <button id="current_chapter_title" class="secondary" aria-expanded="false" aria-controls="custom_chapter_list" title="Select a chapter"><%= dgettext("study", "Loading…") %></button>
+    <button type="button" id="next_chapter_btn" class="secondary" aria-label="<%= dgettext("study", "Next chapter") %>" title="<%= dgettext("study", "Next chapter") %>"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>
+  </div>
+  <div id="custom_chapter_list" class="study-chapter-list" hidden></div>
+</div>

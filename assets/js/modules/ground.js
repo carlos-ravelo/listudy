@@ -1,6 +1,6 @@
 const Chessground = require('chessground').Chessground;
 import { ground_legal_moves, cal_to_ftc, san_to_uci, move_to_ucistr } from './chess_utils';
-import { sounds } from './sounds.js';
+import { playMoveSound as play_sound } from './sounds.js';
 import { array_contains } from './utils.js';
 
 /*
@@ -8,9 +8,9 @@ import { array_contains } from './utils.js';
  * ground that contains the chessground
  */
 
-function ground_init_state(fen) {
+function ground_init_state(fen, custom_orientation = null) {
     const config = {};
-    config["orientation"] = color;
+    config["orientation"] = custom_orientation || color;
     config["movable"] = { free: false, showDests: true };
     // fen for the initial position
     config["fen"] = fen;
@@ -58,14 +58,15 @@ function setup_ground(fen) {
  * Window resize callback
  */
 function onresize() {
-    // Don't resize ground if the window width is unchanged
-    if (window.innerWidth === window.window_width) {
+    const study = document.getElementById("study_layout");
+    if (window.innerWidth === window.window_width && (!study || window.innerHeight === window.window_height)) {
         return;
     }
 
     window.window_width = window.innerWidth;
+    window.window_height = window.innerHeight;
     resize_ground();
-    window.overlay_manager.on_resize();
+    window.overlay_manager?.on_resize();
 }
 
 /*
@@ -73,7 +74,13 @@ function onresize() {
  */
 function calculate_width() {
     let gc = document.getElementById("game_container");
-    let gc_width = gc.offsetWidth;
+    const frame = gc.querySelector(".study-board-frame");
+    if (frame && gc.closest(".study-workspace") && window.innerWidth > 600) {
+        const actions = document.getElementById("study_board_actions");
+        const controlsHeight = actions ? actions.offsetHeight + parseFloat(getComputedStyle(actions).marginTop || 0) : 0;
+        return Math.min(gc.clientWidth, Math.max(240, Math.floor(window.innerHeight - frame.getBoundingClientRect().top - controlsHeight - 16)));
+    }
+    let gc_width = (frame || gc).offsetWidth;
     let width = gc_width ;//- 7; // for the numbers on the side of the ground
     //width -= width % 8; // fix chrome alignment errors; https://github.com/ornicar/lila/pull/3881
     // shouldn't be neccessary any longer https://github.com/lichess-org/chessground/pull/191
@@ -83,6 +90,13 @@ function calculate_width() {
 // call on window resizing
 function resize_ground() {
     let width_integer = calculate_width();
+    const studyContainer = document.getElementById("game_container");
+    if (studyContainer.closest(".study-workspace")) {
+        studyContainer.style.setProperty("--study-board-size", window.innerWidth > 600 ? width_integer + "px" : "100%");
+        // Account for controls that wrap after the board column becomes narrower.
+        width_integer = calculate_width();
+        studyContainer.style.setProperty("--study-board-size", window.innerWidth > 600 ? width_integer + "px" : "100%");
+    }
     let width = "" + width_integer + "px";
     let chessground = document.getElementById("chessground");
     chessground.style.width = width;
@@ -271,16 +285,6 @@ function cjs_turn(color) {
         return "white";
     } else {
         return "black";
-    }
-}
-
-function play_sound(move) {
-    let flags = move.flags;
-    // clone the sound so it can be repeated in quick succession
-    if (flags.indexOf("c") !== -1 || flags.indexOf("e") !== -1) {
-        sounds.play("capture");
-    } else {
-        sounds.play("move");
     }
 }
 

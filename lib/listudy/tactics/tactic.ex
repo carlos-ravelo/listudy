@@ -3,6 +3,15 @@ defmodule Listudy.Tactics.Tactic do
   import Ecto.Changeset
 
   schema "tactics" do
+    field :source, :string, default: "listudy"
+    field :source_id, :string
+    field :source_fen, :string
+    field :source_moves, :string
+    field :themes, {:array, :string}, default: []
+    field :opening_tags, {:array, :string}, default: []
+    field :rating_deviation, :integer
+    field :popularity, :integer
+    field :source_plays, :integer
     field :color, :string
     field :description, :string
     field :fen, :string

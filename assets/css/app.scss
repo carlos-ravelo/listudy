@@ -3,14 +3,31 @@
 @import "./colors.css";
 @import "./const.css";
 @import "./navigation.css";
+@import "./components/site_navigation.css";
 @import "./skeleton.css";
 @import "./progress_bar.css";
 @import "./inputs.css";
 @import "./icons.css";
 @import "./features/study.css";
+@import "./features/study_extensions.css";
+@import "./features/study_maintenance.css";
+@import "./features/admin.css";
+@import "./features/study_presentation.css";
+@import "./features/sparring.css";
+@import "./features/study_library.css";
+@import "./features/study_discovery.css";
+@import "./features/study_collections.css";
+@import "./features/chapter_editor.css";
+@import "./features/analysis_comparison.css";
+@import "./features/analysis_games.css";
+@import "./features/analysis_presentation.css";
+@import "./features/home.css";
+@import "./features/native_training.css";
+@import "./features/puzzle_catalog.css";
 @import "./features/endgames.css";
 @import "./features/achievements.css";
 @import "./features/book.css";
+@import "./features/practice_theme.css";
 @import "./components/breadcrumbs.css";
 @import "./components/modal.css";
 @import "./components/popup.css";
@@ -82,6 +99,10 @@ body {
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */
 }
+
+.infoBox .close_button { display: inline-flex; align-items: center; justify-content: center; width: 32px; min-height: 32px; height: 32px; top: 0; right: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; font-size: 20px; line-height: 1; }
+.infoBox .close_button:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.infoBox { padding-inline-end: 36px; }
 
 .hidden {
     display: none;

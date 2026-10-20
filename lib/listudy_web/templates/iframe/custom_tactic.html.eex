@@ -52,7 +52,8 @@ function clean_input(i) {
 }
 
 // atob => base64 decode the hash
-let t = atob(document.location.hash.slice(1)).split(";");
+let t;
+try { t = atob(document.location.hash.slice(1)).split(";"); } catch (_) { t = []; }
 let fen = clean_input(t[0]);
 let color = clean_input(t[0]).split(" ")[1];
 if (color == "b") {

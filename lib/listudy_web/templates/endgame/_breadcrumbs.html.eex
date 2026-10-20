@@ -1,0 +1,14 @@
+<nav class="endgame-breadcrumbs" aria-label="<%= dgettext("endgame", "Breadcrumb") %>">
+  <ol>
+    <%= for {item, index} <- Enum.with_index(@items) do %>
+      <li>
+        <%= if index > 0 do %><span class="endgame-breadcrumb-separator" aria-hidden="true">/</span><% end %>
+        <%= if item.to do %>
+          <a href="<%= item.to %>"><%= item.label %></a>
+        <% else %>
+          <span aria-current="page"><%= item.label %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</nav>

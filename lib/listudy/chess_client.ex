@@ -9,23 +9,96 @@ defmodule Listudy.Games.ChessClient do
   @default_history_years 1
   @seconds_in_a_year 365 * 24 * 60 * 60
 
+  # Availability probes never import or analyze games.
+  def recent_game_ids(platform, username, request \\ &HTTPoison.get/3)
+
+  def recent_game_ids("lichess", username, request) do
+    username = URI.encode(username, &URI.char_unreserved?/1)
+    url = "#{@lichess_url}#{username}?max=1&moves=false&ongoing=false&finished=true"
+
+    with {:ok, body} <- availability_request(url, [{"Accept", "application/x-ndjson"}], request) do
+      body
+      |> String.split("\n", trim: true)
+      |> Enum.reduce_while({:ok, []}, fn line, {:ok, ids} ->
+        case Jason.decode(line) do
+          {:ok, %{"id" => id}} when is_binary(id) -> {:cont, {:ok, [id | ids]}}
+          _ -> {:halt, {:error, :invalid_response}}
+        end
+      end)
+    end
+  end
+
+  def recent_game_ids("chess_com", username, request) do
+    username = URI.encode(String.downcase(username), &URI.char_unreserved?/1)
+    base = "#{@chess_com_url}#{username}/games"
+
+    with {:ok, body} <- availability_request(base <> "/archives", [], request),
+         {:ok, %{"archives" => archives}} when is_list(archives) <- Jason.decode(body) do
+      case Enum.max(archives, fn -> nil end) do
+        nil ->
+          {:ok, []}
+
+        archive when is_binary(archive) ->
+          # Build the URL ourselves; remote response data cannot choose a host.
+          case Regex.run(~r"/games/(\d{4})/(0[1-9]|1[0-2])$", archive) do
+            [_, year, month] ->
+              with {:ok, month_body} <-
+                     availability_request("#{base}/#{year}/#{month}", [], request),
+                   {:ok, %{"games" => games}} when is_list(games) <- Jason.decode(month_body) do
+                Enum.reduce_while(games, {:ok, []}, fn game, {:ok, ids} ->
+                  case game do
+                    %{"url" => url, "end_time" => time}
+                    when is_binary(url) and is_integer(time) ->
+                      id = url |> String.trim_trailing("/") |> String.split("/") |> List.last()
+                      {:cont, {:ok, [id | ids]}}
+
+                    _ ->
+                      {:halt, {:error, :invalid_response}}
+                  end
+                end)
+              else
+                _ -> {:error, :invalid_response}
+              end
+
+            _ ->
+              {:error, :invalid_response}
+          end
+
+        _ ->
+          {:error, :invalid_response}
+      end
+    else
+      _ -> {:error, :invalid_response}
+    end
+  end
+
+  defp availability_request(url, headers, request) do
+    case request.(url, headers, timeout: 5_000, recv_timeout: 8_000) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} -> {:ok, body}
+      _ -> {:error, :unavailable}
+    end
+  end
+
   @doc """
   Fetches games for a Lichess user. If since_ms is provided, only fetches games after that epoch.
   If nil, defaults to the last #{@default_history_years} years to maintain consistency with Chess.com.
   Limits the download to #{@max_games_limit} games maximum.
   """
   def fetch_lichess_games(username, since_ms \\ nil) do
-    since_param = 
+    since_param =
       if since_ms do
         since_ms
       else
         seconds_to_subtract = @default_history_years * @seconds_in_a_year
+
         DateTime.utc_now()
         |> DateTime.add(-seconds_to_subtract, :second)
         |> DateTime.to_unix(:millisecond)
       end
 
-    url = "#{@lichess_url}#{username}?moves=true&pgnInJson=true&since=#{since_param}&max=#{@max_games_limit}"
+    url =
+      "#{@lichess_url}#{username}?moves=true&pgnInJson=true&since=#{since_param}&max=#{@max_games_limit}"
+
     headers = [{"Accept", "application/x-ndjson"}]
 
     require Logger
@@ -56,65 +129,62 @@ defmodule Listudy.Games.ChessClient do
   Halts downloading when #{@max_games_limit} games are reached.
   """
   def fetch_chess_com_games(username, last_date \\ nil) do
-    archives_url = "#{@chess_com_url}#{username}/games/archives"
+    archives_url = "#{@chess_com_url}#{URI.encode(username)}/games/archives"
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(archives_url),
-         %{"archives" => archives} when archives != [] <- Jason.decode!(body) do
+         {:ok, %{"archives" => archives}} when is_list(archives) <- Jason.decode(body) do
+      archives
+      |> filter_chess_com_archives(last_date)
+      |> Enum.reverse()
+      |> Enum.reduce_while({:ok, []}, fn url, {:ok, games} ->
+        if length(games) >= @max_games_limit do
+          {:halt, {:ok, games}}
+        else
+          # Chess.com recommends serial requests for its monthly archives.
+          Process.sleep(1000)
 
-      # Reverse the URLs to fetch the most recent months first
-      urls_to_fetch = filter_chess_com_archives(archives, last_date) |> Enum.reverse()
+          case HTTPoison.get(url) do
+            {:ok, %HTTPoison.Response{status_code: 200, body: month_body}} ->
+              case Jason.decode(month_body) do
+                {:ok, %{"games" => month_games}} when is_list(month_games) ->
+                  {:cont, {:ok, games ++ Enum.reverse(month_games)}}
 
-      games =
-        Enum.reduce_while(urls_to_fetch, [], fn url, acc ->
-          if length(acc) >= @max_games_limit do
-            {:halt, acc}
-          else
-            # Pause for 1 second to respect Chess.com API limits
-            Process.sleep(1000)
+                _ ->
+                  {:halt, {:error, "Invalid Chess.com archive response for #{url}"}}
+              end
 
-            case HTTPoison.get(url) do
-              {:ok, %HTTPoison.Response{status_code: 200, body: games_body}} ->
-                case Jason.decode(games_body) do
-                  {:ok, %{"games" => month_games}} ->
-                    # Reverse month_games to keep the newest games at the top of our list
-                    new_acc = acc ++ Enum.reverse(month_games)
-                    {:cont, new_acc}
+            {:ok, %HTTPoison.Response{status_code: status}} ->
+              {:halt, {:error, "Chess.com archive returned status #{status}: #{url}"}}
 
-                  _ -> 
-                    {:cont, acc}
-                end
-
-              {:ok, %HTTPoison.Response{status_code: status}} ->
-                require Logger
-                Logger.warning("Chess.com API blocked request. Status: #{status}. URL: #{url}")
-                {:cont, acc}
-
-              {:error, %HTTPoison.Error{reason: reason}} ->
-                require Logger
-                Logger.error("HTTP request failed. Reason: #{inspect(reason)}. URL: #{url}")
-                {:cont, acc}
-            end
+            {:error, %HTTPoison.Error{reason: reason}} ->
+              {:halt, {:error, "Chess.com archive request failed: #{inspect(reason)}"}}
           end
-        end)
-
-      # Ensure we return exactly the limit if we over-fetched in the last month
-      limited_games = Enum.take(games, @max_games_limit)
-      
-      {:ok, limited_games}
+        end
+      end)
+      |> case do
+        {:ok, games} -> {:ok, Enum.take(games, @max_games_limit)}
+        error -> error
+      end
     else
-      {:ok, %HTTPoison.Response{status_code: 404}} -> {:error, "Chess.com user not found"}
-      {:ok, %HTTPoison.Response{status_code: status}} -> {:error, "Chess.com API returned status #{status}"}
-      {:error, %HTTPoison.Error{reason: reason}} -> {:error, inspect(reason)}
-      _ -> {:error, "Failed to fetch Chess.com games"}
+      {:ok, %HTTPoison.Response{status_code: 404}} ->
+        {:error, "Chess.com user not found"}
+
+      {:ok, %HTTPoison.Response{status_code: status}} ->
+        {:error, "Chess.com API returned status #{status}"}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, inspect(reason)}
+
+      _ ->
+        {:error, "Invalid Chess.com archive list"}
     end
   end
-
 
   defp filter_chess_com_archives(archives, nil) do
     today = Date.utc_today()
     # Calculamos la fecha exacta de hace 3 años
     three_years_ago = %{year: today.year - 3, month: today.month}
-    
+
     # Reutilizamos tu propia lógica de filtrado pasándole esta nueva fecha
     filter_chess_com_archives(archives, three_years_ago)
   end

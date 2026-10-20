@@ -1,0 +1,116 @@
+[Event "Queen's Gambit Accepted"]
+[Site "?"]
+[Date "2022.01.16"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "D27"]
+[Opening "Queen's Gambit Accepted: Classical Defense, Rubinstein Variation"]
+[StudyName "Queen's Gambit️️"]
+[ChapterName "Queen's Gambit Accepted"]
+[ChapterURL "https://lichess.org/study/DAmLK0ug/R4HNZsei"]
+[Annotator "https://lichess.org/@/caelT8"]
+[UTCDate "2022.01.16"]
+[UTCTime "16:41:15"]
+[ChapterMode "gamebook"]
+[ListudyChapterId "79262e292cef707f8dfedb44a2f3e577"]
+[Orientation "white"]
+
+{ How do we reach the Queen's Gambit? } 1. d4 d5 { And now? } 2. c4 dxc4
+{ We'll now see how black should play. But first, what do we play here? } 3.
+Nf3 Nf6 { And finally, how do we move a pawn so our bishop attacks c4? } 4. e3
+e6 { This is black's best move. But, we can just win the pawn back. } 5. Bxc4
+c5
+{ This is best. Black will try to take on d4 at some point. But we don't care! Just castle. }
+6. O-O a6
+{ Black wants to go ... b5 and ... Bb7. We can stop this queenside expansion with 7. a4. }
+7. a4
+{ We willingly weaken the b4 square and black, after ... cxd4 exd4, gives us an isolated pawn and a weak d5 square. So what do we have in return? We'll find out soon! }
+7... Nc6 { Begin by bringing your queen to e2. } 8. Qe2 cxd4
+{ We don't have to take back right away. Bring our rook to the d-file. } 9. Rd1
+{ We've pinned the pawn to the queen. } 9... Be7 { NOW we recapture. } 10. exd4
+O-O { And finally, 11. Nc3. } 11. Nc3
+{ In return for weakening b4, d5, and an isolated d-pawn, we have:
+1) Prevented black's queenside expansion
+2) More central space
+3) A good square for a knight, e5.
+4) All these factors add up to a kingside attack for white! }
+*
+
+[Event "Queen's Gambit Declined"]
+[Site "?"]
+[Date "2022.01.16"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "D36"]
+[Opening "Queen's Gambit Declined: Exchange Variation, Reshevsky Variation"]
+[StudyName "Queen's Gambit️️"]
+[ChapterName "Queen's Gambit Declined"]
+[ChapterURL "https://lichess.org/study/DAmLK0ug/NkvYBeNe"]
+[Annotator "https://lichess.org/@/caelT8"]
+[UTCDate "2022.01.16"]
+[UTCTime "16:52:26"]
+[ChapterMode "gamebook"]
+[ListudyChapterId "7c9b789f4f87bc535335b397cafa069b"]
+[Orientation "white"]
+
+{ Black won't always accept our gambit. Here's a variation where black decides to support their d-pawn with 2. ... e6, keeping a central stronghold. }
+1. d4 d5 { And the Queen's Gambit is... } 2. c4 e6
+{ This is the Queen's Gambit Declined. Black maintains their central stronghold at the cost of blocking in their light-squared bishop. We should develop our b1-knight. Where? }
+3. Nc3 Nf6
+{ This is black's main line. We'll look at the alternatives 3. ... c5 and 3. ... Be7 next. After 3. ... Nf6, I recommend the Exchange Variation with 4. cxd5. }
+4. cxd5 exd5
+{ Now, we develop our dark-squared bishop and pin black's knight. } 5. Bg5 Be7
+{ How do we clear the way for our light-squared bishop to enter the game? } 6.
+e3 c6
+{ This is the famous Carlsbad Pawn Structure. Bring out our light squared bishop. }
+7. Bd3 Nbd7 { Here, we play 8. Qc2. } 8. Qc2 { Pressuring h7 a bit. } 8... O-O
+{ Now comes a key moment. Where do we develop our g1-knight to? Well, both e2 and f3 are popular, but e2 is better. }
+9. Nge2 Re8
+{ Now, we castle! But which way? Queenside is OK, but black is perfectly fine. So, kingside is better. }
+10. O-O Nf8
+{ In this position, white has 3 possible plans.
+1) f3 and e4
+2) Rb1 and a minority attack with b4-b5
+3) A mixture of both plans 1 and 2.
+I recommend plans 1 and 3. Let's prepare them with 11. f3! }
+11. f3 Be6 { If we want to play e4, we should support our d-pawn with a rook. }
+12. Rad1 Rc8 { We first go Kh1, then Ng3, then e4! with an attack. } *
+
+[Event "colwem - PsiMaster"]
+[Site "https://lichess.org/N6nizlJC"]
+[Date "2018.02.18"]
+[Round "-"]
+[White "colwem"]
+[Black "PsiMaster"]
+[Result "*"]
+[WhiteElo "1648"]
+[BlackElo "1642"]
+[TimeControl "2700+45"]
+[Termination "Normal"]
+[Annotator "lichess.org"]
+[Variant "Standard"]
+[ECO "D36"]
+[Opening "Queen's Gambit Declined: Exchange Variation, Reshevsky Variation"]
+[StudyName "Erin's Annotated Games"]
+[ChapterName "colwem - PsiMaster"]
+[ChapterURL "https://lichess.org/study/5wYcdjXQ/MrDITFgI"]
+[ListudyOriginalResult "0-1"]
+[ListudyExcerpt "Opening excerpt: at most 10 full moves per line. Full source: https://lichess.org/study/5wYcdjXQ/MrDITFgI"]
+[ListudyChapterId "64a5be388ea06b90bc4f1680460a5994"]
+[Orientation "white"]
+[ListudySourceAuthor "ErinYu"]
+
+{ Queen's Gambit Declined: Exchange Variation. An interesting little strategical battle where white presses and black defends. }
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. cxd5
+{ The common way is playing this a move earlier, but we transpose easily. }
+5... exd5 6. e3 c6
+{ This pawn structure features many plans for both sides, and play is not limited to any one side.
+One very common idea for white is to undermine black's queenside via a minority attack, while black often tries to pressure white in the center of the board.
+In-game, white tries to acquire a strong center. [%csl Rc6,Rd5,Gd4,Ge3][%cal Gb2b4,Gb4b5,Rh8e8,Re8e4,Yf2f3,Ye3e4] }
+7. Bd3 O-O 8. Qc2 Nbd7 9. Nge2 Re8 10. O-O Nf8 *

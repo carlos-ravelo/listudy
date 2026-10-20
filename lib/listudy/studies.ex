@@ -106,7 +106,7 @@ defmodule Listudy.Studies do
       from s in Study,
         join: f in StudyFavorite,
         on: f.study_id == s.id,
-        where: f.user_id == ^user,
+        where: f.user_id == ^user and (not s.private or s.user_id == ^user),
         select: s
 
     Repo.all(query)
@@ -142,22 +142,34 @@ defmodule Listudy.Studies do
       order_by: [desc: c.updated_at]
   end
 
-  def search_by_title(word, "favorites") do
+  defp by_color(query, color) when color in ["white", "black"] do
+    from c in query, where: c.color == ^color
+  end
+
+  defp by_color(query, _color), do: query
+
+  def search_by_title(word, order, color \\ "all")
+
+  def search_by_title(word, "favorites", color) do
     query =
       Study
       |> by_title(word)
       |> not_private
+      |> where([s], s.training_kind == "repertoire")
+      |> by_color(color)
       |> title_limit
       |> order_by_favorites
 
     Repo.all(query) |> Repo.preload([:study_favorites, :user])
   end
 
-  def search_by_title(word, "newest") do
+  def search_by_title(word, "newest", color) do
     query =
       Study
       |> by_title(word)
       |> not_private
+      |> where([s], s.training_kind == "repertoire")
+      |> by_color(color)
       |> title_limit
       |> order_by_newest
 
@@ -180,6 +192,52 @@ defmodule Listudy.Studies do
       {:error, %Ecto.Changeset{}}
 
   """
+  def clone_study(%Study{} = source, user_id, copy_label) do
+    title =
+      String.slice(source.title, 0, max(0, 100 - String.length(copy_label) - 3)) <>
+        " (" <> copy_label <> ")"
+
+    file_id = Listudy.Slug.random_alnum()
+    source_id = source.slug |> String.split("-") |> hd()
+    path = Path.join("priv/static/study_pgn", file_id <> ".pgn")
+    source_path = Path.join("priv/static/study_pgn", source_id <> ".pgn")
+
+    attrs = source |> Map.take([:description, :color, :opening_id, :training_kind])
+
+    attrs =
+      Map.merge(attrs, %{
+        title: title,
+        slug: file_id <> "-" <> Listudy.Slug.slugify(title),
+        user_id: user_id,
+        private: true
+      })
+
+    with {:ok, pgn} <- File.read(source_path) do
+      result =
+        Repo.transaction(fn ->
+          case create_study(attrs) do
+            {:ok, study} ->
+              case Listudy.StudyPgn.replace(path, pgn) do
+                :ok -> study
+                {:error, reason} -> Repo.rollback(reason)
+              end
+
+            {:error, changeset} ->
+              Repo.rollback(changeset)
+          end
+        end)
+
+      case result do
+        {:ok, study} ->
+          {:ok, study}
+
+        {:error, reason} ->
+          File.rm(path)
+          {:error, reason}
+      end
+    end
+  end
+
   def create_study(attrs \\ %{}) do
     %Study{}
     |> Study.changeset(attrs)

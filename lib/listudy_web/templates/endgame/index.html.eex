@@ -1,12 +1,29 @@
-<h1><%= dgettext("endgame", "Endgames") %></h1>
-<p><%= dgettext("endgame", "No idea what to do in the endgame? Learn endgames by playing against stockfish.") %></p>
+<div class="endgame-library practice-page">
+  <% games = practice_games(@conn, @locale, @endgame) %>
+  <header class="endgame-library-heading">
+    <div>
+      <h1><%= dgettext("endgame", "Endgames") %></h1>
+      <p><%= dgettext("endgame", "Practice endgames against Stockfish.") %></p>
+    </div>
+    <%= render "_start.html", games: games, conn: @conn %>
+  </header>
 
-<%= for {slug, type} <- @endgame do %>
-  <div class="highlight">
-    <h2><%= type.name %></h2>
-    <p><%= type.description %></p>
-    <a href="<%= Routes.endgame_path(@conn, :chapter, @locale, slug) %>"><button class="secondary"><%= dgettext("endgame", "Learn") %></button></a>
-  </div>
-<% end %>
-
-
+  <ul class="endgame-category-list">
+    <%= for {slug, type} <- @endgame do %>
+      <% category_games = practice_games(@conn, @locale, [{slug, type}]) %>
+      <li>
+        <a class="endgame-category" href="<%= Routes.endgame_path(@conn, :chapter, @locale, slug) %>">
+          <div class="endgame-category-copy">
+            <div class="endgame-category-title">
+              <%= render "_pieces.html", conn: @conn, pieces: material_icons(slug) %>
+              <h2><%= type.name %></h2>
+            </div>
+            <p><%= type.description %></p>
+            <%= render "_progress.html", games: category_games %>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </a>
+      </li>
+    <% end %>
+  </ul>
+</div>

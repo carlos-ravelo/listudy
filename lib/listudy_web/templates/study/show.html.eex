@@ -1,132 +1,190 @@
-<h1 class="clicking_turns_on_hints"><%= @study.title %></h1>
- <a href="/random_study" class="button secondary" style="width: 100%; text-align: center; display: block; margin-top: 10px;">
-  🎲 Random Study
-</a>
-<button id="btn_random_chapter" class="secondary" style="margin-top: 5px; width: 100%;">
-  🎲 Random Chapter
-</button>
-<div style="position: relative; width: 100%; max-width: 100%; display: block; margin-top: 10px;">
-  
-  <!-- Hidden original select -->
-  <select id="chapter_select" style="display: none;">
-  </select>
-
-  <!-- Navigation bar using CSS Grid to force 100% width -->
-  <div style="display: grid; grid-template-columns: 80px 1fr 80px; gap: 8px; width: 100%;">
-    <button id="prev_chapter_btn" class="secondary" style="width: 100%; margin: 0;">Back</button>
-    <button id="current_chapter_title" class="secondary" style="width: 100%; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;" title="Click to select a chapter">Loading...</button>
-    <button id="next_chapter_btn" class="secondary" style="width: 100%; margin: 0;">Next</button>
+<div data-training-kind="<%= @study.training_kind %>" class="study-workspace practice-page" data-game-positions-url="<%= if @study.is_owner, do: Routes.analysis_path(@conn, :positions, @study.id), else: "" %>">
+<div class="study-session-controls">
+  <div id="study_practice_choices" role="group" aria-label="<%= dgettext("study", "Study mode") %>">
+    <button type="button" id="study_mode" aria-pressed="false"><%= dgettext("study", "Read") %></button>
+    <button type="button" id="practice_smart" <%= if @study.training_kind == "tactics", do: "hidden" %> aria-pressed="false">Smart</button>
+    <button type="button" id="practice_lines" aria-pressed="true"><%= dgettext("study", "Full lines") %></button>
+    <button type="button" id="practice_sparring" <%= if @study.training_kind == "tactics", do: "hidden disabled" %> aria-pressed="false" aria-controls="study_sparring"><%= dgettext("study", "Sparring") %></button>
   </div>
+  <label id="line_order_control" for="puzzle_run"><%= dgettext("study", "After a line") %>
+    <select id="puzzle_run">
+      <option value="off"><%= dgettext("study", "Stay in this chapter") %></option>
+      <option value="next"><%= dgettext("study", "Next chapter") %></option>
+      <option value="random"><%= dgettext("study", "Random chapter") %></option>
+    </select>
+  </label>
+  <button type="button" id="stop_smart_run" hidden><%= dgettext("study", "Stop session") %></button>
+  <div class="study-session-tools">
+  <%= render "_study_tools.html", study: @study, conn: @conn, locale: @locale %>
+  <button type="button" id="progress" class="modal_open"><%= dgettext("study", "Progress") %></button>
 
-  <!-- Custom scrollable dropdown -->
-  <div id="custom_chapter_list" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg-color, white); border: 1px solid #ccc; border-radius: 4px; max-height: 300px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+  <button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog"
+          aria-label="<%= dgettext("study", "Settings") %>" title="<%= dgettext("study", "Settings") %>">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
+      <path d="M9 2h6l.5 2 1.7 1 2-.6 3 5.2-1.5 1.4v2l1.5 1.4-3 5.2-2-.6-1.7 1-.5 2H9l-.5-2-1.7-1-2 .6-3-5.2L3.3 13v-2L1.8 9.6l3-5.2 2 .6 1.7-1Z" />
+    </svg>
+  </button>
   </div>
 </div>
 
-  <!-- Custom scrollable dropdown -->
-  <div id="custom_chapter_list" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg-color, white); border: 1px solid #ccc; border-radius: 4px; max-height: 300px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-  </div>
+<div class="study-context">
+  <h1 class="study-feature-title" title="<%= String.replace(@study.title, "_", " ") %>"><%= String.replace(@study.title, "_", " ") %></h1>
+  <%= render "_chapter_controls.html" %>
 </div>
-<div class="with_sidebar">
+
+<div id="study_layout" class="with_sidebar" x-data="{ reading: false, expanded: false, overflowing: false }"
+     :class="{ 'study-reading-layout': reading }"
+     @study-reading-updated.window="if (reading !== $event.detail.reading) { reading = $event.detail.reading; $nextTick(() => $dispatch('study-reading-layout-updated')); } expanded = false; $nextTick(() => overflowing = $refs.comments.scrollHeight > $refs.comments.clientHeight)">
   <div id="game_container" class="sidebar_main">
-    <%= render ListudyWeb.ComponentView, "chessground.html" %>
+    <%= if @study.training_kind == "tactics" do %>
+      <section id="study_visualization" class="study-visualization"
+               aria-label="<%= dgettext("study", "Visualization training") %>"
+               data-hide="<%= dgettext("study", "Hide pieces") %>"
+               data-reveal="<%= dgettext("study", "Show pieces (help)") %>"
+               data-memorize="<%= dgettext("study", "Memorize the position, then play %count% of your moves with the pieces hidden.") %>"
+               data-hidden="<%= dgettext("study", "Pieces hidden · Your moves: %count%") %>"
+               data-complete="<%= dgettext("study", "Line complete. Reset or choose another exercise.") %>"
+               data-reply="<%= dgettext("study", "Opponent played") %>"
+               data-history="<%= dgettext("study", "Without help: %clean%/%total% runs") %>">
+        <label><input type="checkbox"> <%= dgettext("study", "Visualization") %></label>
+        <select aria-label="<%= dgettext("study", "Moves with hidden pieces") %>" hidden>
+          <option value="auto"><%= dgettext("study", "Adaptive difficulty") %></option>
+          <option value="1"><%= dgettext("study", "1 move") %></option>
+          <option value="2"><%= dgettext("study", "2 moves") %></option>
+          <option value="4"><%= dgettext("study", "4 moves") %></option>
+        </select>
+        <button type="button" class="secondary" aria-pressed="false" hidden><%= dgettext("study", "Hide pieces") %></button>
+        <p role="status" aria-live="polite" hidden></p>
+        <small data-visualization-history hidden></small>
+      </section>
+    <% end %>
+    <%= render "_sparring_status.html" %>
+    <div class="study-board-frame">
+      <%= render ListudyWeb.ComponentView, "chessground.html" %>
+      <%= render ListudyWeb.ComponentView, "promotion_picker.html" %>
+    </div>
+    <div id="study_board_actions" class="study-board-actions">
+<!-- Actions used while training -->
+<div class="study-primary-actions" x-data="{ reading: false }" @study-reading-updated.window="reading = $event.detail.reading">
+  <button type="button" id="hints" class="secondary" x-show="!reading"><%= dgettext("study", "Hint") %></button>
+    <button type="button" class="secondary" id="replay_position_context" hidden><%= dgettext("study", "Replay from the start") %></button>
+
+<div class="option_item">
+    <button type="button" class="secondary" id="reset_line" data-reset-game="<%= dgettext("study", "Reset game") %>"><%= dgettext("study", "Reset line") %></button>
+  </div>
+
+<div class="option_item">
+    <a data-icon="/" id="analysis_board" href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
+  </div>
+</div>
+    <%= if @study.training_kind == "tactics" do %>
+      <div id="study_tactics_failure" class="study-primary-actions" hidden>
+        <button type="button" id="study_tactics_retry"><%= dgettext("study", "Try again") %></button>
+        <button type="button" id="study_tactics_solution" class="secondary"><%= dgettext("study", "View solution") %></button>
+      </div>
+    <% end %>
+    <nav id="study_move_navigation" class="study-move-navigation" :class="{ 'study-move-navigation--reading': reading }" aria-label="<%= dgettext("study", "Move navigation") %>">
+      <button type="button" id="study_previous_move" disabled aria-label="<%= dgettext("study", "Previous move") %>" title="<%= dgettext("study", "Previous move") %>">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6" /></svg>
+      </button>
+      <button type="button" id="study_next_move" disabled aria-label="<%= dgettext("study", "Next move") %>" title="<%= dgettext("study", "Next move") %>">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6" /></svg>
+      </button>
+    </nav>
+    </div>
   </div>  
-  <div class="sidebar clicking_turns_on_hints">
+  <div class="sidebar">
     <div class="sidebar_innercontainer">
-      <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
+      <div class="study-feedback" role="status" aria-live="polite" aria-atomic="true" data-dismiss="<%= dgettext("study", "Dismiss notification") %>" aria-label="<%= dgettext("study", "Move feedback") %>">
+        <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
+      </div>
 
       <div class="sidebar_padded">
-        <div style="margin-bottom: 1em">
-          <a class="icon large_clickarea" data-icon="-" id="hints" role="button"><%= dgettext("study", "Show hints for this move!") %></a><br>
-        </div>
+        <%= render "_sparring.html" %>
+        <section class="study-reading-tree" x-show="reading" x-cloak aria-label="<%= dgettext("study", "Chapter moves") %>">
+          <div id="study_moves_heading" class="study-moves-heading">
+            <h3><%= dgettext("study", "Moves") %></h3>
+          </div>
+          <div class="study-tree-columns" aria-hidden="true">
+            <span>#</span><span><%= dgettext("study", "White") %></span><span><%= dgettext("study", "Black") %></span>
+          </div>
+          <div id="study_read_moves" hidden></div>
+        </section>
+
         
-        <div id="comments" class="study_comments"></div>
+        <!-- Active session feedback -->
+        <div class="study-session-progress">
+          <p id="study_sync_status" role="status" aria-live="polite" hidden></p>
+          <div class="option_item_progressbar" style="width: 100%;">
+        
+            <p id="failed_positions_status" role="status" hidden></p>
+        
+            <p id="smart_run_status" class="study-weak-run-status" aria-live="polite" hidden></p>
+            <p id="study_session_counter" class="study-session-counter" hidden></p>
+            <section id="study_session_end" class="study-session-end" hidden aria-labelledby="study_session_end_title">
+              <h3 id="study_session_end_title" tabindex="-1"><%= dgettext("study", "Session finished") %></h3>
+              <p id="study_session_result"></p>
+              <div class="study-session-end-actions">
+                <button type="button" id="study_session_continue" class="practice-primary"><%= dgettext("study", "Continue practicing") %></button>
+                <button type="button" id="study_session_finish" class="secondary"><%= dgettext("study", "Finish") %></button>
+              </div>
+            </section>
+            <p id="weak_run_status" class="study-weak-run-status" hidden></p>
+          </div>
+        </div>
+
+        <div class="study-comment-panel" :class="{ 'study-comments-expanded': expanded }">
+          <div id="comments" class="study_comments" x-ref="comments"></div>
+          <button type="button" class="study-read-comment-toggle" x-cloak
+                  x-show="reading && (overflowing || expanded)" :aria-expanded="expanded"
+                  aria-controls="comments" @click="expanded = !expanded">
+            <span x-show="!expanded"><%= dgettext("study", "Show more") %></span>
+            <span x-show="expanded"><%= dgettext("study", "Show less") %></span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </div>
-<div class="options_area">
-  <div class="option_item">
-    <a class="icon" data-icon="!" id="play_stockfish" href="<%= Routes.page_path(@conn, :play_stockfish, @locale) %>#rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" title="<%= dgettext "study", "Play against Stockfish" %>"><%= dgettext "study", "Play against Stockfish" %></a>
-  </div>
-  <div class="option_item">
-    <a class="icon" data-icon="/" id="analysis_board" href="https://lichess.org/analysis"
-    title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
-  </div>
-  <div class="option_item">
-    <a class="icon" data-icon="E" id="copy_line_to_clipboard" href="#" title="<%= dgettext "study", "Copy chapter to clipboard" %>">
-      <%= dgettext "study", "Copy chapter to clipboard" %>
-    </a>
-  </div>
-  <div class="option_item">
-    <a class="icon" data-icon="." id="reset_line"><%= dgettext("study", "Reset line") %></a>
-  </div>
-  <div class="option_item">
-    <%= if !@study.favorites do %>
-      <%= link dgettext("study", "Favorite study"), to: Routes.study_path(@conn, :favorite_study, @study.slug), method: :post, class: "icon", "data-icon": "#" %>
-    <% else %>
-      <%= link dgettext("study" ,"Unfavorite study"), to: Routes.study_path(@conn, :unfavorite_study, @study.slug), method: :post, class: "icon", "data-icon": "\"" %>
-    <% end %>
-  </div>
-  <div class="option_item">
-    <a class="icon" data-icon="-" id="arrows_toggle">placeholder</a>
-  </div>
-  <div class="option_item">
-    <a class="icon" data-icon="3" id="comments_toggle" title="<%= dgettext("study", "Option to control when comments are displayed") %>">placeholder</a>
-  </div>
-  <div class="option_item">
-    <a class="icon" data-icon="(" id="line_review" title="<%= dgettext("study", "At the end of lines the board is only reset after 3 seconds giving you time to review the final position.") %>">placeholder</a>
-  </div>
-  <div class="option_item">
-    <a class="icon" data-icon="-" id="arrow_type" title="<%= dgettext("study", "Option to control the type of hints shown. 'Moves' means arrows are displayed for all playable moves in the study. 'Annotations' are arrows and circles from the study or PGN file. These can be created at Lichess.org and other sites.") %>">placeholder</a>
-  </div>
-  <div class="option_item">
-    <a class="icon" data-icon="(" id="move_delay"><%= dgettext("study", "Move delay:") %> <span id="move_delay_time">placeholder</span></a>
-  </div>
-  <div class="option_item">
-    <div id="max_depth_container" title="<%= dgettext("study", "Lets you choose how many moves deep in the repertoire to train. The highest value you can choose is the length of the longest line. Set to a lower value to train against a more shallow subset of the repertoire, and to the highest value to train against the full repertoire.") %>">
-      <a class="icon" data-icon="+"><%= dgettext("study", "Max depth: ") %></a>
-      <a id="max_depth_label" class="max_depth_label">placeholder</a>
-      <a id="max_depth_sub" class="max_depth_ctrl" role="button">-</a><input type="range" id="max_depth_range" class="max_depth_range" min="1" max="1"><a id="max_depth_add" class="max_depth_ctrl" role="button">+</a>
-    </div>
-  </div>
-  <div class="option_item">
-    <a class="icon" data-icon="$" id="key_move" title="<%= dgettext("study", "Don't repeat the early moves that are already known. Skips to the first branching move in the study.") %>">placeholder</a>
-  </div>
-</div>
 
-<div class="options_area">
-  <div class="option_item_progressbar">
-    <a style="display: block; padding-bottom: 5px;" href="#" data-icon="+" class="icon modal_open" id="progress"><%= dgettext("study","Progress") %></a>
-    <div id="chapter_progress"></div>
-  </div>
-  <div class="option_item">
-  </div>
-</div>
 
-<div class="highlight clicking_turns_on_hints">
-  <b><%= dgettext "study", "Description" %></b>
-  <p><%= @study.description %></p>
 
-  <%= if @study.is_owner do %>
-    <p><%= link (dgettext "study", "Edit"), to: Routes.study_path(@conn, :edit, @locale, @study) %></p>
-  <% end %>
 
-  <b><%= dgettext "study", "Creator" %></b>
-  <p><%= link @study.user.username, to: Routes.user_profile_path(@conn, :show, @locale, @study.user.username) %></p>
+<%= render "_study_settings.html", study: @study %>
 
-  <b><%= dgettext "study", "Opening"%></b>
-  <p><%= link @opening.name, to: Routes.opening_path(@conn, :show, @locale, @opening.slug) %></p>
-</div>
+<%= render "_sparring_history.html" %>
 
-<hr>
+<dialog id="study_info_dialog" class="study-dialog study-about" aria-labelledby="study_info_title">
+  <header class="study-dialog-header">
+    <h2 id="study_info_title"><%= dgettext("study", "Study details") %></h2>
+    <form method="dialog"><button type="submit"><%= dgettext("study", "Close") %></button></form>
+  </header>
+<p><%= @study.description %></p>
+<% source = seed_source(@study) %>
+<dl class="study-metadata"><div><dt><%= if source, do: dgettext("study", "Imported by"), else: dgettext("study", "Creator") %></dt>
+<dd><%= link @study.user.username, to: Routes.user_profile_path(@conn, :show, @locale, @study.user.username) %></dd></div>
+<%= if source do %>
+<div><dt><%= dgettext("study", "Source annotations") %></dt><dd>
+<%= for author <- source["authors"] do %><%= link author["name"], to: author["url"], target: "_blank", rel: "noopener noreferrer" %> <% end %>
+</dd></div>
+<div><dt><%= dgettext("study", "Original studies") %></dt><dd>
+<%= for url <- source["sources"] do %><%= link url, to: url, target: "_blank", rel: "noopener noreferrer" %><br><% end %>
+</dd></div>
+<% end %>
+<div><dt><%= dgettext("study", "Opening") %></dt>
+<dd><%= link @opening.name, to: Routes.opening_path(@conn, :show, @locale, @opening.slug) %></dd></div></dl>
+<details id="study_discussion" class="study-controls-panel study-discussion">
+<summary><%= dgettext("comments", "Comments") %></summary>
 <%= render ListudyWeb.CommentView, "show_comments.html", type: "study", id: Integer.to_string(@study.id), action: Routes.comment_path(@conn, :new_comment), conn: @conn %>
 <%= render ListudyWeb.CommentView, "comment_form.html", type: "study", id: Integer.to_string(@study.id), action: Routes.comment_path(@conn, :new_comment), conn: @conn %>
-
+</details>
+</dialog>
+<%= render "_collection_modal.html", conn: @conn %>
 
 
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
-<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study.js") %>"></script>
+<script defer type="text/javascript" src="<%= study_script_path(@conn) %>"></script>
 <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
   /*
    * "Cleans" pgn files, 
@@ -165,6 +223,13 @@
 
   let i18n = {};
   i18n.info_intro = "<%= dgettext "study", "Starting training." %>";
+  i18n.no_playable_chapters = "<%= dgettext "study", "Add moves to a chapter to start practicing." %>";
+  i18n.read_choose_continuation = "<%= dgettext "study", "Choose a continuation from this chapter." %>";
+  i18n.read_start_position = "<%= dgettext "study", "Starting position" %>";
+  i18n.read_variation = "<%= dgettext "study", "Variation" %>";
+  i18n.tactics_commented_variation = "<%= dgettext "study", "This variation is annotated. Find the main continuation." %>";
+  i18n.tactics_trap_failed = "<%= dgettext "study", "Incorrect move. Try again or view the solution." %>";
+  i18n.tactics_no_mainline_moves = "<%= dgettext "study", "No moves to practice before the main line's error annotation. Explore this chapter in reading mode." %>";
   i18n.info_arrows = "<%= dgettext "study", "By default arrows will provide hints to show which moves are in this study. Using the options below you can control for how many moves the arrows/hints should stay visible. By default they stay visible until all moves in a position has been played twice. Any non-playable arrow annotations from the study or PGN file will appear as transparent arrows." %>";
   i18n.error_wrong_move = "<%= dgettext "study", "This move is not in the study, try again." %>";
   i18n.success_right_move = "<%= dgettext "study", "Right move!" %>";
@@ -186,6 +251,37 @@
   i18n.arrow_type_playable = "<%= dgettext "study", "Hints: playable moves only" %>";
   i18n.arrow_type_pgn = "<%= dgettext "study", "Hints: annotations only" %>";
   i18n.review_slow = "<%= dgettext "study", "Board reset delay: slow" %>";
+  i18n.puzzle_run_off = "<%= dgettext "study", "Puzzle run: off" %>";
+  i18n.puzzle_run_next = "<%= dgettext "study", "Puzzle run: next" %>";
+  i18n.puzzle_run_smart = "<%= dgettext "study", "Puzzle run: smart" %>";
+  i18n.smart_learning = "<%= dgettext "study", "Smart: learning a new line (up to 10 new positions per session)" %>";
+  i18n.smart_introduction = "<%= dgettext "study", "New continuation: play the highlighted move. This is learning, not a graded review." %>";
+  i18n.smart_introduction_retry = "<%= dgettext "study", "Follow the highlighted move to learn this continuation. No mistake recorded." %>";
+  i18n.smart_other_continuation = "<%= dgettext "study", "That move is in your repertoire. Try another continuation for this chain." %>";
+  i18n.smart_chain_complete = "<%= dgettext "study", "Practice chain complete!" %>";
+  i18n.progress_storage_error = "<%= dgettext "study", "Progress could not be saved on this device. Keep this page open and connect to synchronize your progress." %>";
+  i18n.progress_sync_error = "<%= dgettext "study", "Progress could not be synchronized. Your local copy is retained; check that you are signed in to the correct account." %>";
+  i18n.progress_sync_offline = "<%= dgettext "study", "Waiting for a connection to sync your progress." %>";
+  i18n.smart_review = "<%= dgettext "study", "Smart: reviewing a due position" %>";
+  i18n.smart_long_review = "<%= dgettext "study", "Smart: checking a longer line" %>";
+  i18n.smart_complete = "<%= dgettext "study", "Smart session complete for now" %>";
+  i18n.session_labels = {
+    session: "<%= dgettext "study", "Session" %>",
+    newMoves: "<%= dgettext "study", "new" %>",
+    practiced: "<%= dgettext "study", "practiced" %>",
+    decisions: "<%= dgettext "study", "decisions" %>",
+    sessions: "<%= dgettext "study", "sessions" %>",
+    total: "<%= dgettext "study", "Total in this study" %>",
+    today: "<%= dgettext "study", "Today" %>",
+    lines: "<%= dgettext "study", "Full lines" %>",
+    positions: "<%= dgettext "study", "Positions" %>",
+    inProgress: "<%= dgettext "study", "In progress" %>",
+    goalReached: "<%= dgettext "study", "Session goal reached" %>",
+    noWork: "<%= dgettext "study", "Session complete for now" %>",
+    saved: "<%= dgettext "study", "Saved" %>",
+    finishChain: "<%= dgettext "study", "Finish this chain to complete the session" %>"
+  };
+  i18n.puzzle_run_random = "<%= dgettext "study", "Puzzle run: random" %>";
   i18n.review_fast = "<%= dgettext "study", "Board reset delay: fast" %>";
   i18n.key_move_enabled = "<%= dgettext "study", "Jump to key move: on" %>";
   i18n.key_move_disabled = "<%= dgettext "study", "Jump to key move: off" %>";
@@ -197,6 +293,49 @@
   i18n.comments_always_on = "<%= dgettext "study", "Comments: always on" %>";
   i18n.comments_hidden = "<%= dgettext "study", "Comments: hidden" %>";
   i18n.confirm_reset_progress = "<%= dgettext "study", "Are you sure you want to delete your study progress?" %>";
+  i18n.progress_errors = "<%= dgettext "study", "Mistakes" %>";
+  i18n.progress_error = "<%= dgettext "study", "mistake" %>";
+  i18n.progress_errors_lower = "<%= dgettext "study", "mistakes" %>";
+  i18n.progress_correct_moves = "<%= dgettext "study", "Correct moves" %>";
+  i18n.progress_recent_accuracy = "<%= dgettext "study", "Recent first-try accuracy" %>";
+  i18n.progress_moves_missed = "<%= dgettext "study", "moves missed" %>";
+  i18n.progress_last_short = "<%= dgettext "study", "Last" %>";
+  i18n.progress_current_short = "<%= dgettext "study", "Current" %>";
+  i18n.progress_no_recent_practice = "<%= dgettext "study", "No recent practice" %>";
+  i18n.progress_last_practice = "<%= dgettext "study", "Last practice" %>";
+  i18n.progress_current_practice = "<%= dgettext "study", "Current practice" %>";
+  i18n.progress_practice = "<%= dgettext "study", "practice" %>";
+  i18n.progress_practices = "<%= dgettext "study", "practices" %>";
+  i18n.progress_incomplete = "<%= dgettext "study", "incomplete" %>";
+  i18n.progress_practiced_moves = "<%= dgettext "study", "Moves practiced" %>";
+  i18n.progress_coverage = "<%= dgettext "study", "Continuation coverage" %>";
+  i18n.progress_full_coverage = "<%= dgettext "study", "Full repertoire coverage" %>";
+  i18n.progress_within_depth = "<%= dgettext "study", "Within depth" %>";
+  i18n.progress_scope_help = "<%= dgettext "study", "Recall, new continuations and due reviews refer to the selected depth. Deeper reviews keep their original schedules." %>";
+  i18n.progress_covered_short = "<%= dgettext "study", "covered" %>";
+  i18n.progress_recall = "<%= dgettext "study", "Recall" %>";
+  i18n.progress_recall_unknown = "<%= dgettext "study", "Not enough review data yet" %>";
+  i18n.progress_graded_reviews = "<%= dgettext "study", "recent graded reviews" %>";
+  i18n.progress_new = "<%= dgettext "study", "New continuations" %>";
+  i18n.progress_due_continuations = "<%= dgettext "study", "Continuations due for review" %>";
+  i18n.progress_due_short = "<%= dgettext "study", "due" %>";
+  i18n.progress_coverage_help = "<%= dgettext "study", "Coverage counts continuations answered correctly without help. Full coverage does not mean lasting recall." %>";
+  i18n.progress_recall_help = "<%= dgettext "study", "Recall is first-try accuracy in the last 20 graded continuation reviews, excluding each initial encounter. Hints count as misses." %>";
+  i18n.progress_clean_moves = "<%= dgettext "study", "Clean moves since last mistake" %>";
+  i18n.progress_needs_practice = "<%= dgettext "study", "Needs practice" %>";
+  i18n.progress_correct = "<%= dgettext "study", "correct" %>";
+  i18n.progress_not_practiced = "<%= dgettext "study", "Not practiced" %>";
+  i18n.progress_no_attempts = "<%= dgettext "study", "Not practiced yet" %>";
+  i18n.practice_failed_positions = "<%= dgettext "study", "Practice failed positions" %>";
+  i18n.failed_position = "<%= dgettext "study", "Position" %>";
+  i18n.failed_positions_complete = "<%= dgettext "study", "Failed position practice complete!" %>";
+  i18n.weak_run_active = "<%= dgettext "study", "Practicing weak chapters" %>";
+  i18n.weak_run_remaining = "<%= dgettext "study", "chapters left" %>";
+  i18n.weak_run_complete = "<%= dgettext "study", "Weak chapter practice complete!" %>";
+  i18n.spaced_review_due = "<%= dgettext "study", "Review due" %>";
+  i18n.spaced_review_next = "<%= dgettext "study", "Next review" %>";
+  i18n.spaced_review_active = "<%= dgettext "study", "Reviewing due chapters" %>";
+  i18n.spaced_review_complete = "<%= dgettext "study", "Reviews complete for now!" %>";
   i18n.response = "<%= dgettext "study", "response" %>";
   i18n.max_depth = "<%= dgettext "study", "Max depth: " %>";
   i18n.overlay_playable_move = "<%= dgettext "study", "Opaque arrows with a black outline are playable moves" %>";
@@ -207,12 +346,69 @@
 </script>
 
 <div id="progress_modal" class="modal">
-  <div class="modal-content">
+  <div class="modal-content"
+    x-data="{ chapters: [], weakRunActive: false, spacedReviewActive: false, practiceMode: 'chapters' }"
+    x-on:study-progress-updated.window="chapters = &#36;event.detail"
+    x-on:study-weak-run-updated.window="weakRunActive = &#36;event.detail.active"
+    x-on:study-spaced-run-updated.window="spacedReviewActive = &#36;event.detail.active">
     <span class="modal_close">&times;</span>
     <h3><%= dgettext("study","Study Progress")%></h3>
-    <div class="study_progress" id="study_progress"></div>
-    <button id="study_progress_reset" class="primary"><%= dgettext("study", "Reset progress") %></button>
+    <section class="study-time-summary" aria-labelledby="study_time_title">
+      <h4 id="study_time_title"><%= dgettext("study", "Practice time") %></h4>
+      <p id="study_time_today"></p>
+      <p id="study_time_total"></p>
+      <details class="study-session-history">
+        <summary><%= dgettext("study", "Recent sessions") %></summary>
+        <ol id="study_session_history"></ol>
+      </details>
+      <p class="study-time-help"><%= dgettext("study", "Tracks practice from now on. Time pauses in hidden tabs and after two minutes without activity. Reading time is excluded.") %></p>
+    </section>
+    <div class="study_progress" id="study_progress">
+      <template x-for="chapter in chapters" :key="chapter.index">
+        <button type="button" class="chapter-progress-summary"
+          :class="'chapter-progress-summary--' + (chapter.reviewDue ? 'due' : chapter.pickerTone === 'mistakes' ? 'watch' : 'unrated') + (chapter.current ? ' chapter-progress-summary--current' : '')"
+          :aria-current="chapter.current ? 'true' : null"
+          x-on:click="$dispatch('study-progress-open-chapter', { index: chapter.index })">
+          <strong x-text="chapter.name"></strong>
+          <span class="chapter-progress-cues" x-show="chapter.current || chapter.scopeComplete || chapter.reviewDue">
+            <span class="chapter-progress-current" x-show="chapter.current"><%= dgettext("study", "Current chapter") %></span>
+            <span class="chapter-progress-solid" x-show="chapter.scopeComplete" x-text="chapter.limited ? $el.dataset.scopedLabel : $el.dataset.fullLabel"
+                  data-scoped-label="<%= dgettext("study", "All continuations within limit practiced") %>"
+                  data-full-label="<%= dgettext("study", "All continuations practiced") %>"></span>
+            <span class="chapter-progress-due" x-show="chapter.reviewDue"><%= dgettext("study", "Review due") %></span>
+          </span>
+          <span x-text="chapter.coverageLabel" title="<%= dgettext("study", "Continuations answered correctly without help at least once. This does not measure lasting recall.") %>"></span>
+          <span x-show="chapter.limited" x-text="chapter.fullCoverageLabel"></span>
+          <span x-text="chapter.recallLabel" title="<%= dgettext("study", "First-try accuracy in the last 20 graded continuation reviews, excluding each initial encounter. Hints count as misses.") %>"></span>
+          <span x-text="chapter.pendingLabel"></span>
+          <span x-text="chapter.metrics"></span>
+          <span x-show="chapter.reviewLabel && !chapter.reviewDue" x-text="chapter.reviewLabel"></span>
+        </button>
+      </template>
+    </div>
+    <div class="study-progress-actions">
+      <button type="button" class="secondary" id="review_due_chapters"
+        x-show="spacedReviewActive || chapters.some(chapter => chapter.reviewDue)"
+        x-on:click="$dispatch('study-progress-toggle-spaced-run')"
+        data-start-label="<%= dgettext("study", "Review due chapters") %>"
+        data-stop-label="<%= dgettext("study", "Stop reviews") %>"
+        x-text="spacedReviewActive ? $el.dataset.stopLabel : $el.dataset.startLabel + ' (' + chapters.filter(chapter => chapter.reviewDue).length + ')'"></button>
+      <button type="button" class="secondary" id="practice_weak_chapters"
+        x-show="weakRunActive || chapters.some(chapter => practiceMode === 'positions' ? chapter.failedPositions > 0 : chapter.errors > 0 && !chapter.mastered)"
+        x-on:click="$dispatch('study-progress-toggle-weak-run')"
+        data-start-label="<%= dgettext("study", "Practice weak chapters") %>"
+        data-stop-label="<%= dgettext("study", "Stop weak practice") %>"
+        x-text="weakRunActive ? $el.dataset.stopLabel : $el.dataset.startLabel"></button>
+      <label class="study-practice-mode" for="weak_practice_mode">
+        <span><%= dgettext("study", "Practice") %></span>
+        <select id="weak_practice_mode" x-model="practiceMode" :disabled="weakRunActive">
+          <option value="chapters"><%= dgettext("study", "Full chapters") %></option>
+          <option value="positions"><%= dgettext("study", "Failed positions") %></option>
+        </select>
+      </label>
+      <button id="study_progress_reset" class="tertiary"><%= dgettext("study", "Reset progress") %></button>
+    </div>
   </div>
 </div>
 
-
+</div>

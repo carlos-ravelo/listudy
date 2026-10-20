@@ -332,3 +332,147 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Two minor pieces against one minor piece, with and without pawns."
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Start practicing"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Continue practicing"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Explore exercises"
+msgstr ""
+
+msgid "Practice endgames against Stockfish."
+msgstr ""
+
+msgid "%{solved} / %{total} solved"
+msgstr ""
+
+msgid "Exercise %{number}"
+msgstr ""
+
+msgid "Solved"
+msgstr ""
+
+msgid "About this category"
+msgstr ""
+
+msgid "Review exercise"
+msgstr ""
+
+msgid "Finish and review"
+msgstr ""
+
+msgid "Stockfish is thinking…"
+msgstr ""
+
+msgid "Stockfish is unavailable. Reset the exercise to retry."
+msgstr ""
+
+msgid "White to play"
+msgstr ""
+
+msgid "Black to play"
+msgstr ""
+
+msgid "Win"
+msgstr ""
+
+msgid "Draw"
+msgstr ""
+
+msgid "Promote a pawn"
+msgstr ""
+
+msgid "Position before %{move}."
+msgstr ""
+
+msgid "Estimated winning advantage reduced"
+msgstr ""
+
+msgid "Position became difficult to hold"
+msgstr ""
+
+msgid "No clear change in the estimated outcome"
+msgstr ""
+
+msgid "Analysis inconclusive"
+msgstr ""
+
+msgid "Some analysis is unavailable. Open the review again to retry."
+msgstr ""
+
+msgid "Analysing…"
+msgstr ""
+
+msgid "Select a move to review its position."
+msgstr ""
+
+msgid "Suggested continuation:"
+msgstr ""
+
+msgid "%{done} / %{total} decisions analysed"
+msgstr ""
+
+msgid "%{count} key moments"
+msgstr ""
+
+msgid "Starting position"
+msgstr ""
+
+msgid "Position details"
+msgstr ""
+
+msgid "Lichess analysis"
+msgstr ""
+
+msgid "Live feedback"
+msgstr ""
+
+msgid "Exercise review"
+msgstr ""
+
+msgid "Retry this position"
+msgstr ""
+
+msgid "Continue playing"
+msgstr ""
+
+msgid "Engine estimates from limited searches, not exact win or draw guarantees. Highlighted moves show possible changes in the outcome."
+msgstr ""
+
+msgid "Mate in %{moves}"
+msgstr ""
+
+msgid "Opponent has mate in %{moves}"
+msgstr ""
+
+msgid "Evaluation"
+msgstr ""
+
+msgid "Evaluation bar"
+msgstr ""
+
+msgid "Undo last move"
+msgstr ""
+
+msgid "Take back your last move and the engine reply."
+msgstr ""
+
+msgid "Breadcrumb"
+msgstr ""
+
+msgid "The win became a draw"
+msgstr ""
+
+msgid "The winning position became lost"
+msgstr ""
+
+msgid "The draw became a loss"
+msgstr ""
+
+msgid "There was a faster mate"
+msgstr ""

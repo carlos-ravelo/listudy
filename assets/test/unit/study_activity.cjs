@@ -1,0 +1,36 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+(async () => {
+    const source = fs.readFileSync(path.resolve(__dirname, '../../js/modules/study_activity.js'), 'utf8');
+    const { readStudyActivity, requestedStudyActivity, trackStudyActivity } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+    const values = new Map();
+    const storage = { getItem: key => values.get(key), setItem: (key, value) => values.set(key, value) };
+    global.window = new EventTarget();
+    const save = trackStudyActivity('italian', storage);
+    assert.equal(readStudyActivity('italian', storage), null);
+    save('sparring');
+    assert.equal(readStudyActivity('italian', storage), 'sparring');
+    assert.equal(readStudyActivity('caro-kann', storage), null);
+    window.dispatchEvent(new Event('study-puzzle-run-off'));
+    window.dispatchEvent(new CustomEvent('study-reading-updated', { detail: { reading: false } }));
+    window.dispatchEvent(new CustomEvent('study-sparring-updated', { detail: { active: false } }));
+    assert.equal(readStudyActivity('italian', storage), 'sparring', 'Mode cleanup must not replace the selected activity');
+    window.dispatchEvent(new CustomEvent('study-reading-updated', { detail: { reading: true } }));
+    assert.equal(readStudyActivity('italian', storage), 'read');
+    window.studyPuzzleRunMode = 'smart';
+    window.dispatchEvent(new Event('study-puzzle-run-changed'));
+    assert.equal(readStudyActivity('italian', storage), 'smart');
+    window.studyPuzzleRunMode = 'random';
+    window.dispatchEvent(new Event('study-puzzle-run-changed'));
+    assert.equal(readStudyActivity('italian', storage), 'lines');
+    for (const mode of ['read', 'smart', 'lines', 'sparring']) assert.equal(requestedStudyActivity(`?mode=${mode}`), mode);
+    for (const search of ['?mode=unknown', '?mode=sparring&practice=chapter', '?mode=read&practice_fen=fen']) assert.equal(requestedStudyActivity(search), null);
+    values.set('studyActivity:italian', 'invalid');
+    assert.equal(readStudyActivity('italian', storage), null);
+    const blocked = { getItem() { throw Error('denied'); }, setItem() { throw Error('denied'); } };
+    assert.equal(readStudyActivity('italian', blocked), null);
+    assert.doesNotThrow(() => trackStudyActivity('italian', blocked)('read'));
+    console.log('Study activity persistence, isolation, transition cleanup and directed practice precedence passed');
+})().catch(error => { console.error(error); process.exitCode = 1; });

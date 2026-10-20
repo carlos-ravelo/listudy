@@ -76,6 +76,67 @@
     min-width: 26ch;
 }
 
+.study-heading {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+}
+
+.study-heading .study-feature-title { margin-bottom: 0; }
+.study-edit-link { font-size: 0.9rem; }
+
+.study-primary-actions,
+.study-quick-options,
+.study-settings-grid,
+.study-more-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.4rem 1rem;
+}
+
+.study-primary-actions { padding: 0.75rem 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.study-primary-actions .option_item > a,
+.study-primary-actions .option_item > button {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    line-height: 1.35;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+    .study-primary-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.study-quick-options { padding-bottom: 0.75rem; }
+
+.study-primary-actions .option_item,
+.study-quick-options .option_item,
+.study-settings-grid .option_item,
+.study-more-grid .option_item {
+    min-width: 0;
+    margin: 0;
+}
+
+.study-controls-panel {
+    padding: 0.75rem 0;
+    border-top: 1px solid #eaeaea;
+}
+
+.study-controls-panel > summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.study-controls-panel > summary:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+}
+
+.study-controls-panel[open] > summary { margin-bottom: 0.75rem; }
+.study-about p { margin: 0.25rem 0 0.75rem; }
+.study-discussion h2 { display: none; }
+
 .option_item_progressbar {
     margin-right: 3rem;
     margin-bottom: 1em;
@@ -101,20 +162,70 @@
     font-size: 0.9em;
 }
 
-.study_search_results {
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-}
-.study_search_result {
-    flex: 250px;
-    padding: 0.5em;
-}
-
 .study_progress {
-    overflow-y: scroll;
+    overflow-y: auto;
     max-height: 20em;
 }
+
+.study-progress-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.study-progress-actions button { margin: 0; }
+
+.study-weak-run-status {
+    margin: 0.35em 0 0;
+    font-size: 0.85em;
+}
+
+.chapter-progress-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    height: auto;
+    padding: 0.65em 0.85em;
+    margin: 0 0 0.35em;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: normal;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: normal;
+    border: 1px solid transparent;
+    border-left: 4px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.chapter-progress-summary > strong,
+.chapter-progress-summary > span {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+.chapter-progress-summary > span { margin-top: 0.2em; }
+.chapter-progress-summary:hover, .chapter-progress-summary:focus-visible { border-color: currentColor; }
+.chapter-progress-summary--watch { border-left-color: #d97706; background: rgba(217, 119, 6, 0.08); }
+.chapter-progress-summary--weak { border-left-color: #c53030; background: rgba(197, 48, 48, 0.1); }
+
+.chapter-progress-summary--due { border-left-color: #d97706; background: rgba(217, 119, 6, 0.08); }
+.chapter-progress-summary--solid { border-left-color: var(--success-color); background: rgba(79, 138, 16, 0.08); }
+.progress-bar--solid .progress-bar-fill { background: var(--success-color); }
+.chapter-progress-summary--current { outline: 2px solid var(--secondary-color); outline-offset: -2px; }
+.chapter-progress-summary .chapter-progress-cues { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.3em; }
+.chapter-progress-cues > span { padding: 0.1em 0.4em; border-radius: 4px; }
+.chapter-progress-current { background: var(--info-bg); color: var(--info-color); }
+.chapter-progress-due { background: rgba(217, 119, 6, 0.12); color: #a65f00; }
+.chapter-progress-solid { background: var(--success-bg); color: var(--success-color); }
+
+.chapter-progress-summary span, .chapter-weakness { font-size: 0.85em; }
+.chapter-weakness { margin: 0.35em 0 0; }
+.chapter-weakness--watch { color: #a65f00; }
+.chapter-weakness--weak { color: #c53030; }
 
 .max_depth_label {
     display: inline-block;

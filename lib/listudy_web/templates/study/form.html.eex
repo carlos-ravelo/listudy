@@ -1,50 +1,95 @@
-<%= form_for @assigns.changeset, @action, [multipart: true], fn f -> %>
+<% tactics = Ecto.Changeset.get_field(@assigns.changeset, :training_kind) == "tactics" %>
+<% maintenance = Map.get(@assigns, :maintenance, false) %>
+<%= form_for @assigns.changeset, @action, [multipart: true, class: if(Map.get(@assigns, :maintenance, false), do: "study-management-form", else: "study-form"), "x-data": if(Map.get(@assigns, :maintenance, false), do: "studyMetadata", else: "{ changed: false }"), "@submit": if(Map.get(@assigns, :maintenance, false), do: "save($event)", else: ""), "@input": "changed = true", "@change": "changed = true"], fn f -> %>
   <%= if @assigns.changeset.action do %>
     <div class="alert alert-danger">
       <p>Oops, something went wrong! Please check the errors below.</p>
     </div>
   <% end %>
 
+  <%= unless Map.get(@assigns, :maintenance, false) do %>
+    <div class="study-create-layout">
+    <div class="study-create-main">
+    <div class="study-create-fields">
+  <% end %>
+
+  <div class="study-metadata-title">
   <%= label f, :title, dgettext("study", "Title") %>
-  <%= text_input f, :title, class: "big_input", minlength: 3, maxlength: 60, placeholder: dgettext("study", "Caro-Kann Defense"), required: true, autofocus: true %>
+  <%= text_input f, :title, class: "big_input", minlength: 3, maxlength: 60, placeholder: if(tactics, do: dgettext("study", "Tactics from my book"), else: dgettext("study", "Caro-Kann Defense")), required: true %>
   <%= error_tag f, :title %>
-
-  <%= label f, :description, dgettext("study", "Description") %>
-  <%= textarea f, :description, class: "big_input", minlength: 20, maxlength: 1000, required: true, placeholder: dgettext("study", "In this study I work on my 1.e4 openings...") %>
-  <%= error_tag f, :description %>
-
-  <%= label f, :opening_id, dgettext("study", "Opening") %>
-  <%= select(f, :opening_id, Enum.map(@assigns.openings, fn %{name: name, id: id} -> [key: name, value: id] end), selected: selected_opening(@assigns), class: "study_opening_id big_input") %>
-
-  <div class="pgn_choice">
-    <p><%= dgettext("study", "Either upload a PGN file or provide a link to a public Lichess study:") %></p>
-    <div class="row">
-      <div class="one-half column">
-        <%= label f, :pgn, dgettext("study", "Select a PGN to upload") %>
-        <%= file_input f, :pgn %>
-      </div>
-
-      <div class="one-half column">
-        <%= label f, :lichess_study, dgettext("study", "Lichess Study") %>
-        <%= text_input f, :lichess_study, placeholder: "https://lichess.org/study/ZWHbJIPd", class: "big_input" %>
-        <%= error_tag f, :lichess_study %>
-      </div>
-    </div>
   </div>
 
+  <div class="study-metadata-line">
+  <div class="study-metadata-description">
 
-  <div class="row study_below_highlight">
-    <div class="one-half column">
+  <%= label f, :description, dgettext("study", "Description (optional)") %>
+  <%= textarea f, :description, class: "big_input", rows: 2, maxlength: 1000, placeholder: if(tactics, do: dgettext("study", "Exercises and explanations to practice…"), else: dgettext("study", "In this study I work on my 1.e4 openings...")) %>
+  <%= error_tag f, :description %>
+
+  </div>
+  </div>
+
+  <div class="study-management-settings-row" data-practice-kind="<%= Ecto.Changeset.get_field(@assigns.changeset, :training_kind) %>" x-data="{ kind: $el.dataset.practiceKind }">
+  <div class="study-management-kind">
+    <%= if maintenance do %>
+    <%= label f, :training_kind, dgettext("study", "Practice type") %>
+    <%= select f, :training_kind, [{dgettext("study", "Repertoire"), "repertoire"}, {dgettext("study", "Tactics collection"), "tactics"}], "x-model": "kind" %>
+    <% else %>
+    <fieldset class="study-segmented-field">
+      <legend><%= dgettext("study", "Practice type") %></legend>
+      <div class="study-segmented-control">
+        <%= for {value, text} <- [{"repertoire", dgettext("study", "Repertoire")}, {"tactics", dgettext("study", "Tactics collection")}] do %>
+          <label>
+            <%= radio_button f, :training_kind, value, "x-model": "kind" %>
+            <span><%= text %></span>
+          </label>
+        <% end %>
+      </div>
+    </fieldset>
+    <% end %>
+    <%= error_tag f, :training_kind %>
+  </div>
+  <div class="study-metadata-opening" x-show="kind === 'repertoire'" x-cloak>
+    <%= render "_opening_picker.html", f: f, openings: @assigns.openings,
+          selected: Ecto.Changeset.get_field(@assigns.changeset, :opening_id) || selected_opening(@assigns) %>
+
+  </div>
+    <div class="study-management-side" x-show="kind === 'repertoire'" x-cloak>
+      <%= if maintenance do %>
       <%= label f, :color, dgettext("study", "For which side is this study") %>
       <%= select(f, :color, ["White": "white", "Black": "black"]) %>
+      <% else %>
+      <fieldset class="study-segmented-field">
+        <legend><%= dgettext("study", "For which side is this study") %></legend>
+        <div class="study-segmented-control">
+          <%= for {value, icon, text} <- [{"white", "♔", dgettext("study", "White")}, {"black", "♚", dgettext("study", "Black")}] do %>
+            <label>
+              <%= radio_button f, :color, value, checked: (Ecto.Changeset.get_field(@assigns.changeset, :color) || "white") == value %>
+              <span><span aria-hidden="true"><%= icon %></span> <%= text %></span>
+            </label>
+          <% end %>
+        </div>
+      </fieldset>
+      <%= error_tag f, :color %>
+      <% end %>
     </div>
-
-    <div class="one-half column">
+    <%= if maintenance do %>
+    <div class="study-management-private">
       <%= label f, :private, dgettext("study", "Keep this study private") %>
       <%= checkbox f, :private %>
     </div>
+    <% end %>
   </div>
 
+  <%= unless Map.get(@assigns, :maintenance, false) do %></div><% end %>
+  <%= if Map.get(@assigns, :maintenance, false) do %>
+    <%= render "_import.html", f: f, conn: @assigns.conn %>
+  <% end %>
+  <%= if Map.get(@assigns, :maintenance, false) do %>
+    <p class="study-management-status" role="status" x-text="status"></p>
+  <% end %>
+
+  <%= if Map.get(@assigns, :maintenance, false) do %>
   <script type="text/javascript" src="<%= Routes.static_path(@assigns.conn, "/js/jquery-3.5.1.min.js") %>"></script>
   <script type="text/javascript" src="<%= Routes.static_path(@assigns.conn, "/js/select2.min.js") %>"></script>
   <link rel="stylesheet" href="<%= Routes.static_path(@assigns.conn, "/css/select2.min.css") %>"/>
@@ -54,19 +99,47 @@
 .select2-container {
   color: black;
 }
-button {
-  margin-top: 20px;
-}
 </style>
 
 <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@assigns.conn) %>>
 $(document).ready(function() {
-    $('#study_opening_id').select2();
+    <%= unless Map.get(@assigns, :maintenance, false) do %>
+    $('#study_opening_id').select2({width: '100%'});
+    <% end %>
 });
 </script>
+  <% end %>
 
-<div>
-  <%= submit "Save", class: "primary" %>
-  <button class="go-back tertiary"><%= dgettext("study", "Back") %></button>
+<%= unless maintenance do %>
+<div class="study-form-footer">
+  <div class="study-management-private">
+    <%= checkbox f, :private %>
+    <%= label f, :private, dgettext("study", "Keep this study private") %>
+  </div>
+<% end %>
+<div class="study-form-actions" <%= if Map.get(@assigns, :maintenance, false) and is_nil(@assigns.changeset.action), do: raw("x-show=\"changed\" x-cloak") %>>
+  <%= submit "Save", class: if(Map.get(@assigns, :maintenance, false), do: "primary", else: "button practice-primary"), "x-bind:disabled": "typeof saving !== 'undefined' && saving" %>
+  <%= unless Map.get(@assigns, :maintenance, false) do %>
+    <%= link dgettext("study", "Back"), to: Routes.study_path(@assigns.conn, :index, @assigns.locale), class: "button practice-secondary" %>
+  <% end %>
 </div>
+<%= unless maintenance do %>
+</div>
+</div>
+    <aside class="study-create-options" aria-label="<%= dgettext("study", "Study sources") %>">
+      <section class="study-create-card" aria-labelledby="study-create-scratch-title">
+        <h2 id="study-create-scratch-title"><%= dgettext("study", "Start from scratch") %></h2>
+        <%= link dgettext("study", "Start on the board"), to: Routes.study_path(@assigns.conn, :new, @assigns.locale, source: "blank", kind: Ecto.Changeset.get_field(@assigns.changeset, :training_kind)), class: "button practice-primary" %>
+        <p><%= dgettext("study", "Play your moves or set up a position. No file needed.") %></p>
+      </section>
+      <section class="study-create-card" aria-labelledby="study-create-import-title">
+        <h2 id="study-create-import-title"><%= dgettext("study", "Import existing data") %></h2>
+        <%= render "_import.html", f: f, conn: @assigns.conn, creation: true %>
+        <p class="study-create-legal"><%= dgettext("study", "Please remember to only upload PGNs for which you have the rights to publish them. This is especially true, but not limited, for PGN files that you have acquired from paid platforms.") %>
+          <%= link dgettext("study", "For more information read the Copyright Policy"), to: Routes.page_path(@assigns.conn, :show, "en", "copyright") %>
+        </p>
+      </section>
+    </aside>
+</div>
+<% end %>
 <% end %>

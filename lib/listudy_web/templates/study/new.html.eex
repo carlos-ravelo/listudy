@@ -1,11 +1,6 @@
-<h1><%= dgettext("study", "Create a new Study") %></h1>
+<div class="study-create practice-page" data-training-kind="<%= Ecto.Changeset.get_field(@changeset, :training_kind) %>">
+<h1><%= if Ecto.Changeset.get_field(@changeset, :training_kind) == "tactics", do: dgettext("study", "Create tactics"), else: dgettext("study", "Create repertoire") %></h1>
 
-<div class="row">
-  <div class="two-thirds column">
-    <%= render "form.html", assigns: assigns, action: Routes.study_path(@conn, :create, @locale) %>
-  </div>
-  <div class="one-third column">
-    <p><%= dgettext("study", "Please remember to only upload PGNs for which you have the rights to publish them. This is especially true, but not limited, for PGN files that you have acquired from paid platforms.") %></p>
-<%= link dgettext("study", "For more information read the Copyright Policy"), to: Routes.page_path(@conn, :show, "en", "copyright") %>
-  </div>
+<%= render "form.html", assigns: assigns, action: Routes.study_path(@conn, :create, @locale) %>
 </div>
+<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_maintenance.js") %>"></script>

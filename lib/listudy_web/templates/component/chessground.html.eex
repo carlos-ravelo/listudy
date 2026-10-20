@@ -1,1 +1,1 @@
-<div class="chessboard cg-wrap cg-board-wrap orientation-white manipulable" id="chessground"></div>
+<div class="chessboard cg-wrap cg-board-wrap orientation-white manipulable" id="chessground" tabindex="-1" aria-label="<%= dgettext("study", "Chessboard") %>"></div>

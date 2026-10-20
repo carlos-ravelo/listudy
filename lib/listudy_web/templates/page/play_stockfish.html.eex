@@ -18,7 +18,6 @@
 
   </div>
 </div>
-<script src="/stockfish/stockfish.js"></script>
 
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
 <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/play_stockfish.js") %>"></script>

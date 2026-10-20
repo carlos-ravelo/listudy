@@ -15,7 +15,7 @@ defmodule ListudyWeb.TacticController do
 
   def daily(conn, _params) do
     tactic = daily_tactic()
-    render(conn, "daily.html", tactic: tactic)
+    render(conn, if(tactic, do: "daily.html", else: "empty.html"), tactic: tactic)
   end
 
   def custom(conn, _params) do
@@ -124,10 +124,12 @@ defmodule ListudyWeb.TacticController do
 
   def random(conn, params) do
     tactic = get_tactic(params)
-    url = get_url(conn, params, tactic)
 
-    conn
-    |> redirect(to: url)
+    if tactic do
+      redirect(conn, to: get_url(conn, params, tactic))
+    else
+      render(conn, "empty.html")
+    end
   end
 
   defp get_tactic(%{"opening" => slug}) do
@@ -194,14 +196,5 @@ defmodule ListudyWeb.TacticController do
     Routes.tactics_path(conn, ListudyWeb.TacticsLive, conn.private.plug_session["locale"], tactic)
   end
 
-  def daily_tactic() do
-    id = daily_id()
-    Tactics.get_tactic!(id)
-  end
-
-  defp daily_id() do
-    total = Tactics.tactics_count()
-    {{year, month, day}, _} = :calendar.universal_time()
-    rem(year * 1001 + month * 12345 + day * 54321, total) + 1
-  end
+  def daily_tactic(), do: Tactics.daily_tactic()
 end

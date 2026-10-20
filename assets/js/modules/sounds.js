@@ -31,4 +31,7 @@ class Sounds {
 }
 
 const sounds = new Sounds();
-export { sounds };
+function playMoveSound(move) {
+    sounds.play(/[ce]/.test(move.flags) ? 'capture' : 'move');
+}
+export { sounds, playMoveSound };

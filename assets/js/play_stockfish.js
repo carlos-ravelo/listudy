@@ -5,6 +5,8 @@ const Chess = require('chess.js')
 
 import { turn_color, setup_chess, uci_to_san, san_to_uci, initial_fen } from './modules/chess_utils.js';
 import { load_stockfish } from './modules/stockfish.js';
+import { enginePosition } from './modules/engine_position.js';
+let engineStartFen;
 import { tree_move_index, tree_children, tree_possible_moves, has_children, 
          need_hint, update_value, date_sort, tree_get_node, tree_children_filter_sort } from './modules/tree_utils.js';
 import { generate_move_trees } from './modules/tree_from_pgn.js';
@@ -42,12 +44,9 @@ function animate_progress_bar(movetime, reason="") {
 
 function ai_move() {
     let movetime = 1000
-    let threads = window.navigator.hardwareConcurrency || 1;
     animate_progress_bar(movetime, "Calculating Move...");
-    sf.postMessage('uci');
-    sf.postMessage('ucinewgame');
-    sf.postMessage(`setoption name Threads value ${threads}`);
-    sf.postMessage(`position fen ${chess.fen()}`);
+    const position = enginePosition(engineStartFen, chess);
+    sf.postMessage(`position fen ${position.initialFen}${position.moves.length ? ' moves ' + position.moves.join(' ') : ''}`);
     sf.postMessage(`go movetime ${movetime}`);
 }
 
@@ -73,6 +72,8 @@ function setup_options() {
 function reset(c) {
     let fen = initial_fen(chess);
     setup_chess(fen);
+    engineStartFen = chess.fen();
+    window.sf?.postMessage('ucinewgame');
     color = c;
     setup_ground(fen); //uses global color for orientation
     ground_set_moves();
@@ -110,6 +111,7 @@ function main(hash) {
     let first_move = hash_splits[1] || "p";
 
     setup_chess(fen);
+    engineStartFen = chess.fen();
     window.color = turn_color(chess);
     if (first_move == "sf") {
         // switch the board rotation for the player to be bottom
@@ -123,10 +125,11 @@ function main(hash) {
     animate_progress_bar(2000, "Loading Stockfish...");
 
     load_stockfish(stockfish_listener, function() {
+        sf.postMessage('ucinewgame');
         if (first_move == "sf") {
             ai_move();
         }
-    });
+    }).catch(() => set_text(error_div, 'Stockfish could not load. Reload the page to retry.'));
     setup_options();
 }
 

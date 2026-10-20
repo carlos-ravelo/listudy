@@ -25,7 +25,9 @@ defmodule ListudyWeb.Endpoint do
     at: "/",
     from: :listudy,
     gzip: false,
-    cache_control_for_etags: "public, max-age=31536000",
+    # Unversioned URLs must revalidate after a rebuild. Phoenix digest URLs
+    # retain Plug.Static's long-lived cache policy through their ?vsn= query.
+    cache_control_for_etags: "public, max-age=0, must-revalidate",
     only:
       ~w(css fonts images js sounds book_cover favicon.ico robots.txt ads.txt
         android-chrome-192x192.png android-chrome-512x512.png apple-touch-icon.png browserconfig.xml favicon-16x16.png favicon-32x32.png favicon.ico mstile-144x144.png mstile-150x150.png mstile-310x150.png mstile-310x310.png mstile-70x70.png safari-pinned-tab.svg site.webmanifest)
@@ -42,7 +44,7 @@ defmodule ListudyWeb.Endpoint do
     cache_control_for_etags: "public, max-age=31536000",
     only: ~w(stockfish),
     headers: %{"cross-origin-embedder-policy" => "require-corp"},
-    content_types: %{"stockfish.wasm" => "application/wasm"}
+    content_types: %{"stockfish-19-lite-single.wasm" => "application/wasm"}
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

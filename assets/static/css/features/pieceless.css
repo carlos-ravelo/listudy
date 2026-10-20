@@ -7,16 +7,20 @@
     width: 2em;
 }
 
-cg-board > piece {
+.pieceless-workspace:not(.training-revealed):not(.training-partial) cg-board > piece {
 	background-image: none !important;
     display: none !important;
 }
 
-square.last-move {
+.pieceless-workspace:not(.training-revealed).training-partial cg-board > piece.visualization-hidden-piece {
+    visibility: hidden;
+}
+
+.pieceless-workspace:not(.training-revealed) square.last-move {
     display: none;
 }
 
-piece.ghost {
+.pieceless-workspace:not(.training-revealed) piece.ghost {
     display: none !important;
 }
 
@@ -38,8 +42,4 @@ piece.ghost {
 	font-weight: bold;
 }
 
-.pieceless_info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-}
+.pieceless_info { position: static; }

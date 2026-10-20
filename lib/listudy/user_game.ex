@@ -11,7 +11,8 @@ defmodule Listudy.Games.UserGame do
     field :result, :string
     field :played_at, :utc_datetime
 
-    belongs_to :user, Listudy.Users.User # <-- Cámbialo si tu módulo se llama diferente (ej: Listudy.User)
+    # <-- Cámbialo si tu módulo se llama diferente (ej: Listudy.User)
+    belongs_to :user, Listudy.Users.User
     has_many :deviations, Listudy.Games.Deviation
 
     timestamps()
@@ -19,8 +20,17 @@ defmodule Listudy.Games.UserGame do
 
   def changeset(user_game, attrs) do
     user_game
-    |> cast(attrs, [:platform, :game_id_on_platform, :pgn, :white_player, :black_player, :result, :played_at, :user_id])
+    |> cast(attrs, [
+      :platform,
+      :game_id_on_platform,
+      :pgn,
+      :white_player,
+      :black_player,
+      :result,
+      :played_at,
+      :user_id
+    ])
     |> validate_required([:platform, :game_id_on_platform, :pgn, :user_id])
-    |> unique_constraint([:platform, :game_id_on_platform])
+    |> unique_constraint([:user_id, :platform, :game_id_on_platform])
   end
 end

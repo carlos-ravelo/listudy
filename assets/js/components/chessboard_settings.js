@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let background_localStorageKey = "chessground_background";
     let background_selectorId = "chessboard_background";
     let bg_selector = document.getElementById(background_selectorId);
+    if (!bg_selector) return;
     let chessboard_background = localStorage.getItem(background_localStorageKey) || "blue";
     bg_selector.value = chessboard_background;
     bg_selector.onchange = function() {

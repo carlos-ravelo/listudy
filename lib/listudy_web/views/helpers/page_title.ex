@@ -24,6 +24,9 @@ defmodule ListudyWeb.PageTitle do
   defp get(%{view_module: PageView, view_template: "thanks.html"}),
     do: dgettext("page_titles", "Thank you!")
 
+  defp get(%{view_module: PageView, view_template: "credits.html"}),
+    do: gettext("Credits and license")
+
   defp get(%{view_module: PageView, view_template: "play_stockfish.html"}),
     do: dgettext("page_titles", "Play against Stockfish Online")
 

@@ -1,0 +1,60 @@
+[Event "1. Quiet development against ...Bc5"]
+[Site "Listudy"]
+[Date "????.??.??"]
+[Round "1"]
+[White "Beginner"]
+[Black "Sparring"]
+[Result "*"]
+[ECO "C50"]
+[ListudyChapterId "b618059532ef4402afcb55a40ad5ff01"]
+
+{You play White. Follow this line in Read mode first, then try Sparring. Your goals are to occupy the centre, develop your pieces and protect your king. This is an example line: Black can choose other replies.}
+1. e4 {The pawn occupies the centre and opens diagonals for your f1 bishop and queen.}
+e5 2. Nf3 {Develop a knight while attacking the e5 pawn.}
+Nc6 3. Bc4 {This bishop move introduces the Italian Game. The bishop points towards f7, but that alone is not a reason to sacrifice it.}
+Bc5 4. d3 {Support e4 and open a diagonal for the c1 bishop. We choose a quiet approach.}
+Nf6 5. c3 {Prepare the possibility of d4. There is a trade-off: your b1 knight can no longer develop to c3.}
+d6 6. O-O {Move the king away from the centre and bring the h1 rook to f1.}
+O-O 7. Re1 {The rook supports e4. You still have pieces to develop, so there is no need to rush an attack.}
+a6 8. Bb3 {Retreat the bishop while keeping the diagonal towards f7.}
+Ba7 9. Nbd2 {Develop the knight via d2 because c3 is occupied. A later trip to f1 is possible, but check Black's threats before following a plan.}
+h6 {Your next tasks are to develop the c1 bishop and consider how to prepare d4. Before each move, look for Black's checks, captures and threats. The example ends here; in Sparring you can keep playing.} *
+
+[Event "2. Two Knights: support the centre and castle"]
+[Site "Listudy"]
+[Date "????.??.??"]
+[Round "2"]
+[White "Beginner"]
+[Black "Sparring"]
+[Result "*"]
+[ECO "C55"]
+[ListudyChapterId "b618059532ef4402afcb55a40ad5ff02"]
+
+{Black develops the second knight before the bishop. We keep a simple approach with d3 and castling. You do not need to learn an attack on f7 to play this position.}
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 {The knight attacks e4. Notice what has changed before copying moves from the previous chapter.}
+4. d3 {The d3 pawn defends e4.}
+Be7 5. O-O {Protect your king while Black prepares to castle too.}
+O-O 6. Re1 {Give your central pawn extra support.}
+d6 7. c3 {Keep the possibility of a later d4 advance.}
+Na5 {The knight attacks your c4 bishop. Respond to that threat.}
+8. Bb5 {Move the attacked bishop to safety and keep the piece.}
+a6 9. Ba4 {The pawn attacks your bishop again, so find another square.}
+b5 10. Bc2 {The bishop is safe behind your pawns. Its diagonal towards e4 can open if you later advance d4.}
+c5 {Black has gained space on the queenside. Develop your b1 knight and c1 bishop, and consider the d4 break. Check the position before following a familiar plan.} *
+
+[Event "3. Respond to the central break ...d5"]
+[Site "Listudy"]
+[Date "????.??.??"]
+[Round "3"]
+[White "Beginner"]
+[Black "Sparring"]
+[Result "*"]
+[ECO "C55"]
+[ListudyChapterId "b618059532ef4402afcb55a40ad5ff03"]
+
+{Black does not have to let you develop quietly. In this example, d5 attacks both your e4 pawn and your c4 bishop. Practise noticing that threat.}
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 d5
+{The central advance calls for a decision. Here we exchange pawns to remove the attack on our bishop.}
+5. exd5 Nxd5 {The knight recaptures. Material is equal: we have not won a pawn.}
+6. O-O {Protect the king before opening more lines in the centre.}
+Be7 {Black develops the bishop and prepares to castle. This short exercise ends just after the central exchange and your castling move. Black has an active knight on d5. Before continuing in Sparring, look for threats and forcing moves for both sides rather than automatically copying the quiet line.} *

@@ -1,9 +1,12 @@
 import {Node, Tree} from './tree.js';
 
 function createNode(move) {
+    const annotation = move.move.match(/[!?]+$/)?.[0];
+    const symbolicNag = { '!': 1, '?': 2, '!!': 3, '??': 4, '!?': 5, '?!': 6 }[annotation];
     // filter only valid san characters, remove !,?, etc.
-    move.move = move.move.replace(/[^a-zA-Z0-9-+=#]/g, "");
-    let node = new Node(move.move);
+    let node = new Node(move.move.replace(/[^a-zA-Z0-9-+=#]/g, ""));
+    node.nags = [...new Set([...(move.nags || []).map(nag => Number(String(nag).replace('$', ''))),
+        ...(symbolicNag ? [symbolicNag] : [])])];
     node.comments = move.comments;
     node.updated = Date.now();
 
@@ -58,20 +61,30 @@ function generateNodes(moveLine) {
 
 // creates a tree from a parsed pgn from
 // https://github.com/kevinludwig/pgn-parser
-function generate_move_trees(parsedPGN) {
+function generate_move_trees(parsedPGN, { tactics = false } = {}) {
     console.log("parsedPGN:", parsedPGN);
     let trees = []
-    for (let game of parsedPGN) {
+    for (const [sourceIndex, game] of parsedPGN.entries()) {
         if (game.moves.length == 0) {
             continue;
         }
         let tree = new Tree(0);
+        tree.sourceIndex = sourceIndex;
         tree.root = generateNodes(game.moves);
         tree.headers = {};
         tree.comments = game.comments;
         tree.first_variation = game.first_variation;
         for (let header of game.headers) {
             tree.headers[header.name] = header.value;
+        }
+        if (tactics) {
+            const active = tree.headers.FEN?.trim().split(/\s+/)[1] === 'b' ? 'black' : 'white';
+            const declared = tree.headers.PlyCount;
+            const count = /^\d+$/.test(declared || '') && Number.isSafeInteger(Number(declared)) && Number(declared) > 0
+                ? Number(declared) : game.moves.length;
+            // Puzzle convention: the solver makes the last mainline move.
+            tree.user_color = count % 2 === 1 ? active : active === 'white' ? 'black' : 'white';
+            tree.has_introductory_move = tree.user_color !== active;
         }
         trees.push(tree);
     }

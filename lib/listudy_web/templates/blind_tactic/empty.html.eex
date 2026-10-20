@@ -1,0 +1,1 @@
+<%= render ListudyWeb.ComponentView, "training_empty.html", conn: @conn, locale: @locale, title: gettext("Blind Tactics") %>

@@ -6,29 +6,180 @@ defmodule ListudyWeb.StudyController do
   alias Listudy.Studies.Study
   alias Listudy.StudyFavorites
 
-  def index(conn, _params) do
+  def index(conn, _params), do: library(conn, nil)
+
+  def tactics(conn, params) do
+    filters = ListudyWeb.PuzzlePreferences.filters(conn, params)
+
+    conn
+    |> assign(:puzzle_filters, filters)
+    |> assign(:puzzle_themes, Listudy.PuzzleCatalog.themes())
+    |> assign(:puzzle_count, Listudy.PuzzleCatalog.count(filters))
+    |> library("tactics")
+  end
+
+  def tactics_collection(conn, %{"id" => id}) do
+    case Studies.get_study_by_slug!(id) do
+      %Study{training_kind: "tactics"} = study -> show(conn, id, study)
+      _ -> conn |> put_status(:not_found) |> put_view(ListudyWeb.ErrorView) |> render("404.html")
+    end
+  end
+
+  defp library(conn, kind) do
     user =
       case get_user(conn) do
         {:ok, user} -> user.id
         {:error, _} -> -1
       end
 
-    studies = Studies.get_study_by_user!(user)
-    favorites = Studies.get_studies_by_favorite!(user)
-    render(conn, "index.html", studies: studies, favorites: favorites)
+    studies =
+      Enum.filter(Studies.get_study_by_user!(user), &(is_nil(kind) or &1.training_kind == kind))
+
+    favorites =
+      Enum.filter(
+        Studies.get_studies_by_favorite!(user),
+        &(is_nil(kind) or &1.training_kind == kind)
+      )
+
+    favorite_ids = MapSet.new(favorites, & &1.id)
+    owned = MapSet.new(studies, & &1.id)
+    favorites = Enum.reject(favorites, &MapSet.member?(owned, &1.id))
+
+    render(conn, "index.html",
+      studies: studies,
+      favorites: favorites,
+      favorite_ids: favorite_ids,
+      library_data: Listudy.StudyLibrary.fetch(user),
+      tactics: kind == "tactics"
+    )
   end
 
-  def new(conn, _params) do
+  def clone(conn, %{"id" => id}) do
+    case get_user(conn) do
+      {:ok, user} ->
+        study = Studies.get_study_by_slug!(id)
+
+        if study && (!study.private || study.user_id == user.id) do
+          case Studies.clone_study(study, user.id, dgettext("study", "Copy")) do
+            {:ok, copy} ->
+              conn
+              |> put_flash(:info, dgettext("study", "Study cloned successfully."))
+              |> redirect(to: Routes.study_path(conn, :edit, conn.assigns.locale, copy))
+
+            {:error, _} ->
+              conn
+              |> put_flash(:error, dgettext("study", "This study could not be cloned."))
+              |> redirect(to: Routes.study_path(conn, :index, conn.assigns.locale))
+          end
+        else
+          conn |> put_status(:not_found) |> put_view(ListudyWeb.ErrorView) |> render("404.html")
+        end
+
+      {:error, error} ->
+        conn
+        |> put_flash(:info, error)
+        |> redirect(to: Routes.pow_session_path(conn, :new))
+    end
+  end
+
+  def new(conn, params) do
     case get_user(conn) do
       {:ok, _} ->
         openings = Listudy.Openings.list_openings_study_form()
-        changeset = Studies.change_study(%Study{})
-        render(conn, "new.html", changeset: changeset, openings: openings)
+        kind = if params["kind"] == "tactics", do: "tactics", else: "repertoire"
+        changeset = Studies.change_study(%Study{training_kind: kind})
+
+        if params["source"] == "blank" do
+          title =
+            if kind == "tactics",
+              do: dgettext("study", "New exercise"),
+              else: dgettext("study", "New repertoire")
+
+          {:ok, %{"editor" => editor}} =
+            Listudy.Games.ChessEngine.editor("[Event \"#{title}\"]\n\n*")
+
+          render(conn, "editor.html",
+            study: %Study{title: title, color: "white", training_kind: kind, private: true},
+            draft: true,
+            editor_json: Jason.encode!(editor),
+            revision: ""
+          )
+        else
+          render(conn, "new.html", changeset: changeset, openings: openings)
+        end
 
       {:error, error} ->
         conn
         |> put_flash(:info, error)
         |> redirect(to: Routes.pow_registration_path(conn, :new))
+    end
+  end
+
+  def create(conn, %{"draft" => draft}) when is_map(draft) do
+    id = Listudy.Slug.random_alnum()
+    path = get_path(id <> ".pgn")
+
+    attrs =
+      draft
+      |> Map.take(["title", "training_kind", "color", "private"])
+      |> Map.put_new("private", true)
+      |> Map.put_new("color", "white")
+
+    with {:ok, user} <- get_user(conn),
+         pgn when is_binary(pgn) and byte_size(pgn) <= 500_000 <- draft["pgn"],
+         {:ok, %{"editor" => %{"chapters" => [%{"root" => [_ | _]}]}}} <-
+           Listudy.Games.ChessEngine.editor(pgn),
+         true <- attrs["color"] in ["white", "black"],
+         {:ok, %{"pgn" => pgn}} <-
+           Listudy.Games.ChessEngine.collection_study([%{pgn: pgn, study: draft["title"] || ""}]) do
+      attrs =
+        Map.merge(attrs, %{
+          "user_id" => user.id,
+          "slug" => create_slug(id, Listudy.Slug.slugify(draft["title"] || ""))
+        })
+
+      result =
+        Listudy.Repo.transaction(fn ->
+          case Studies.create_study(attrs) do
+            {:ok, study} ->
+              case Listudy.StudyPgn.replace(path, pgn) do
+                :ok -> study
+                error -> Listudy.Repo.rollback(error)
+              end
+
+            error ->
+              Listudy.Repo.rollback(error)
+          end
+        end)
+
+      case result do
+        {:ok, study} ->
+          json(conn, %{url: Routes.study_path(conn, :editor, conn.assigns.locale, study)})
+
+        _ ->
+          File.rm(path)
+
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "Check the title and practice type. Your moves are still in the editor."
+              )
+          })
+      end
+    else
+      _ ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error:
+            dgettext(
+              "study",
+              "Set up a valid position and add at least one legal move before saving."
+            )
+        })
     end
   end
 
@@ -54,15 +205,19 @@ defmodule ListudyWeb.StudyController do
           conn
           |> put_flash(:info, "Study created successfully.")
           |> redirect(
-            to: Routes.study_path(conn, :show, conn.private.plug_session["locale"], study)
+            to:
+              ListudyWeb.StudyView.training_path(conn, conn.private.plug_session["locale"], study)
           )
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render(conn, "new.html", changeset: changeset)
+          render(conn, "new.html",
+            changeset: changeset,
+            openings: Listudy.Openings.list_openings_study_form()
+          )
       end
     else
       {:error, reason} ->
-        changeset = Studies.change_study(%Study{})
+        changeset = Studies.change_study(%Study{}, Map.take(study_params, ["training_kind"]))
         openings = Listudy.Openings.list_openings_study_form()
 
         conn
@@ -113,6 +268,16 @@ defmodule ListudyWeb.StudyController do
       file = unique_id <> ".pgn"
       {_, pgn} = File.read(get_path(file))
       study = Map.put(study, :pgn, pgn)
+
+      conn =
+        if study.training_kind == "tactics" do
+          conn
+        else
+          conn
+          |> put_session(:last_study_slug, study.slug)
+          |> put_session(:last_study_user_id, if(user_id == -1, do: nil, else: user_id))
+        end
+
       render(conn, "show.html", study: study, noindex: noindex, opening: opening)
     else
       show(conn, id, nil)
@@ -122,6 +287,230 @@ defmodule ListudyWeb.StudyController do
   def show(conn, %{"id" => id}) do
     study = Studies.get_study_by_slug!(id)
     show(conn, id, study)
+  end
+
+  def editor(conn, %{"id" => id} = params) do
+    study = Studies.get_study_by_slug!(id)
+    user = Pow.Plug.current_user(conn)
+
+    if study && user && allowed(study, user) do
+      with {:ok, pgn} <- File.read(get_path(id_from_slug(study.slug) <> ".pgn")),
+           {:ok, %{"editor" => editor}} <-
+             chapter_editor_data(pgn, params["chapter_index"] || "0") do
+        render(conn, "editor.html",
+          study: study,
+          editor_json: Jason.encode!(editor),
+          revision: Listudy.StudyPgn.revision(pgn)
+        )
+      else
+        {:error, reason} when is_binary(reason) ->
+          conn
+          |> put_flash(:error, reason)
+          |> redirect(to: Routes.study_path(conn, :edit, conn.assigns.locale, study))
+
+        _ ->
+          conn
+          |> put_flash(:error, dgettext("study", "This study could not be opened in the editor."))
+          |> redirect(to: Routes.study_path(conn, :edit, conn.assigns.locale, study))
+      end
+    else
+      conn |> put_status(:forbidden) |> text("Forbidden")
+    end
+  end
+
+  def load_chapter(conn, %{"id" => id} = params) do
+    study = Studies.get_study_by_slug!(id)
+    user = Pow.Plug.current_user(conn)
+
+    if study && user && allowed(study, user) do
+      with {:ok, pgn} <- File.read(get_path(id_from_slug(study.slug) <> ".pgn")),
+           revision = Listudy.StudyPgn.revision(pgn),
+           true <- params["revision"] == revision,
+           {:ok, %{"editor" => editor}} <- chapter_editor_data(pgn, params["chapter_index"]) do
+        json(conn, %{editor: editor, revision: revision})
+      else
+        false ->
+          conn
+          |> put_status(:conflict)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "This study changed while you were editing. Reload it before saving."
+              )
+          })
+
+        {:error, reason} when is_binary(reason) ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: reason})
+
+        _ ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "This chapter could not be opened. Your changes are still in the editor."
+              )
+          })
+      end
+    else
+      conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    end
+  end
+
+  defp chapter_editor_data(pgn, index) when is_binary(index) do
+    case Integer.parse(index) do
+      {value, ""} when value >= 0 -> Listudy.Games.ChessEngine.editor(pgn, value)
+      _ -> {:error, "Choose an existing chapter."}
+    end
+  end
+
+  defp chapter_editor_data(_, _), do: {:error, "Choose an existing chapter."}
+
+  def save_chapter(conn, %{"id" => id} = params) do
+    study = Studies.get_study_by_slug!(id)
+    user = Pow.Plug.current_user(conn)
+
+    if study && user && allowed(study, user) do
+      path = get_path(id_from_slug(study.slug) <> ".pgn")
+
+      case Listudy.StudyPgn.replace_chapter(
+             path,
+             params["revision"],
+             params["chapter_index"],
+             params["tree"]
+           ) do
+        {:ok, %{playback_index: playback_index, revision: revision}} ->
+          json(conn, %{
+            revision: revision,
+            url:
+              Routes.study_path(conn, :show, conn.assigns.locale, study,
+                chapter_index: playback_index
+              )
+          })
+
+        {:error, :conflict} ->
+          conn
+          |> put_status(:conflict)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "This study changed while you were editing. Reload it before saving."
+              )
+          })
+
+        {:error, reason} when is_binary(reason) ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: reason})
+
+        _ ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "The chapter could not be saved. Your changes are still in the editor."
+              )
+          })
+      end
+    else
+      conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    end
+  end
+
+  def manage_chapters(conn, %{"id" => id} = params) do
+    study = Studies.get_study_by_slug!(id)
+    user = Pow.Plug.current_user(conn)
+
+    if user && allowed(study, user) do
+      path = get_path(id_from_slug(study.slug) <> ".pgn")
+
+      case Listudy.StudyPgn.manage_chapters(path, params["revision"], params["chapters"]) do
+        {:ok, :saved} ->
+          {:ok, pgn} = File.read(path)
+          {:ok, %{"chapters" => chapters}} = Listudy.Games.ChessEngine.maintenance(pgn)
+
+          json(conn, %{
+            url: Routes.study_path(conn, :edit, conn.assigns.locale, study),
+            revision: Listudy.StudyPgn.revision(pgn),
+            chapters: chapters
+          })
+
+        {:error, :conflict} ->
+          conn
+          |> put_status(:conflict)
+          |> json(%{
+            error:
+              dgettext(
+                "study",
+                "This study changed while you were editing. Reload it before saving."
+              )
+          })
+
+        {:error, reason} when is_binary(reason) ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: reason})
+
+        _ ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: dgettext("study", "The chapter changes could not be saved.")})
+      end
+    else
+      conn |> put_status(:forbidden) |> json(%{error: "Forbidden"})
+    end
+  end
+
+  defp update_response(conn, study, params, pgn_changed) do
+    if params["_stay"] == "true" do
+      {:ok, pgn} = File.read(get_path(id_from_slug(study.slug) <> ".pgn"))
+
+      chapters =
+        case Listudy.Games.ChessEngine.maintenance(pgn) do
+          {:ok, %{"chapters" => chapters}} -> chapters
+          _ -> []
+        end
+
+      json(conn, %{
+        action: Routes.study_path(conn, :update, conn.assigns.locale, study),
+        study_url: ListudyWeb.StudyView.training_path(conn, conn.assigns.locale, study),
+        save_url: Routes.study_path(conn, :manage_chapters, conn.assigns.locale, study),
+        editor_url: Routes.study_path(conn, :editor, conn.assigns.locale, study),
+        revision: Listudy.StudyPgn.revision(pgn),
+        chapters: chapters,
+        pgn_changed: pgn_changed
+      })
+    else
+      conn
+      |> put_flash(:info, dgettext("study", "Study info updated."))
+      |> redirect(to: ListudyWeb.StudyView.training_path(conn, conn.assigns.locale, study))
+    end
+  end
+
+  defp render_edit(conn, study, changeset) do
+    pgn =
+      case File.read(get_path(id_from_slug(study.slug) <> ".pgn")) do
+        {:ok, content} -> content
+        _ -> ""
+      end
+
+    {chapters, sites, error} =
+      case Listudy.Games.ChessEngine.maintenance(pgn) do
+        {:ok, %{"chapters" => chapters, "sites" => sites}} -> {chapters, sites, nil}
+        _ -> {[], [], dgettext("study", "This study could not be opened in the editor.")}
+      end
+
+    render(conn, "edit.html",
+      study: study,
+      source_sites: Enum.map_join(sites, "\n", fn site -> "[Site \"#{site}\"]" end),
+      changeset: changeset,
+      openings: Listudy.Openings.list_openings_study_form(),
+      chapters_json: Jason.encode!(chapters),
+      revision: Listudy.StudyPgn.revision(pgn),
+      maintenance_error: error,
+      maintenance: true
+    )
   end
 
   def edit(conn, %{"id" => id}) do
@@ -134,9 +523,7 @@ defmodule ListudyWeb.StudyController do
     study = Map.put(study, :pgn, pgn)
 
     if allowed(study, user) do
-      openings = Listudy.Openings.list_openings_study_form()
-      changeset = Studies.change_study(study)
-      render(conn, "edit.html", study: study, changeset: changeset, openings: openings)
+      render_edit(conn, study, Studies.change_study(study))
     else
       conn
       |> put_flash(:error, "This study is private.")
@@ -151,7 +538,7 @@ defmodule ListudyWeb.StudyController do
     end
   end
 
-  def update(conn, %{"id" => id, "study" => study_params}) do
+  def update(conn, %{"id" => id, "study" => study_params} = params) do
     study = Studies.get_study_by_slug!(id)
     {_, user} = get_user(conn)
     [unique_id | _] = id |> String.split("-")
@@ -167,22 +554,22 @@ defmodule ListudyWeb.StudyController do
             {:ok, pgn} ->
               save_pgn(pgn, file)
 
-              conn
-              |> put_flash(:info, dgettext("study", "Study info updated, PGN changed."))
-              |> redirect(
-                to: Routes.study_path(conn, :show, conn.private.plug_session["locale"], study)
-              )
+              update_response(conn, study, params, true)
 
             {:error, _} ->
-              conn
-              |> put_flash(:info, dgettext("study", "Study info updated, no PGN change."))
-              |> redirect(
-                to: Routes.study_path(conn, :show, conn.private.plug_session["locale"], study)
-              )
+              update_response(conn, study, params, false)
           end
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render(conn, "edit.html", study: study, changeset: changeset)
+          if params["_stay"] == "true" do
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              error: dgettext("study", "The study could not be saved. Check the entered values.")
+            })
+          else
+            render_edit(conn, study, changeset)
+          end
       end
     else
       conn
@@ -199,13 +586,31 @@ defmodule ListudyWeb.StudyController do
     if !allowed(study, user) do
       conn
       |> put_flash(:info, "You're not allowed to do that.")
-      |> redirect(to: Routes.study_path(conn, :index, conn.private.plug_session["locale"]))
+      |> redirect(
+        to:
+          if(study.training_kind == "tactics",
+            do:
+              Routes.tactics_library_path(conn, :tactics, conn.assigns.locale,
+                source: "collections"
+              ),
+            else: Routes.study_path(conn, :index, conn.assigns.locale)
+          )
+      )
     else
       {:ok, _study} = Studies.delete_study(study)
 
       conn
       |> put_flash(:info, "Study deleted successfully.")
-      |> redirect(to: Routes.study_path(conn, :index, conn.private.plug_session["locale"]))
+      |> redirect(
+        to:
+          if(study.training_kind == "tactics",
+            do:
+              Routes.tactics_library_path(conn, :tactics, conn.assigns.locale,
+                source: "collections"
+              ),
+            else: Routes.study_path(conn, :index, conn.assigns.locale)
+          )
+      )
     end
   end
 
@@ -239,7 +644,7 @@ defmodule ListudyWeb.StudyController do
 
     case File.stat(file) do
       {:ok, %{size: size}} ->
-        if size < 15000000 do
+        if size < 15_000_000 do
           {:ok, file}
         else
           {:error, dgettext("study", "PGN is too big, only 50kb allowed")}
@@ -321,7 +726,7 @@ defmodule ListudyWeb.StudyController do
   # pgn is the path to the pgn file
   # target_file is the name the file should be saved as
   defp save_pgn(pgn, file_name) do
-    File.cp(pgn, get_path(file_name))
+    :ok = Listudy.StudyPgn.replace(get_path(file_name), File.read!(pgn))
     File.rm(pgn)
   end
 

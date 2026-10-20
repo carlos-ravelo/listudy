@@ -1,226 +1,313 @@
 defmodule Listudy.Games.Analyzer do
   @moduledoc """
-  Optimized Chessbook-style engine to compare user games against
-  the study repertoire, avoiding unnecessary re-analysis.
+  Load owned studies, rank chapter matches, and persist imported-game outcomes.
+  Chess parsing, position identity, and repertoire caching live in priv/python.
   """
-
+  import Ecto.Query
   require Logger
   alias Listudy.Repo
-  import Ecto.Query
-  alias Listudy.Games.Deviation
-  alias Listudy.Games.StudyGame
-  alias Listudy.Games.ChessEngine
 
-  def analyze_all_user_studies(user_id, platform) do
-    studies = Repo.all(from s in Listudy.Studies.Study, where: s.user_id == ^user_id)
-    user_record = Repo.get!(Listudy.Users.User, user_id)
+  alias Listudy.Games.{
+    AnalysisComparison,
+    ChessEngine,
+    Deviation,
+    StudyGame,
+    TrainingDeviations,
+    UserGame
+  }
 
-    Enum.each(studies, fn study ->
-      raw_pgn = get_study_pgn_content(study)
+  def analyze_single_pgn(user_id, pgn, selection \\ %{}) do
+    with {:ok, studies} <- load_studies(user_id, selection["study_id"]),
+         studies <-
+           Enum.filter(
+             studies,
+             &(is_nil(selection["color"]) or &1.study.color == selection["color"])
+           ),
+         :ok <- if(studies == [], do: {:error, :no_match}, else: :ok),
+         {:ok, %{"games" => [game]}} <-
+           ChessEngine.analyze_batch(payload(studies), [%{id: 0, pgn: pgn}]),
+         {:ok, candidates} <- candidates(game, studies) do
+      candidates =
+        Enum.filter(candidates, fn {study, result} ->
+          (is_nil(selection["study_id"]) or to_string(study.id) == selection["study_id"]) and
+            (is_nil(selection["color"]) or study.color == selection["color"]) and
+            (is_nil(selection["chapter_index"]) or
+               to_string(result["chapter_index"]) == selection["chapter_index"])
+        end)
 
-      if is_nil(raw_pgn) do
-        Logger.error("Could not load physical PGN for study #{study.slug}")
-      else
-        case ChessEngine.parse_repertoire_to_map(raw_pgn) do
-          %{"repertoire_map" => study_map, "signature_prefix" => signature_prefix} ->
-            unprocessed_games =
-              Listudy.Games.UserGame
-              |> where([g], g.user_id == ^user_id and g.platform == ^platform)
-              |> where([g], like(g.pgn, ^"%#{signature_prefix}%"))
-              |> join(:left, [g], sg in Listudy.Games.StudyGame, on: sg.user_game_id == g.id and sg.study_id == ^study.id)
-              |> where([g, sg], is_nil(sg.id))
-              |> Repo.all()
-              |> Enum.filter(fn game ->
-                user_color(game, user_record) == study.color
-              end)
+      unavailable =
+        Enum.filter(studies, &Map.has_key?(game["study_errors"] || %{}, to_string(&1.study.id)))
 
-            if unprocessed_games == [] do
-              Logger.info("✅ No new games to analyze for study: #{study.title}")
-            else
-              Logger.info("🚀 Analyzing #{length(unprocessed_games)} new games for: #{study.title}")
-              analyze_games_in_parallel(unprocessed_games, study, study_map)
-            end
-
-          %{} ->
-            Logger.error("Python parsing failed for study #{study.slug}")
-        end
+      case candidates
+           |> best_candidates()
+           |> AnalysisComparison.rank(Listudy.StudyLibrary.fetch(user_id)) do
+        [] when unavailable == [] -> {:error, :no_match}
+        [] -> {:error, "Some studies could not be compared. Check their PGN and try again."}
+        choices -> {:ok, choices, Enum.map(unavailable, & &1.study)}
       end
-    end)
+    end
   end
 
-  def analyze_games_in_parallel(user_games, study, study_map) do
-    results =
-      user_games
-      |> Task.async_stream(
-        fn game -> process_game(game, study_map, study) end,
-        max_concurrency: System.schedulers_online(),
-        timeout: :infinity
-      )
-      |> Enum.reduce(%{deviations: 0, matches: 0, errors: 0, skipped: 0}, fn
-        {:ok, {:deviation, _}}, acc -> %{acc | deviations: acc.deviations + 1}
-        {:ok, :no_deviation}, acc -> %{acc | matches: acc.matches + 1}
-        {:ok, :skipped}, acc -> %{acc | skipped: acc.skipped + 1}
-        {:ok, {:error, _}}, acc -> %{acc | errors: acc.errors + 1}
+  defp candidates(%{"error" => reason}, _studies), do: {:error, reason}
+
+  defp candidates(game, studies) do
+    by_id = Map.new(studies, fn item -> {to_string(item.study.id), item.study} end)
+
+    matches =
+      Enum.flat_map(game["matches"], fn match ->
+        Enum.map(match["candidates"], &{Map.fetch!(by_id, match["study_id"]), &1})
       end)
 
-    Logger.info("🎯 Análisis optimizado para #{study.title}: #{inspect(results)}")
-    results
+    {:ok, matches}
   end
 
-  defp process_game(user_game, study_map, study) do
-    study_id = study.id
+  defp best_candidates([]), do: []
 
-    Repo.delete_all(from d in Deviation, where: d.user_game_id == ^user_game.id and d.study_id == ^study_id)
+  defp best_candidates(candidates) do
+    score = candidates |> Enum.map(fn {_, result} -> result["score"] end) |> Enum.max()
+    Enum.filter(candidates, fn {_, result} -> result["score"] == score end)
+  end
 
-    case ChessEngine.find_first_deviation(user_game.pgn, study_map) do
-      %{"deviation" => true, "fen" => fen, "expected" => expected_moves, "played" => played} ->
-        active_color = if String.contains?(fen, " w "), do: "white", else: "black"
-        ply = get_ply_from_fen(fen)
+  def analyze_all_user_studies(user_id, platform) do
+    case load_studies(user_id) do
+      {:ok, studies} ->
+        analyze_imported_games(studies, user_id, platform)
 
-        cond do
-          # 1. Tú jugaste otra apertura intencionalmente en tu primer movimiento (ply 1 para blancas, 2 para negras).
-          active_color == study.color and ply <= 2 ->
-            insert_study_game(user_game.id, study_id, "out_of_scope", ply)
-            :no_deviation
-
-          # 2. Desviación real: Tú te equivocaste dentro de la teoría.
-          active_color == study.color ->
-            expected_str = Enum.join(expected_moves, " / ")
-            insert_deviation(user_game.id, study_id, ply, fen, expected_str, played)
-            insert_study_game(user_game.id, study_id, "deviation", ply)
-            {:deviation, user_game.id}
-
-          # 3. Match: El rival se desvió (incluso si fue en su primera jugada). Tú hiciste tu parte.
-          true ->
-            insert_study_game(user_game.id, study_id, "match", ply)
-            :no_deviation
-        end
-
-      %{"deviation" => false, "fen" => fen} ->
-        # Llegaron al final de la línea del PGN sin desviarse.
-        ply = get_ply_from_fen(fen)
-        insert_study_game(user_game.id, study_id, "match", ply)
-        :no_deviation
-
-      %{"error" => reason} ->
-        insert_study_game(user_game.id, study_id, "error", 0)
+      {:error, reason} ->
+        Logger.error(reason)
         {:error, reason}
     end
   end
 
-  # Calculates the exact ply number based on the FEN string
-  defp get_ply_from_fen(fen) do
-    parts = String.split(fen, " ")
-    turn = Enum.at(parts, 1)
-    fullmove = Enum.at(parts, 5) |> String.to_integer()
+  defp analyze_imported_games(studies, user_id, platform) do
+    user = Repo.get!(Listudy.Users.User, user_id)
+    library = Listudy.StudyLibrary.fetch(user_id)
+    # Choosing a best match depends on the entire repertoire, not one PGN.
+    version =
+      ChessEngine.fingerprint(
+        "best-match-v1\0" <>
+          Jason.encode!(
+            Enum.map(studies, fn item ->
+              {item.study.id, item.study.color, item.version,
+               get_in(library, ["studies", to_string(item.study.id), "location"])}
+              |> Tuple.to_list()
+            end)
+            |> Enum.sort()
+          )
+      )
 
-    if turn == "w" do
-      (fullmove * 2) - 1
-    else
-      fullmove * 2
-    end
-  end
+    studies = Enum.map(studies, &Map.put(&1, :version, version))
+    # Existing results are reusable only for this PGN content and matcher version.
+    saved =
+      Repo.all(
+        from sg in StudyGame,
+          join: g in UserGame,
+          on: g.id == sg.user_game_id,
+          where: g.user_id == ^user_id and g.platform == ^platform,
+          select: {sg.user_game_id, sg.study_id, sg.analysis_version, sg.status}
+      )
 
-  # Determines which color the account owner played in a specific game
-  defp user_color(game, user) do
-    cond do
-      game.white_player == user.lichess_username or game.white_player == user.chess_com_username -> "white"
-      game.black_player == user.lichess_username or game.black_player == user.chess_com_username -> "black"
-      true -> "white" # Fallback
-    end
-  end
+    versions =
+      Map.new(saved, fn {game_id, study_id, version, status} ->
+        {{game_id, study_id}, if(status == "error", do: nil, else: version)}
+      end)
 
-  defp insert_deviation(game_id, study_id, ply, fen, expected, played) do
-    %Deviation{}
-    |> Deviation.changeset(%{
-      user_game_id: game_id,
-      study_id: study_id,
-      ply_number: ply,
-      position_fen: fen,
-      expected_move: expected,
-      played_move: played
-    })
-    |> Repo.insert()
-  end
+    # Read only identifiers and player names until a game actually needs work.
+    games =
+      Repo.all(
+        from g in UserGame,
+          where: g.user_id == ^user_id and g.platform == ^platform,
+          select: %{id: g.id, white_player: g.white_player, black_player: g.black_player}
+      )
 
-  defp insert_study_game(game_id, study_id, status, depth) do
-    %StudyGame{}
-    |> StudyGame.changeset(%{
-      user_game_id: game_id,
-      study_id: study_id,
-      status: status,
-      depth: depth
-    })
-    |> Repo.insert(
-      on_conflict: [set: [status: status, depth: depth]],
-      conflict_target: [:study_id, :user_game_id]
-    )
-  end
-
-  defp get_study_pgn_content(study) do
-    [unique_id | _] = String.split(study.slug, "-")
-    file_path = "priv/static/study_pgn/#{unique_id}.pgn"
-
-    case File.read(file_path) do
-      {:ok, content} -> content
-      {:error, _reason} -> nil
-    end
-  end
-
-def analyze_single_pgn(user_id, game_pgn_text) do
-    studies = Repo.all(from s in Listudy.Studies.Study, where: s.user_id == ^user_id)
-
-    matches =
-      studies
-      |> Task.async_stream(fn study ->
-        # Assume get_study_pgn_content/1 already exists in your file
-        raw_pgn = get_study_pgn_content(study)
-
-        if raw_pgn do
-          case ChessEngine.parse_repertoire_to_map(raw_pgn) do
-            %{"repertoire_map" => study_map} ->
-              case ChessEngine.find_first_deviation(game_pgn_text, study_map) do
-                %{"deviation" => true} = data ->
-                  # Discard studies where the game deviated on the very first move (ply 0).
-                  if Map.get(data, "ply", 0) == 0 do
-                    nil
-                  else
-                    {:ok, study, data}
-                  end
-
-                %{"deviation" => false, "fen" => fen} = data ->
-                  # If FEN is the starting position, it never entered the theory
-                  if String.starts_with?(fen, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR") do
-                    nil
-                  else
-                    # Partial match, theory ended without deviation
-                    {:ok, study, data}
-                  end
-
-                _ ->
-                  nil
-              end
-
-            %{} ->
-              nil
-          end
-        else
-          nil
-        end
-      end, timeout: :timer.seconds(30)) # Added timeout to prevent process crashing
-      |> Enum.map(fn {:ok, result} -> result end) # Unwrap the Task result
-      |> Enum.reject(&is_nil/1)
-
-    # Tie-breaker: If multiple studies match, pick the one that went deepest into the game
-    case matches do
-      [] ->
-        {:error, :no_match}
-
-      list ->
-        Enum.max_by(list, fn {:ok, _study, data} ->
-          Map.get(data, "ply", 0)
+    games
+    |> Enum.map(fn game ->
+      pending =
+        Enum.filter(studies, fn item ->
+          user_color(game, user) == item.study.color
         end)
+
+      stale = Enum.any?(pending, &(Map.get(versions, {game.id, &1.study.id}) != &1.version))
+      {game, if(stale, do: pending, else: [])}
+    end)
+    |> Enum.reject(fn {_, pending} -> pending == [] end)
+    |> Enum.chunk_every(50)
+    |> Enum.reduce_while({:ok, 0}, fn batch, {:ok, processed} ->
+      needed =
+        batch |> Enum.flat_map(fn {_, pending} -> pending end) |> Enum.uniq_by(& &1.study.id)
+
+      ids = Enum.map(batch, fn {game, _} -> game.id end)
+      pgns = Repo.all(from g in UserGame, where: g.id in ^ids, select: {g.id, g.pgn}) |> Map.new()
+
+      requests =
+        Enum.map(batch, fn {game, pending} ->
+          %{
+            id: game.id,
+            pgn: Map.fetch!(pgns, game.id),
+            study_ids: Enum.map(pending, & &1.study.id)
+          }
+        end)
+
+      case ChessEngine.analyze_batch(payload(needed), requests) do
+        {:ok, %{"games" => results}} when length(results) == length(batch) ->
+          Enum.zip(batch, results)
+          |> Enum.each(fn {{game, pending}, result} ->
+            selection = automatic_selection(pending, result, library)
+            Enum.each(pending, &persist_result(game, &1, result, selection))
+          end)
+
+          {:cont, {:ok, processed + length(batch)}}
+
+        {:ok, _} ->
+          {:halt, {:error, "The chess parser returned an incomplete batch."}}
+
+        {:error, reason} ->
+          Logger.error("Game analysis failed: #{inspect(reason)}")
+          {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp automatic_selection(studies, game, library) do
+    by_id = Map.new(studies, &{to_string(&1.study.id), &1.study})
+
+    best =
+      (game["matches"] || [])
+      |> Enum.flat_map(fn match ->
+        Enum.map(match["candidates"], &{Map.fetch!(by_id, match["study_id"]), &1})
+      end)
+      |> best_candidates()
+      |> AnalysisComparison.rank(library)
+
+    if best != [] && map_size(game["study_errors"] || %{}) == 0 do
+      {study, result} = hd(best)
+      %{study.id => result}
+    else
+      Map.new(best, fn {study, _} -> {study.id, :ambiguous} end)
     end
   end
 
+  defp persist_result(game, item, batch_result, selection) do
+    match =
+      Enum.find(batch_result["matches"] || [], &(&1["study_id"] == to_string(item.study.id)))
+
+    error =
+      batch_result["error"] || get_in(batch_result, ["study_errors", to_string(item.study.id)])
+
+    candidates = if match, do: Enum.map(match["candidates"], &{item.study, &1}), else: []
+    best = best_candidates(candidates)
+
+    result =
+      case selection[item.study.id] do
+        selected when is_map(selected) ->
+          selected
+
+        _ ->
+          case best do
+            [{_, first} | _] -> first
+            _ -> nil
+          end
+      end
+
+    training_events = TrainingDeviations.events(result, item.study.color)
+
+    status =
+      cond do
+        error -> "error"
+        result == nil -> "out_of_scope"
+        selection[item.study.id] == nil -> "other_match"
+        selection[item.study.id] == :ambiguous -> "ambiguous"
+        training_events != [] -> "deviation"
+        true -> "match"
+      end
+
+    Repo.transaction(fn ->
+      Repo.delete_all(
+        from d in Deviation, where: d.user_game_id == ^game.id and d.study_id == ^item.study.id
+      )
+
+      if status == "deviation" do
+        Enum.each(training_events, fn event ->
+          %Deviation{}
+          |> Deviation.changeset(%{
+            user_game_id: game.id,
+            study_id: item.study.id,
+            ply_number: event.ply + 1,
+            position_fen: event.fen,
+            expected_move: Enum.join(event.expected, " / "),
+            played_move: event.played
+          })
+          |> Repo.insert!()
+        end)
+      end
+
+      # Depth is the number of half-moves reached in the uploaded game.
+      attrs = %{
+        user_game_id: game.id,
+        study_id: item.study.id,
+        status: status,
+        depth: if(result, do: result["ply"], else: 0),
+        analysis_version: item.version
+      }
+
+      %StudyGame{}
+      |> StudyGame.changeset(attrs)
+      |> Repo.insert!(
+        on_conflict: [set: [status: status, depth: attrs.depth, analysis_version: item.version]],
+        conflict_target: [:study_id, :user_game_id]
+      )
+    end)
+  end
+
+  defp user_color(game, user) do
+    names =
+      [user.lichess_username, user.chess_com_username]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&String.downcase/1)
+
+    cond do
+      String.downcase(game.white_player || "") in names -> "white"
+      String.downcase(game.black_player || "") in names -> "black"
+      true -> nil
+    end
+  end
+
+  def player_color(user_id, game), do: user_color(game, Repo.get!(Listudy.Users.User, user_id))
+
+  defp payload(studies), do: Enum.map(studies, &%{id: &1.study.id, pgn: &1.pgn})
+
+  defp load_studies(user_id, selected_study_id \\ nil) do
+    query =
+      from s in Listudy.Studies.Study,
+        where: s.user_id == ^user_id and s.training_kind == "repertoire"
+
+    query =
+      if selected_study_id do
+        id =
+          case Integer.parse(selected_study_id) do
+            {value, ""} when value > 0 -> value
+            _ -> -1
+          end
+
+        where(query, [s], s.id == ^id)
+      else
+        query
+      end
+
+    Repo.all(query)
+    |> Enum.reduce_while({:ok, []}, fn study, {:ok, studies} ->
+      [id | _] = String.split(study.slug, "-")
+      path = Application.app_dir(:listudy, "priv/static/study_pgn/#{id}.pgn")
+
+      case File.read(path) do
+        {:ok, pgn} ->
+          {:cont,
+           {:ok, studies ++ [%{study: study, pgn: pgn, version: ChessEngine.fingerprint(pgn)}]}}
+
+        {:error, reason} ->
+          Logger.error("Could not read study #{study.id}: #{inspect(reason)}")
+          {:halt, {:error, "The PGN file for study #{study.title} could not be read."}}
+      end
+    end)
+  end
 end

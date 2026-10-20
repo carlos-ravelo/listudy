@@ -1,24 +1,55 @@
-<h1>Admin</h1>
-
-<%= link "Blind Tactics", to: Routes.blind_tactic_path(@conn, :index) %>
-<br>
-<%= link "Pieceless Tactics", to: Routes.pieceless_tactic_path(@conn, :index) %>
-<br>
-<%= link "Tactics", to: Routes.tactic_path(@conn, :index) %>
-<br>
-<%= link "Books", to: Routes.book_path(@conn, :index) %>
-<br>
-<%= link "Tag", to: Routes.tag_path(@conn, :index) %>
-<br>
-<%= link "Book Tags", to: Routes.book_tag_path(@conn, :index) %>
-<br>
-<%= link "Players", to: Routes.player_path(@conn, :index) %>
-<br>
-<%= link "Author", to: Routes.author_path(@conn, :index) %>
-<br>
-<%= link "Motif", to: Routes.motif_path(@conn, :index) %>
-<br>
-<%= link "Change/Check Email of user", to: Routes.user_administration_path(@conn, :email, "Arne") %>
-<br>
-<%= link "Change Password of user", to: Routes.user_administration_path(@conn, :password, "Arne") %>
-<br>
+<section class="admin-dashboard">
+  <h1><%= gettext("Admin") %></h1>
+  <div class="admin-dashboard-grid">
+    <section class="admin-dashboard-card">
+      <h2><%= gettext("Studies and publishing") %></h2>
+      <ul>
+        <li><%= link gettext("Studies"), to: Routes.admin_study_path(@conn, :index) %></li>
+        <li><%= link gettext("Blog"), to: Routes.post_path(@conn, :index_all) %></li>
+        <li><%= link gettext("Blog FAQs"), to: Routes.blog_faq_path(@conn, :index) %></li>
+        <li><%= link gettext("Images"), to: Routes.image_path(@conn, :index) %></li>
+      </ul>
+    </section>
+    <section class="admin-dashboard-card">
+      <h2><%= gettext("Openings and classification") %></h2>
+      <ul>
+        <li><%= link gettext("Openings"), to: Routes.opening_path(@conn, :index) %></li>
+        <li><%= link gettext("Opening FAQs"), to: Routes.opening_faq_path(@conn, :index) %></li>
+        <li><%= link gettext("Motifs"), to: Routes.motif_path(@conn, :index) %></li>
+        <li><%= link gettext("Players"), to: Routes.player_path(@conn, :index) %></li>
+        <li><%= link gettext("Events"), to: Routes.event_path(@conn, :index) %></li>
+        <li><%= link gettext("Tags"), to: Routes.tag_path(@conn, :index) %></li>
+      </ul>
+    </section>
+    <section class="admin-dashboard-card">
+      <h2><%= gettext("Practice") %></h2>
+      <ul>
+        <li><%= link gettext("Puzzle imports"), to: Routes.puzzle_catalog_path(@conn, :imports) %></li>
+        <li><%= link gettext("Tactics"), to: Routes.tactic_path(@conn, :index) %></li>
+        <li><%= link gettext("Blind Tactics"), to: Routes.blind_tactic_path(@conn, :index) %></li>
+        <li><%= link gettext("Pieceless Tactics"), to: Routes.pieceless_tactic_path(@conn, :index) %></li>
+      </ul>
+    </section>
+    <section class="admin-dashboard-card">
+      <h2><%= gettext("Books and recommendations") %></h2>
+      <ul>
+        <li><%= link gettext("Books"), to: Routes.book_path(@conn, :index) %></li>
+        <li><%= link gettext("Authors"), to: Routes.author_path(@conn, :index) %></li>
+        <li><%= link gettext("Book openings"), to: Routes.book_opening_path(@conn, :index) %></li>
+        <li><%= link gettext("Book tags"), to: Routes.book_tag_path(@conn, :index) %></li>
+        <li><%= link gettext("Expert recommendations"), to: Routes.expert_recommendation_path(@conn, :index) %></li>
+      </ul>
+    </section>
+    <section class="admin-dashboard-card">
+      <h2><%= gettext("Users") %></h2>
+      <form action="<%= Routes.page_path(@conn, :admin_index) %>" method="get">
+        <label for="admin_username"><%= gettext("Username") %></label>
+        <input id="admin_username" name="username" type="text" required />
+        <div class="admin-dashboard-account-actions">
+          <button type="submit" name="account_action" value="email"><%= gettext("Edit email") %></button>
+          <button type="submit" name="account_action" value="password"><%= gettext("Change password") %></button>
+        </div>
+      </form>
+    </section>
+  </div>
+</section>

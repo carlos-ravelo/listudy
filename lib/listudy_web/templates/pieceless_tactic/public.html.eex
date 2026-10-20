@@ -1,28 +1,33 @@
+<div class="training-workspace pieceless-workspace" data-solution-format="<%= @solution_format %>">
+<%= render ListudyWeb.ComponentView, "training_header.html", conn: @conn, locale: @locale, title: gettext("Pieceless Tactics") %>
 <div class="with_sidebar">
   <div id="game_container" class="sidebar_main">
-    <%= render ListudyWeb.ComponentView, "chessground.html" %>
+    <div class="study-board-frame"><%= render ListudyWeb.ComponentView, "chessground.html" %><%= render ListudyWeb.ComponentView, "promotion_picker.html" %></div>
   </div>
   <div class="sidebar">
-    <h2><%= dgettext "tactics", "Pieceless Tactic"%> <%= @pieceless_tactic.id %></h2>
+    <p class="training-instruction"><%= dgettext("tactics", "Picture the missing pieces using the list, then play the winning moves.") %></p>
+
+    <%= render ListudyWeb.ComponentView, "visualization_progress.html", mode: "pieceless" %>
 
     <%= render ListudyWeb.ComponentView, "infoboxes.html" %>
     
-    <div id="info">
+    <div id="pieceless_context">
       <% color = "<span id=\"pieceless_to_play\"></span>" %>
       <p><%= raw dgettext("tactics", "%{color} to play.", color: color) %></p>
       <div id="pieceless_pieces"></div>
       <p id="history_container" class="hidden"><%= dgettext("tactics", "History") %>: <span id="history"></span></p>
 
-      <a href="<%= Routes.pieceless_tactic_path(@conn, :random, @locale, @pieceless_tactic.id) %>">
-        <button id="next" class="hidden continue_button"><%= dgettext "tactics", "Continue"%></button>
-      </a>
-
-      <a class="icon" data-icon="-" id="give-up"><%= dgettext("tactics", "Give up") %></a>
+      <div class="training-actions">
+        <a id="next" class="hidden button continue_button" href="<%= @next_url %>"><%= dgettext("tactics", "Next puzzle") %></a>
+        <button type="button" id="give-up"><%= dgettext("tactics", "Show solution") %></button>
+        <button type="button" id="training_restart"><%= dgettext("tactics", "Retry") %></button>
+      </div>
     </div>
-    <br>
-    <br>
-    <a class="pieceless_info" href="<%= Routes.page_path(@conn, :features, @conn.assigns.locale, "pieceless-tactics") %>#help"><%= dgettext("tactics", "[Help] How pieceless tactics work.") %></a>
+    <details class="training-help"><summary><%= dgettext("tactics", "How to play") %></summary>
+      <p><%= dgettext("tactics", "The list shows the starting position. Track each move in your mind. Use Show solution to see the pieces and the continuation.") %></p>
+    </details>
   </div>
+</div>
 </div>
 
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
@@ -33,6 +38,8 @@ let fen = "<%= @pieceless_tactic.fen %>";
 let solution = "<%= @pieceless_tactic.solution %>";
 
 let i18n = {};
+i18n.checking = "<%= dgettext "tactics", "Checking alternative…" %>";
+i18n.unconfirmed = "<%= dgettext "tactics", "Could not verify this alternative. Try the suggested line or retry." %>";
 i18n.success = "<%= dgettext "tactics", "Tactic solved!"%>";
 i18n.wrong_move = "<%= dgettext "tactics", "Wrong Move"%>";
 i18n.right_move = "<%= dgettext "tactics", "Correct move, there are still more moves." %> ";

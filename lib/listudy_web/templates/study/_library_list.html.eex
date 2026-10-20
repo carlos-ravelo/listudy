@@ -1,0 +1,15 @@
+<% organizable = Map.get(assigns, :organizable, true) %>
+<ul class="study-library-list">
+  <%= for study <- @studies do %>
+    <%= if organizable do %>
+      <%= render ListudyWeb.ComponentView, "study_list_row.html", study: study, context: @conn, locale: @locale, editable: @editable, favorite_ids: Map.get(assigns, :favorite_ids, MapSet.new()) %>
+    <% else %>
+      <li class="study-library-row" data-library-row data-study-id="<%= study.id %>" data-search="<%= study.title %> <%= study.description %>">
+        <a class="study-library-content" href="<%= training_path(@conn, @locale, study) %>" title="<%= study.title %>">
+          <span class="study-library-title"><%= study.title %></span>
+          <span class="study-library-practice"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M5 3l8 5-8 5z"/></svg><%= gettext("Practice") %></span>
+        </a>
+      </li>
+    <% end %>
+  <% end %>
+</ul>

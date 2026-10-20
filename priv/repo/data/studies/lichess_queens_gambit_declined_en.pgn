@@ -1,0 +1,104 @@
+[Event "Basic Development"]
+[Site "?"]
+[Date "2022.02.15"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "D53"]
+[Opening "Queen's Gambit Declined"]
+[StudyName "Queen's Gambit Declined"]
+[ChapterName "Basic Development"]
+[ChapterURL "https://lichess.org/study/4NDhDHBV/Iu25LKBY"]
+[Annotator "https://lichess.org/@/LeninPerez"]
+[UTCDate "2022.02.15"]
+[UTCTime "14:07:12"]
+[ChapterMode "gamebook"]
+[ListudyChapterId "e2c07e93bbbc83b6964092e9f576a70f"]
+[Orientation "black"]
+
+1. d4
+{ I ask you to perform the first moves that you learned in the previous chapter (chapter 2) }
+1... d5 2. c4 e6 { Very well! This is the QGD (Queen's Gambit Declined)! } 3.
+Nc3 { Follow the arrows! :D [%csl Gf6][%cal Gg8f6] } 3... Nf6 4. Bg5
+{ [%csl Ge7][%cal Gf8e7] } 4... Be7 5. e3 { [%csl Gg8][%cal Ge8g8] } 5... O-O
+{ This is so simple! This is the basic development of the QGD, what you have done is to develop the pieces quickly in good squares to castle on the kingside as quickly as possible.
+Remember this basic development :) }
+*
+
+[Event "Development Queenside"]
+[Site "?"]
+[Date "2022.02.15"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "D58"]
+[Opening "Queen's Gambit Declined: Tartakower Defense"]
+[StudyName "Queen's Gambit Declined"]
+[ChapterName "Development Queenside"]
+[ChapterURL "https://lichess.org/study/4NDhDHBV/Rq33z2Lw"]
+[Annotator "https://lichess.org/@/LeninPerez"]
+[UTCDate "2022.02.15"]
+[UTCTime "14:07:12"]
+[ChapterMode "gamebook"]
+[ListudyChapterId "74c5d772030e0b7d1669ea523074aebb"]
+[Orientation "black"]
+
+1. d4 { Now, perform the moves that you already know :) } 1... d5 2. c4 e6 3.
+Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Nf3
+{ Good job. You really know the first plan, now, the next plan is to develop the queenside but first, you can gain time on the white bishop with 6.h6. [%csl Gh6][%cal Gh7h6] }
+6... h6 7. Bh4
+{ Well, it's time to develop the queenside. A good idea to start with is to play 7.b6 and develop the c8 bishop for fianchetto. [%csl Gb6][%cal Yd8a8,Ya8d8,Gb7b6] }
+7... b6 8. Bd3 { Follow the arrows :) [%csl Gb7][%cal Gc8b7] } 8... Bb7
+{ From b7, the black bishop is an excellent piece. Congratulations, you have solved your biggest problem, developing this bishop. [%csl Gb7] }
+9. O-O { [%csl Gd7][%cal Gb8d7] } 9... Nbd7
+{ Now it is better to put your knight on d7 to support your other knight, and to make sure your c-pawn can move. [%csl Gb7][%cal Bc7c6,Bc6c5,Yd7f6,Yf6d7] }
+*
+
+[Event "Illustrative Game"]
+[Site "https://lichess.org/0WhkNTCE"]
+[Date "2016.03.16"]
+[Round "?"]
+[White "Carlsen, Magnus"]
+[Black "Topalov, Veselin"]
+[Result "*"]
+[WhiteElo "2775"]
+[BlackElo "2777"]
+[TimeControl "-"]
+[Termination "Unknown"]
+[Variant "Standard"]
+[ECO "D58"]
+[Opening "Queen's Gambit Declined: Tartakower Defense"]
+[StudyName "Queen's Gambit Declined"]
+[ChapterName "Illustrative Game"]
+[ChapterURL "https://lichess.org/study/4NDhDHBV/6eyu7yCP"]
+[Annotator "https://lichess.org/@/LeninPerez"]
+[ListudyOriginalResult "0-1"]
+[ListudyExcerpt "Opening excerpt: at most 12 full moves per line. Full source: https://lichess.org/study/4NDhDHBV/6eyu7yCP"]
+[ListudyChapterId "d4286c86f06c1c3122f9df580d13220d"]
+[Orientation "black"]
+
+{ Edit: I decided to write for you in this chapter because I think it will be more instructive. }
+1. d4
+{ This is a game between the reigning world champion, Magnus Carlsen with the white pieces, against Veselin Topalov, a great player who has the black pieces. }
+1... Nf6
+{ As you know, the main move here is 1.d4, but this is also a good starting move. }
+2. c4
+{ The popular Queen's Gambit! This study was made mainly for when Magnus plays this to you, you know what to do! }
+2... e6 3. Nf3 d5
+{ Although it was not with the first moves, we are in the position of the QGD. }
+4. Nc3 Be7 { Speeding up the castling [%cal Ge8g8] } 5. Bg5 h6 6. Bh4 O-O
+{ Now the kingside is developed [%csl Ge7,Gf6,Gg8,Gf8] } 7. e3 b6
+{ Remember this, since it is fundamental in your games with the QGD:
+Once the kingside is developed, our interest will be the queenside, to then be prepared and play actively in the center with c5. [%cal Gc8b7] }
+8. Bd3 Bb7
+{ In QGD the bishop on c8 doesn't have that much activity, but this is the solution, now this bishop feels very comfortable on b7 :) [%csl Gb7] }
+9. O-O Nbd7
+{ Not on c6 so as not to hinder the bishop, moreover, from here the knight supports the next c5. [%csl Gc5][%cal Gc7c5,Yd7c5] }
+10. Bg3 c5 $1
+{ After this, it could be said that the black pieces have played a formidable opening.
+At the beginning of the game, your priority is to fight for the center, with 1.d4-2.d6, to then develop your kingside (with moves like Nf6, Be7, OO), and then the queenside (b6-Bb7, Nbd2), to then hit the center with c5! }
+11. cxd5 Nxd5 12. Nxd5 Bxd5 *

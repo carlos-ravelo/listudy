@@ -1,39 +1,68 @@
+<% groups = comparison_groups(@choices) %>
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
-
-<div class="analysis-result-container" style="max-width: 800px; margin: 0 auto; padding: 2rem 0;">
-  <div style="margin-bottom: 2rem;">
-    <%= link "← Back to Analysis", to: Routes.analysis_path(@conn, :index), class: "button is-small is-light" %>
-    <div style="margin-bottom: 2rem; display: flex; gap: 10px; align-items: center;">
-    <%= link "Go to Study: #{@study.title} (#{@chapter_name})", 
-    to: Routes.study_path(@conn, :show, @conn.assigns[:locale] || "en", @study.slug, chapter: @chapter_name), 
-    class: "button is-small is-primary" %>  </div>
-    <h2 class="title is-3 mt-4">Analysis Result: <%= @study.title %></h2>
-    
-    <%= if @deviator_color == @study.color do %>
-      <div class="notification is-danger">
-        <strong>You deviated!</strong> You played <b><%= @played_move %></b>, but your repertoire expected: <b><%= String.replace(@expected_moves, ",", ", ") %></b>.
-      </div>
-    <% else %>
-      <div class="notification is-warning">
-        <strong>Opponent deviated.</strong> They played <b><%= @played_move %></b>. Your repertoire expected: <b><%= String.replace(@expected_moves, ",", ", ") %></b>.
-      </div>
+<div id="analysis-comparison" class="analysis-result-container analysis-workspace"
+  data-comparisons="<%= Jason.encode!(Enum.map(groups, &Map.take(&1, [:result, :color]))) %>">
+  <%= link (if assigns[:imported_game], do: "← Imported games", else: "← Back to Analysis"), to: assigns[:back_path] || Routes.analysis_path(@conn, :index), class: "analysis-back-link" %>
+  <h1>Your game and repertoire</h1>
+  <%= if assigns[:imported_game] do %>
+    <p class="analysis-game-meta"><strong><%= @imported_game.white_player || "White" %> – <%= @imported_game.black_player || "Black" %></strong> · <%= analysis_platform_label(@imported_game.platform) %> · <time data-local-time datetime="<%= DateTime.to_iso8601(@imported_game.played_at) %>"><%= Calendar.strftime(@imported_game.played_at, "%d %b %Y, %H:%M UTC") %></time></p>
+    <%= if Map.get(@conn.query_params, "compare_study_id") do %>
+      <p><%= link "Compare across all studies", to: @compare_all_path %></p>
     <% end %>
-  </div>
+  <% end %>
+  <%= if (assigns[:unavailable_studies] || []) != [] do %>
+    <details class="analysis-comparison-warning">
+      <summary>Comparison incomplete · <%= length(@unavailable_studies) %> <%= if length(@unavailable_studies) == 1, do: "study could", else: "studies could" %> not be compared</summary>
+      <p>The matching line below is available. To include these studies in the comparison, check their PGN and compare again:</p>
+      <ul>
+        <%= for study <- @unavailable_studies do %>
+          <li><%= link study.title, to: Routes.study_path(@conn, :show, @conn.assigns[:locale] || "en", study.slug), target: "_blank", rel: "noopener" %></li>
+        <% end %>
+      </ul>
+      <%= if assigns[:compare_all_path] do %><p><%= link "Try comparison again", to: @compare_all_path %></p><% end %>
+    </details>
+  <% end %>
 
-  <div 
- id="quick-analysis-board" 
-  class="cg-wrap" 
-  style="width: 500px; height: 500px; margin: 0 auto;"
-  data-pgn="<%= @pgn_text %>"
-  data-error-fen="<%= @error_fen %>"
-  data-expected="<%= @expected_moves %>"
-  data-played="<%= @played_move %>">
-  </div>
+  <div class="analysis-comparison-layout">
+    <section class="analysis-game" aria-label="Uploaded game">
+      <div id="analysis-replay-error" class="error infoBox" role="alert" hidden></div>
+      <div id="quick-analysis-board" class="cg-wrap analysis-result-board" data-pgn="<%= @pgn_text %>" aria-label="Game board"></div>
+      <div class="analysis-result-navigation" aria-label="Game navigation">
+        <button type="button" id="btn-prev" disabled>← Previous</button>
+        <button type="button" id="btn-comparison" disabled>Comparison position</button>
+        <button type="button" id="btn-next" disabled>Next →</button>
+      </div>
+      <p id="analysis-board-status" class="analysis-board-status" aria-live="polite"></p>
+      <div id="analysis-outcomes" aria-live="polite">
+        <%= for {group, index} <- Enum.with_index(groups) do %>
+          <%= render "_comparison_outcome.html", group: group, index: index, conn: @conn %>
+        <% end %>
+      </div>
+      <details class="analysis-game-moves">
+        <summary>Game moves</summary>
+        <div id="analysis-moves" aria-label="Move list"></div>
+      </details>
+      <noscript><p>Enable JavaScript to replay your game and switch comparisons. Chapter links are available below.</p></noscript>
+    </section>
 
-  <div style="text-align: center; margin-top: 1.5rem;">
-    <button id="btn-prev" class="button is-outlined">← Prev</button>
-    <button id="btn-next" class="button is-outlined">Next →</button>
+    <aside class="analysis-matches" aria-labelledby="analysis-matches-heading">
+      <h2 id="analysis-matches-heading">Matching chapters</h2>
+      <p class="analysis-match-help"><%= if Map.get(@conn.query_params, "compare_study_id"), do: "Showing the study you selected.", else: "Best match selected automatically from your repertoire." %></p>
+      <%= render "_matching_chapters.html", group: hd(groups), index: 0, selectable: length(groups) > 1, conn: @conn %>
+      <%= if length(groups) > 1 do %>
+        <details class="analysis-other-matches">
+          <summary>Other matching lines (<%= length(groups) - 1 %>)</summary>
+          <p class="analysis-match-help">These chapters match equally well but suggest a different comparison. You can explore them without changing your saved practice.</p>
+          <%= for {group, index} <- groups |> Enum.with_index() |> Enum.drop(1) do %>
+            <%= render "_matching_chapters.html", group: group, index: index, selectable: true, conn: @conn %>
+          <% end %>
+        </details>
+      <% end %>
+    </aside>
   </div>
+  <%= if assigns[:imported_game] do %>
+    <%= render "_imported_game_details.html", game: @imported_game %>
+  <% end %>
 </div>
-
-<script defer src="/js/quick_result.js"></script>
+<script defer src="<%= Routes.static_path(@conn, "/js/quick_result.js") %>"></script>
+<script defer src="<%= Routes.static_path(@conn, "/js/analysis_games.js") %>"></script>

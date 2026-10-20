@@ -1,7 +1,6 @@
 defmodule ListudyWeb.PageController do
   use ListudyWeb, :controller
   alias Listudy.Books
-  alias Listudy.Content
 
   @languages Application.compile_env(:listudy, [:languages, :translations])
   @pages [
@@ -9,6 +8,7 @@ defmodule ListudyWeb.PageController do
     "terms-of-service",
     "imprint",
     "copyright",
+    "credits",
     "achievements",
     "icons",
     "thanks",
@@ -19,9 +19,51 @@ defmodule ListudyWeb.PageController do
   def index(conn, %{"locale" => locale}) do
     case locale in @languages do
       true ->
-        posts = Content.list_published_posts(5)
-        tactic = ListudyWeb.TacticController.daily_tactic()
-        render(conn, "index.html", posts: posts, tactic: tactic)
+        user = Pow.Plug.current_user(conn)
+        user_id = if user, do: user.id, else: nil
+        last_slug = get_session(conn, :last_study_slug)
+        last_user_id = get_session(conn, :last_study_user_id)
+
+        last_study =
+          if last_slug && last_user_id == user_id do
+            Listudy.Studies.get_study_by_slug!(last_slug)
+          end
+
+        last_study =
+          if last_study && last_study.training_kind == "repertoire" &&
+               (!last_study.private || last_study.user_id == user_id),
+             do: last_study,
+             else: nil
+
+        favorite_studies = Listudy.StudyLibrary.favorite_studies(user_id)
+
+        favorite_studies =
+          if last_study && !Enum.any?(favorite_studies, &(&1.id == last_study.id)),
+            do: [last_study | favorite_studies],
+            else: favorite_studies
+
+        most_used = Listudy.StudyLibrary.most_used(user_id, favorite_studies)
+
+        favorite_studies =
+          Enum.sort_by(favorite_studies, fn study ->
+            cond do
+              last_study && study.id == last_study.id -> 0
+              study.id == most_used -> 1
+              true -> 2
+            end
+          end)
+
+        render(conn, "index.html",
+          endgame_games:
+            ListudyWeb.EndgameView.practice_games(
+              conn,
+              locale,
+              ListudyWeb.EndgameCatalogue.chapters()
+            ),
+          last_study: last_study,
+          most_used: most_used,
+          favorite_studies: favorite_studies
+        )
 
       _ ->
         conn
@@ -36,6 +78,18 @@ defmodule ListudyWeb.PageController do
 
   def show(conn, %{"page" => page}) do
     renderer(conn, @pages, page)
+  end
+
+  def admin_index(conn, %{"username" => username, "account_action" => action})
+      when action in ["email", "password"] do
+    username = String.trim(username)
+
+    if Listudy.Users.get_user_by_name!(username) do
+      action = if action == "email", do: :email, else: :password
+      redirect(conn, to: Routes.user_administration_path(conn, action, username))
+    else
+      conn |> put_flash(:error, gettext("User not found")) |> render("admin_index.html")
+    end
   end
 
   def admin_index(conn, _) do

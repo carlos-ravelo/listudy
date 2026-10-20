@@ -1,33 +1,81 @@
-<h1>Edit Study</h1>
-
-<script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
-  /*
-   * "Cleans" pgn files, 
-   * remove non standard characters
-   * replace some (but not all) of the html escapting
-  */
-  function clean_pgn(pgn) {
-    pgn = pgn.replace(/½/g, '1/2');
-    pgn = pgn.replace(/&gt;/g, '>');
-    pgn = pgn.replace(/&lt;/g, '<');
-    pgn = pgn.replace(/&quot;/g, '"');
-    pgn = pgn.replace(/\)/g, ' ) ');
-    pgn = pgn.replace(/\(/g, ' ( ');
-    pgn = pgn.replace(/\{/g, ' { ');
-    pgn = pgn.replace(/\}/g, ' } ');
-    pgn = pgn.replace(/0-0-0/g, 'O-O-O');
-    pgn = pgn.replace(/0-0/g, 'O-O');
-    while (pgn.indexOf("  ") != -1) {
-      pgn = pgn.replace(/  /g, ' ');
-    }
-    return pgn;
-  }
-  var pgn = clean_pgn(`<%= javascript_escape @study.pgn %>`);
-</script>
-<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/remember_lichess_study.js") %>"></script>
+<div class="study-management-page" data-training-kind="<%= @study.training_kind %>">
+<div class="study-heading study-management-heading">
+  <h1><%= if @study.training_kind == "tactics", do: dgettext("study", "Manage collection"), else: dgettext("study", "Manage study") %></h1>
+  <%= link (if @study.training_kind == "tactics", do: dgettext("study", "Back to collection"), else: dgettext("study", "Back to study")), to: training_path(@conn, @locale, @study), class: "study-edit-link" %>
+</div>
 
 <%= render "form.html", assigns: assigns, action: Routes.study_path(@conn, :update, @locale, @study) %>
 
-<h2><%= dgettext("study", "Delete Study") %></h2>
-<p><%= dgettext("study", "This can not be undone!") %></p>
-<%= link dgettext("study", "Delete"), to: Routes.study_path(@conn, :delete, @locale, @study), method: :delete, data: [confirm: dgettext("study", "Are you sure?")] %>
+<%= if @maintenance_error do %>
+  <p role="alert"><%= @maintenance_error %></p>
+<% else %>
+<section class="study-maintenance" x-data="studyMaintenance" @study-saved.window="metadataSaved($event.detail)" @beforeunload.window="beforeLeave($event)"
+         data-chapters="<%= @chapters_json %>" data-revision="<%= @revision %>"
+         data-save-url="<%= Routes.study_path(@conn, :manage_chapters, @locale, @study) %>"
+         data-editor-url="<%= Routes.study_path(@conn, :editor, @locale, @study) %>"
+         data-new-chapter="<%= dgettext("study", "New chapter") %>" data-copy-label="<%= dgettext("study", "Copy") %>"
+         data-delete-prompt="<%= dgettext("study", "Delete chapter %s? This takes effect when you save.") %>"
+         data-discard-prompt="<%= dgettext("study", "Discard your unsaved chapter changes?") %>"
+         data-saving="<%= dgettext("study", "Saving…") %>"
+         data-saved="<%= dgettext("study", "Study saved") %>"
+         data-save-error="<%= dgettext("study", "The chapter changes could not be saved.") %>">
+  <div class="study-maintenance-heading">
+    <h2><%= dgettext("study", "Chapters") %> <span x-text="'(' + chapters.length + ')' "></span></h2>
+    <button type="button" @click="add()" :disabled="saving"><%= dgettext("study", "Add chapter") %></button>
+  </div>
+  <p><%= dgettext("study", "Rename and reorder your chapters here. Open a chapter to edit its moves and comments.") %></p>
+  <ol class="study-maintenance-list">
+    <template x-for="(chapter, index) in chapters" :key="chapter.id">
+      <li class="study-maintenance-row" @dragover="dragOver($event, chapter)" @drop="drop($event, chapter)"
+          @dragleave="if (!$el.contains($event.relatedTarget)) dropId = null"
+          :class="{ 'is-dragging': draggedId === chapter.id, 'drop-before': dropId === chapter.id && !dropAfter, 'drop-after': dropId === chapter.id && dropAfter }">
+        <span class="study-maintenance-drag" :draggable="!saving" @dragstart="startDrag($event, chapter)" @dragend="endDrag()"
+              title="<%= dgettext("study", "Drag to reorder chapter") %>" aria-label="<%= dgettext("study", "Drag to reorder chapter") %>">
+          <svg aria-hidden="true" width="16" height="20" viewBox="0 0 16 20" fill="currentColor"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="10" r="1.5"/><circle cx="11" cy="10" r="1.5"/><circle cx="5" cy="16" r="1.5"/><circle cx="11" cy="16" r="1.5"/></svg>
+        </span>
+        <span class="study-maintenance-number" x-text="index + 1"></span>
+        <div class="study-maintenance-title">
+          <input type="text" maxlength="200" x-model="chapter.title" :disabled="saving"
+                 aria-label="<%= dgettext("study", "Chapter title") %>">
+          <span x-show="chapter.source_index === null || chapter.duplicate"><%= dgettext("study", "Save changes to edit this chapter") %></span>
+        </div>
+        <div class="study-maintenance-actions">
+          <button type="button" @click="move(index, -1)" :disabled="saving || index === 0" aria-label="<%= dgettext("study", "Move chapter up") %>">↑</button>
+          <button type="button" @click="move(index, 1)" :disabled="saving || index === chapters.length - 1" aria-label="<%= dgettext("study", "Move chapter down") %>">↓</button>
+          <a :href="$el.closest('section').dataset.editorUrl + '?chapter_index=' + chapter.source_index"
+             x-show="chapter.source_index !== null && !chapter.duplicate" @click="openEditor($event, chapter)"><%= dgettext("study", "Edit") %></a>
+          <details @click.outside="$el.removeAttribute('open')">
+            <summary class="study-maintenance-overflow" aria-label="<%= dgettext("study", "More") %>" title="<%= dgettext("study", "More") %>"><span aria-hidden="true">⋯</span></summary>
+            <div class="study-maintenance-menu">
+              <button type="button" @click="$el.closest('details').removeAttribute('open'); duplicate(index)" :disabled="saving"><%= dgettext("study", "Duplicate") %></button>
+              <button type="button" @click="$el.closest('details').removeAttribute('open'); remove(index)" :disabled="saving || chapters.length === 1"><%= dgettext("study", "Delete") %></button>
+            </div>
+          </details>
+        </div>
+      </li>
+    </template>
+  </ol>
+  <div class="study-maintenance-save">
+    <span x-show="dirty"><%= dgettext("study", "Unsaved changes") %></span>
+    <button type="button" @click="discard()" :disabled="saving || !dirty"><%= dgettext("study", "Discard changes") %></button>
+    <button type="button" class="button-primary" @click="save()" :disabled="saving || !dirty"><%= dgettext("study", "Save chapter changes") %></button>
+  </div>
+  <p role="status" aria-live="polite" x-text="status"></p>
+</section>
+<% end %>
+
+
+
+<script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
+  var pgn = `<%= javascript_escape @source_sites %>`;
+</script>
+<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/remember_lichess_study.js") %>"></script>
+
+
+<footer class="study-management-danger">
+  <span><%= dgettext("study", "This can not be undone!") %></span>
+  <%= link dgettext("study", "Delete Study"), to: Routes.study_path(@conn, :delete, @locale, @study), method: :delete, data: [confirm: dgettext("study", "Are you sure?") <> " " <> dgettext("study", "This can not be undone!")], class: "study-management-delete" %>
+</footer>
+<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_maintenance.js") %>"></script>
+
+</div>

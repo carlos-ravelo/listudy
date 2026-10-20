@@ -1,0 +1,127 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const { pathToFileURL } = require('url');
+const load = async name => import('data:text/javascript;base64,' + fs.readFileSync(path.join(__dirname, '../../js/modules/study', name)).toString('base64'));
+
+(async () => {
+    const { splitChapterPgn, chapterFromUrl } = await load('chapter_pgn.js');
+    const historySource = fs.readFileSync(path.join(__dirname, '../../js/modules/study/review_history.js'), 'utf8').replace(/export \{[^}]+\};/, '');
+    const reviewSource = fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_review.js'), 'utf8')
+        .replace("import { reviewHistory } from './review_history.js';", historySource)
+        .replace("from 'ts-fsrs'", `from '${pathToFileURL(path.join(__dirname, '../../node_modules/ts-fsrs/dist/index.mjs')).href}'`);
+    const { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus, dueChapterOrder } =
+        await import('data:text/javascript;base64,' + Buffer.from(reviewSource).toString('base64'));
+    const { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder } = await load('chapter_stats.js');
+    const stats = readChapterStats(null);
+    recordChapterAttempt(stats, 2, false);
+    assert.strictEqual(chapterWeakness(stats, 2).level, 'weak');
+    recordChapterAttempt(stats, 2, true);
+    recordChapterAttempt(stats, 2, false);
+    assert.deepStrictEqual(chapterWeakness(stats, 2), { attempts: 3, errors: 2, cleanMoves: [], errorRate: 2 / 3, level: 'weak' });
+    assert.strictEqual(chapterWeakness(stats, 1).level, 'unrated');
+    assert.deepStrictEqual(readChapterStats('invalid'), { version: 1, chapters: {} });
+    const orderStats = readChapterStats(null);
+    recordChapterAttempt(orderStats, 0, false);
+    for (let i = 0; i < 8; i++) recordChapterAttempt(orderStats, 1, false);
+    for (let i = 0; i < 12; i++) recordChapterAttempt(orderStats, 1, true);
+    assert.deepStrictEqual(weakChapterOrder(orderStats, 3), [1, 0]);
+    const catalog = chapterMoveCatalog([
+        { move: 'e4', children: [{ move: 'e5', children: [{ move: 'Nf3', children: [] }] }] },
+        { move: 'd4', children: [{ move: 'd5', children: [] }] }
+    ], true);
+    assert.deepStrictEqual([...catalog], ['e4', 'e4|e5|Nf3', 'd4']);
+    assert.deepStrictEqual([...chapterMoveCatalog([{ move: 'e4', children: [{ move: 'e5', children: [] }] }], false)], ['e4|e5']);
+    const coverageStats = readChapterStats(null);
+    recordChapterAttempt(coverageStats, 0, true, 'e4');
+    recordChapterAttempt(coverageStats, 0, true, 'e4');
+    recordChapterAttempt(coverageStats, 0, false, 'd4');
+    assert.deepStrictEqual(chapterCoverage(coverageStats, 0, catalog), { covered: 1, total: 3, percent: 33 });
+    assert.strictEqual(chapterWeakness(coverageStats, 0).errors, 1);
+    assert.deepStrictEqual(chapterMastery(coverageStats, 0, catalog), { cleanCovered: 0, mastered: false });
+    recordChapterAttempt(coverageStats, 0, true, 'e4');
+    recordChapterAttempt(coverageStats, 0, true, 'd4');
+    assert.strictEqual(chapterMastery(coverageStats, 0, catalog).mastered, false);
+    recordChapterAttempt(coverageStats, 0, true, 'e4|e5|Nf3');
+    assert.deepStrictEqual(chapterMastery(coverageStats, 0, catalog), { cleanCovered: 3, mastered: true });
+    assert.strictEqual(chapterWeakness(coverageStats, 0).errors, 1);
+    assert.deepStrictEqual(weakChapterOrder(coverageStats, 1, [catalog]), []);
+    recordChapterAttempt(coverageStats, 0, false);
+    assert.deepStrictEqual(chapterMastery(coverageStats, 0, catalog), { cleanCovered: 0, mastered: false });
+    assert.deepStrictEqual(weakChapterOrder(coverageStats, 1, [catalog]), [0]);
+    const legacyClean = readChapterStats(JSON.stringify({ version: 1, chapters: { 0: { attempts: 2, errors: 0, coveredMoves: ['e4', 'd4', 'e4|e5|Nf3'] } } }));
+    assert.strictEqual(chapterMastery(legacyClean, 0, catalog).mastered, true);
+    recordChapterAttempt(legacyClean, 0, false);
+    assert.strictEqual(chapterMastery(legacyClean, 0, catalog).mastered, false);
+    const reviewTree = [{ move: 'e4', value: 0, comments: ['first'], children: [] }];
+    const signature = chapterReviewSignature(reviewTree, 'starting fen');
+    reviewTree[0].value = 5;
+    reviewTree[0].comments = ['edited'];
+    assert.strictEqual(chapterReviewSignature(reviewTree, 'starting fen'), signature);
+    assert.notStrictEqual(chapterReviewSignature(reviewTree, 'different fen'), signature);
+    reviewTree[0].move = 'd4';
+    assert.notStrictEqual(chapterReviewSignature(reviewTree, 'starting fen'), signature);
+    const reviews = emptyChapterReviews();
+    const reviewAt = new Date('2026-10-05T12:00:00Z');
+    assert.deepStrictEqual(dueChapterOrder(reviews, [signature], reviewAt), []);
+    recordLineReview(reviews, 0, signature, true, reviewAt);
+    const restoredReviews = readChapterReviews(JSON.stringify(reviews));
+    assert.strictEqual(chapterReviewStatus(restoredReviews, 0, signature, reviewAt).due, false);
+    assert.strictEqual(chapterReviewStatus(restoredReviews, 0, 'edited chapter', reviewAt).due, false);
+    const dueAt = chapterReviewStatus(restoredReviews, 0, signature, reviewAt).dueAt;
+    assert.deepStrictEqual(dueChapterOrder(restoredReviews, [signature], new Date(dueAt.getTime() + 1)), [0]);
+    recordLineReview(restoredReviews, 0, signature, false, new Date(dueAt.getTime() + 1));
+    assert.strictEqual(restoredReviews.chapters['0'].card.lapses, 1);
+    assert.deepStrictEqual(readChapterReviews('broken'), emptyChapterReviews());
+
+    const first = '[Event "First *"]\n\n1. e4 {fake result * [Event "x"]} (1. d4 d5) e5 1-0';
+    const second = '[Event "Second"]\n\n1. d4 ; fake result 0-1\n d5 *';
+    assert.deepStrictEqual(splitChapterPgn(first + '\n\n' + second), [first, second]);
+    assert.strictEqual(chapterFromUrl('?chapter=Same&chapter_index=1', ['Same', 'Same']), 1);
+    assert.strictEqual(chapterFromUrl('?chapter=Same', ['Same', 'Same']), null);
+    assert.strictEqual(chapterFromUrl('?chapter=Main', ['Main line', 'Main']), 1);
+    assert.strictEqual(chapterFromUrl('?chapter=Main', ['Main line']), null);
+    assert.strictEqual(chapterFromUrl('?chapter=Moved&chapter_index=0', ['Other', 'Moved']), 1);
+    const caroKann = '3. Caro-Kann: Two Knights (1.e4 c6 2.Nc3 d5 3.Nf3)';
+    const cleanedCaroKann = '3. Caro-Kann: Two Knights ( 1.e4 c6 2.Nc3 d5 3.Nf3 )';
+    const chapterTitles = Array.from({ length: 124 }, (_, index) => `Chapter ${index + 1}`);
+    chapterTitles[67] = cleanedCaroKann;
+    const chapterQuery = new URLSearchParams({ chapter: caroKann, chapter_index: '67' });
+    assert.strictEqual(chapterFromUrl('?' + chapterQuery, chapterTitles), 67);
+    assert.strictEqual(chapterFromUrl('?chapter=' + encodeURIComponent(caroKann), chapterTitles), 67);
+    chapterTitles[61] = cleanedCaroKann;
+    chapterTitles[68] = cleanedCaroKann;
+    chapterQuery.set('chapter_index', '61');
+    assert.strictEqual(chapterFromUrl('?' + chapterQuery, chapterTitles), 61);
+    chapterQuery.set('chapter_index', '67');
+    assert.strictEqual(chapterFromUrl('?' + chapterQuery, chapterTitles), 67);
+    assert.strictEqual(chapterFromUrl('?chapter=' + encodeURIComponent(caroKann), chapterTitles), null);
+
+
+    const { CollectionStore } = await load('collection_store.js');
+    const values = new Map([['listudy_cart', JSON.stringify([first])]]);
+    const storage = { getItem: key => values.get(key) || null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) };
+    const store = new CollectionStore(storage);
+    assert.strictEqual(store.read().collections.Default[0].pgn, first);
+    assert.strictEqual(values.has('listudy_cart'), false);
+    store.create('__proto__');
+    store.add({ pgn: second, title: 'Second' });
+    store.add({ pgn: second, title: 'Second' });
+    assert.strictEqual(store.read().collections.__proto__.length, 1);
+    store.rename('Renamed');
+    store.move(0, 'Default');
+    store.select('Default');
+    store.reorder(1, -1);
+    assert.strictEqual(store.read().collections.Default[0].pgn, second);
+    assert.throws(() => store.rename('Renamed'), /already exists/);
+    values.set('listudy_collections', 'corrupt data');
+    assert.throws(() => store.read(), /kept/);
+    assert.strictEqual(values.get('listudy_collections'), 'corrupt data');
+    const legacy = JSON.stringify([first]);
+    values.delete('listudy_collections');
+    values.set('listudy_cart', legacy);
+    storage.setItem = () => { throw new Error('Quota exceeded'); };
+    assert.throws(() => store.read(), /Quota/);
+    assert.strictEqual(values.get('listudy_cart'), legacy);
+    console.log('Study feature regression checks passed.');
+})().catch(error => { console.error(error); process.exitCode = 1; });

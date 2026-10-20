@@ -52,6 +52,9 @@ function set_text(id, text, extra = { bold_text: "", symbol: "" }) {
     set_text_content(id + "_text", text);
     set_text_content(id + "_symbol", prefix_symbol);
     set_text_content(id + "_bold", extra.bold_text);
+    if (div.closest('.study-feedback')) div.dispatchEvent(new CustomEvent('study-feedback-change', {
+        bubbles: true, detail: { id, text, transient: extra.transient ?? id === success_div }
+    }));
 }
 
 function set_text_content(id, content) {

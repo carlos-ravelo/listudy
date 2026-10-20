@@ -24,7 +24,7 @@ defmodule ListudyWeb.Router do
   end
 
   pipeline :stockfish do
-    #plug ListudyWeb.Plugs.Stockfish
+    # plug ListudyWeb.Plugs.Stockfish
     plug ListudyWeb.Plugs.AllowIframe
   end
 
@@ -77,6 +77,8 @@ defmodule ListudyWeb.Router do
     resources "/openings", OpeningController
     resources "/players", PlayerController
     resources "/events", EventController
+    get "/puzzle-imports", PuzzleCatalogController, :imports
+    post "/puzzle-imports", PuzzleCatalogController, :create
     resources "/tactics", TacticController
     resources "/piecelesstactic", PiecelessTacticController
 
@@ -95,12 +97,28 @@ defmodule ListudyWeb.Router do
 
     get "/progress", ProgressController, :index
     post "/progress/sync", ProgressController, :sync
+    get "/collections", CollectionController, :index
+    get "/study-library", StudyLibraryController, :index
+    patch "/study-library", StudyLibraryController, :update
+    put "/collections", CollectionController, :update
+    post "/collections/study", CollectionController, :create_study
+  end
+
+  scope "/analysis", ListudyWeb do
+    pipe_through [:api_session, :logged_in]
+
+    get "/sync-status", AnalysisController, :sync_status
+    get "/new-games/:platform", AnalysisController, :new_games
+    get "/studies/:id/positions", AnalysisController, :positions
   end
 
   scope "/analysis", ListudyWeb do
     pipe_through [:browser, :logged_in]
 
     get "/", AnalysisController, :index
+    get "/games", AnalysisController, :games
+    get "/games/:id", AnalysisController, :game
+    get "/games/:id/compare", AnalysisController, :compare_game
     post "/sync", AnalysisController, :sync
     post "/disconnect", AnalysisController, :disconnect
     get "/:id/train", AnalysisController, :train
@@ -144,7 +162,16 @@ defmodule ListudyWeb.Router do
     get "/openings/:opening", OpeningController, :show
     get "/motif/:motif", MotifController, :show
 
-    get "/tactics", TacticController, :random
+    get "/tactics", StudyController, :tactics, as: :tactics_library
+    get "/tactics/collections/:id", StudyController, :tactics_collection, as: :tactics_collection
+    get "/tactics/puzzles", PuzzleCatalogController, :index
+    get "/tactics/puzzles/start", PuzzleCatalogController, :start
+
+    live "/tactics/puzzles/:id", TacticsLive,
+      layout: {ListudyWeb.LayoutView, :live},
+      as: :catalog_tactics
+
+    get "/tactics/random", TacticController, :random
     get "/tactics/daily-puzzle", TacticController, :daily
     get "/tactics/custom", TacticController, :custom
     get "/tactics/opening/:opening", TacticController, :random, as: :random_opening_tactic
@@ -162,6 +189,7 @@ defmodule ListudyWeb.Router do
       as: :blind_tactics
 
     get "/pieceless-tactics", PiecelessTacticController, :random
+    get "/pieceless-tactics/puzzle/:id", PiecelessTacticController, :puzzle
     get "/pieceless-tactics-random/:id", PiecelessTacticController, :random
     get "/pieceless-tactics/:id", PiecelessTacticController, :public
 
@@ -194,6 +222,11 @@ defmodule ListudyWeb.Router do
     get "/books/:slug", BookController, :show
     live "/books", BookSearchLive, layout: {ListudyWeb.LayoutView, :live}, as: :book_search
 
+    post "/studies/:id/clone", StudyController, :clone
+    get "/studies/:id/editor", StudyController, :editor
+    get "/studies/:id/editor/chapter", StudyController, :load_chapter
+    post "/studies/:id/editor", StudyController, :save_chapter
+    post "/studies/:id/chapters", StudyController, :manage_chapters
     resources "/studies", StudyController
     get "/blog", PostController, :index
     get "/blog/:id", PostController, :show
@@ -218,5 +251,4 @@ defmodule ListudyWeb.Router do
     pipe_through :browser
     get "/", PageController, :domain
   end
-
 end

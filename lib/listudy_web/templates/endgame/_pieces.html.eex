@@ -1,0 +1,5 @@
+<span class="endgame-material" aria-hidden="true">
+  <%= for piece <- @pieces do %>
+    <img src="<%= Routes.static_path(@conn, "/images/pieces/cburnett/w#{piece}.svg") %>" width="28" height="28" alt="">
+  <% end %>
+</span>

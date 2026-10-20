@@ -94,7 +94,7 @@
             <%= if assigns[:favorites] do %>
               <div style="font-size: 0.875rem; color: #718096; margin-top: 0.5rem;">
                 <span title="# <%= dgettext("study", "favorites")%>"><%= length(study.study_favorites) %> <span class="icon" data-icon="#"></span></span> 
-                &bull; <%= dgettext("study", "by") %> <strong><%= study.user.username %></strong>
+                &bull; <%= if seed_source(study), do: dgettext("study", "Imported by"), else: dgettext("study", "by") %> <strong><%= study.user.username %></strong>
               </div>
             <% end %>
           </div>

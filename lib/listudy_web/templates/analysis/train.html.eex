@@ -1,43 +1,78 @@
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
 
 
-<div class="training-container" style="max-width: 800px; margin: 0 auto; padding: 2rem 0;">
-
-  <div style="margin-bottom: 2.5rem;">
-    <div style="margin-bottom: 0.5rem;">
-      <%= link "← Back to Overview", to: Routes.analysis_path(@conn, :index), style: "color: #718096; text-decoration: none; font-size: 0.95rem; font-weight: 500; transition: color 0.2s ease;" %>
-    </div>
-    <h2 style="margin: 0; line-height: 1.2;">
-      Training Mistakes: <span style="color: #4a5568;"><%= @study.title %></span>
-    </h2>
-  </div>
-
-  <div style="width: min(100%, 500px); margin: 0 auto 0.5rem auto; display: flex; justify-content: flex-end;">
-    <select id="time-filter" style="padding: 0.3rem 1.5rem 0.3rem 0.8rem; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #4a5568; background-color: white; cursor: pointer; appearance: none; outline: none; background-image: url('data:image/svg+xml;charset=US-ASCII,<svg width=\"16\" height=\"16\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"%23a0aec0\"><path d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\"/></svg>'); background-repeat: no-repeat; background-position: right 0.3rem center; background-size: 1.2em 1.2em; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-      <option value="all" <%= if @filter == "all", do: "selected" %>>All time</option>
-      <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
-      <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
-    </select>
-  </div>
-
-  <div
-    id="chess-training-board"
-    class="cg-wrap"
-    style="width: min(100%, 500px); aspect-ratio: 1 / 1; height: auto; margin: 0 auto;"
-    data-mistakes="<%= @mistakes_json %>">
-  </div>
-
-  <div id="training-controls" style="text-align: center; margin-top: 2rem;">
-    <h3 id="training-status" style="margin-bottom: 1rem;">Preparing positions...</h3>
-    <p id="mistake-info" style="color: var(--gray-600);"></p>
-    <div id="mistakes-pagination" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 1rem; margin-bottom: 1rem;"></div>
-    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
-      <button id="hint-btn" class="button button-outline" style="margin: 0;">Hint</button>
-      <button id="solve-btn" class="button button-outline" style="margin: 0;">Show Answer</button>
-      <button id="next-mistake-btn" class="button button-primary" style="display: none; margin: 0;">Next Position</button>
+<div class="training-container analysis-workspace practice-page" data-progress-user="<%= @current_user.id %>">
+  <div class="training-heading">
+    <div class="training-heading-copy">
+      <%= link "← Analysis overview", to: Routes.analysis_path(@conn, :index, filter: @filter), class: "analysis-back-link" %>
+      <h1><%= String.replace(@study.title, "_", " ") %></h1>
     </div>
 
   </div>
+  <div class="training-board-column">
+    <div id="chess-training-board" class="cg-wrap" hidden
+      data-study-key="<%= hd(String.split(@study.slug, "-")) %>" data-study-color="<%= @study.color %>" data-study-pgn="<%= @study_pgn %>"
+      data-mistakes="<%= @mistakes_json %>"></div>
+    <p id="training-progress-status" class="training-screen-reader" role="status" aria-live="polite">Loading reviews…</p>
+    <p id="training-sync-status" role="status" hidden></p>
+    <p id="training-position-counter" class="training-position-counter training-screen-reader" tabindex="-1" hidden></p>
+    <nav class="training-positions" aria-label="Practice positions">
+      <div id="mistakes-pagination"></div>
+    </nav>
+  </div>
+  <div class="training-sidebar">
+    <div class="training-toolbar">
+      <label class="training-scope-label">Practice
+        <select id="training-scope" aria-label="Practice scope" disabled>
+          <option value="due">Due now</option>
+          <option value="all">All game positions</option>
+        </select>
+      </label>
+      <label>Period
+        <select id="time-filter" aria-label="Time period">
+          <option value="all" <%= if @filter == "all", do: "selected" %>>All time</option>
+          <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
+          <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
+        </select>
+      </label>
+      <details class="training-about">
+        <summary aria-label="About practice" title="About practice"><span aria-hidden="true">?</span></summary>
+        <p>Practice positions from your games. Attempts update the same reviews and study progress used by Smart. Hints and shown answers schedule another attempt; your game history stays unchanged.</p>
+      </details>
+    </div>
+    <div id="training-controls" hidden>
+      <section class="training-position-tools" aria-labelledby="training-status">
+        <h2 id="training-status" tabindex="-1" aria-live="polite">Your move</h2>
+        <p id="mistake-info"></p>
+        <div class="training-actions" role="group" aria-label="Position tools">
+          <button id="hint-btn" type="button" class="button button-outline practice-secondary">Hint</button>
+          <button id="solve-btn" type="button" class="button button-outline practice-secondary">Show answer</button>
+          <button id="skip-mistake-btn" type="button" class="button button-outline practice-secondary">Skip</button>
+          <button id="next-mistake-btn" type="button" class="button button-primary practice-primary" hidden>Next position</button>
+        </div>
+      </section>
+      <div id="training-chapters" class="training-chapters" aria-label="Study chapters" hidden></div>
+      <button id="finish-training-btn" type="button" class="training-text-button">Finish session</button>
+    </div>
+
+  </div>
+  <section id="training-empty" class="training-end-panel practice-panel" hidden aria-labelledby="training-empty-title">
+    <h2 id="training-empty-title">You're up to date</h2>
+    <p id="training-empty-description">Your game positions will return when their next review is due.</p>
+    <button type="button" data-review-all class="button practice-primary">Review all game positions</button>
+    <%= link "Analysis overview", to: Routes.analysis_path(@conn, :index, filter: @filter) %>
+  </section>
+  <section id="training-summary" class="training-end-panel practice-panel" hidden aria-labelledby="training-summary-title">
+    <h2 id="training-summary-title" tabindex="-1">Session saved</h2>
+    <p id="training-summary-result"></p>
+    <p id="training-summary-time"></p>
+    <div class="training-summary-actions">
+      <button id="training-remaining" type="button" class="button button-primary practice-primary" hidden>Practice remaining</button>
+      <button type="button" data-review-all class="button button-outline practice-secondary">Review all game positions</button>
+      <%= link "Back to analysis", to: Routes.analysis_path(@conn, :index, filter: @filter) %>
+    </div>
+  </section>
+  <%= if @chapter_error do %><p class="training-chapters-error"><%= @chapter_error %></p><% end %>
 </div>
 
-<script defer type="text/javascript" src="/js/train_mistakes.js"></script>
+<script defer type="text/javascript" src="/js/train_mistakes.js?v=training-6"></script>

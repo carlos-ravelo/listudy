@@ -1,0 +1,7 @@
+<section class="tactics-modes" aria-labelledby="tactics-visualization-title">
+  <h2 id="tactics-visualization-title"><%= dgettext("tactics", "Visualization training") %></h2>
+  <div class="tactics-visualization-links">
+    <a href="<%= Routes.blind_tactic_path(@conn, :random, @locale) %>"><svg class="tactics-mode-icon" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="2"/><path d="M5 12h22M5 20h22M12 5v22M20 5v22"/><path d="M12 12h8v8h-8z" fill="currentColor"/></svg><span class="tactics-mode-copy"><strong><%= gettext("Blind Tactics") %></strong><span><%= dgettext("tactics", "Follow moves on a frozen board") %></span></span></a>
+    <a href="<%= Routes.pieceless_tactic_path(@conn, :random, @locale) %>"><svg class="tactics-mode-icon" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="2"/><path d="M5 12h22M5 20h22M12 5v22M20 5v22" stroke-dasharray="2 3"/></svg><span class="tactics-mode-copy"><strong><%= gettext("Pieceless Tactics") %></strong><span><%= dgettext("tactics", "Solve with hidden pieces") %></span></span></a>
+  </div>
+</section>

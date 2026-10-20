@@ -27,7 +27,7 @@ defmodule Listudy.Games do
 
     since_ms =
       if last_date do
-        DateTime.to_unix(last_date, :millisecond) + 1000
+        DateTime.to_unix(last_date, :millisecond) - 86_400_000
       else
         nil
       end
@@ -43,7 +43,10 @@ defmodule Listudy.Games do
               white_player: get_in(game, ["players", "white", "user", "name"]) || "Anonymous",
               black_player: get_in(game, ["players", "black", "user", "name"]) || "Anonymous",
               result: game["status"],
-              played_at: game["createdAt"] |> DateTime.from_unix!(:millisecond) |> DateTime.truncate(:second),
+              played_at:
+                game["createdAt"]
+                |> DateTime.from_unix!(:millisecond)
+                |> DateTime.truncate(:second),
               user_id: user.id
             }
           end)
@@ -67,7 +70,8 @@ defmodule Listudy.Games do
           Enum.map(games, fn game ->
             %{
               platform: "chess_com",
-              game_id_on_platform: game["url"] |> String.split("/") |> List.last(),
+              game_id_on_platform:
+                game["url"] |> String.trim_trailing("/") |> String.split("/") |> List.last(),
               pgn: game["pgn"],
               white_player: get_in(game, ["white", "username"]),
               black_player: get_in(game, ["black", "username"]),
@@ -92,7 +96,8 @@ defmodule Listudy.Games do
     now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
 
     # insert_all needs timestamps explicitly added
-    records_with_timestamps = Enum.map(games_attrs, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
+    records_with_timestamps =
+      Enum.map(games_attrs, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
 
     # Dividimos el arreglo en lotes de 1000 para no reventar el límite de 65,535 parámetros de Postgres
     {total_count, all_records} =
@@ -101,10 +106,10 @@ defmodule Listudy.Games do
       |> Enum.reduce({0, []}, fn chunk, {acc_count, acc_records} ->
         {count, records} =
           Repo.insert_all(
-            UserGame, 
-            chunk, 
-            on_conflict: :nothing, 
-            conflict_target: [:platform, :game_id_on_platform], 
+            UserGame,
+            chunk,
+            on_conflict: :nothing,
+            conflict_target: [:user_id, :platform, :game_id_on_platform],
             returning: true
           )
 
@@ -130,11 +135,15 @@ defmodule Listudy.Games do
   Devuelve una lista de errores únicos para un estudio, agrupados por posición (FEN)
   y ordenados por frecuencia de repetición.
   """
-  def get_unique_mistakes_to_train(study_id, filter \\ "all") do
+  def get_unique_mistakes_to_train(study_id, user_id, filter \\ "all") do
+    training_positions(user_id, [study_id], filter)
+  end
+
+  def training_positions(user_id, study_ids, filter \\ "all") do
     query =
       Deviation
       |> join(:inner, [d], g in Listudy.Games.UserGame, on: d.user_game_id == g.id)
-      |> where([d, g], d.study_id == ^study_id)
+      |> where([d, g], d.study_id in ^study_ids and g.user_id == ^user_id)
 
     query =
       case filter do
@@ -150,13 +159,22 @@ defmodule Listudy.Games do
           query
       end
 
+    # The matcher treats the first four FEN fields as position identity.
+    # Keep a full FEN from one occurrence so the training board can replay it.
     query
-    |> group_by([d, g], [d.position_fen, d.expected_move, d.played_move])
+    |> group_by([d, g], [
+      d.study_id,
+      fragment("regexp_replace(?, ' [0-9]+ [0-9]+$', '')", d.position_fen),
+      d.expected_move
+    ])
     |> select([d, g], %{
-      fen: d.position_fen,
+      fen: min(d.position_fen),
+      study_id: d.study_id,
       expected: d.expected_move,
-      played: d.played_move,
-      times_repeated: count(d.id)
+      played: min(d.played_move),
+      last_played_at: max(g.played_at),
+      latest_game_id: max(g.id),
+      times_repeated: count(g.id, :distinct)
     })
     |> order_by([d, g], desc: count(d.id))
     |> Repo.all()
