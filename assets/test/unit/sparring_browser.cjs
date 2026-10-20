@@ -44,7 +44,7 @@ window.savedResults={};window.decisions=[];window.stops=0;window.moveNavigation=
 window.board=Sparring.Chessground(document.getElementById('chessground'),{drawable:{brushes:{normal:{key:'n',color:'#3333ff',opacity:0.6,lineWidth:10}}},movable:{free:false,events:{after:(from,to)=>controller.move(from,to)}}});
 Sparring.setupStudyFeedback({durationMs:400});
 window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapters:()=>window.studyChapters || [chapter],getTitle:()=> 'Test study',getBoard:()=>board,
- onPosition(position){window.displayedFen=position.fen();moveNavigation.update()},
+ onPosition(){moveNavigation.update()},
  createEngine:options=>window.fakeEngine || Sparring.createSparringEngine(options),
  readStrength:()=>localStorage.getItem('test_strength'),writeStrength:level=>localStorage.setItem('test_strength',level),
  readPreferences:()=>JSON.parse(localStorage.getItem('test_sparring_preferences')||'{}'),writePreferences:value=>localStorage.setItem('test_sparring_preferences',JSON.stringify(value)),
@@ -255,20 +255,12 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.locator('#error').isHidden(),true);
         assert(Math.abs(await actionTop()-initialActionTop)<1,'Dismissing notifications must not shift controls');
         const liveFen = await page.evaluate(() => board.state.pieces.get('e4')?.color);
-        const liveAnalysisLink = await page.getAttribute('[data-sparring="lichess"]', 'href');
-        assert.equal(decodeURIComponent(new URL(liveAnalysisLink).pathname.slice('/analysis/'.length)), await page.evaluate(() => displayedFen));
-        assert.equal(await page.getAttribute('[data-sparring="lichess"]', 'target'), '_blank');
-        assert.equal(await page.getAttribute('[data-sparring="lichess"]', 'rel'), 'noopener noreferrer');
         await page.click('#study_previous_move');
-        const previousAnalysisLink = await page.getAttribute('[data-sparring="lichess"]', 'href');
-        assert.notEqual(previousAnalysisLink, liveAnalysisLink);
-        assert.equal(decodeURIComponent(new URL(previousAnalysisLink).pathname.slice('/analysis/'.length)), await page.evaluate(() => displayedFen));
         assert.equal(await page.evaluate(() => controller.navigation().canGoForward), true);
         assert.equal(await page.evaluate(() => board.state.movable.dests.size), 0);
         await page.evaluate(() => controller.move('g1', 'f3'));
         assert.equal(await page.evaluate(() => board.state.pieces.get('f3')?.role || null), null);
         await page.click('[data-sparring="latest"]');
-        assert.equal(await page.getAttribute('[data-sparring="lichess"]', 'href'), liveAnalysisLink);
         assert.equal(await page.evaluate(() => board.state.pieces.get('e4')?.color), liveFen);
         assert.equal(await page.locator('[data-sparring="latest"]').isHidden(), true);
 

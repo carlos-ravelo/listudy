@@ -133,7 +133,6 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         const playable = state.canPlay && !pendingPromotion && !browsing;
         workspace?.classList.toggle('study-sparring-paused', review);
         const game = readIndex === null ? ports.position.game() : ports.position.at(readIndex);
-        find('lichess').href = `https://lichess.org/analysis/${encodeURIComponent(game.fen())}?color=${board.state.orientation}`;
         onPosition(game, ports.repertoire.routes(), state.phase);
         const dests = new Map();
         if (playable) for (const move of state.legal) {
