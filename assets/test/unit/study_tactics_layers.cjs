@@ -7,7 +7,7 @@ const Chess = ChessModule.Chess || ChessModule;
 const study = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
 const noop = () => {};
 const pgn = '1. e4 (1. d4 d5 2. c4) (1. f3 $2 e5 2. g4 Qh4#) e5 2. Nf3 *';
-function harness({ source = pgn, tactics = true, wait = async () => {} } = {}) {
+function harness({ source = pgn, tactics = true, wait = async () => {}, actualReplies = false } = {}) {
     const elements = new Map();
     const element = id => {
         if (!elements.has(id)) elements.set(id, { hidden: true, disabled: false, focus() { this.focused = true; } });
@@ -46,7 +46,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {} } = {}) {
         updateContextReplayUi: noop, change_play_stockfish: noop, change_analysis_board: noop,
         display_arrows: noop, display_comments: noop, show_suggestions: noop, update_read_mode_ui: noop,
         updateFailedPositionsUi: noop, update_progress: noop,
-        finish_chapter_practice: noop, achievement_end_of_line: noop, right_move_text: () => 'correct',
+        finish_chapter_practice: completed => events.push(['complete', completed]), achievement_end_of_line: noop, right_move_text: () => 'correct',
         depth_limit_enabled: false, get_move_delay: () => 0, sleep: wait, smartIntroductionMove: () => null,
         ai_move: () => undefined
     });
@@ -76,6 +76,11 @@ function harness({ source = pgn, tactics = true, wait = async () => {} } = {}) {
     vm.runInContext(study.slice(promotionStart, study.indexOf('function updateWeakChapterRunUi()', promotionStart)), context);
     const setupStart = study.indexOf('function setup_move()');
     vm.runInContext(study.slice(setupStart, study.indexOf('\n/*', setupStart)), context);
+    if (actualReplies) {
+        const aiStart = study.indexOf('function ai_move(access)');
+        vm.runInContext(study.slice(aiStart, study.indexOf('function play_move(san)', aiStart)), context);
+        context.Math = Object.create(Math);
+    }
     return { context, events, state, element };
 }
 (async () => {
@@ -181,6 +186,68 @@ function harness({ source = pgn, tactics = true, wait = async () => {} } = {}) {
         assert.equal(run.context.currentTacticsTrap().failed, true);
         assert.equal(run.state.movable.dests.size, 0);
     }
+
+    const defenses = '1. e4 (1. d4 d5) e5 (1... c5 2. Nc3 (2. Nf3 d6) (2. f3? e5)) 2. Nf3 *';
+    const selected = new Set();
+    for (const sample of [0, 0.999999]) {
+        const run = harness({ source: defenses, actualReplies: true });
+        run.context.Math.random = () => sample;
+        await run.context.handle_move('e2', 'e4');
+        const reply = run.context.chess.history()[1];
+        selected.add(reply);
+        assert.equal(run.context.chess.history().length, 2);
+        assert(!run.events.some(event => event[0] === 'complete'), 'A defense still needs its specific user answer');
+        if (reply === 'c5') {
+            // A documented user sideline under this defense remains neutral.
+            await run.context.handle_move('g1', 'f3');
+            assert.equal(run.context.chapterStats.chapters[0].attempts, 1);
+            assert.equal(run.context.total_moves, 1);
+            assert.equal(run.context.chess.history().length, 2);
+            assert(run.events.some(event => event[2] === 'neutral'));
+            await run.context.handle_move('b1', 'c3');
+        } else {
+            await run.context.handle_move('g1', 'f3');
+        }
+        assert.equal(run.context.chapterStats.chapters[0].errors, 0);
+        assert.equal(run.context.chapterStats.chapters[0].attempts, 2);
+        const expected = reply === 'c5' ? 'Nc3' : 'Nf3';
+        assert(run.context.chapterStats.chapters[0].coveredMoves.includes(`e4|${reply}|${expected}`));
+        assert(run.events.some(event => event[0] === 'complete' && event[1] === true));
+        assert.equal(run.context.positionAttempts.size, 2);
+    }
+    assert.deepEqual([...selected].sort(), ['c5', 'e5'], 'Random sampling can select either documented defense');
+
+    const branchTrap = harness({ source: defenses, actualReplies: true });
+    branchTrap.context.Math.random = () => 0.999999;
+    await branchTrap.context.handle_move('e2', 'e4');
+    await branchTrap.context.handle_move('f2', 'f3');
+    assert.deepEqual(branchTrap.events.filter(event => event[0] === 'render').map(event => event[1]), ['f3', 'e5']);
+    assert.equal(branchTrap.context.chapterStats.chapters[0].errors, 1);
+    assert.equal(branchTrap.context.chapterStats.chapters[0].failedPositions.positions['e4|c5'].played, 'f3');
+    assert.deepEqual(Array.from(branchTrap.context.chapterStats.chapters[0].failedPositions.positions['e4|c5'].expected), ['Nc3']);
+    assert.equal(branchTrap.context.currentTacticsTrap().failed, true);
+
+    const branchError = harness({ source: '1. e4 e5 (1... c5 2. Nc3) 2. Nf3 *', actualReplies: true });
+    branchError.context.Math.random = () => 0.999999;
+    await branchError.context.handle_move('e2', 'e4');
+    await branchError.context.handle_move('g1', 'f3');
+    assert.equal(branchError.context.chapterStats.chapters[0].errors, 1);
+    assert(!branchError.events.some(event => event[0] === 'complete'), 'The answer to a different defense cannot finish this branch');
+
+    const incomplete = harness({ source: '1. e4 e5 (1... c5) 2. Nf3 *', actualReplies: true });
+    incomplete.context.Math.random = () => 0.999999;
+    assert.equal(incomplete.context.ai_move([0, 0]), 'e5', 'Do not select a defense without a documented user response');
+
+    // Scheduled reviews must reach their selected position instead of changing
+    // defenses at random midway through the route.
+    const directed = harness({ source: defenses, actualReplies: true });
+    directed.context.smartTarget = { type: 'line', chapter: 0, route: [0, 1, 0] };
+    directed.context.Math.random = () => 0;
+    assert.equal(directed.context.ai_move([0, 0]), 'c5');
+
+    const weighted = harness({ source: defenses, tactics: false, actualReplies: true });
+    vm.runInContext("function tree_size_weighted_random_move() { return 'e5'; }", weighted.context);
+    assert.equal(weighted.context.ai_move([0, 0]), 'e5', 'Repertoires retain their existing weighted reply selection');
 
     const repertoire = harness({ tactics: false });
     await repertoire.context.handle_move('d2', 'd4');

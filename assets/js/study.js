@@ -1104,8 +1104,12 @@ function ai_move(access) {
     }
     //console.log('Finding moves after ' + (tree_get_node(access).move_index > 0 ? tree_get_node_string(tree_get_node(access)) : 'starting position'));
 
-    let candidates = tree_children_filter_sort(access, {filter: has_children});
-    let m = tree_size_weighted_random_move(candidates);
+    let candidates = tacticsCollection
+        ? tree_children(access).filter(has_children)
+        : tree_children_filter_sort(access, {filter: has_children});
+    let m = tacticsCollection
+        ? candidates[Math.floor(Math.random() * candidates.length)]?.move
+        : tree_size_weighted_random_move(candidates);
 
     // change the last updated value of the node so if other moves exists they will be
     // picked next time instead
@@ -1846,7 +1850,7 @@ async function main() {
     chapterReviews = readChapterReviews(StorageAdapter.getItem(chapter_reviews_key()));
     if (bindChapterIdentities(chapterStats, trees)) StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     if (bindChapterIdentities(chapterReviews, trees)) StorageAdapter.setItem(chapter_reviews_key(), JSON.stringify(chapterReviews));
-    smartCatalog = cachedPositionCatalog(trees, studyColor, tacticsCollection ? 'tactics-mainline-v2|' + pgn : pgn);
+    smartCatalog = cachedPositionCatalog(trees, studyColor, tacticsCollection ? 'tactics-defenses-v1|' + pgn : pgn);
     let previousTrees = [];
     try { previousTrees = JSON.parse(await StorageAdapter.legacyTree(study_id + '_tree') || '[]'); } catch (_) {}
     if (!Array.isArray(previousTrees)) previousTrees = [];

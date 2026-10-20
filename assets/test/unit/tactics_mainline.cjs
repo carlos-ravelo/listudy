@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const pgnParser = require('pgn-parser');
 const context = vm.createContext({ require, ...require('ts-fsrs'), ChessModule: require('chess.js'), console: { log() {} } });
 for (const file of ['tree.js', 'tree_from_pgn.js', 'study/tactics_mainline.js', 'study/chapter_stats.js',
-    'study/review_history.js', 'study/position_review.js', 'study/position_catalog_cache.js']) {
+    'study/review_history.js', 'study/position_review.js', 'study/position_catalog_cache.js', 'study/progress_preservation.js']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', file), 'utf8')
         .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, '').replace(/^export /gm, ''), context);
 }
@@ -23,10 +23,10 @@ const reading = parse(source);
 const original = JSON.stringify(reading);
 const practice = context.tacticsMainline(reading, 'white');
 const catalog = context.positionCatalog(practice, 'white');
-assert.equal(JSON.stringify(catalog.map(item => item.expected)), '[["Bc7"],["Nd6+"]]');
-assert.equal(JSON.stringify(catalog.map(item => item.path)), '[[],[0,0]]');
+assert.equal(JSON.stringify(catalog.map(item => item.expected)), '[["Bc7"],["Nd6+"],["Nd6+"]]');
+assert.equal(JSON.stringify(catalog.map(item => item.path)), '[[],[0,0],[0,1]]');
 assert.equal(practice[0].root.length, 1);
-assert.equal(practice[0].root[0].children.length, 1);
+assert.equal(practice[0].root[0].children.length, 2);
 assert.equal(JSON.stringify(reading), original, 'Practice must preserve every source variation and comment');
 assert.equal(reading[0].root.length, 2);
 assert.equal(reading[0].root[0].children.length, 2);
@@ -39,10 +39,12 @@ assert.equal(rendered.variations[0].moves[2].san, 'Nxa8?');
 const moves = context.chapterMoveCatalog(practice[0].root, true);
 const stats = { chapters: {} };
 context.recordChapterAttempt(stats, 0, true, 'Bc7');
-assert.equal(context.chapterCoverage(stats, 0, moves).percent, 50);
+assert.equal(context.chapterCoverage(stats, 0, moves).percent, 33);
 context.recordChapterAttempt(stats, 0, true, 'Bc7|Qd7|Nd6+');
+assert.equal(context.chapterCoverage(stats, 0, moves).percent, 67);
+context.recordChapterAttempt(stats, 0, true, 'Bc7|Qc8|Nd6+');
 assert.equal(context.chapterCoverage(stats, 0, moves).percent, 100);
-assert.equal(moves.size, 2, 'Illustrative and defensive sidelines must not inflate progress');
+assert.equal(moves.size, 3, 'Both defenses count; illustrative user alternatives do not');
 
 for (const annotation of ['?', '??', '?!', ' $2', ' $4', ' $6']) {
     const trees = parse(`1. e4 e5 2. Nf3${annotation} Nc6 *`);
@@ -74,9 +76,9 @@ const intro = context.tacticsMainline(introReading, 'black');
 assert.equal(intro[0].user_color, 'white');
 assert.equal(intro[0].has_introductory_move, true);
 const introCatalog = context.positionCatalog(intro, 'black');
-assert.equal(JSON.stringify(introCatalog.map(item => item.expected)), '[["Qh6+"],["Rh1#"]]');
-assert.equal(JSON.stringify(introCatalog.map(item => item.path)), '[[0],[0,0,0]]');
-assert.equal(context.chapterMoveCatalog(intro[0].root, !intro[0].has_introductory_move).size, 2);
+assert.equal(JSON.stringify(introCatalog.map(item => item.expected)), '[["Qh6+"],["Rh1#"],["Rc8+"],["Rxf8#"]]');
+assert.equal(JSON.stringify(introCatalog.map(item => item.path)), '[[0],[0,0,0],[0,0,1],[0,0,1,0,0]]');
+assert.equal(context.chapterMoveCatalog(intro[0].root, !intro[0].has_introductory_move).size, 4);
 assert.equal(introReading[0].root[0].children[0].children.length, 2, 'Preserve the alternative defense for reading');
 
 // Only the FEN and count were supplied for this position; use a legal three-ply continuation.
@@ -106,17 +108,39 @@ assert.equal(parse(introSource)[0].user_color, undefined, 'Repertoire parsing do
 const markedIntro = context.tacticsMainline(parse(puzzle(introFen, 4,
     introMoves.replace('Kh7 ', 'Kh7? ')), true), 'black');
 assert.equal(markedIntro[0].root[0].move, 'Kh7', 'Keep a marked opponent introduction');
-assert.equal(context.positionCatalog(markedIntro, 'black').length, 2);
+assert.equal(context.positionCatalog(markedIntro, 'black').length, 4);
 
-// A previously cached full tree cannot supply sideline positions to tactics practice.
+// A legacy mainline cache must not hide newly playable defenses.
 const memory = new Map();
 const storage = { getItem: key => memory.get(key), setItem: (key, value) => memory.set(key, value) };
-const full = context.cachedPositionCatalog(reading, 'white', source, storage);
-const main = context.cachedPositionCatalog(practice, 'white', 'tactics-mainline-v1|' + source, storage);
+const legacy = [{ ...practice[0], root: [{ ...practice[0].root[0], children: [practice[0].root[0].children[0]] }] }];
+context.cachedPositionCatalog(legacy, 'white', 'tactics-mainline-v2|' + source, storage);
+const full = context.positionCatalog(reading, 'white');
+const main = context.cachedPositionCatalog(practice, 'white', 'tactics-defenses-v1|' + source, storage);
 assert.ok(full.length > main.length);
-assert.equal(main.length, 2);
-assert.equal(context.cachedPositionCatalog(practice, 'white', 'tactics-mainline-v1|' + source, storage).length, 2);
+assert.equal(main.length, 3);
+assert.equal(context.cachedPositionCatalog(practice, 'white', 'tactics-defenses-v1|' + source, storage).length, 3);
 assert.equal(context.cachedPositionCatalog(reading, 'white', source, storage).length, full.length);
+// Adding defenses must preserve completed moves and previously scheduled reviews.
+const saved = { version: 1, chapters: { 0: { attempts: 2, errors: 0,
+    coveredMoves: ['Bc7', 'Bc7|Qd7|Nd6+'], cleanMoves: ['Bc7', 'Bc7|Qd7|Nd6+'],
+    positionReviews: { signature: 'legacy', cards: {} } } } };
+const savedCards = saved.chapters[0].positionReviews.cards;
+context.recordPositionReview(savedCards, 'Bc7|Qd7', true, false, new Set(), new Date('2026-10-19'));
+savedCards['Bc7|Qd7'].positionFen = catalog.find(item => item.id === 'Bc7|Qd7').fen;
+const scheduledDue = new Date(savedCards['Bc7|Qd7'].card.due).getTime();
+context.reconcileStudyProgress(saved, practice, catalog, ['defenses'], legacy);
+assert.equal(context.chapterCoverage(saved, 0, moves).percent, 67, 'New defenses are initially uncovered');
+assert.equal(new Date(saved.chapters[0].positionReviews.cards['Bc7|Qd7'].card.due).getTime(), scheduledDue);
+assert.equal(saved.chapters[0].positionReviews.cards['Bc7|Qc8'], undefined);
+
+const blackDefenses = context.tacticsMainline(parse('1. e4 (1. d4 d5 2. c4 e6) e5 2. Nf3 (2. Bc4 Nf6) Nc6 *', true), 'white');
+assert.equal(blackDefenses[0].user_color, 'black');
+assert.equal(blackDefenses[0].root.length, 2, 'Keep opponent alternatives in an introductory move');
+assert.equal(blackDefenses[0].root[0].children[0].children.length, 2, 'Keep later opponent alternatives when solving as black');
+assert.equal(context.positionCatalog(blackDefenses, 'white').length, 5);
+assert.equal(context.classifyTacticsMove(context.tacticsCandidates(blackDefenses[0], [1]), 'd5').kind, 'mainline');
+
 // Classification must not leak to the parser or mutate its PGN input.
 const annotatedPgn = pgnParser.parse('[Event "Annotations"]\n1. e4! (1. d4 { $2 is just explanatory text }) e5 2. Nf3 *');
 context.annotate_pgn(annotatedPgn);
@@ -154,4 +178,4 @@ assert.equal(context.classifyTacticsMove(context.tacticsCandidates(blackTrap, [0
 const opponentError = context.tacticsMainline(parse('1. e4 e5? 2. Nf3 *'), 'white')[0];
 assert.equal(opponentError.tactics_root[0].children[0].is_bad_line, false);
 
-console.log('Tactics main line, PGN annotations, reading, progress and catalog cache passed');
+console.log('Tactics defenses, PGN annotations, reading, coverage, review preservation and catalog cache passed');

@@ -1,4 +1,5 @@
-// Keep sidelines for feedback, while hints and progress follow the main line.
+// Practice the first user continuation against every documented defense.
+// Keep other user continuations separately for neutral feedback and traps.
 function tacticsMainline(trees, studyColor) {
     const standard = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
     return trees.map(tree => {
@@ -15,13 +16,13 @@ function tacticsMainline(trees, studyColor) {
                     children: classify(node.children, turn === 'w' ? 'b' : 'w', is_bad_line, is_alternative) };
             });
         }
-        function mainline(nodes) {
-            const node = nodes?.[0];
-            if (!node || node.is_bad_line) return [];
-            return [{ ...node, children: mainline(node.children) }];
+        function practice(nodes, turn) {
+            const choices = turn === player ? (nodes || []).slice(0, 1) : nodes || [];
+            return choices.filter(node => !node.is_bad_line).map(node => ({ ...node,
+                children: practice(node.children, turn === 'w' ? 'b' : 'w') }));
         }
         const tactics_root = classify(tree.root, fen[1]);
-        return { ...tree, tactics_root, root: mainline(tactics_root) };
+        return { ...tree, tactics_root, root: practice(tactics_root, fen[1]) };
     });
 }
 
