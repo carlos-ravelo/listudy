@@ -56,3 +56,14 @@ docs/architecture.md
 
 # Private puzzle import files (never served or committed)
 /var/puzzle_imports/
+
+# Private environment files and runtime dumps
+.env
+.env.*
+!.env.example
+!.env.sample
+.aws/
+MnesiaCore.*
+*.pem
+*.p12
+*.pfx
