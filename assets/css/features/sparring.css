@@ -36,6 +36,7 @@
 .chapter-editor-promotion-overlay[hidden] { display: none; }
 
 .sparring-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sparring-navigation a { display: inline-flex; align-items: center; min-height: 44px; }
 .sparring-grade-counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .sparring-grade-counts > span { padding: 8px; border: 1px solid var(--study-divider); border-radius: 6px; font-size: 13px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .sparring-move-detail { margin-top: 12px; padding: 12px; border: 1px solid var(--study-divider); border-radius: 6px; overflow-wrap: anywhere; }

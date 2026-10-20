@@ -98,30 +98,34 @@ export function createSparringSession({ position, repertoire, engine, player, ra
                 thinking = true; emit();
                 try {
                     if (engine.analyze) {
-                        const first = await engine.analyze(before);
+                        let first = await engine.analyze(before, { targetDepth: 18, maxTimeMs: 4000 });
                         if (disposed || request !== revision) return false;
                         const after = { ...position.snapshot(), moves: [...moves] };
-                        let last = after.over ? { score: after.result === '1/2-1/2' ? { type: 'cp', value: 0 } : { type: 'mate', value: 0 } }
-                            : await engine.analyze(after);
+                        let last = after.over ? { targetReached: true, score: after.result === '1/2-1/2' ? { type: 'cp', value: 0 } : { type: 'mate', value: 0 } }
+                            : await engine.analyze(after, { targetDepth: 18, maxTimeMs: 4000 });
                         if (disposed || request !== revision) return false;
-                        let assessment = assessMove({ ...first, turn: before.turn }, { ...last, turn: after.turn }, player, uci);
-                        if (assessment?.grade === 'blunder' && !after.over) {
-                            const confirmed = await engine.analyze(before, { movetime: 800 });
+                        const assess = () => first.targetReached === true && last.targetReached === true ? assessMove({ ...first, turn: before.turn }, { ...last, turn: after.turn }, player, uci) : null;
+                        let assessment = assess();
+                        if (['inaccuracy', 'mistake', 'blunder'].includes(assessment?.grade) && !after.over) {
+                            const initialGrade = assessment.grade;
+                            last = await engine.analyze(after, { targetDepth: 20, maxTimeMs: 4000 });
                             if (disposed || request !== revision) return false;
-                            last = await engine.analyze(after, { movetime: 800 });
+                            first = await engine.analyze(before, { targetDepth: 20, maxTimeMs: 4000 });
                             if (disposed || request !== revision) return false;
-                            assessment = assessMove({ ...confirmed, turn: before.turn }, { ...last, turn: after.turn }, player, uci);
-                            first.uci = confirmed.uci; first.pv = confirmed.pv; first.score = confirmed.score;
+                            assessment = assess();
+                            if (assessment?.grade !== initialGrade) assessment = null;
                         }
-                        if (!assessment) throw new Error('No evaluation');
-                        const retried = repeated || retryPly === ply;
-                        reviews.push({ ...assessment, ply, uci, positionKey: before.moves.join(' '), san: position.snapshot().lastMove?.san || uci,
-                            best: first.uci, pv: first.pv || [], assisted: retried,
-                            evaluationBefore: { ...first.score, turn: before.turn },
-                            evaluationAfter: { ...last.score, turn: after.turn } });
-                        onDecision({ key: `free:${ply}`, correct: ['best', 'acceptable'].includes(assessment.grade), assisted: retried });
                         reply = engine.canReuseAnalysisMove?.() === false ? null : last.uci;
-                        if (pauseOnBlunder && assessment.grade === 'blunder' && !position.snapshot().over) { pause('blunder'); return true; }
+                        if (assessment) {
+                            const retried = repeated || retryPly === ply;
+                            reviews.push({ ...assessment, ply, uci, positionKey: before.moves.join(' '), san: position.snapshot().lastMove?.san || uci,
+                                best: first.uci, pv: first.pv || [], assisted: retried,
+                                analysisDepthBefore: first.depth, analysisDepthAfter: last.depth,
+                                evaluationBefore: { ...first.score, turn: before.turn },
+                                evaluationAfter: { ...last.score, turn: after.turn } });
+                            onDecision({ key: `free:${ply}`, correct: ['best', 'acceptable'].includes(assessment.grade), assisted: retried });
+                            if (pauseOnBlunder && assessment.grade === 'blunder' && !position.snapshot().over) { pause('blunder'); return true; }
+                        }
                     } else onDecision({ key: `free:${ply}`, correct: false, assisted: false });
                 } catch (_) {
                     if (!disposed && request === revision) error = 'analysis';

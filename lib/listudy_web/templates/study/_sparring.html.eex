@@ -27,6 +27,7 @@
   </section>
   <div class="sparring-navigation" role="group" aria-label="<%= dgettext("study", "Game navigation") %>">
     <button type="button" data-sparring="latest"><%= dgettext("study", "Return to game") %></button>
+    <a data-sparring="lichess" href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer"><%= dgettext("study", "Analyze in Lichess") %></a>
   </div>
   <section data-sparring="move-detail" class="sparring-move-detail" aria-label="<%= dgettext("study", "Selected move") %>" aria-live="polite" hidden>
     <strong data-sparring="move-grade"></strong>

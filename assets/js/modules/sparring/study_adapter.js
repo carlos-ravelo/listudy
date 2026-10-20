@@ -63,7 +63,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             'Black', state.player === 'b' ? 'You' : 'Stockfish / repertoire');
         return { id: sessionId, startedAt, updatedAt: Date.now(), status: state.phase, reason: state.reason,
             scope: 'study', startFen: state.initialFen, sources: ports.repertoire.sources(),
-            gradingVersion: 'lichess-style-v1', reviewSettings: reviewOptions(), engine: engine?.metadata?.() || null, opponentLevels: strengthChanges.map(change => ({ ...change })),
+            gradingVersion: 'lichess-style-depth-v2', reviewSettings: reviewOptions(), engine: engine?.metadata?.() || null, opponentLevels: strengthChanges.map(change => ({ ...change })),
             attempts: state.attempts, correct: state.correct, firstDeviation: state.firstDeviation,
             freeCount: state.freeCount, result: outcome, pgn: game.pgn(),
             reviews: state.reviews.map(row => ({ ...row, line: continuation(row.ply, row.pv) })) };
@@ -133,6 +133,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         const playable = state.canPlay && !pendingPromotion && !browsing;
         workspace?.classList.toggle('study-sparring-paused', review);
         const game = readIndex === null ? ports.position.game() : ports.position.at(readIndex);
+        find('lichess').href = `https://lichess.org/analysis/${encodeURIComponent(game.fen())}?color=${board.state.orientation}`;
         onPosition(game, ports.repertoire.routes(), state.phase);
         const dests = new Map();
         if (playable) for (const move of state.legal) {

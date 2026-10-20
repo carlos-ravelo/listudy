@@ -28,10 +28,11 @@ function createUciEngine({ createWorker = createStockfishWorker,
     let pending;
     let ready;
     let disposed = false;
+    let generation = 0;
     let eloRange = null;
     let hashRange = null;
     function fail(reason) {
-        if (pending) { clearTimeout(pending.timer); pending.reject(reason); pending = null; }
+        if (pending) { clearTimeout(pending.timer); clearTimeout(pending.budgetTimer); pending.reject(reason); pending.finish(); pending = null; }
         if (worker) worker.terminate();
         worker = null;
         ready = null;
@@ -40,7 +41,9 @@ function createUciEngine({ createWorker = createStockfishWorker,
     }
     function waitFor(kind, send) {
         return new Promise((resolve, reject) => {
-            pending = { kind, resolve, reject, timer: setTimeout(() => fail(new Error('Engine timeout')), timeoutMs) };
+            let finish;
+            const done = new Promise(resolve => { finish = resolve; });
+            pending = { kind, resolve, reject, done, finish, timer: setTimeout(() => fail(new Error('Engine timeout')), timeoutMs) };
             try { send(); } catch (error) { fail(error); }
         });
     }
@@ -71,7 +74,10 @@ function createUciEngine({ createWorker = createStockfishWorker,
             const task = pending;
             pending = null;
             clearTimeout(task.timer);
-            task.resolve({ line, ...task.analysis });
+            clearTimeout(task.budgetTimer);
+            task.finish();
+            if (task.cancelled) task.reject(new Error('Engine cancelled'));
+            else task.resolve({ line, ...task.analysis, timedOut: task.timedOut === true });
         };
         await waitFor('uciok', () => worker.postMessage('uci'));
         if (worker !== current) throw new Error('Engine cancelled');
@@ -84,6 +90,7 @@ function createUciEngine({ createWorker = createStockfishWorker,
     }
     async function search({ initialFen, moves }, options = {}) {
             if (disposed) throw new Error('Engine disposed');
+            const request = generation;
             if (!ready) {
                 const initialization = initialize();
                 ready = initialization;
@@ -91,6 +98,8 @@ function createUciEngine({ createWorker = createStockfishWorker,
             }
             await ready;
             if (disposed) throw new Error('Engine disposed');
+            if (pending?.cancelled) await pending.done;
+            if (disposed || request !== generation) throw new Error('Engine cancelled');
             if (pending) throw new Error('Engine busy');
             const result = await waitFor('bestmove ', () => {
                 if (options.elo != null) {
@@ -102,15 +111,32 @@ function createUciEngine({ createWorker = createStockfishWorker,
                     worker.postMessage('setoption name Skill Level value 20');
                 }
                 worker.postMessage(`position fen ${initialFen}${moves.length ? ' moves ' + moves.join(' ') : ''}`);
-                worker.postMessage(`go${options.depth ? ' depth ' + options.depth : ''} movetime ${options.movetime || movetime}`);
+                if (options.targetDepth) {
+                    clearTimeout(pending.timer);
+                    pending.timer = null;
+                    pending.budgetTimer = setTimeout(() => stop(false), options.maxTimeMs);
+                    worker.postMessage(`go depth ${options.targetDepth}`);
+                } else worker.postMessage(`go${options.depth ? ' depth ' + options.depth : ''} movetime ${options.movetime || movetime}`);
             });
             const move = result.line.split(/\s+/)[1];
             if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(move) && !['(none)', '0000'].includes(move)) throw new Error('Invalid engine move');
-            return { ...result, uci: move };
+            return { ...result, uci: move, targetDepth: options.targetDepth || null,
+                targetReached: Boolean(options.targetDepth && result.score && result.depth >= options.targetDepth && !result.timedOut) };
+    }
+    function stop(cancelled) {
+        if (!pending || pending.kind !== 'bestmove ') return;
+        pending.cancelled ||= cancelled;
+        pending.timedOut ||= !cancelled;
+        clearTimeout(pending.budgetTimer);
+        if (pending.stopping) return;
+        pending.stopping = true;
+        clearTimeout(pending.timer);
+        pending.timer = setTimeout(() => fail(new Error('Engine stop timeout')), 1000);
+        try { worker.postMessage('stop'); } catch (error) { fail(error); }
     }
     return {
         search,
-        cancel() { fail(new Error('Engine cancelled')); },
+        cancel() { generation++; stop(true); },
         dispose() { disposed = true; fail(new Error('Engine disposed')); }
     };
 }
@@ -127,14 +153,18 @@ export function createSparringEngine({ strength = 2, ...options } = {}) {
         async bestMove(state, searchOptions = {}) { return (await opponent.search(state, { ...searchOptions, elo: sparringRating(level) })).uci; },
         async analyze(state, searchOptions = {}) {
             if (disposed) throw new Error('Engine disposed');
-            const key = JSON.stringify([stockfishVersion, state.initialFen, state.moves, searchOptions.depth || null, searchOptions.movetime || options.movetime || 700]);
+            const targetDepth = searchOptions.targetDepth ?? searchOptions.depth ?? 18;
+            const maxTimeMs = searchOptions.maxTimeMs ?? 4000;
+            if (!Number.isInteger(targetDepth) || targetDepth < 1 || targetDepth > 128 ||
+                !Number.isFinite(maxTimeMs) || maxTimeMs <= 0) throw new Error('Invalid analysis policy');
+            const key = JSON.stringify([stockfishVersion, 'lite-single', state.initialFen, state.moves, targetDepth, maxTimeMs]);
             if (analyses.has(key)) {
                 const value = analyses.get(key);
                 analyses.delete(key); analyses.set(key, value);
                 return { ...value, score: {...value.score}, pv: [...(value.pv || [])] };
             }
-            const result = await analyst.search(state, { ...searchOptions, elo: null });
-            if (result.score && result.depth > 0) {
+            const result = await analyst.search(state, { targetDepth, maxTimeMs, elo: null });
+            if (result.targetReached) {
                 analyses.set(key, {...result, score: {...result.score}, pv: [...(result.pv || [])]});
                 if (analyses.size > 128) analyses.delete(analyses.keys().next().value);
             }

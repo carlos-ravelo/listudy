@@ -44,7 +44,7 @@ window.savedResults={};window.decisions=[];window.stops=0;window.moveNavigation=
 window.board=Sparring.Chessground(document.getElementById('chessground'),{drawable:{brushes:{normal:{key:'n',color:'#3333ff',opacity:0.6,lineWidth:10}}},movable:{free:false,events:{after:(from,to)=>controller.move(from,to)}}});
 Sparring.setupStudyFeedback({durationMs:400});
 window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapters:()=>window.studyChapters || [chapter],getTitle:()=> 'Test study',getBoard:()=>board,
- onPosition(){moveNavigation.update()},
+ onPosition(position){window.displayedFen=position.fen();moveNavigation.update()},
  createEngine:options=>window.fakeEngine || Sparring.createSparringEngine(options),
  readStrength:()=>localStorage.getItem('test_strength'),writeStrength:level=>localStorage.setItem('test_strength',level),
  readPreferences:()=>JSON.parse(localStorage.getItem('test_sparring_preferences')||'{}'),writePreferences:value=>localStorage.setItem('test_sparring_preferences',JSON.stringify(value)),
@@ -255,12 +255,20 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.locator('#error').isHidden(),true);
         assert(Math.abs(await actionTop()-initialActionTop)<1,'Dismissing notifications must not shift controls');
         const liveFen = await page.evaluate(() => board.state.pieces.get('e4')?.color);
+        const liveAnalysisLink = await page.getAttribute('[data-sparring="lichess"]', 'href');
+        assert.equal(decodeURIComponent(new URL(liveAnalysisLink).pathname.slice('/analysis/'.length)), await page.evaluate(() => displayedFen));
+        assert.equal(await page.getAttribute('[data-sparring="lichess"]', 'target'), '_blank');
+        assert.equal(await page.getAttribute('[data-sparring="lichess"]', 'rel'), 'noopener noreferrer');
         await page.click('#study_previous_move');
+        const previousAnalysisLink = await page.getAttribute('[data-sparring="lichess"]', 'href');
+        assert.notEqual(previousAnalysisLink, liveAnalysisLink);
+        assert.equal(decodeURIComponent(new URL(previousAnalysisLink).pathname.slice('/analysis/'.length)), await page.evaluate(() => displayedFen));
         assert.equal(await page.evaluate(() => controller.navigation().canGoForward), true);
         assert.equal(await page.evaluate(() => board.state.movable.dests.size), 0);
         await page.evaluate(() => controller.move('g1', 'f3'));
         assert.equal(await page.evaluate(() => board.state.pieces.get('f3')?.role || null), null);
         await page.click('[data-sparring="latest"]');
+        assert.equal(await page.getAttribute('[data-sparring="lichess"]', 'href'), liveAnalysisLink);
         assert.equal(await page.evaluate(() => board.state.pieces.get('e4')?.color), liveFen);
         assert.equal(await page.locator('[data-sparring="latest"]').isHidden(), true);
 
@@ -286,19 +294,23 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         if (await page.locator('[data-sparring="summary"]').isHidden()) await page.click('[data-sparring="analyze"]');
         await page.waitForSelector('[data-sparring="summary"]', { state: 'visible' });
         await auditActionLayout();
+        const reviewCount = await page.evaluate(() => Object.values(savedResults)[0].reviews.length);
+        assert([0, 1].includes(reviewCount));
+        assert.equal(Boolean(await page.textContent('[data-sparring="coverage"]')), reviewCount === 0);
         assert.equal(await page.textContent('[data-sparring="theory-score"]'), '1/2');
-        assert.equal(await page.textContent('[data-sparring="engine-score"]'), '1/1');
+        assert.equal(await page.textContent('[data-sparring="engine-score"]'), `${reviewCount}/1`);
         const gradedMove = page.locator('[data-sparring="moves"] button[data-grade]:not([data-grade=""]):not([data-grade="theory"])').first();
-        assert.equal(await gradedMove.count(), 1);
+        assert.equal(await gradedMove.count(), reviewCount);
         assert.equal(await page.locator('[data-sparring="grade-counts"] [role="listitem"]').count(), 5);
         assert.equal(await page.locator('[data-sparring="grade-counts"] strong').count(),5);
         await page.locator('[data-sparring="summary"]').screenshot({path:'/tmp/listudy-sparring-results-colour.png'});
         assert.equal(await page.evaluate(() => Object.keys(savedResults).length), 1);
-        assert.equal(await page.evaluate(() => Object.values(savedResults)[0].gradingVersion), 'lichess-style-v1');
+        assert.equal(await page.evaluate(() => Object.values(savedResults)[0].gradingVersion), 'lichess-style-depth-v2');
         assert.equal(await page.evaluate(() => Object.values(savedResults)[0].opponentLevels.at(-1).level), 1);
         await auditButtons();
         await downloadPGN(page.locator('[data-sparring="download"]'));
         assert.equal(await page.locator('[data-sparring="history"]').isHidden(), true);
+        if (reviewCount) {
         await gradedMove.click();
         assert.equal(await page.locator('[data-sparring="move-detail"]').isVisible(), true);
         assert((await page.textContent('[data-sparring="move-evaluation"]')).includes('→'),
@@ -326,7 +338,8 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.locator('[data-sparring="summary"]').isHidden(), true);
         assert.equal(await page.evaluate(() => document.activeElement.id), 'chessground');
         await page.click('[data-sparring="analyze"]');
-        assert.equal(await page.textContent('[data-sparring="engine-score"]'), '1/1');
+        assert.equal(await page.textContent('[data-sparring="engine-score"]'), `${reviewCount}/1`);
+        }
         page.once('dialog', dialog => dialog.dismiss());
         await page.click('[data-sparring="resign"]');
         assert.equal(await page.locator('[data-sparring="resign"]').isDisabled(), false);

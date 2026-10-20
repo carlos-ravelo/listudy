@@ -167,7 +167,7 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
                 if (message === 'uci') queueMicrotask(() => this.onmessage({data:'option name UCI_Elo type spin default 1320 min 1320 max 3190'}));
                 if (reply) queueMicrotask(() => this.onmessage({data:reply}));
                 if (message.startsWith('go ')) queueMicrotask(() => {
-                    this.onmessage({data:'info depth 4 multipv 1 score cp 20 pv e7e5 g1f3'});
+                    this.onmessage({data:'info depth 18 multipv 1 score cp 20 pv e7e5 g1f3'});
                     this.onmessage({data:'info depth 4 multipv 2 score cp 999 pv c7c5'});
                     this.onmessage({data:`bestmove ${!this.limited ? 'e7e5' : 'c7c5'}`});
                 });
@@ -184,22 +184,23 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     assert(workers[1].messages.includes('setoption name Skill Level value 20'));
     assert(workers[1].messages.includes('setoption name UCI_LimitStrength value false'));
     assert(!workers[1].messages.some(message=>message.startsWith('setoption name UCI_Elo')));
-    assert(workers[1].messages.includes('go movetime 700'));
+    assert(workers[1].messages.includes('go depth 18'));
+    assert.equal(evaluated.targetReached, true);
     assert.equal(separated.canReuseAnalysisMove(), false);
     separated.setStrength(8);
-    assert.equal(workers[0].stopped, true);
+    assert.equal(workers[0].stopped, false);
     assert.equal(workers[1].stopped, false);
     assert.equal(separated.canReuseAnalysisMove(), true);
     assert.equal(await separated.bestMove(enginePosition), 'e7e5');
-    assert.equal(workers.length, 3);
+    assert.equal(workers.length, 2);
     await separated.analyze(enginePosition);
-    assert.equal(workers.length, 3);
+    assert.equal(workers.length, 2);
     separated.dispose();
     assert(workers.every(worker => worker.stopped));
 
     let weakenedReplies = 0;
     const practice = createSparringSession({ ...createChapterSparring({headers:{},root:[]}), player:'w', engine:{
-        async analyze(state) { return {score:{type:'cp',value:0},uci:state.turn === 'w' ? 'e2e4' : 'c7c5',pv:[]}; },
+        async analyze(state) { return {targetReached:true, score:{type:'cp',value:0},uci:state.turn === 'w' ? 'e2e4' : 'c7c5',pv:[]}; },
         canReuseAnalysisMove: () => false,
         async bestMove() { weakenedReplies++; return 'e7e5'; },dispose() {}
     } });
@@ -212,7 +213,7 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     const rewindPorts = createChapterSparring({headers:{},root:[]});
     const rewind = createSparringSession({...rewindPorts, player:'w', checkpointEvery:99,
         engine:{
-            async analyze(state) { const line=['e2e4','e7e5','g1f3','b8c6']; return {
+            async analyze(state) { const line=['e2e4','e7e5','g1f3','b8c6']; return {targetReached: true,
                 score:{type:'cp',value:0},uci:line[state.moves.length],pv:[line[state.moves.length]].filter(Boolean)}; },
             bestMove:async()=> 'e7e5',cancel(){},dispose(){}
         }});
@@ -253,7 +254,7 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     const decisions = [];
     const analyzed = createSparringSession({ ...createChapterSparring({ headers: {}, root: [] }), player: 'w',
         checkpointEvery: 1, onDecision: result => decisions.push(result), engine: {
-            async analyze(state) { return { score: { type: 'cp', value: state.turn === 'w' ? 100 : 0 },
+            async analyze(state) { return { targetReached: true, score: { type: 'cp', value: state.turn === 'w' ? 100 : 0 },
                 uci: state.turn === 'w' ? 'd2d4' : 'e7e5', pv: state.turn === 'w' ? ['d2d4', 'd7d5'] : ['e7e5'] }; },
             bestMove() { throw new Error('The analyzed response should be reused'); }, cancel() {}, dispose() {}
         } });
@@ -283,7 +284,7 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
 
     let searches = 0;
     const blunder = createSparringSession({ ...createChapterSparring({ headers: {}, root: [] }), player: 'w', pauseOnBlunder: true, engine: {
-        async analyze(state) { searches++; return { score: { type: 'cp', value: state.turn === 'w' ? 500 : 0 },
+        async analyze(state) { searches++; return { targetReached: true, score: { type: 'cp', value: state.turn === 'w' ? 500 : 0 },
             uci: state.turn === 'w' ? 'd2d4' : 'e7e5', pv: ['d2d4'] }; },
         cancel() {}, dispose() {}
     } });
@@ -294,7 +295,7 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
 
     // Default play never interrupts for an engine judgement; optional pauses are explicit.
     const continuous = createSparringSession({ ...createChapterSparring({headers:{},root:[]}),player:'w',engine:{
-        async analyze(state) { return {score:{type:'cp',value:state.turn==='w'?500:0},uci:state.turn==='w'?'d2d4':'e7e5',pv:[]}; },
+        async analyze(state) { return {targetReached:true, score:{type:'cp',value:state.turn==='w'?500:0},uci:state.turn==='w'?'d2d4':'e7e5',pv:[]}; },
         cancel(){},dispose(){}
     }});
     await continuous.start();await continuous.move('e2e4');
