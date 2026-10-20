@@ -158,9 +158,12 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         if (state.feedback === 'outside') set_text(error_div, labels.outside);
         if (state.feedback === 'correct' && find('live').checked) set_text(success_div, labels.correct);
         const latest = state.reviews[state.reviews.length - 1];
+        const latestPlayerPly = state.moves.length - (state.turn === state.player ? 2 : 1);
+        const latestMatchesPosition = latest?.ply === latestPlayerPly && state.moves[latest.ply] === latest.uci &&
+            latest.positionKey === state.moves.slice(0, latest.ply).join(' ');
         if (state.reviews.length > heardReviews && isError(latest.grade) && (find('live').checked || review)) sounds.play('error');
         heardReviews = state.reviews.length;
-        if (!browsing && latest && state.feedback !== 'outside' && (find('live').checked || review)) {
+        if (!browsing && latestMatchesPosition && state.feedback !== 'outside' && (find('live').checked || review)) {
             set_text(isError(latest.grade) ? error_div : latest.grade === 'best' ? success_div : info_div,
                 gradeLabel(latest.grade), { symbol: gradeSymbol(latest.grade), transient: !isError(latest.grade) && !review });
         }

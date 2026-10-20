@@ -497,6 +497,42 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
             commands.indexOf('setoption name Hash value 4') < commands.indexOf('isready'))));
         console.log('Shared loader, native Elo, independent full-strength analysis and same-release JS fallback passed');
         console.log('Bundled engine:', await page.evaluate(() => engineTrace.find(line => line.startsWith('id name '))));
+        await page.evaluate(async () => {
+            controller.stop();
+            studyChapters = [{headers: {}, root: []}];
+            window.analysisResolvers = [];
+            let calls = 0;
+            fakeEngine = {
+                analyze(state) {
+                    const value = {targetReached: true, depth: 18, score: {type: 'cp', value: 0},
+                        uci: state.turn === 'w' ? state.moves.length === 0 ? 'd2d4' : 'g1f3' : 'e7e5', pv: []};
+                    if (++calls <= 2) return Promise.resolve(value);
+                    return new Promise(resolve => analysisResolvers.push(() => resolve(value)));
+                },
+                async bestMove(state) { return state.moves.length === 1 ? 'e7e5' : 'b8c6'; },
+                canReuseAnalysisMove: () => false, cancel() {}, dispose() {}
+            };
+            document.querySelector('[data-sparring="live"]').checked = true;
+            document.querySelector('[data-sparring="review-every"]').value = '0';
+            document.querySelector('[data-sparring="pause-blunder"]').checked = false;
+            await controller.start();
+            await controller.move('e2', 'e4');
+        });
+        const gradeLabels = await page.locator('[data-sparring="status"]').evaluate(element => ({
+            acceptable: element.dataset.acceptable, best: element.dataset.best
+        }));
+        assert.equal(await page.textContent('#info_text'), gradeLabels.acceptable);
+        await page.evaluate(() => { window.nextMove = controller.move('g1', 'f3'); });
+        await page.waitForFunction(() => analysisResolvers.length === 1);
+        assert.equal(await page.textContent('#info_text'), '', 'Previous move grade must disappear during the next analysis');
+        assert.equal(await page.textContent('#success_text'), '');
+        await page.evaluate(() => analysisResolvers[0]());
+        await page.waitForFunction(() => analysisResolvers.length === 2);
+        assert.equal(await page.textContent('#info_text'), '');
+        assert.equal(await page.textContent('#success_text'), '', 'The new grade must wait for the after-move evaluation');
+        await page.evaluate(async () => { analysisResolvers[1](); await nextMove; });
+        assert.equal(await page.textContent('#success_text'), gradeLabels.best);
+        console.log('Live feedback clears the previous move grade and waits for both evaluations');
         assert.deepEqual(errors, []);
         console.log('All Sparring buttons: labels, keyboard focus, touch targets, continue, retry, downloads, history, resignation and promotion passed');
         console.log('Study-wide chapters, merged hints, delayed engine transition, provenance and independent custom starts passed');
