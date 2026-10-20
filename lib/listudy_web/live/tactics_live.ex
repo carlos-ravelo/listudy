@@ -1,6 +1,6 @@
 defmodule ListudyWeb.TacticsLive do
   require Logger
-  import ListudyWeb.Gettext, only: [gettext: 1]
+  use Gettext, backend: ListudyWeb.Gettext
   use Phoenix.LiveView
 
   alias Listudy.Tactics

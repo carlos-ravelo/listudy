@@ -41,20 +41,20 @@ defmodule ListudyWeb.PlayerJourneyTest do
     assert html =~ "Your Studies"
 
     assert [_] =
-             Floki.find(
+             html_find(
                html,
                ".site-primary-navigation > a[data-nav-section=tactics][href='/en/tactics']"
              )
 
-    assert [] = Floki.find(html, ".site-menu-panel a[href='/en/tactics']")
-    assert [_] = Floki.find(html, ".home-tactics .home-tactics-link[href='/en/tactics']")
-    assert [_] = Floki.find(html, ".home-openings .home-daily-study[data-last-study=true]")
+    assert [] = html_find(html, ".site-menu-panel a[href='/en/tactics']")
+    assert [_] = html_find(html, ".home-tactics .home-tactics-link[href='/en/tactics']")
+    assert [_] = html_find(html, ".home-openings .home-daily-study[data-last-study=true]")
     assert html =~ "Continue learning"
-    assert [_] = Floki.find(html, ".home-tactics a[href='/en/tactics/daily-puzzle']")
-    assert [_] = Floki.find(html, ".home-tactics a[href='/en/blind-tactics']")
-    assert [_] = Floki.find(html, ".home-tactics a[href='/en/pieceless-tactics']")
-    assert [_] = Floki.find(html, ".home-endgames [data-endgame-start]")
-    assert [] = Floki.find(html, "#chessground")
+    assert [_] = html_find(html, ".home-tactics a[href='/en/tactics/daily-puzzle']")
+    assert [_] = html_find(html, ".home-tactics a[href='/en/blind-tactics']")
+    assert [_] = html_find(html, ".home-tactics a[href='/en/pieceless-tactics']")
+    assert [_] = html_find(html, ".home-endgames [data-endgame-start]")
+    assert [] = html_find(html, "#chessground")
     preview("returning-home", html)
 
     path = Application.app_dir(:listudy, "priv/static/study_pgn/journey.pgn")
@@ -206,7 +206,7 @@ defmodule ListudyWeb.PlayerJourneyTest do
     preview("endgame-play", exercise)
   end
 
-  test "new players can import or explore and see import controls first", %{conn: conn} do
+  test "new players can import or explore and choose a study source", %{conn: conn} do
     user =
       Listudy.Repo.insert!(%Listudy.Users.User{
         username: "FirstSession",
@@ -226,9 +226,9 @@ defmodule ListudyWeb.PlayerJourneyTest do
       |> get("/en/studies/new")
       |> html_response(200)
 
-    {import_position, _} = :binary.match(form, "study-management-import-card")
-    {metadata, _} = :binary.match(form, "study-metadata-title")
-    assert import_position < metadata
+    assert [_] = html_find(form, ".study-create-options a[href*='source=blank']")
+    assert [_] = html_find(form, ".study-create-options input#study_pgn[type=file]")
+    assert [_] = html_find(form, ".study-create-fields #study_title")
     preview("import", form)
   end
 end

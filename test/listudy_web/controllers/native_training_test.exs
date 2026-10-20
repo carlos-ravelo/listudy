@@ -12,9 +12,9 @@ defmodule ListudyWeb.NativeTrainingTest do
     conn: conn
   } do
     html = conn |> get("/en/tactics/daily-puzzle") |> html_response(200)
-    assert [_] = Floki.find(html, ".training-breadcrumb a[href='/en/tactics']")
-    assert [_] = Floki.find(html, "#next[href='/en/tactics']")
-    assert [] = Floki.find(html, "a[href='/en/tactics/random']")
+    assert [_] = html_find(html, ".training-breadcrumb a[href='/en/tactics']")
+    assert [_] = html_find(html, "#next[href='/en/tactics']")
+    assert [] = html_find(html, "a[href='/en/tactics/random']")
     preview("daily", html)
   end
 
@@ -25,10 +25,10 @@ defmodule ListudyWeb.NativeTrainingTest do
     assert path =~ "/en/pieceless-tactics/puzzle/"
     html = build_conn() |> get(path) |> html_response(200)
     assert html =~ ~s(data-solution-format="san")
-    assert [_] = Floki.find(html, "#info")
-    assert [_] = Floki.find(html, "#training_restart")
-    assert [_] = Floki.find(html, "[data-native-visualization]")
-    assert [_] = Floki.find(html, "[data-visualization-destinations]")
+    assert [_] = html_find(html, "#info")
+    assert [_] = html_find(html, "#training_restart")
+    assert [_] = html_find(html, "[data-native-visualization]")
+    assert [_] = html_find(html, "[data-visualization-destinations]")
     preview("pieceless-fallback", html)
   end
 
@@ -69,8 +69,8 @@ defmodule ListudyWeb.NativeTrainingTest do
       })
 
     html = conn |> get("/en/blind-tactics/#{tactic.id}") |> html_response(200)
-    assert [_] = Floki.find(html, "#training_restart")
-    assert [_] = Floki.find(html, "#blind_board_frame[phx-update=ignore]")
+    assert [_] = html_find(html, "#training_restart")
+    assert [_] = html_find(html, "#blind_board_frame[phx-update=ignore]")
     preview("blind", html)
   end
 

@@ -148,13 +148,13 @@ defmodule ListudyWeb.AnalysisTrainingTest do
       |> get("/analysis/games/#{game.id}/compare?period=last_week")
       |> html_response(200)
 
-    [root] = Floki.find(html, "#analysis-comparison")
+    [root] = html_find(html, "#analysis-comparison")
     [json] = Floki.attribute(root, "data-comparisons")
 
     assert [%{"result" => %{"expected" => ["Nf3"]}}, %{"result" => %{"expected" => ["Bc4"]}}] =
              Jason.decode!(json)
 
-    assert Floki.find(html, "[data-match-group='0'] .analysis-chapter-name")
+    assert html_find(html, "[data-match-group='0'] .analysis-chapter-name")
            |> hd()
            |> Floki.text() == "Z daily repertoire"
 
@@ -165,25 +165,25 @@ defmodule ListudyWeb.AnalysisTrainingTest do
     if path = System.get_env("LISTUDY_COMPARISON_PREVIEW"), do: File.write!(path, html)
 
     library = conn_for(user) |> get("/analysis/games?period=last_week") |> html_response(200)
-    [href] = Floki.find(library, ".analysis-game-row") |> Floki.attribute("href")
+    [href] = html_find(library, ".analysis-game-row") |> Floki.attribute("href")
     refute href =~ "compare_study_id"
     assert href =~ "period=last_week"
 
     scoped =
       conn_for(user) |> get("/analysis/games?study_id=#{alternative.id}") |> html_response(200)
 
-    [href] = Floki.find(scoped, ".analysis-game-row") |> Floki.attribute("href")
+    [href] = html_find(scoped, ".analysis-game-row") |> Floki.attribute("href")
     assert href =~ "compare_study_id=#{alternative.id}"
 
     game(user, "1. d4 d5 *")
     assert {:ok, 1} = Analyzer.analyze_all_user_studies(user.id, "lichess")
     unmatched = conn_for(user) |> get("/analysis/games?status=out_of_scope") |> html_response(200)
-    [row] = Floki.find(unmatched, ".analysis-game-row")
+    [row] = html_find(unmatched, ".analysis-game-row")
 
-    assert Floki.find(row, ".analysis-status-out_of_scope") |> Floki.text() ==
+    assert html_find(row, ".analysis-status-out_of_scope") |> Floki.text() ==
              "No matching chapter"
 
-    assert Floki.find(row, ".analysis-game-study-name") == []
+    assert html_find(row, ".analysis-game-study-name") == []
   end
 
   test "a study with conflicting chapters still chooses and trains one exact chapter", %{
@@ -233,11 +233,11 @@ defmodule ListudyWeb.AnalysisTrainingTest do
     assert unavailable_id == invalid.id
 
     library = conn_for(user) |> get("/analysis/games") |> html_response(200)
-    [row] = Floki.find(library, ".analysis-game-row")
-    assert Floki.find(row, ".analysis-status-ambiguous") |> Floki.text() == "Matching line found"
-    assert Floki.find(row, ".analysis-game-open") |> Floki.text() == "View comparison"
+    [row] = html_find(library, ".analysis-game-row")
+    assert html_find(row, ".analysis-status-ambiguous") |> Floki.text() == "Matching line found"
+    assert html_find(row, ".analysis-game-open") |> Floki.text() == "View comparison"
 
-    assert Floki.find(row, ".analysis-game-study-name") |> Enum.map(&Floki.text/1) == [
+    assert html_find(row, ".analysis-game-study-name") |> Enum.map(&Floki.text/1) == [
              valid.title
            ]
 
@@ -249,7 +249,7 @@ defmodule ListudyWeb.AnalysisTrainingTest do
     assert html =~ "Try comparison again"
 
     [practice] =
-      Floki.find(html, "#analysis-outcome-0 a.button-primary") |> Floki.attribute("href")
+      html_find(html, "#analysis-outcome-0 a.button-primary") |> Floki.attribute("href")
 
     assert practice =~ "practice_expected=Nf3"
     assert practice =~ "/#{valid.slug}"

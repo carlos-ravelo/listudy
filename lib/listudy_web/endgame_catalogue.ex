@@ -1,5 +1,5 @@
 defmodule ListudyWeb.EndgameCatalogue do
-  import ListudyWeb.Gettext
+  use Gettext, backend: ListudyWeb.Gettext
 
   def chapters do
     [

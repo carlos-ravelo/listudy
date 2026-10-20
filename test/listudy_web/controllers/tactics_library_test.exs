@@ -89,7 +89,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
     refute studies =~ "data-library-help"
 
     assert [_] =
-             Floki.find(
+             html_find(
                studies,
                "[data-study-id='#{own.id}'] .study-library-menu a[data-method='delete']"
              )
@@ -129,10 +129,10 @@ defmodule ListudyWeb.TacticsLibraryTest do
     html = auth |> get("/en/studies/new?kind=tactics") |> html_response(200)
     assert html =~ "Create tactics"
     assert html =~ "study_pgn"
-    assert Floki.find(html, "#study_description[required], #study_description[minlength]") == []
+    assert html_find(html, "#study_description[required], #study_description[minlength]") == []
 
     assert [_] =
-             Floki.find(
+             html_find(
                html,
                "input[type='radio'][name='study[training_kind]'][value='tactics'][checked]"
              )
@@ -141,7 +141,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
     normal = auth |> get("/en/studies/new") |> html_response(200)
 
     assert [_] =
-             Floki.find(
+             html_find(
                normal,
                "input[type='radio'][name='study[training_kind]'][value='repertoire'][checked]"
              )

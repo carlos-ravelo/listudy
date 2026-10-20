@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - master
+      - integration/upstream-elixir-update
+  pull_request:
+    branches:
+      - master
 
 jobs:
   Test:
@@ -10,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [13.x]
+        node-version: [22.x]
     services:
       db:
-        image: postgres:11
+        image: postgres:17
         ports: ["5432:5432"]
         env:
           POSTGRES_USER: postgres
@@ -25,9 +29,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Cache mix modules
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         env:
           cache-name: cache-mix-modules
         with:
@@ -38,14 +42,19 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - name: Setup elixir
-        uses: erlef/setup-elixir@v1
+        uses: erlef/setup-beam@v1
         with:
-          elixir-version: 1.11.2 # Define the elixir version [required]
-          otp-version: 23.0 # Define the OTP version [required]
+          elixir-version: '1.20.4'
+          otp-version: '28'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python dependencies
+        run: python -m pip install -r priv/python/requirements.txt
       - name: Install Dependencies
         run: |
           mix local.rebar --force
@@ -66,6 +75,7 @@ jobs:
   Deploy:
     name: Deploy
     needs: Test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
     - name: executing remote ssh commands

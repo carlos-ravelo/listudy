@@ -43,7 +43,7 @@ defmodule ListudyWeb.PuzzleCatalogControllerTest do
     Repo.insert!(%Tactic{source: "lichess", source_id: "other", rating: 2400, themes: ["mate"]})
     url = "/en/tactics/puzzles/#{one.id}?theme=fork&min_rating=1600&max_rating=1900"
     {:ok, view, html} = live(conn, url)
-    assert html =~ "Lichess #one"
+    assert html |> html_find(".puzzle-current-rating strong") |> Floki.text() == "1700"
     assert html =~ "lichess:one"
     render_click(view, "next")
 
@@ -88,7 +88,16 @@ defmodule ListudyWeb.PuzzleCatalogControllerTest do
     filters = %{"theme" => "pin", "min_rating" => "2000", "max_rating" => "2300"}
     html = render_change(view, "preview_filters", filters)
     assert html =~ "lichess:inline-one"
-    assert html =~ "1 puzzles available"
+    assert ["pin"] ==
+             html |> html_find("#practice-puzzles-theme option[selected]") |> Floki.attribute("value")
+
+    assert ["2000"] ==
+             html |> html_find("#practice-puzzles-min") |> Floki.attribute("value")
+
+    assert ["2300"] ==
+             html |> html_find("#practice-puzzles-max") |> Floki.attribute("value")
+
+    assert [_] = html_find(html, "#practice-puzzles-status[hidden]")
     render_submit(view, "apply_filters", filters)
 
     assert_patch(
@@ -112,12 +121,12 @@ defmodule ListudyWeb.PuzzleCatalogControllerTest do
   test "saved rating is restored without overriding explicit filters", %{conn: conn} do
     saved = put_req_cookie(conn, "puzzle_rating", "1000:1400")
     html = saved |> get("/en/tactics") |> html_response(200)
-    assert ["1000"] == html |> Floki.find("#library-puzzles-min") |> Floki.attribute("value")
-    assert ["1400"] == html |> Floki.find("#library-puzzles-max") |> Floki.attribute("value")
+    assert ["1000"] == html |> html_find("#library-puzzles-min") |> Floki.attribute("value")
+    assert ["1400"] == html |> html_find("#library-puzzles-max") |> Floki.attribute("value")
 
     html = saved |> get("/en/tactics?min_rating=1600&max_rating=1900") |> html_response(200)
-    assert ["1600"] == html |> Floki.find("#library-puzzles-min") |> Floki.attribute("value")
-    assert ["1900"] == html |> Floki.find("#library-puzzles-max") |> Floki.attribute("value")
+    assert ["1600"] == html |> html_find("#library-puzzles-min") |> Floki.attribute("value")
+    assert ["1900"] == html |> html_find("#library-puzzles-max") |> Floki.attribute("value")
 
     html =
       conn
@@ -125,8 +134,8 @@ defmodule ListudyWeb.PuzzleCatalogControllerTest do
       |> get("/en/tactics")
       |> html_response(200)
 
-    assert ["0"] == html |> Floki.find("#library-puzzles-min") |> Floki.attribute("value")
-    assert ["4000"] == html |> Floki.find("#library-puzzles-max") |> Floki.attribute("value")
+    assert ["0"] == html |> html_find("#library-puzzles-min") |> Floki.attribute("value")
+    assert ["4000"] == html |> html_find("#library-puzzles-max") |> Floki.attribute("value")
   end
 
   test "the catalog opens practice immediately and the tactics hub offers filters", %{conn: conn} do
@@ -137,9 +146,9 @@ defmodule ListudyWeb.PuzzleCatalogControllerTest do
     assert URI.parse(path).path == "/en/tactics/puzzles/#{puzzle.id}"
     assert URI.decode_query(URI.parse(path).query)["theme"] == "fork"
     html = conn |> get("/en/tactics") |> html_response(200)
-    assert [_] = Floki.find(html, "form#library-puzzles select[name=theme]")
-    assert [_] = Floki.find(html, "form#library-puzzles input[name=min_rating]")
-    assert [_] = Floki.find(html, "form#library-puzzles input[name=max_rating]")
+    assert [_] = html_find(html, "form#library-puzzles select[name=theme]")
+    assert [_] = html_find(html, "form#library-puzzles input[name=min_rating]")
+    assert [_] = html_find(html, "form#library-puzzles input[name=max_rating]")
     assert html =~ "Your collections"
 
     if directory = System.get_env("LISTUDY_PUZZLES_PREVIEW") do

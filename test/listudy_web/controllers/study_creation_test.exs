@@ -19,15 +19,15 @@ defmodule ListudyWeb.StudyCreationTest do
       assert html =~ "Start on the board"
       assert html =~ "source=blank"
       assert html =~ "study_pgn"
-      assert [_, _] = Floki.find(html, ".study-create-options > .study-create-card")
-      assert [_] = Floki.find(html, ".study-create-card #study_lichess_study")
-      assert [_] = Floki.find(html, ".study-create-card .study-create-legal")
-      assert [_] = Floki.find(html, ".study-create-fields #study_title")
-      assert [_] = Floki.find(html, ".study-form-actions a[href='/en/studies']")
-      assert [_] = Floki.find(html, "dialog#study_opening_picker")
-      assert [_] = Floki.find(html, "input#study_opening_id[type='hidden']")
-      assert [] = Floki.find(html, "select#study_opening_id")
-      assert [] = Floki.find(html, ".study-create details, .study-create .one-third")
+      assert [_, _] = html_find(html, ".study-create-options > .study-create-card")
+      assert [_] = html_find(html, ".study-create-card #study_lichess_study")
+      assert [_] = html_find(html, ".study-create-card .study-create-legal")
+      assert [_] = html_find(html, ".study-create-fields #study_title")
+      assert [_] = html_find(html, ".study-form-actions a[href='/en/studies']")
+      assert [_] = html_find(html, "dialog#study_opening_picker")
+      assert [_] = html_find(html, "input#study_opening_id[type='hidden']")
+      assert [] = html_find(html, "select#study_opening_id")
+      assert [] = html_find(html, ".study-create details, .study-create .one-third")
       if dir = System.get_env("LISTUDY_CREATE_FORM_PREVIEW") do
         File.mkdir_p!(dir)
         File.write!(Path.join(dir, kind <> ".html"), html)

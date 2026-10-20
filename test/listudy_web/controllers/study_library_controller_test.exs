@@ -217,7 +217,7 @@ defmodule ListudyWeb.StudyLibraryControllerTest do
     refute html =~ "data-library-view=\"daily\""
 
     assert [_] =
-             Floki.find(
+             html_find(
                html,
                "[data-study-id='#{first.id}'] [data-library-favorite][aria-pressed='true']"
              )

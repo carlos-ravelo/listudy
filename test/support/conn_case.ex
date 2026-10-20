@@ -17,6 +17,14 @@ defmodule ListudyWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  def html_find(html, selector) when is_binary(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find(selector)
+  end
+
+  def html_find(html, selector), do: Floki.find(html, selector)
+
   using do
     quote do
       # Import conveniences for testing with connections

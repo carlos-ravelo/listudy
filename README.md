@@ -16,7 +16,7 @@ Listudy is developed in Elixir using the phoenix framework. It uses postgresql a
 To generate opening svg images Python3.8 is used together with [python-chess](https://github.com/niklasf/python-chess). This should be optional.
 
 To start the server:
-  * You need to [install Elixir](https://elixir-lang.org/install.html), [install npm](https://www.npmjs.com/get-npm), and [PostgreSQL](https://www.postgresql.org/download). The DB user and password for Postgres should be 'postgres' (no quotes).
+  * Use [Elixir 1.20 with Erlang/OTP 28](https://elixir-lang.org/install.html), [Node.js 20 or newer](https://nodejs.org/), and [PostgreSQL 17](https://www.postgresql.org/download). The DB user and password for Postgres should be 'postgres' (no quotes).
   * Setup the project with `mix setup`
   * Install npm dependencies with `npm install --prefix assets`. For Windows, you need to run `cd assets` then `npm install` then `cd ..`.
   * Make study pgn directory with `mkdir priv/static/study_pgn`
