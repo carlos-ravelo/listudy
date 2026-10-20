@@ -1812,12 +1812,6 @@ async function refreshGameEvidence(positionsRequest) {
 async function main() {
     setupStudyFeedback();
     const gamePositionsRequest = loadGamePositions();
-    window.addEventListener('study-sync-status', event => {
-        const indicator = document.getElementById('study_sync_status');
-        indicator.hidden = event.detail.state === 'saved';
-        indicator.textContent = event.detail.state === 'storage-error' ? i18n.progress_storage_error
-            : event.detail.state === 'sync-error' ? i18n.progress_sync_error : i18n.progress_sync_offline;
-    });
     // 1. If the user is authenticated, try to fetch cloud progress/settings
     if (typeof logged_in !== 'undefined' && logged_in) {
         try {

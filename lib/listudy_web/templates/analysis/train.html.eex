@@ -14,7 +14,6 @@
       data-study-key="<%= hd(String.split(@study.slug, "-")) %>" data-study-color="<%= @study.color %>" data-study-pgn="<%= @study_pgn %>"
       data-mistakes="<%= @mistakes_json %>"></div>
     <p id="training-progress-status" class="training-screen-reader" role="status" aria-live="polite">Loading reviews…</p>
-    <p id="training-sync-status" role="status" hidden></p>
     <p id="training-position-counter" class="training-position-counter training-screen-reader" tabindex="-1" hidden></p>
     <nav class="training-positions" aria-label="Practice positions">
       <div id="mistakes-pagination"></div>

@@ -30,13 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const key = boardContainer.dataset.studyKey + '_chapter_stats';
     let source = [];
     try { source = JSON.parse(boardContainer.dataset.mistakes || '[]'); } catch (_) {}
-    let initialSyncState;
-    const captureSyncState = event => { initialSyncState = event.detail.state; };
-    window.addEventListener('study-sync-status', captureSyncState);
-    const hydrated = await StorageAdapter.hydrate();
-    window.removeEventListener('study-sync-status', captureSyncState);
-    let syncState = initialSyncState || (hydrated ? 'saved' : 'offline');
-    let online = syncState === 'saved';
+    await StorageAdapter.hydrate();
     let stats = readChapterStats(StorageAdapter.getItem(key));
     let signatures, references, positions;
     const positionKey = mistake => {
@@ -70,18 +64,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const renderProgress = () => {
         const pending = positions.filter(mistake => gamePositionPending(stats, mistake)).length;
         progressStatus.textContent = `${pending} to review now · ${positions.length} ${positions.length === 1 ? 'position' : 'positions'} from games`;
-        const sync = el('training-sync-status');
-        sync.hidden = online;
-        sync.textContent = syncState === 'storage-error' ? 'Progress could not be saved on this device. Keep this page open and connect to synchronize.'
-            : syncState === 'sync-error' ? 'Account sync failed. Check that you are signed in to the correct account.'
-            : 'Saved on this device. Account sync will retry when connected.';
         progressStatus.classList.toggle('training-screen-reader', source.length <= positions.length);
         if (source.length > positions.length) progressStatus.textContent = `${source.length - positions.length} changed positions skipped; sync games to refresh`;
     };
     window.addEventListener('study-progress-sync-merged', event => {
         if (event.detail.key === key) { stats = JSON.parse(event.detail.value); StorageAdapter.acceptSnapshot(key, event.detail.value); renderProgress(); }
     });
-    window.addEventListener('study-sync-status', event => { syncState = event.detail.state; online = syncState === 'saved'; renderProgress(); });
     persist();
     renderProgress();
 
