@@ -71,7 +71,7 @@
     <button type="button" class="secondary" id="replay_position_context" hidden><%= dgettext("study", "Replay from the start") %></button>
 
 <div class="option_item">
-    <button type="button" class="secondary" id="reset_line"><%= dgettext("study", "Reset line") %></button>
+    <button type="button" class="secondary" id="reset_line" data-reset-game="<%= dgettext("study", "Reset game") %>"><%= dgettext("study", "Reset line") %></button>
   </div>
 
 <div class="option_item">

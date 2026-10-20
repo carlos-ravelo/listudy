@@ -1,5 +1,5 @@
 import { createSparringSession, sparringReviewEvery } from './session.js';
-import { createStudySparring, sparringStartPositions } from './chess_adapter.js';
+import { createStudySparring, sparringStartPositions, createSparringChapterRotation } from './chess_adapter.js';
 import { createSparringEngine, sparringStrength, sparringRating } from './uci_engine.js';
 import { createPromotionPicker } from '../promotion_picker.js';
 import { setupStudyMoveTree } from '../study/study_move_tree.js';
@@ -18,6 +18,8 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     const historyDialog = document.getElementById('study_sparring_history_dialog');
     const find = name => settings?.querySelector(`[data-sparring="${name}"]`) || historyDialog?.querySelector(`[data-sparring="${name}"]`) || panel.querySelector(`[data-sparring="${name}"]`) || boardStatus?.querySelector(`[data-sparring="${name}"]`);
     const labels = find('status').dataset;
+    const resetButton = document.getElementById('reset_line');
+    const resetLineLabel = resetButton.textContent;
     let session, ports, picker, pendingPromotion, currentState, sessionId, startedAt;
     let generation = 0, soundCount = 0, heardReviews = 0, readIndex = null, lineRoot = [], lineLength = -1, previousPhase;
     let savedSignature = '';
@@ -27,6 +29,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     let engine;
     let strength = sparringStrength(readStrength());
     let strengthChanges = [];
+    const chapterRotation = createSparringChapterRotation();
     const paused = state => ['review', 'finished'].includes(state.phase);
     const gradeLabel = grade => labels[grade === 'blunder' ? 'gradeBlunder' : grade === 'good' ? 'acceptable' : grade];
     const isError = grade => ['inaccuracy', 'mistake', 'blunder'].includes(grade);
@@ -109,6 +112,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         session = null; engine = null; picker = null; pendingPromotion = null;
         workspace?.classList.remove('study-sparring-active', 'study-sparring-paused');
         panel.hidden = true; opener.setAttribute('aria-pressed', 'false');
+        resetButton.textContent = resetLineLabel;
         if (boardStatus) boardStatus.hidden = true;
         history();
         find('strength').disabled = false;
@@ -288,6 +292,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         startedAt = Date.now(); soundCount = 0; heardReviews = 0; readIndex = null; lineLength = -1; previousPhase = null; savedSignature = ''; inspectedRow = null;
         strengthChanges = [{ ply: 0, level: strength, eloTarget: sparringRating(strength) }];
         panel.hidden = false; workspace?.classList.add('study-sparring-active');
+        resetButton.textContent = resetButton.dataset.resetGame;
         if (boardStatus) boardStatus.hidden = false;
         opener.setAttribute('aria-pressed', 'true');
         for (const id of ['study_mode', 'practice_smart', 'practice_lines']) document.getElementById(id)?.setAttribute('aria-pressed', 'false');
@@ -296,7 +301,9 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             const chapters = getChapters();
             const starts = sparringStartPositions(chapters);
             if (!starts.some(group => group.fen === selectedStartFen)) selectedStartFen = starts[0]?.fen;
-            ports = createStudySparring(chapters, { startFen: selectedStartFen, starts });
+            const group = starts.find(group => group.fen === selectedStartFen);
+            const chapterOrder = chapterRotation.next(chapters, group);
+            ports = createStudySparring(chapters, { startFen: selectedStartFen, starts, chapterOrder });
             sessionTitle = getTitle();
             find('start-control').hidden = starts.length <= 1;
             find('start').replaceChildren();

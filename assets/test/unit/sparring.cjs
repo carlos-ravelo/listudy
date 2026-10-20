@@ -7,7 +7,7 @@ for (const file of ['evaluation', 'session', 'chess_adapter', 'uci_engine']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, `../../js/modules/sparring/${file}.js`), 'utf8')
         .replace(/^import .*\n/gm, '').replace(/^export /gm, ''), context);
 }
-const { createSparringSession, createChapterSparring, createStudySparring, sparringStartPositions, createSparringEngine } = context;
+const { createSparringSession, createChapterSparring, createStudySparring, sparringStartPositions, createSparringEngine, createSparringChapterRotation } = context;
 const chapter = { headers: {}, root: [{ move: 'e4', children: [
     { move: 'e5', children: [{ move: 'Nf3', children: [] }] },
     { move: 'c5', children: [] }
@@ -401,6 +401,35 @@ function make({ source = chapter, player = 'w', random = () => 0, bestMove = asy
     lazy.repertoire.advance('e2e4'); lazy.position.play('e2e4');
     assert.equal(visited, 1);
     assert.equal(lazy.repertoire.choices()[0].uci, 'e7e5');
+    const rotation = createSparringChapterRotation({random: () => 0.37});
+    const rotationChapters = [
+        {headers: {ListudyChapterId: 'king-pawn'}, root: tree(['e4', 'e5', 'Nf3', 'Nc6'])},
+        {headers: {ListudyChapterId: 'petrov'}, root: tree(['e4', 'e5', 'Nf3', 'Nf6'])},
+        {headers: {ListudyChapterId: 'sicilian'}, root: tree(['e4', 'c5'])},
+        {headers: {ListudyChapterId: 'queen-pawn'}, root: tree(['d4', 'd5'])}
+    ];
+    const rotationGroup = sparringStartPositions(rotationChapters)[0];
+    const cycle = () => Array.from({length: 4}, () => rotation.next(rotationChapters, rotationGroup)[0]);
+    const firstCycle = cycle(), secondCycle = cycle();
+    assert.equal(new Set(firstCycle).size, 4);
+    assert.equal(new Set(secondCycle).size, 4);
+    assert.notEqual(firstCycle.at(-1), secondCycle[0]);
+    for (const selected of [0, 1]) {
+        const ports = createStudySparring(rotationChapters, {chapterOrder: [selected, 2, 3]});
+        for (const move of ['e2e4', 'e7e5', 'g1f3']) {
+            ports.repertoire.advance(move); ports.position.play(move);
+        }
+        assert.equal(ports.repertoire.choose(() => 0.99), selected === 0 ? 'b8c6' : 'g8f6', 'The selected chapter must guide later opponent choices');
+        assert.equal(ports.repertoire.choices().length, 2, 'Other repertoire continuations remain available');
+        ports.position.restore(0); ports.repertoire.restore([]);
+        ports.repertoire.advance('d2d4'); ports.position.play('d2d4');
+        assert.equal(ports.repertoire.choose(() => 0), 'd7d5', 'A different valid player move adapts the opponent target');
+    }
+    const customGroup = groups[1];
+    const customOrder = rotation.next(mixed, customGroup);
+    assert.deepEqual([...plain(customOrder)].sort((a,b) => a-b), [0,5]);
+    assert.equal(rotation.next([rotationChapters[0]], {fen: initial, chapters:[0]})[0], 0, 'Changed chapter sets reset the rotation');
+    console.log('Shuffled chapter cycles, no cycle-boundary repeat, coherent opponent lines and valid player alternatives passed');
     console.log('Sparring session, evaluation, checkpoints, retries, cancellation and UCI tests passed');
     console.log('Study-wide union, unique choices, chapter provenance, FEN groups and lazy traversal passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

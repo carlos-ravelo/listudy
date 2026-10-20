@@ -3,6 +3,37 @@ const Chess = ChessModule.Chess || ChessModule;
 
 const uci = move => move.from + move.to + (move.promotion || '');
 
+export function createSparringChapterRotation({ random = Math.random } = {}) {
+    const groups = new Map();
+    function shuffle(values) {
+        const result = [...values];
+        for (let index = result.length - 1; index > 0; index--) {
+            const other = Math.floor(random() * (index + 1));
+            [result[index], result[other]] = [result[other], result[index]];
+        }
+        return result;
+    }
+    return {
+        next(chapters, group) {
+            const signature = JSON.stringify(group.chapters.map(index => chapters[index].headers.ListudyChapterId || String(index)));
+            let rotation = groups.get(group.fen);
+            if (!rotation || rotation.signature !== signature) {
+                rotation = { signature, remaining: [], last: null };
+                groups.set(group.fen, rotation);
+            }
+            if (!rotation.remaining.length) {
+                rotation.remaining = shuffle(group.chapters);
+                if (rotation.remaining.length > 1 && rotation.remaining[0] === rotation.last) {
+                    [rotation.remaining[0], rotation.remaining[1]] = [rotation.remaining[1], rotation.remaining[0]];
+                }
+            }
+            const selected = rotation.remaining.shift();
+            rotation.last = selected;
+            return [selected, ...shuffle(group.chapters.filter(index => index !== selected))];
+        }
+    };
+}
+
 export function sparringStartPositions(chapters) {
     const standard = new Chess().fen();
     const normalized = new Map([[standard, standard]]);
@@ -22,7 +53,7 @@ export function sparringStartPositions(chapters) {
 }
 
 // Keep only references to compatible branches. Descendants are read on advance.
-export function createStudySparring(chapters, { startFen, starts = sparringStartPositions(chapters) } = {}) {
+export function createStudySparring(chapters, { startFen, starts = sparringStartPositions(chapters), chapterOrder = [] } = {}) {
     const group = startFen ? starts.find(group => group.fen === startFen) : starts[0];
     if (!group) throw new Error('No matching repertoire starting position');
     let chess = new Chess(group.fen);
@@ -84,6 +115,13 @@ export function createStudySparring(chapters, { startFen, starts = sparringStart
         sources: () => frontier.map(source),
         path: () => routes()[0]?.path || [],
         choices: () => [...continuations().values()].map(({ uci, san }) => ({ uci, san })),
+        choose(random = Math.random) {
+            const choices = [...continuations().values()];
+            const preferred = chapterOrder.find(chapter => choices.some(choice => choice.matches.some(match => match.route.chapter === chapter)));
+            const candidates = preferred === undefined ? choices
+                : choices.filter(choice => choice.matches.some(match => match.route.chapter === preferred));
+            return candidates.length ? candidates[Math.floor(random() * candidates.length)].uci : null;
+        },
         advance(move) {
             const choice = continuations().get(move);
             if (!choice) throw new Error('Unknown repertoire continuation');

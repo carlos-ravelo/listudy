@@ -22,7 +22,7 @@ const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="w
 <button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog">Settings</button>
 <details id="study_more_actions" class="study-tools-menu"><summary>More</summary><button type="button" data-study-dialog="study_sparring_history_dialog">Sparring history</button></details>
 <div class="study-session-controls"><button id="practice_sparring">Sparring</button><button id="practice_smart">Smart</button><button id="practice_lines">Lines</button></div>
-<div class="study-primary-actions"><button id="hints">Hint</button><button id="reset_line">Reset line</button></div>
+<div class="study-primary-actions"><button id="hints">Hint</button><button id="reset_line" data-reset-game="Reset game">Reset line</button></div>
 ${render(read('lib/listudy_web/templates/study/_sparring_status.html.eex'))}
 <div class="study-board-frame"><div id="chessground" class="cg-wrap" tabindex="-1"></div>
 ${render(read('lib/listudy_web/templates/component/promotion_picker.html.eex'))}</div>
@@ -88,12 +88,14 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         page.on('pageerror', error => errors.push(error.message));
         page.on('requestfailed', request => errors.push(request.url() + ': ' + request.failure().errorText));
         await page.goto(`http://127.0.0.1:${server.address().port}`);
+        assert.equal(await page.textContent('#reset_line'), 'Reset line');
         await page.click('#study_more_actions > summary');
         await page.click('[data-study-dialog="study_sparring_history_dialog"]');
         assert.equal(await page.locator('[data-sparring="history-empty"]').isVisible(), true);
         await page.keyboard.press('Escape');
         assert.equal(await page.evaluate(() => document.activeElement.parentElement.id), 'study_more_actions');
         await page.click('#practice_sparring');
+        assert.equal(await page.textContent('#reset_line'), 'Reset game');
         await page.waitForSelector('cg-board piece');
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         assert.equal(await page.textContent('[data-sparring="phase"]'), 'Repertoire');
@@ -342,6 +344,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.locator('[data-sparring="resign"]').isHidden(), true);
         await auditButtons();
         await page.click('#practice_lines');
+        assert.equal(await page.textContent('#reset_line'), 'Reset line');
         assert.equal(await page.locator('[data-sparring-board-status]').isHidden(), true);
         assert.equal(await page.evaluate(() => stops), 1);
         await page.click('#study_more_actions > summary');

@@ -46,7 +46,7 @@ export function createSparringSession({ position, repertoire, engine, player, ra
             let uci;
             if (phase === 'theory') {
                 const choices = repertoire.choices();
-                uci = choices[Math.floor(random() * choices.length)].uci;
+                uci = repertoire.choose ? repertoire.choose(random) : choices[Math.floor(random() * choices.length)].uci;
             } else uci = reply || await engine.bestMove({ ...position.snapshot(), moves: [...moves] });
             if (disposed || request !== revision) return;
             if (phase === 'theory') repertoire.advance(uci);
