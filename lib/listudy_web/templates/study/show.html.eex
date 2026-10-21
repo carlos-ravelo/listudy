@@ -75,7 +75,7 @@
   </div>
 
 <div class="option_item">
-    <a data-icon="/" id="analysis_board" href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
+    <a data-icon="/" id="analysis_board" href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer" data-import-prompt="<%= dgettext "study", "Import the downloaded PGN in Lichess to analyze this chapter." %>" title="<%= dgettext "study", "Analyze this position with the Lichess Analysis Board" %>"><%= dgettext "study", "Analyze position" %></a>
   </div>
 </div>
     <%= if @study.training_kind == "tactics" do %>

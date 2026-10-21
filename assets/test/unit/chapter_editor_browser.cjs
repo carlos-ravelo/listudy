@@ -19,6 +19,7 @@ const editorControls = ['editor_delete_move', 'editor_undo', 'editor_redo', 'edi
     translate(editorTemplate.match(new RegExp('<button[^>]+id="' + id + '"[\\s\\S]*?</button>'))[0])).join('');
 const chapterPicker = translate(editorTemplate.match(/<div class="study-chapter-navigation chapter-editor-picker">[\s\S]*?<\/div>\s*<\/div>/)[0]);
 const annotationControl = translate(editorTemplate.match(/<select id="editor_annotation"[\s\S]*?<\/select>/)[0]);
+const analysisControl = translate(editorTemplate.match(/<a id="editor_analysis"[\s\S]*?<\/a>/)[0]);
 const html = `<!doctype html><html class="blue cburnett"><head>
 <meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/chessground.css"></head><body><main class="container">
@@ -31,7 +32,7 @@ ${chapterPicker}
 <button id="editor_discard" :disabled="saving || !dirty" @click="discard()">Discard</button>
 <div class="chapter-editor-layout"><div><div class="chapter-editor-board"><div id="editor_board" class="cg-wrap" x-ref="board"></div>${promotionPicker}</div>
 <button id="editor_previous" :disabled="saving || !hasPrevious" @click="previous()">Previous</button><button id="editor_next" :disabled="saving || !hasNext" @click="next()">Next</button>
-${editorControls}${annotationControl}
+${editorControls}${annotationControl}${analysisControl}
 </div>
 <div><div id="editor_moves" x-ref="moves"></div><textarea id="editor_comment" x-model="comment" :disabled="saving" @input="updateComment($event.target.value)"></textarea></div></div>
 <p id="editor_status" role="status" x-text="status"></p></section></main><script src="/js/study_editor.js"></script></body></html>`;
@@ -153,6 +154,9 @@ ${editorControls}${annotationControl}
         await square('c5');
         await page.waitForFunction(() => document.getElementById('editor_moves').textContent.includes('c5'));
         await page.fill('#editor_comment', 'New Sicilian comment');
+        const analysisUrl = new URL(await page.locator('#editor_analysis').getAttribute('href'));
+        const analysisPgn = decodeURIComponent(analysisUrl.pathname.slice('/analysis/pgn/'.length));
+        assert.ok(analysisPgn.includes('(1... c5 { New Sicilian comment })'), 'Include unsaved variations and comments in analysis');
         page.once('dialog', dialog => dialog.dismiss());
         await page.click('#editor_chapter');
         await page.locator('#editor_chapter_list .chapter-choice').nth(1).click();

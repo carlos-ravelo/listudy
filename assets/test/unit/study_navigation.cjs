@@ -9,6 +9,8 @@ const statsContext = vm.createContext({ sparring: null, visualization: null,});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_stats.js'), 'utf8')
     .replace(/export \{[^}]+\};/, ''), statsContext);
 const moveTreeContext = vm.createContext({ sparring: null, visualization: null, require });
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/lichess_analysis.js'), 'utf8')
+    .replace(/^export /gm, ''), moveTreeContext);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/study_move_tree.js'), 'utf8')
     .replace(/^export /gm, ''), moveTreeContext);
 
@@ -67,7 +69,7 @@ assert.equal(depthContext.max_depth, 3);
 function fixture(moves, fen, orientation = 'white') {
     const root = moves.reduceRight((children, move, move_index) => [{ move, move_index, children }], []);
     const links = {
-        analysis_board: { href: 'https://lichess.org/analysis' },
+        analysis_board: { href: 'https://lichess.org/analysis', dataset: {} },
         play_stockfish: { href: '/play-stockfish' }
     };
     const board = { orientation };
@@ -75,7 +77,11 @@ function fixture(moves, fen, orientation = 'white') {
     const timers = [];
     const context = vm.createContext({ sparring: null, visualization: null,
         chess: new Chess(fen), chapter: 0, curr_move: [0],
-        trees: [{ root, headers: fen ? { SetUp: '1', FEN: fen } : {} }],
+        trees: [{ root, sourceIndex: 1, headers: fen ? { SetUp: '1', FEN: fen } : {} }],
+        chapterPgns: ['[Event "Empty"]\n\n*',
+            `${fen ? `[SetUp "1"]\n[FEN "${fen}"]\n` : ''}[Event "Chapter"]\n\n${moves.join(' ')} *`],
+        lichessAnalysisUrl: moveTreeContext.lichessAnalysisUrl,
+        prepareLichessAnalysis: moveTreeContext.prepareLichessAnalysis,
         trainingSessionId: 0, lineEligibleForReview: true, lineReviewRecorded: false,
         chapterStats: { version: 1, chapters: {} }, practiceChapter: null,
         chapterReviewSignatures: ['chapter'], study_id: 'study',
@@ -83,6 +89,7 @@ function fixture(moves, fen, orientation = 'white') {
         finishChapterPractice: statsContext.finishChapterPractice,
         StorageAdapter: { setItem() {} },
         contextReplayActive: false, updateContextReplayUi() {}, comments_div: 'comments',
+        tacticsTrap: null, currentTacticsTrap: () => null, updateTacticsTrapUi() {},
         studySessions: { begin() {}, decision() {}, end() {}, boundary() { return false; } },
         replayPositionContext: moveTreeContext.replayPositionContext,
         smartSession: null, smartTarget: null, failedPositionRun: null,
@@ -158,9 +165,9 @@ function assertSynchronized({ context, board, links }) {
     const last = chess.history({ verbose: true }).slice(-1)[0];
     assert.equal(JSON.stringify(board.lastMove), JSON.stringify(last ? [last.from, last.to] : undefined));
     assert.equal(links.play_stockfish.href, `/play-stockfish#${chess.fen()}`);
-    assert.equal(links.analysis_board.href, context.trees[context.chapter].headers.SetUp
-        ? `https://lichess.org/analysis/${chess.fen()}?color=${board.orientation}`
-        : `https://lichess.org/analysis/pgn/${encodeURIComponent(chess.pgn())}?color=${board.orientation}`);
+    assert.equal(links.analysis_board.href, moveTreeContext.lichessAnalysisUrl(
+        context.chapterPgns[context.trees[context.chapter].sourceIndex], board.orientation,
+        chess.fen(), context.curr_move.slice(1)));
 }
 
 (async () => {
@@ -188,6 +195,10 @@ function assertSynchronized({ context, board, links }) {
 
     const tactics = fixture(['e4', 'e5', 'Nf3']);
     const trainer = tactics.context;
+    trainer.chapterPgns[1] = '[Event "Tactics"]\n\n1. e4 e5 (1... c5 {Defense}) 2. Nf3 (2. Nc3) *';
+    trainer.change_analysis_board();
+    assert.equal(decodeURIComponent(new URL(tactics.links.analysis_board.href).pathname.slice('/analysis/pgn/'.length)),
+        trainer.chapterPgns[1], 'Export the source chapter with every defense and alternative');
     trainer.tacticsCollection = true;
     trainer.trees[0].first_variation = null;
     trainer.trees[0].root.push({ move: 'd4', children: [], move_index: 0 });
@@ -352,7 +363,7 @@ function assertSynchronized({ context, board, links }) {
 
     const reply = fixture(['e4', 'e5', 'Nf3']);
     const pendingReply = reply.context.handle_move('e2', 'e4');
-    assert(reply.links.analysis_board.href.includes(encodeURIComponent('1. e4')));
+    assert(reply.links.analysis_board.href.includes(encodeURIComponent(reply.context.chapterPgns[1])));
     reply.context.go_back();
     reply.waits.shift()();
     await pendingReply;

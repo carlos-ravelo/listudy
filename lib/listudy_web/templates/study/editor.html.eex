@@ -18,6 +18,7 @@
          data-start="<%= dgettext "study", "Starting position" %>"
          data-variation="<%= dgettext "study", "Variation" %>"
          data-promote="<%= dgettext "study", "Promote to main line" %>"
+         data-import-prompt="<%= dgettext "study", "Import the downloaded PGN in Lichess to analyze this chapter." %>"
          data-discard-prompt="<%= dgettext "study", "Discard your unsaved chapter changes?" %>"
          data-unsaved="<%= dgettext "study", "Unsaved changes" %>"
          data-saved="<%= dgettext "study", "Chapter saved" %>"
@@ -125,7 +126,7 @@
                 aria-label="<%= dgettext "study", "Next move" %>" title="<%= dgettext "study", "Next move" %>">
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
         </button>
-        <a id="editor_analysis" class="chapter-editor-icon" :href="analysisUrl" target="_blank" rel="noopener noreferrer"
+        <a id="editor_analysis" class="chapter-editor-icon" :href="analysisUrl" @click="prepareAnalysis()" target="_blank" rel="noopener noreferrer"
            aria-label="<%= dgettext "study", "Analyze position" %>" title="<%= dgettext "study", "Analyze position" %>">
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
         </a>

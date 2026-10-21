@@ -1,5 +1,6 @@
 import { Chessground } from 'chessground';
 import { createChapterEditor } from './modules/study/chapter_editor.js';
+import { lichessAnalysisUrl, prepareLichessAnalysis } from './modules/study/lichess_analysis.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
 import { ground_legal_moves } from './modules/chess_utils.js';
 import { createPromotionPicker } from './modules/promotion_picker.js';
@@ -13,7 +14,7 @@ const Chess = ChessModule.Chess || ChessModule;
 import Alpine from 'alpinejs';
 
 Alpine.data('chapterEditor', () => {
-    let currentChapter, editor, ground, moveTree, config, pgnSnapshot, promotionPicker, engine, analysisId = 0;
+    let currentChapter, editor, ground, moveTree, config, pgnSnapshot, analysisPgn, promotionPicker, engine, analysisId = 0;
 
     let chapterRequest = 0, chapterAbort, chapterPicker;
 
@@ -140,10 +141,12 @@ Alpine.data('chapterEditor', () => {
             this.canPromote = editor.canPromote;
             const snapshot = JSON.stringify([this.chapter, editor.tree]);
             if (force || snapshot !== pgnSnapshot) {
-                this.exportPgn = editor.pgn();
+                analysisPgn = editor.pgn();
+                this.exportPgn = analysisPgn;
                 this.pgnEdited = false;
                 pgnSnapshot = snapshot;
             }
+            this.analysisUrl = lichessAnalysisUrl(analysisPgn, ground.state.orientation, editor.position().fen(), editor.path);
         },
 
         refresh() {
@@ -162,17 +165,14 @@ Alpine.data('chapterEditor', () => {
                 lastMove: move ? [move.from, move.to] : undefined,
                 movable: { color: (this.saving || this.loading || this.pendingPromotion) ? undefined : color, dests: (this.saving || this.loading || this.pendingPromotion) ? new Map() : ground_legal_moves(position) }
             });
-            const orientation = ground.state.orientation;
-            const customStart = position.header().SetUp !== undefined;
-            this.analysisUrl = customStart
-                ? `https://lichess.org/analysis/${position.fen()}?color=${orientation}`
-                : `https://lichess.org/analysis/pgn/${encodeURIComponent(position.pgn())}?color=${orientation}`;
             moveTree.update({ reading: true, chapter: this.chapter, root: editor.tree.root,
                 fen: currentChapter.fen, path: editor.path,
                 editingDisabled: this.setupMode || this.saving || this.loading || !!this.pendingPromotion });
             chapterPicker?.update();
             if (this.analysisEnabled) this.analyzePosition();
         },
+
+        prepareAnalysis() { prepareLichessAnalysis(editor.pgn(), config.importPrompt); },
 
         play(from, to, promotion) {
             if (this.setupMode || this.saving || this.loading || this.pendingPromotion) return;

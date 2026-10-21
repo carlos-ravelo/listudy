@@ -34,6 +34,7 @@ import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_
 import { array_contains } from './modules/utils.js';
 import { StorageAdapter } from './storageAdapter.js';
 import { splitChapterPgn, chapterFromUrl } from './modules/study/chapter_pgn.js';
+import { lichessAnalysisUrl, prepareLichessAnalysis } from './modules/study/lichess_analysis.js';
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
 import { readStudyActivity, requestedStudyActivity, trackStudyActivity } from './modules/study_activity.js';
@@ -47,6 +48,7 @@ Alpine.start();
 
 
 let studyFeatureViews = [];
+let chapterPgns = [];
 let sparring = null;
 let studyMoveNavigation = { update() {} };
 let studyMoveTree = { update() {} };
@@ -1012,26 +1014,11 @@ function change_play_stockfish() {
     link.href = `${base}#${fen}`;
 }
 
-/**
- * Lichess.org has two ways of launching an analysis board. One is through a FEN and the other
- * is through a PGN and a color. The benefit of the PGN version is that it allows the user to
- * step back through the move line and evaluate the position at any of the played moves. If the
- * repertoire doesn't start on move 1, ie it has a FEN code as a starting positionin the PGN
- * file, then using the PGN url doesn't work. So to utilize the possibility of the GN url when
- * we can, we use that url when the repoertoire starts at move 1, or else the FEN url.
- */
 function change_analysis_board() {
-    let link = document.getElementById("analysis_board");
-    const orientation = ground.state.orientation;
-    // The PGN standard requires a SetUp header when there is another start position
-    let starts_midgame = chess.header().SetUp != undefined;
-    if (starts_midgame) {
-        let fen = chess.fen();
-        link.href = `https://lichess.org/analysis/${fen}?color=${orientation}`;
-    } else {
-        let pgn = encodeURIComponent(chess.pgn());
-        link.href = `https://lichess.org/analysis/pgn/${pgn}?color=${orientation}`;
-    }
+    const link = document.getElementById('analysis_board');
+    const source = chapterPgns[trees[chapter].sourceIndex];
+    link.href = lichessAnalysisUrl(source, ground.state.orientation, chess.fen(), curr_move.slice(1));
+    link.onclick = () => prepareLichessAnalysis(source, link.dataset.importPrompt);
 }
 
 function setup_move() {
@@ -1214,6 +1201,7 @@ function start_training() {
 
 // Rebuild the playable trees from the source PGN.
 function setup_trees() {
+    chapterPgns = splitChapterPgn(pgn);
     let trees = {};
     const pgnParser = require('pgn-parser'); 
     
@@ -1929,9 +1917,8 @@ async function main() {
         document.getElementById('chapter_select').addEventListener('change', updateEditorLink);
         updateEditorLink();
     }
-    const chapterPgns = splitChapterPgn(pgn);
-    const getCurrentChapter = () => chapterPgns[chapter] ? {
-        pgn: chapterPgns[chapter],
+    const getCurrentChapter = () => chapterPgns[trees[chapter].sourceIndex] ? {
+        pgn: chapterPgns[trees[chapter].sourceIndex],
         chapterIndex: Number(chapter),
         title: tree_chapter_name(Number(chapter)),
         study: document.querySelector('h1').textContent.trim(),

@@ -4,6 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
 const model = vm.createContext({require});
+vm.runInContext(read('modules/study/lichess_analysis.js').replace(/^export /gm, ''), model);
 vm.runInContext(read('modules/study/chapter_editor.js').replace('export function', 'function'), model);
 const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const chapters = ['First', 'Second', 'Third'].map(title => ({title, fen, comment: title, headers: {}, root: []}));
@@ -14,6 +15,7 @@ const ground = {state: {orientation: 'white'}, set() {}, destroy() {}};
 const context = vm.createContext({
     require, URL, URLSearchParams, AbortController, Map, console,
     createChapterEditor: model.createChapterEditor,
+    lichessAnalysisUrl: model.lichessAnalysisUrl, prepareLichessAnalysis: model.prepareLichessAnalysis,
     createPromotionPicker: () => ({destroy() {}}),
     Chessground: () => ground,
     setupStudyMoveTree: () => ({update() {}}), ground_legal_moves: () => new Map(),
