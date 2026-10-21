@@ -14,13 +14,13 @@
 .puzzle-filters select, .puzzle-filters .puzzle-rating input[type="number"] { display: block; box-sizing: border-box; width: 100%; max-width: 100%; min-height: 44px; height: auto; margin: 0; padding: 10px; border: 1px solid color-mix(in srgb, var(--font-color) 28%, var(--bg-color)); border-radius: 5px; background: var(--bg-color); color: var(--font-color); font: inherit; font-variant-numeric: tabular-nums; }
 .puzzle-filters select { padding-inline-end: 24px; text-overflow: ellipsis; }
 .puzzle-filters :is(input, select):hover { border-color: var(--font-color); }
-.puzzle-filters :is(input, select, button):focus-visible { outline: 2px solid #206a9d; outline-offset: 3px; }
-.puzzle-filters .puzzle-practice-button { display: inline-flex; gap: 8px; align-items: center; justify-content: center; box-sizing: border-box; min-height: 44px; height: auto; width: 100%; margin: 0; padding: 10px 16px; border: 1px solid transparent; border-radius: 5px; background: #206a9d; color: #fff; font: inherit; font-weight: 600; line-height: 1.4; letter-spacing: normal; text-transform: none; white-space: normal; touch-action: manipulation; }
-.puzzle-filters .puzzle-practice-button:hover { background: #18527a; }
+.puzzle-filters :is(input, select, button):focus-visible { outline: 2px solid var(--practice-accent); outline-offset: 3px; }
+.puzzle-filters .puzzle-practice-button { display: inline-flex; gap: 8px; align-items: center; justify-content: center; box-sizing: border-box; min-height: 44px; height: auto; width: 100%; margin: 0; padding: 10px 16px; border: 1px solid transparent; border-radius: 5px; background: var(--practice-button-bg); color: var(--practice-button-color); font: inherit; font-weight: 600; line-height: 1.4; letter-spacing: normal; text-transform: none; white-space: normal; touch-action: manipulation; }
+.puzzle-filters .puzzle-practice-button:hover { background: var(--practice-button-hover-bg); }
 .puzzle-filters.phx-submit-loading .puzzle-practice-button { opacity: .7; cursor: wait; }
 .puzzle-filters .puzzle-filter-status { grid-column: 1 / -1; margin: 0; font-size: 12px; line-height: 1.5; color: var(--secondary-color); font-variant-numeric: tabular-nums; }
 .puzzle-filter-status[data-filter-error] { padding-inline-start: 10px; border-inline-start: 3px solid #b42318; color: var(--font-color); }
-[data-theme="dark"] .puzzle-filters :is(input, select, button):focus-visible { outline-color: #8ec9f2; }
+[data-theme="dark"] .puzzle-filters :is(input, select, button):focus-visible { outline-color: var(--practice-accent); }
 [data-theme="dark"] .puzzle-filter-status[data-filter-error] { border-color: #ff9f9f; }
 /* Both puzzle sources stay visible, like the homepage training cards. */
 .tactics-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }

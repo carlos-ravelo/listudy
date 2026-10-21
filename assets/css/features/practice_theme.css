@@ -1,51 +1,4 @@
-/* The Tactics practice desk, shared by the other training libraries. */
-.practice-page {
-  --practice-accent: #206a9d;
-  --practice-divider: color-mix(in srgb, var(--font-color) 14%, transparent);
-  --practice-surface: color-mix(in srgb, var(--practice-accent) 4%, var(--bg-color));
-  --practice-hover: color-mix(in srgb, var(--practice-accent) 8%, var(--bg-color));
-}
-[data-theme="dark"] .practice-page { --practice-accent: #8ec9f2; }
-.practice-page .practice-panel {
-  box-sizing: border-box;
-  min-width: 0;
-  padding: 20px;
-  border: 1px solid var(--practice-divider);
-  border-inline-start: 3px solid var(--practice-accent);
-  border-radius: 6px;
-  background: var(--practice-surface);
-  box-shadow: none;
-}
-.practice-page :is(.practice-primary, .practice-secondary) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-sizing: border-box;
-  min-height: 44px;
-  height: auto;
-  margin: 0;
-  padding: 10px 14px;
-  border: 1px solid var(--practice-accent);
-  border-radius: 5px;
-  color: var(--practice-accent);
-  background: transparent;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: normal;
-  text-transform: none;
-  text-align: center;
-  text-decoration: none;
-  white-space: normal;
-  touch-action: manipulation;
-}
-.practice-page .practice-primary { background: #206a9d; border-color: #206a9d; color: #fff; }
-.practice-page .practice-primary:focus { background: #206a9d; border-color: #206a9d; color: #fff; }
-.practice-page .practice-primary:hover:not(:disabled) { background: #18527a; border-color: #18527a; filter: none; }
-.practice-page .practice-secondary:hover { background: var(--practice-hover); text-decoration: none; }
-.practice-page :is(a, button, input, select, summary):focus-visible { outline: 2px solid var(--practice-accent); outline-offset: 3px; }
+.practice-page .practice-panel { box-sizing: border-box; min-width: 0; padding: 20px; box-shadow: none; }
 
 /* Libraries share source tabs, filters, and an explicit practice action. */
 .study-create.practice-page { max-width: 960px; margin-inline: auto; }
@@ -96,8 +49,7 @@
   .study-create.practice-page :is(input[type="text"], textarea, select) { font-size: 16px; }
 }
 
-:is(.tactics-collections, .repertoire-library) { --library-action: #206a9d; }
-[data-theme="dark"] :is(.tactics-collections, .repertoire-library) { --library-action: #8ec9f2; }
+:is(.tactics-collections, .repertoire-library) { --library-action: var(--practice-accent); }
 :is(.tactics-collections, .repertoire-library) .study-library-views { gap: 8px; padding: 4px; border: 1px solid var(--library-divider); border-radius: 6px; background: color-mix(in srgb, var(--bg-highlight-color) 55%, var(--bg-color)); }
 :is(.tactics-collections, .repertoire-library) .study-library-views button { margin: 0; padding-inline: 14px; border: 1px solid transparent; border-radius: 4px; }
 :is(.tactics-collections, .repertoire-library) .study-library-views button[aria-pressed="true"] { border-color: var(--library-divider); background: var(--bg-color); color: var(--library-action); }
@@ -114,8 +66,7 @@
 :is(.tactics-collections, .repertoire-library) .study-library-menu > summary { border: 1px solid var(--library-divider); box-sizing: border-box; background: var(--bg-color); }
 :is(.tactics-collections, .repertoire-library) .study-library-empty { padding: 24px; border: 1px solid var(--library-divider); border-inline-start: 3px solid var(--library-action); border-radius: 6px; background: color-mix(in srgb, var(--library-action) 4%, var(--bg-color)); }
 :is(.tactics-collections, .repertoire-library) .study-library-empty p { max-width: 60ch; margin: 0 0 20px; }
-:is(.tactics-collections, .repertoire-library) .study-library-create { background: #206a9d; border-color: #206a9d; color: #fff; min-height: 44px; }
-:is(.tactics-collections, .repertoire-library) .study-library-create:hover { background: #18527a; border-color: #18527a; }
+:is(.tactics-collections, .repertoire-library) .study-library-create { min-height: 44px; }
 
 .repertoire-library .study-library-heading { flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
 .repertoire-library .study-library-create-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -282,7 +233,7 @@
 .study-workspace.practice-page .study-session-tools #progress { padding-inline: 12px; border: 1px solid var(--practice-accent); background: var(--bg-color); color: var(--practice-accent); text-decoration: none; }
 .study-workspace.practice-page .study-session-tools #open_study_settings,
 .study-workspace.practice-page .study-tools-menu > summary { border: 1px solid var(--practice-divider); border-radius: 5px; background: var(--bg-color); }
-.study-workspace.practice-page .study-context { box-sizing: border-box; padding: 6px 12px; margin-bottom: 8px; gap: 8px 16px; border: 1px solid var(--practice-divider); border-inline-start: 3px solid var(--practice-accent); border-radius: 6px; background: var(--practice-surface); }
+.study-workspace.practice-page .study-context { box-sizing: border-box; padding: 6px 12px; margin-bottom: 8px; gap: 8px 16px; }
 .study-workspace.practice-page .study-feature-title { font-size: 17px; }
 .study-workspace.practice-page #current_chapter_title { min-height: 44px; background: var(--bg-color); border-color: var(--practice-divider); color: var(--practice-accent); }
 .study-workspace.practice-page .study-chapter-buttons > button { min-height: 44px; }
@@ -292,12 +243,11 @@
 .study-workspace.practice-page #hints:hover { background: var(--practice-hover); }
 .study-workspace.practice-page .study-move-navigation button { min-width: 44px; min-height: 44px; border: 1px solid var(--practice-divider); border-radius: 5px; background: var(--bg-color); }
 .study-workspace.practice-page .study-move-navigation button:hover:not(:disabled) { border-color: var(--practice-accent); color: var(--practice-accent); }
-.study-workspace.practice-page .study-comment-panel:has(.study_comments:not(:empty)) { box-sizing: border-box; padding: 16px; border: 1px solid var(--practice-divider); border-inline-start: 3px solid var(--practice-accent); border-radius: 6px; background: var(--practice-surface); }
+.study-workspace.practice-page .study-comment-panel:has(.study_comments:not(:empty)) { box-sizing: border-box; padding: 16px; }
 .study-workspace.practice-page .study-reading-tree { border-color: var(--practice-divider); background: var(--practice-surface); }
 .study-workspace.practice-page .study-moves-heading h3 { color: var(--practice-accent); }
 .study-workspace.practice-page .study-settings-tabs [aria-selected="true"] { color: var(--practice-accent); border-bottom-color: var(--practice-accent); }
-.study-workspace.practice-page .study-session-end { padding: 20px; border: 1px solid var(--practice-divider); border-inline-start: 3px solid var(--practice-accent); border-radius: 6px; background: var(--practice-surface); }
-.study-workspace.practice-page #study_session_continue { background: #206a9d; border-color: #206a9d; color: #fff; }
+.study-workspace.practice-page .study-session-end { padding: 20px; }
 .study-workspace.practice-page .study-session-progress { margin: 0 0 12px; padding: 0; }
 .study-workspace.practice-page .study-session-progress:not(:has(p:not([hidden]), section:not([hidden]))) { display: none; }
 .study-workspace.practice-page #study_session_counter:not([hidden]) { margin: 0; font-variant-numeric: tabular-nums; padding: 8px 12px; border: 1px solid var(--practice-divider); border-radius: 5px; background: var(--practice-surface); color: var(--practice-accent); }

@@ -1,0 +1,65 @@
+/* Shared practice palette, action states and panel surfaces; no page layout. */
+.practice-page, :is(.tactics-collections, .repertoire-library), .puzzle-filters {
+  --practice-button-bg: #206a9d;
+  --practice-button-hover-bg: #18527a;
+  --practice-button-color: #fff;
+  --practice-accent: var(--practice-button-bg);
+  --practice-divider: color-mix(in srgb, var(--font-color) 14%, transparent);
+  --practice-surface: color-mix(in srgb, var(--practice-accent) 4%, var(--bg-color));
+  --practice-hover: color-mix(in srgb, var(--practice-accent) 8%, var(--bg-color));
+}
+[data-theme="dark"] :is(.practice-page, .tactics-collections, .repertoire-library, .puzzle-filters) { --practice-accent: #8ec9f2; }
+
+.practice-page .practice-panel,
+.study-workspace.practice-page .study-context,
+.study-workspace.practice-page .study-comment-panel:has(.study_comments:not(:empty)),
+.study-workspace.practice-page .study-session-end {
+  border: 1px solid var(--practice-divider);
+  border-inline-start: 3px solid var(--practice-accent);
+  border-radius: 6px;
+  background: var(--practice-surface);
+}
+
+.practice-page :is(.practice-primary, .practice-secondary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 44px;
+  height: auto;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--practice-accent);
+  border-radius: 5px;
+  color: var(--practice-accent);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+  touch-action: manipulation;
+}
+.practice-page .practice-secondary:hover { background: var(--practice-hover); text-decoration: none; }
+.practice-page :is(a, button, input, select, summary):focus-visible { outline: 2px solid var(--practice-accent); outline-offset: 3px; }
+
+
+.practice-page .practice-primary,
+.practice-page .practice-primary:focus,
+:is(.tactics-collections, .repertoire-library) .study-library-create,
+.study-workspace.practice-page #study_session_continue {
+  background: var(--practice-button-bg);
+  border-color: var(--practice-button-bg);
+  color: var(--practice-button-color);
+}
+.practice-page .practice-primary:hover:not(:disabled),
+:is(.tactics-collections, .repertoire-library) .study-library-create:hover {
+  background: var(--practice-button-hover-bg);
+  border-color: var(--practice-button-hover-bg);
+}
+.practice-page .practice-primary:hover:not(:disabled) { filter: none; }

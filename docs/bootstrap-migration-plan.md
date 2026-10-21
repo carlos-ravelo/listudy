@@ -26,18 +26,19 @@ La biblioteca simplificada de tácticas también usa el layout compartido.
 - [x] Biblioteca simplificada de tácticas con buscador y preferencias compartidos.
 - [x] Fase 5: adaptadores compartidos de tema para campos y botones secundarios.
 - [x] Fase 5: estilos de colecciones reunidos y reglas obsoletas retiradas.
-- [ ] Fase 5: continuar la convergencia de variantes y superficies en biblioteca
-  y entrenamiento; mantener los estilos propios de tablero y composición.
+- [x] Fase 5: variantes y superficies compartidas de biblioteca y entrenamiento,
+  conservando los estilos propios de tablero y composición.
 - [ ] Fase 6: migrar páginas heredadas y retirar Skeleton y el gestor antiguo
   cuando no queden consumidores.
 - [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
 - [ ] Después de la migración de componentes: análisis de reutilización de JS.
 
-La siguiente entrega continúa la convergencia de variantes y superficies de
-biblioteca y entrenamiento. Los adaptadores de tema y botones secundarios ya
-tienen una definición compartida; los estilos propios de tablero y composición
-permanecen en sus componentes. Estas tareas del fork tienen prioridad sobre las
-páginas heredadas de fase 6.
+La fase 5 queda completada para las páginas migradas del fork. La siguiente
+entrega inicia fase 6 con el inventario de consumidores heredados y la búsqueda
+pública de estudios, que ya reutiliza las filas de biblioteca. Al migrar ese
+primer consumidor LiveView se incorporarán sus hooks de montaje y destrucción.
+El catálogo de ejercicios y las demás páginas pendientes se migrarán por familias;
+Skeleton y el gestor antiguo se retirarán solo cuando no tengan consumidores.
 
 ## Primera entrega
 
@@ -349,6 +350,34 @@ composición y los flujos afectados por retirar estilos ajenos a esa página.
 La fase 5 sigue parcial: queda revisar la convergencia de las superficies de
 biblioteca y entrenamiento antes de pasar a páginas heredadas.
 
+## Fase 5: variantes y superficies compartidas de práctica
+
+`components/practice_controls.css` concentra la paleta de práctica, sus variantes
+primaria y secundaria, foco y superficies con borde de acento. Biblioteca,
+reanudación de sesión y acciones de práctica comparten la definición primaria;
+los filtros del catálogo consumen los mismos valores de color, incluido el foco
+en oscuro. Los recursos Bootstrap y el bundle anterior importan este componente.
+
+`practice_theme.css` conserva composición, tamaños y adaptaciones por pantalla.
+Los paneles de práctica, contexto del estudio, comentarios y fin de sesión
+comparten su borde y fondo; sus paddings y condiciones de visibilidad permanecen
+en los selectores de cada función. No cambia la distribución ni el comportamiento
+de los controles.
+
+`practice_controls_browser.cjs` compara los recursos CSS anteriores y actuales
+para biblioteca, tácticas, práctica de errores, estudio y creación, en 1280, 900,
+390 y 320 px, con temas claro y oscuro. Compara dimensiones y estilos, además de
+hover, foco por teclado y botones deshabilitados. La regresión de estudio cubre
+ajustes, profundidad, objetivos, comentarios, historial y progreso; la de
+descubrimiento comprueba también las páginas que siguen usando los recursos
+anteriores. El build de producción pasa con las advertencias de Sass y tamaño
+de recursos existentes.
+
+Esta entrega cierra la convergencia prevista en fase 5 para las páginas ya
+migradas; la migración del sitio completo continúa en fase 6. Las limitaciones
+anteriores de las regresiones generales siguen registradas y no se dan por
+resueltas al completar esta fase visual.
+
 ## Objetivo y alcance
 
 Reducir HTML, CSS y JavaScript repetidos mediante Bootstrap 5.3 y plantillas
@@ -418,7 +447,7 @@ dependen de que la integración y la limpieza de la anterior estén verificadas.
 | 2 | Completada: biblioteca personal y biblioteca simplificada de tácticas | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
 | 3 | Completada | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
 | 4 | Completada | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
-| 5 | Parcial: páginas de análisis, diálogos, creación, mantenimiento y editor | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
+| 5 | Completada para las páginas migradas del fork | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
 | 6 | Pendiente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
 
 ## Fase 0: integración y reglas comunes
