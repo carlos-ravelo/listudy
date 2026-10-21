@@ -9,8 +9,10 @@ const statsContext = vm.createContext({ sparring: null, visualization: null,});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_stats.js'), 'utf8')
     .replace(/export \{[^}]+\};/, ''), statsContext);
 const moveTreeContext = vm.createContext({ sparring: null, visualization: null, require });
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/lichess_analysis.js'), 'utf8')
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/download_pgn.js'), 'utf8')
     .replace(/^export /gm, ''), moveTreeContext);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/lichess_analysis.js'), 'utf8')
+    .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), moveTreeContext);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/study_move_tree.js'), 'utf8')
     .replace(/^export /gm, ''), moveTreeContext);
 

@@ -1,3 +1,5 @@
+import { downloadPgn } from '../download_pgn.js';
+
 // Lichess truncates inline PGNs at 5,000 characters. Larger chapters are
 // downloaded intact so they can be imported from the analysis board.
 const inlineLimit = 5000;
@@ -13,13 +15,6 @@ export function lichessAnalysisUrl(pgn, orientation, fen, path = []) {
 
 export function prepareLichessAnalysis(pgn, importPrompt) {
     if (encodeURIComponent(pgn).length <= inlineLimit) return;
-    const url = URL.createObjectURL(new Blob([pgn], {type: 'application/x-chess-pgn'}));
-    const download = document.createElement('a');
-    download.href = url;
-    download.download = 'chapter.pgn';
-    document.body.appendChild(download);
-    download.click();
-    download.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadPgn(pgn, 'chapter.pgn');
     window.alert(importPrompt);
 }

@@ -1,3 +1,4 @@
+import { downloadPgn } from '../download_pgn.js';
 import { createSparringSession, sparringReviewEvery } from './session.js';
 import { createStudySparring, sparringStartPositions, createSparringChapterRotation } from './chess_adapter.js';
 import { createSparringEngine, sparringStrength, sparringRating } from './uci_engine.js';
@@ -72,10 +73,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             reviews: state.reviews.map(row => ({ ...row, line: continuation(row.ply, row.pv) })) };
     }
     function download(record) {
-        const url = URL.createObjectURL(new Blob([record.pgn], { type: 'application/x-chess-pgn' }));
-        const link = document.createElement('a');
-        link.href = url; link.download = 'listudy-sparring.pgn'; link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        downloadPgn(record.pgn, 'listudy-sparring.pgn');
     }
     function history() {
         find('recent').replaceChildren();

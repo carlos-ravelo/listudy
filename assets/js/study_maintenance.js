@@ -1,3 +1,4 @@
+import { normalizeSearchText } from './modules/search_text.js';
 import { openDialog, closeDialog } from './modules/dialog_lifecycle.js';
 import Alpine from 'alpinejs';
 
@@ -9,8 +10,7 @@ Alpine.data('studyOpeningPicker', () => ({
         this.names = JSON.parse(this.$el.dataset.openingNames);
     },
     matches(value) {
-        const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
-        return normalize(value).includes(normalize(this.query.trim()));
+        return normalizeSearchText(value).includes(normalizeSearchText(this.query.trim()));
     },
     open() {
         this.query = '';

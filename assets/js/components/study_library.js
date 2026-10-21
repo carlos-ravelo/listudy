@@ -1,3 +1,4 @@
+import { normalizeSearchText } from '../modules/search_text.js';
 import {setupColorToggles} from "./color_toggles.js";
 
 export function setupStudyLibrary(library = document.querySelector('[data-study-library]'), widgets = {}) {
@@ -8,10 +9,9 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     const labels = JSON.parse(library.dataset.libraryLabels);
     const search = library.querySelector('[data-library-search]');
     if (library.hasAttribute('data-library-simple')) {
-        const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
         const filter = (writeUrl = true) => {
-            const query = normalize(search.value.trim());
-            rows.forEach(row => { row.hidden = !normalize(row.dataset.search).includes(query); });
+            const query = normalizeSearchText(search.value.trim());
+            rows.forEach(row => { row.hidden = !normalizeSearchText(row.dataset.search).includes(query); });
             const visible = rows.filter(row => !row.hidden).length;
             library.querySelector('[data-library-count]').textContent = `${visible} / ${rows.length}`;
             library.querySelectorAll('[data-library-section]').forEach(section => {
@@ -56,7 +56,6 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     const groupList = library.querySelector('[data-library-group-list]');
     const status = library.querySelector('[data-library-save-status]');
     const selected = new Set();
-    const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
     const setting = row => state.studies[row.dataset.studyId] || { group: null };
     const hasViews = Boolean(library.querySelector('[data-library-view]'));
     let view = 'all';
@@ -92,14 +91,14 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         rows.forEach(row => { row.querySelector('[data-library-check]').checked = selected.has(row.dataset.studyId); });
     }
     function filter(writeUrl = true) {
-        const query = normalize(search.value.trim());
+        const query = normalizeSearchText(search.value.trim());
         let visible = 0;
         const counts = { favorites: 0, all: rows.length };
         rows.forEach(row => {
             const entry = setting(row);
             if (row.dataset.favorite === 'true') counts.favorites++;
             const groupName = state.groups[entry.group] || '';
-            const searchable = normalize(row.dataset.search + ' ' + groupName);
+            const searchable = normalizeSearchText(row.dataset.search + ' ' + groupName);
             row.hidden = !((view === 'all' || row.dataset.favorite === 'true') && searchable.includes(query) &&
                 (!kind || kind.value === 'all' || row.dataset.kind === kind.value) &&
                 (color.value === 'all' || row.dataset.color === color.value) &&

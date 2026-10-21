@@ -14,8 +14,10 @@ const context = vm.createContext({
     window: {alert: value => { prompt = value; }},
     setTimeout: callback => { cleanup = callback; }
 });
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/lichess_analysis.js'), 'utf8')
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/download_pgn.js'), 'utf8')
     .replace(/^export /gm, ''), context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/lichess_analysis.js'), 'utf8')
+    .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 
 (async () => {
     const link = context.lichessAnalysisUrl(pgn, 'black', fen, []);

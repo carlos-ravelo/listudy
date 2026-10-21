@@ -1,3 +1,4 @@
+import { downloadPgn } from './download_pgn.js';
 import { openDialog } from './dialog_lifecycle.js';
 import { CollectionStore } from './study/collection_store.js';
 import { CollectionAccount } from './study/collection_account.js';
@@ -236,14 +237,8 @@ export function setupStudyCollections({ getCurrentChapter }) {
     modal.querySelector('#modal_download').onclick = () => perform(() => {
         const data = store.read(), items = data.collections[data.active];
         if (!items.length) return;
-        const url = URL.createObjectURL(new Blob([items.map(item => item.pgn).join('\n\n')], { type: 'application/x-chess-pgn' }));
-        const link = element('a', '');
-        link.href = url;
-        link.download = `${data.active.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pgn`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        downloadPgn(items.map(item => item.pgn).join('\n\n'),
+            `${data.active.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pgn`);
     });
     window.addEventListener('storage', event => {
         if (event.key === store.key) {
