@@ -43,11 +43,19 @@ Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
   conserva elegibilidad, inactividad del tracker y finalización al salir. La
   práctica de errores instala el adaptador una vez durante la vida de la página.
 
-## Próximas extracciones recomendadas
+- `modules/editable_target.js`: `isEditableTarget` compartido por navegación
+  y copia del editor y por los atajos del visor de partidas. La opción
+  `includeContentEditableFalse` conserva la protección más amplia del visor;
+  el editor permite atajos sobre contenido estático, salvo que un antecesor
+  editable siga protegido como antes. Resúmenes, diálogos, selección de texto,
+  teclas modificadoras y estados del editor permanecen en cada consumidor.
+  El visor también ignora eventos durante composición IME.
 
-| Prioridad | Duplicación comprobada | Propuesta | Condiciones que deben conservarse |
-| --- | --- | --- | --- |
-| Media | `study_editor.js` y `quick_result.js` comprueban elementos editables antes de ejecutar atajos | Predicado de destino editable con opciones explícitas | `contenteditable=false`, composición, selección y teclas modificadoras; resumen y diálogo siguen siendo exclusiones de cada función |
+## Estado
+
+Las extracciones identificadas en esta auditoría están completadas. Las pruebas
+cubren los consumidores y los contratos compartidos; no hay nuevas extracciones
+pendientes dentro de este alcance.
 
 ## Orden de implementación
 
@@ -56,13 +64,14 @@ Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
    al editor y a creación de estudios desde colecciones.
 3. Completado: adaptador de actividad, con pruebas de tiempo activo, políticas
    de persistencia, limpieza y remontaje.
-4. Pendiente: predicado de destino editable y regresiones de atajos.
+4. Completado: predicado de destino editable y regresiones de atajos, copia,
+   selección, composición y exclusiones propias del visor.
 
 No conviene unificar por apariencia métodos como `save`, `play` o `refresh`:
 editor, colecciones y entrenamiento tienen contratos y estados diferentes.
 Tampoco hace falta envolver las APIs de Bootstrap si el wrapper solo cambia
 nombres y no elimina una política repetida.
 
-Las siguientes extracciones conservan las funciones de dominio en cada consumidor.
+Las extracciones conservan las funciones de dominio en cada consumidor.
 El ahorro de tokens no se ha medido. El beneficio comprobable sería reducir los
 lugares que hay que leer y modificar cuando cambia un comportamiento compartido.

@@ -27,6 +27,7 @@ const context = vm.createContext({
     fetch: (url, options) => new Promise(resolve => requests.push({url: String(url), options, resolve}))
 });
 vm.runInContext(read('modules/request_json.js').replace(/^export /gm, ''), context);
+vm.runInContext(read('modules/editable_target.js').replace(/^export /gm, ''), context);
 vm.runInContext(read('study_editor.js').replace(/^import .*;\n/gm, ''), context);
 const controller = factory();
 controller.$el = {dataset: {

@@ -37,6 +37,38 @@ const pages = {
         await page.goto(base + '/comparison');
         await page.waitForSelector('cg-board');
         assert.equal(await page.locator('#quick-analysis-board').getAttribute('data-ply'), '2');
+        const keyboard = await page.evaluate(() => {
+            const board = document.getElementById('quick-analysis-board');
+            const host = document.createElement('div'); document.body.append(host);
+            const results = [];
+            const send = (node, options = {}) => {
+                const event = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true, ...options });
+                node.dispatchEvent(event);
+                return { ply: board.dataset.ply, prevented: event.defaultPrevented };
+            };
+            for (const html of ['<input>', '<textarea></textarea>', '<select></select>',
+                '<div contenteditable><span>Text</span></div>',
+                '<div contenteditable="true"><span>Text</span></div>',
+                '<div contenteditable="plaintext-only"><span>Text</span></div>',
+                '<div contenteditable="false"><span>Static text</span></div>',
+                '<summary><span>Details</span></summary>', '<div role="dialog"><span>Dialog</span></div>']) {
+                host.innerHTML = html;
+                results.push(send(host.querySelector('span') || host.firstElementChild));
+            }
+            for (const options of [{ altKey: true }, { ctrlKey: true }, { metaKey: true },
+                { shiftKey: true }, { isComposing: true }]) results.push(send(host, options));
+            const prevented = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true });
+            prevented.preventDefault(); host.dispatchEvent(prevented);
+            results.push({ ply: board.dataset.ply, prevented: false });
+            host.innerHTML = '<button>Replay</button>';
+            const allowed = send(host.firstElementChild);
+            host.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+            host.remove();
+            return { results, allowed, restored: board.dataset.ply };
+        });
+        assert(keyboard.results.every(result => result.ply === '2' && !result.prevented), 'Replay ignores fields, summary, dialog, composition and modified keys');
+        assert.deepEqual(keyboard.allowed, { ply: '1', prevented: true });
+        assert.equal(keyboard.restored, '2');
         assert.equal(await page.locator('[data-select-group="0"]').getAttribute('aria-pressed'), 'true');
         assert((await page.locator('[data-match-group="0"] .analysis-chapter-name').first().textContent()).includes('Z daily repertoire'));
         assert.equal(await page.locator('.analysis-other-matches').getAttribute('open'), null);

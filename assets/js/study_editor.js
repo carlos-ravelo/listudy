@@ -1,5 +1,6 @@
 import { hasBlockingUi } from './modules/blocking_ui.js';
 import { requestJson } from './modules/request_json.js';
+import { isEditableTarget } from './modules/editable_target.js';
 import { Chessground } from 'chessground';
 import { createChapterEditor } from './modules/study/chapter_editor.js';
 import { lichessAnalysisUrl, prepareLichessAnalysis } from './modules/study/lichess_analysis.js';
@@ -238,7 +239,7 @@ Alpine.data('chapterEditor', () => {
         copyCurrentMove(event) {
             if (hasBlockingUi()) return;
             if (event.defaultPrevented || !event.clipboardData || window.getSelection()?.toString()) return;
-            if (event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+            if (isEditableTarget(event.target)) return;
             if (!editor.path.length) return;
             const move = this.$refs.moves.querySelector('[aria-current="step"]');
             if (!move) return;
@@ -247,7 +248,7 @@ Alpine.data('chapterEditor', () => {
         },
 
         navigateKey(event) {
-            const editingField = event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
+            const editingField = isEditableTarget(event.target);
             if (hasBlockingUi()) {
                 // Chrome can undo a blurred textarea from a non-editable modal.
                 if (!editingField && (event.ctrlKey || event.metaKey) && ['z', 'y'].includes(event.key.toLowerCase())) event.preventDefault();

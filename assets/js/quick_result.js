@@ -1,4 +1,5 @@
 import { hasBlockingUi } from './modules/blocking_ui.js';
+import { isEditableTarget } from './modules/editable_target.js';
 import { createGameReplay } from './modules/analysis/game_replay.js';
 
 function setupComparison() {
@@ -80,8 +81,9 @@ function setupComparison() {
             button.addEventListener('click', () => seek(Number(button.dataset.jumpPly)));
         });
         document.addEventListener('keydown', event => {
-            if (hasBlockingUi() || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
-                event.target.closest('input, textarea, select, [contenteditable], summary, [role="dialog"]')) return;
+            if (hasBlockingUi() || event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
+                isEditableTarget(event.target, { includeContentEditableFalse: true }) ||
+                event.target?.closest?.('summary, [role="dialog"]')) return;
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
                 event.preventDefault();
                 seek(replay.ply + (event.key === 'ArrowRight' ? 1 : -1));

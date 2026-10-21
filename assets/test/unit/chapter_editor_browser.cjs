@@ -83,6 +83,56 @@ ${editorControls}${annotationControl}${analysisControl}
         await page.goto(`http://127.0.0.1:${server.address().port}`);
         const state = () => page.evaluate(() => { const c = Alpine.$data(document.getElementById('chapter_editor')); return {pgn: c.exportPgn, dirty: c.dirty, canUndo: c.canUndo, canRedo: c.canRedo, canPromote: c.canPromote}; });
         await page.waitForSelector('cg-board');
+        const keyboard = await page.evaluate(() => {
+            const controller = Alpine.$data(document.getElementById('chapter_editor'));
+            const host = document.createElement('div');
+            document.body.append(host);
+            const results = [];
+            const send = (node, options = {}) => {
+                const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true, ...options });
+                node.dispatchEvent(event);
+                return { moved: controller.hasPrevious, prevented: event.defaultPrevented };
+            };
+            for (const html of ['<input>', '<textarea></textarea>', '<select></select>',
+                '<div contenteditable><span>Text</span></div>',
+                '<div contenteditable="true"><span>Text</span></div>',
+                '<div contenteditable="plaintext-only"><span>Text</span></div>',
+                '<div contenteditable="true"><span contenteditable="false">Text</span></div>']) {
+                host.innerHTML = html;
+                results.push(send(host.querySelector('span') || host.firstElementChild));
+            }
+            for (const options of [{ altKey: true }, { ctrlKey: true }, { metaKey: true },
+                { shiftKey: true }, { isComposing: true }]) results.push(send(host, options));
+            const prevented = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true });
+            prevented.preventDefault(); host.dispatchEvent(prevented);
+            results.push({ moved: controller.hasPrevious, prevented: false });
+            host.innerHTML = '<div contenteditable="false"><span>Static text</span></div>';
+            const allowed = send(host.querySelector('span'));
+            const copy = node => {
+                const data = new DataTransfer();
+                data.setData('text/plain', 'Keep native copy');
+                controller.copyCurrentMove({ target: node, clipboardData: data, preventDefault() {} });
+                return data.getData('text/plain');
+            };
+            host.innerHTML = '<div contenteditable><span>Editable text</span></div>';
+            const editableCopy = copy(host.querySelector('span'));
+            host.innerHTML = '<span>Selected text</span>';
+            const selection = window.getSelection();
+            const range = document.createRange(); range.selectNodeContents(host);
+            selection.removeAllRanges(); selection.addRange(range);
+            const selectedCopy = copy(host);
+            selection.removeAllRanges();
+            const moveCopy = copy(host);
+            host.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+            host.remove();
+            return { results, allowed, editableCopy, selectedCopy, moveCopy, restored: !controller.hasPrevious };
+        });
+        assert(keyboard.results.every(result => !result.moved && !result.prevented), 'Fields, composition and modified keys retain their keyboard handling');
+        assert.deepEqual(keyboard.allowed, { moved: true, prevented: true }, 'Editor navigation permits static contenteditable=false');
+        assert.equal(keyboard.editableCopy, 'Keep native copy');
+        assert.equal(keyboard.selectedCopy, 'Keep native copy');
+        assert.notEqual(keyboard.moveCopy, 'Keep native copy', 'An unselected move still supports custom copy');
+        assert.equal(keyboard.restored, true);
         assert.equal(await page.locator('#editor_chapter .chapter-current-label').textContent(), '1 / 2 · First');
         await page.click('#editor_chapter');
         assert.equal(await page.locator('#editor_chapter_list [aria-current="true"]').textContent(), '1. First');
