@@ -156,7 +156,19 @@ defmodule ListudyWeb.StudyEditorControllerTest do
     url = Routes.study_path(conn, :editor, "en", study)
     assert conn |> get(url) |> response(403) == "Forbidden"
     assert other |> get(url) |> response(403) == "Forbidden"
-    assert owner |> get(url) |> html_response(200) =~ "chapter_editor"
+    html = owner |> get(url) |> html_response(200)
+    assert html =~ "chapter_editor"
+    assert html =~ "/css/bootstrap_editor.css"
+    assert html =~ "/js/bootstrap_editor.js"
+    assert html =~ "study_editor.js?v=bootstrap-editor-1"
+    refute html =~ "/css/app.css"
+    refute html =~ "/js/app.js"
+
+    if preview_file = System.get_env("LISTUDY_EDITOR_PREVIEW") do
+      File.mkdir_p!(Path.dirname(preview_file))
+      File.write!(preview_file, html)
+    end
+
     save_url = Routes.study_path(conn, :save_chapter, "en", study)
     assert other |> post(save_url, %{}) |> json_response(403) == %{"error" => "Forbidden"}
     assert File.read!(path) == pgn

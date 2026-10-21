@@ -47,7 +47,7 @@
           <svg class="chapter-editor-pencil" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m16 3 5 5L8 21H3v-5L16 3Z"/><path d="m14 5 5 5"/></svg>
         </button>
       </h1>
-      <input x-cloak x-show="draft || editingTitle" x-ref="titleInput" type="text" id="editor_title" maxlength="<%= if draft, do: 100, else: 200 %>" required
+      <input x-cloak x-show="draft || editingTitle" x-ref="titleInput" type="text" id="editor_title" class="form-control" maxlength="<%= if draft, do: 100, else: 200 %>" required
              aria-label="<%= dgettext "study", "Chapter title" %>" x-model="title" :disabled="pendingPromotion || saving || loading"
              @input="updateTitle($event.target.value)" @blur="editingTitle = false"
              @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="cancelTitleEdit()" />
@@ -61,15 +61,15 @@
     </nav>
   </div>
   <div class="chapter-editor-toolbar chapter-editor-actions">
-    <button type="button" id="editor_save" class="button" :class="{ 'button-primary': dirty }" :disabled="pendingPromotion || saving || loading || setupMode || !dirty" @click="save()" disabled><%= if draft, do: dgettext("study", "Create study"), else: dgettext("study", "Save chapter") %></button>
-    <button type="button" id="editor_discard" class="button" :disabled="pendingPromotion || saving || loading || (!dirty && !pgnEdited)" @click="discard()" disabled><%= dgettext "study", "Discard changes" %></button>
+    <button type="button" id="editor_save" class="button btn" :class="dirty ? 'btn-primary' : 'btn-outline-secondary'" :disabled="pendingPromotion || saving || loading || setupMode || !dirty" @click="save()" disabled><%= if draft, do: dgettext("study", "Create study"), else: dgettext("study", "Save chapter") %></button>
+    <button type="button" id="editor_discard" class="button btn btn-outline-secondary" :disabled="pendingPromotion || saving || loading || (!dirty && !pgnEdited)" @click="discard()" disabled><%= dgettext "study", "Discard changes" %></button>
   </div>
   <%= if draft do %>
   <div class="chapter-editor-create-options">
-    <label for="draft_kind"><%= dgettext("study", "Practice type") %><select id="draft_kind" x-model="trainingKind"><option value="repertoire"><%= dgettext("study", "Repertoire") %></option><option value="tactics"><%= dgettext("study", "Tactics collection") %></option></select></label>
-    <label x-show="trainingKind === 'repertoire'" for="draft_color"><%= dgettext("study", "For which side is this study") %><select id="draft_color" x-model="studyColor"><option value="white"><%= dgettext("study", "White") %></option><option value="black"><%= dgettext("study", "Black") %></option></select></label>
-    <label><input type="checkbox" x-model="privateStudy"> <%= dgettext("study", "Keep this study private") %></label>
-    <button type="button" class="button" @click="beginSetup()" :disabled="saving || loading || pendingPromotion || setupMode"><%= dgettext("study", "Set up a position") %></button>
+    <label for="draft_kind"><%= dgettext("study", "Practice type") %><select id="draft_kind" class="form-select" x-model="trainingKind"><option value="repertoire"><%= dgettext("study", "Repertoire") %></option><option value="tactics"><%= dgettext("study", "Tactics collection") %></option></select></label>
+    <label x-show="trainingKind === 'repertoire'" for="draft_color"><%= dgettext("study", "For which side is this study") %><select id="draft_color" class="form-select" x-model="studyColor"><option value="white"><%= dgettext("study", "White") %></option><option value="black"><%= dgettext("study", "Black") %></option></select></label>
+    <label><input type="checkbox" class="form-check-input" x-model="privateStudy"> <%= dgettext("study", "Keep this study private") %></label>
+    <button type="button" class="button btn btn-outline-secondary" @click="beginSetup()" :disabled="saving || loading || pendingPromotion || setupMode"><%= dgettext("study", "Set up a position") %></button>
   </div>
   <% end %>
   <p><%= dgettext "study", "Select a position and play a move to add a continuation or variation. Add a comment to the selected position." %></p>
@@ -81,8 +81,8 @@
       </div>
       <details class="chapter-editor-pgn"><summary><%= dgettext("study", "Import or export PGN") %></summary>
         <label for="editor_pgn"><%= dgettext "study", "PGN" %></label>
-        <textarea id="editor_pgn" x-ref="pgn" x-model="exportPgn" @input="pgnEdited = true" :disabled="pendingPromotion || saving || loading" rows="8" spellcheck="false"></textarea>
-        <button type="button" id="editor_apply_pgn" class="button" :disabled="pendingPromotion || saving || loading" @click="applyChapterPgn()"><%= dgettext "study", "Import PGN" %></button>
+        <textarea id="editor_pgn" class="form-control" x-ref="pgn" x-model="exportPgn" @input="pgnEdited = true" :disabled="pendingPromotion || saving || loading" rows="8" spellcheck="false"></textarea>
+        <button type="button" id="editor_apply_pgn" class="button btn btn-outline-secondary" :disabled="pendingPromotion || saving || loading" @click="applyChapterPgn()"><%= dgettext "study", "Import PGN" %></button>
       </details>
 
 
@@ -95,7 +95,7 @@
           <template x-for="piece in setupPieces" :key="piece.code"><button type="button" :aria-label="piece.label" :aria-pressed="selectedPiece === piece.code" @click="selectedPiece = piece.code" x-text="piece.symbol"></button></template>
         </div>
         <label for="position_turn"><%= dgettext("study", "Side to move") %></label>
-        <select id="position_turn" x-model="positionTurn"><option value="w"><%= dgettext("study", "White") %></option><option value="b"><%= dgettext("study", "Black") %></option></select>
+        <select id="position_turn" class="form-select" x-model="positionTurn"><option value="w"><%= dgettext("study", "White") %></option><option value="b"><%= dgettext("study", "Black") %></option></select>
         <div class="chapter-editor-toolbar">
           <button type="button" @click="clearPosition()"><%= dgettext("study", "Clear board") %></button>
           <button type="button" @click="resetPosition()"><%= dgettext("study", "Starting position") %></button>
@@ -105,7 +105,7 @@
       </fieldset>
       <% end %>
       <div class="chapter-editor-engine">
-        <button type="button" id="editor_engine" class="button" :aria-pressed="analysisEnabled" :disabled="setupMode || saving || loading" @click="toggleAnalysis()"><%= dgettext("study", "Engine analysis") %></button>
+        <button type="button" id="editor_engine" class="button btn btn-outline-secondary" :aria-pressed="analysisEnabled" :disabled="setupMode || saving || loading" @click="toggleAnalysis()"><%= dgettext("study", "Engine analysis") %></button>
         <p role="status" aria-live="polite" x-show="analysisEnabled" x-text="analysisText"></p>
       </div>
 
@@ -141,7 +141,7 @@
       </div>
       <div class="chapter-editor-navigation">
         <label for="editor_annotation"><%= dgettext("study", "Move annotation") %></label>
-        <select id="editor_annotation" :value="annotation" :disabled="setupMode || pendingPromotion || saving || loading || !hasPrevious" @change="setAnnotation($event.target.value)">
+        <select id="editor_annotation" class="form-select" :value="annotation" :disabled="setupMode || pendingPromotion || saving || loading || !hasPrevious" @change="setAnnotation($event.target.value)">
           <option value="0"><%= dgettext("study", "None") %></option>
           <option value="1">!</option><option value="2">?</option><option value="3">!!</option>
           <option value="4">??</option><option value="5">!?</option><option value="6">?!</option>
@@ -149,11 +149,11 @@
       </div>
       <div id="editor_moves" class="study-move-tree" x-ref="moves" aria-label="<%= dgettext "study", "Moves and variations" %>"></div>
       <label for="editor_comment"><%= dgettext "study", "Comment" %></label>
-      <textarea id="editor_comment" rows="2" maxlength="20000" x-model="comment" :disabled="pendingPromotion || saving || loading" @input="updateComment($event.target.value)"></textarea>
+      <textarea id="editor_comment" class="form-control" rows="2" maxlength="20000" x-model="comment" :disabled="pendingPromotion || saving || loading" @input="updateComment($event.target.value)"></textarea>
     </div>
   </div>
   <p id="editor_status" role="status" aria-live="polite" x-text="status"></p>
 
 </section>
 <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/chessground.css") %>"/>
-<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_editor.js") %>"></script>
+<script defer type="text/javascript" src="<%= editor_script_path(@conn) %>"></script>

@@ -1,3 +1,4 @@
+import { hasBlockingUi } from './modules/blocking_ui.js';
 import { Chessground } from 'chessground';
 import { createChapterEditor } from './modules/study/chapter_editor.js';
 import { lichessAnalysisUrl, prepareLichessAnalysis } from './modules/study/lichess_analysis.js';
@@ -234,6 +235,7 @@ Alpine.data('chapterEditor', () => {
         setAnnotation(value) { this.applyEdit('setAnnotation', Number(value)); },
 
         copyCurrentMove(event) {
+            if (hasBlockingUi()) return;
             if (event.defaultPrevented || !event.clipboardData || window.getSelection()?.toString()) return;
             if (event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
             if (!editor.path.length) return;
@@ -244,6 +246,12 @@ Alpine.data('chapterEditor', () => {
         },
 
         navigateKey(event) {
+            const editingField = event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
+            if (hasBlockingUi()) {
+                // Chrome can undo a blurred textarea from a non-editable modal.
+                if (!editingField && (event.ctrlKey || event.metaKey) && ['z', 'y'].includes(event.key.toLowerCase())) event.preventDefault();
+                return;
+            }
             if (this.pendingPromotion) {
                 if (event.key === 'Escape') {
                     event.preventDefault();
@@ -251,8 +259,7 @@ Alpine.data('chapterEditor', () => {
                 }
                 return;
             }
-            if (this.setupMode || this.saving || this.loading || event.defaultPrevented || event.isComposing || event.altKey) return;
-            if (event.target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+            if (this.setupMode || this.saving || this.loading || event.defaultPrevented || event.isComposing || event.altKey || editingField) return;
             if (event.ctrlKey || event.metaKey) {
                 const key = event.key.toLowerCase();
                 if (key === 'z' || key === 'y') {

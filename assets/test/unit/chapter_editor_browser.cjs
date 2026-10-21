@@ -20,9 +20,9 @@ const editorControls = ['editor_delete_move', 'editor_undo', 'editor_redo', 'edi
 const chapterPicker = translate(editorTemplate.match(/<div class="study-chapter-navigation chapter-editor-picker">[\s\S]*?<\/div>\s*<\/div>/)[0]);
 const annotationControl = translate(editorTemplate.match(/<select id="editor_annotation"[\s\S]*?<\/select>/)[0]);
 const analysisControl = translate(editorTemplate.match(/<a id="editor_analysis"[\s\S]*?<\/a>/)[0]);
-const html = `<!doctype html><html class="blue cburnett"><head>
-<meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/app.css">
-<link rel="stylesheet" href="/css/chessground.css"></head><body><main class="container">
+const html = `<!doctype html><html class="blue cburnett"><head><meta charset="utf-8">
+<meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/bootstrap_editor.css">
+<link rel="stylesheet" href="/css/chessground.css"></head><body class="bootstrap-ui"><main class="container">
 <section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)" @keydown.window="navigateKey($event)" data-editor="${escape(JSON.stringify({chapters: data.chapters.map(({title}) => ({title})), chapter_index: 0, chapter: data.chapters[0]}))}"
 data-revision="original" data-save-url="/save" data-load-url="/chapter" data-loading="Loading" data-load-error="Load failed" data-color="white" data-start="Start"
 data-variation="Variation" data-promote="Promote to main line" data-discard-prompt="Discard?" data-saving="Saving"

@@ -3,7 +3,8 @@
 Fecha: 2026-10-21. Rama: `migration/bootstrap-ui`. Análisis inicial y biblioteca
 personal y entrenamiento migrados. Los cuatro diálogos de entrenamiento usan
 Bootstrap. Colecciones y selector de aperturas completan la fase 4; creación
-y mantenimiento cargan ahora sus propios recursos Bootstrap.
+y mantenimiento cargan ahora sus propios recursos Bootstrap. El editor de capítulos
+y la creación desde cero también usan recursos Bootstrap separados.
 
 ## Pendientes y siguiente entrega
 
@@ -18,18 +19,19 @@ y mantenimiento cargan ahora sus propios recursos Bootstrap.
   la página de entrenamiento; verificar profundidad, revisiones y modos de juego.
 - [x] Fase 4: colecciones con modal compartido, conservando borradores.
 - [x] Fase 4: selector de aperturas y recursos Bootstrap de creación y mantenimiento.
-- [ ] Fase 5: extender componentes comunes al editor y restantes páginas de
-  análisis; completar la limpieza de estilos y variantes de creación, mantenimiento
-  y demás páginas migradas.
+- [x] Fase 5: editor de capítulos y creación desde cero con recursos Bootstrap.
+- [ ] Fase 5: restantes páginas de análisis; completar la limpieza de estilos y
+  variantes de creación, mantenimiento y demás páginas migradas.
 - [ ] Fase 6: migrar páginas heredadas y retirar Skeleton y el gestor antiguo
   cuando no queden consumidores.
 - [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
 - [ ] Después de la migración de componentes: análisis de reutilización de JS.
 
-La siguiente entrega corresponde a fase 5: editor de capítulos y restantes
-páginas de análisis. La biblioteca simplificada de tácticas y las demás páginas
-sin activar Bootstrap conservan sus recursos anteriores. El editor de tablero
-que se abre con `source=blank` todavía usa su layout heredado.
+La siguiente entrega corresponde a las restantes páginas de análisis de fase 5:
+partidas, entrenamiento de errores y comparación con repertorios. Después queda
+la convergencia de estilos y variantes de las páginas migradas. La biblioteca
+simplificada de tácticas y las demás páginas sin activar Bootstrap conservan sus
+recursos anteriores.
 
 ## Primera entrega
 
@@ -217,7 +219,8 @@ cancelar o seleccionar una apertura. Enter en la búsqueda no envía el formular
 Creación por importación y mantenimiento usan el layout Bootstrap con recursos
 `bootstrap_management.js` / `bootstrap_management.css`, sin `app.js`, Skeleton,
 jQuery ni Select2. La carga de estos dos últimos no tenía inicialización efectiva
-y se retira. El editor de tablero y la creación desde cero quedan para fase 5.
+y se retira. El editor de tablero y la creación desde cero se incorporan en
+la entrega de fase 5 descrita a continuación.
 Los errores HTML de creación conservan estos recursos, y los errores de campo
 renderizados por Phoenix siguen visibles pese al `display: none` predeterminado
 de Bootstrap para `.invalid-feedback`. El script de Alpine tiene URL versionada
@@ -230,6 +233,32 @@ La prueba `bootstrap_management_browser.cjs` compara anchos y columnas en 1280,
 backdrop, foco, borradores, guardado con error y respuesta HTML de validación.
 `study_maintenance_browser.cjs` conserva la regresión de renombrado, ordenación,
 duplicación, borrado, conflictos y guardado de capítulos.
+
+## Fase 5: editor y creación desde cero
+
+El editor de capítulos y `source=blank` usan el layout Bootstrap con recursos
+`bootstrap_editor.js` / `bootstrap_editor.css`. Comparten navegación, preferencias,
+tema y variantes de campos y botones; `study_editor.js` conserva una única
+inicialización de Alpine y tiene URL versionada. Estas páginas ya no cargan
+Skeleton ni `app.js`. El tablero, el árbol de variantes, la promoción y la
+composición de posiciones mantienen sus componentes especializados y su distribución.
+
+Los atajos y la copia de jugadas respetan los diálogos bloqueantes compartidos.
+Al abrir preferencias se evita que Ctrl/Cmd+Z sobre el contenedor del diálogo
+haga que Chrome deshaga el último comentario del editor; los campos del propio
+diálogo conservan su edición nativa. Se mantienen borradores y la recuperación
+tras errores de guardado.
+
+La comparación de regiones cubre 1280, 900, 390 y 320 px en claro y oscuro para
+edición, creación de repertorio y creación de tácticas. Las pruebas del editor y
+creación cubren historial, variantes, promociones, composición de posiciones,
+análisis local Stockfish y guardado. Las páginas restantes de análisis y la
+limpieza transversal de estilos siguen pendientes; la fase 5 permanece parcial.
+
+Validación: 16 pruebas del servidor; cuatro pruebas unitarias de carga, historial,
+promoción y composición; `chapter_editor_browser.cjs`,
+`study_creation_browser.cjs` y `bootstrap_editor_browser.cjs`. El build de
+producción conserva las advertencias existentes de Sass y tamaño de recursos.
 
 ## Objetivo y alcance
 
@@ -300,7 +329,7 @@ dependen de que la integración y la limpieza de la anterior estén verificadas.
 | 2 | Completada para biblioteca personal | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
 | 3 | Completada | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
 | 4 | Completada | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
-| 5 | Parcial: diálogos, creación y mantenimiento | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
+| 5 | Parcial: diálogos, creación, mantenimiento y editor | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
 | 6 | Pendiente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
 
 ## Fase 0: integración y reglas comunes

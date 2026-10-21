@@ -4,6 +4,7 @@ defmodule ListudyWeb.LayoutView do
   def app_stylesheet_path(conn) do
     stylesheet =
       cond do
+        conn.assigns[:bootstrap_editor] -> "/css/bootstrap_editor.css"
         conn.assigns[:bootstrap_management] -> "/css/bootstrap_management.css"
         conn.assigns[:bootstrap_study] -> "/css/bootstrap_study.css"
         conn.assigns[:bootstrap_ui] -> "/css/bootstrap_ui.css"
@@ -18,6 +19,7 @@ defmodule ListudyWeb.LayoutView do
   def app_script_path(conn) do
     script =
       cond do
+        conn.assigns[:bootstrap_editor] -> "/js/bootstrap_editor.js"
         conn.assigns[:bootstrap_management] -> "/js/bootstrap_management.js"
         conn.assigns[:bootstrap_study] -> "/js/bootstrap_study.js"
         conn.assigns[:bootstrap_ui] -> "/js/bootstrap_ui.js"

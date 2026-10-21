@@ -13,6 +13,7 @@ let factory, confirm = true;
 const requests = [];
 const ground = {state: {orientation: 'white'}, set() {}, destroy() {}};
 const context = vm.createContext({
+    hasBlockingUi: () => false,
     require, URL, URLSearchParams, AbortController, Map, console,
     createChapterEditor: model.createChapterEditor,
     lichessAnalysisUrl: model.lichessAnalysisUrl, prepareLichessAnalysis: model.prepareLichessAnalysis,

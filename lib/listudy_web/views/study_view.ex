@@ -87,6 +87,10 @@ defmodule ListudyWeb.StudyView do
     versioned_script_path(conn, "/js/study_maintenance.js", "bootstrap-opening-1")
   end
 
+  def editor_script_path(conn) do
+    versioned_script_path(conn, "/js/study_editor.js", "bootstrap-editor-1")
+  end
+
   defp versioned_script_path(conn, script, version) do
     path = Routes.static_path(conn, script)
     separator = if String.contains?(path, "?"), do: "&", else: "?"

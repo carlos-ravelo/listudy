@@ -4,7 +4,7 @@ const path = require('node:path');
 const http = require('node:http');
 const {chromium} = require('playwright');
 const root = path.resolve(__dirname, '../../..');
-const previews = '/tmp/listudy-create-preview';
+const previews = process.env.LISTUDY_CREATE_PREVIEW || '/tmp/listudy-create-preview';
 (async () => {
     let saved;
     const server = http.createServer((req, res) => {

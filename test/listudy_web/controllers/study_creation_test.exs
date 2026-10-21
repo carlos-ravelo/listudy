@@ -49,6 +49,9 @@ defmodule ListudyWeb.StudyCreationTest do
     for kind <- ["repertoire", "tactics"] do
       html = conn |> get("/en/studies/new?source=blank&kind=#{kind}") |> html_response(200)
       assert html =~ ~s(data-draft="true")
+      assert html =~ "/css/bootstrap_editor.css"
+      assert html =~ "/js/bootstrap_editor.js"
+      refute html =~ "/js/app.js"
       assert html =~ ~s(data-kind="#{kind}")
       assert html =~ "Set up a position"
       assert html =~ "Engine analysis"

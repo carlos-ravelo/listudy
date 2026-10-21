@@ -1,15 +1,20 @@
 const assert = require('assert').strict;
 const fs = require('fs');
 const vm = require('vm');
+const model = vm.createContext({require});
+vm.runInContext(fs.readFileSync('assets/js/modules/study/lichess_analysis.js', 'utf8').replace(/^export /gm, ''), model);
+vm.runInContext(fs.readFileSync('assets/js/modules/study/chapter_editor.js', 'utf8').replace('export function', 'function'), model);
 let factory;
 const ground = { state: { orientation: 'white' }, set() {}, destroy() {} };
-const context = vm.createContext({ require, URLSearchParams, Map,
+const context = vm.createContext({ hasBlockingUi: () => false, require, URLSearchParams, Map,
+    createChapterEditor: model.createChapterEditor,
+    lichessAnalysisUrl: model.lichessAnalysisUrl, prepareLichessAnalysis: model.prepareLichessAnalysis,
+    createPromotionPicker: () => ({open() {}, close() {}, destroy() {}}),
     window: { location: { search: '' } },
     Alpine: { data(_, value) { factory = value; }, start() {} },
     Chessground(_, options) { ground.state.orientation = options.orientation; return ground; },
     setupStudyMoveTree() { return { update() {} }; }, ground_legal_moves() { return new Map(); }
 });
-vm.runInContext(fs.readFileSync('assets/js/modules/study/chapter_editor.js', 'utf8').replace('export function', 'function'), context);
 vm.runInContext(fs.readFileSync('assets/js/study_editor.js', 'utf8').replace(/^import .*;\n/gm, ''), context);
 function editor(fen, color = 'white') {
     const controller = factory();
@@ -26,8 +31,6 @@ for (const [role, san] of [['q', 'a8=Q+'], ['r', 'a8=R+'], ['b', 'a8=B'], ['n', 
     assert.ok(controller.pendingPromotion);
     assert.equal(controller.dirty, false);
     assert.equal(controller.exportPgn, before, 'no move is committed before the choice');
-    assert.equal(controller.promotionLeft, '0%');
-    assert.equal(controller.promotionBottom, false);
     controller.next();
     assert.equal(controller.dirty, false);
     controller.choosePromotion(role);
@@ -37,8 +40,6 @@ for (const [role, san] of [['q', 'a8=Q+'], ['r', 'a8=R+'], ['b', 'a8=B'], ['n', 
 }
 const black = editor('4k3/8/8/8/8/8/p7/4K3 b - - 0 1', 'black');
 black.play('a2', 'a1');
-assert.equal(black.promotionLeft, '87.5%');
-assert.equal(black.promotionBottom, false);
 black.cancelPromotion();
 assert.equal(black.pendingPromotion, null);
 assert.equal(black.dirty, false);

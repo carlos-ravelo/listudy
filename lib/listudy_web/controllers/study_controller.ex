@@ -107,7 +107,7 @@ defmodule ListudyWeb.StudyController do
           {:ok, %{"editor" => editor}} =
             Listudy.Games.ChessEngine.editor("[Event \"#{title}\"]\n\n*")
 
-          render(conn, "editor.html",
+          render(editor_layout(conn), "editor.html",
             study: %Study{title: title, color: "white", training_kind: kind, private: true},
             draft: true,
             editor_json: Jason.encode!(editor),
@@ -311,7 +311,7 @@ defmodule ListudyWeb.StudyController do
       with {:ok, pgn} <- File.read(get_path(id_from_slug(study.slug) <> ".pgn")),
            {:ok, %{"editor" => editor}} <-
              chapter_editor_data(pgn, params["chapter_index"] || "0") do
-        render(conn, "editor.html",
+        render(editor_layout(conn), "editor.html",
           study: study,
           editor_json: Jason.encode!(editor),
           revision: Listudy.StudyPgn.revision(pgn)
@@ -500,6 +500,13 @@ defmodule ListudyWeb.StudyController do
       |> put_flash(:info, dgettext("study", "Study info updated."))
       |> redirect(to: ListudyWeb.StudyView.training_path(conn, conn.assigns.locale, study))
     end
+  end
+
+  defp editor_layout(conn) do
+    conn
+    |> assign(:bootstrap_ui, true)
+    |> assign(:bootstrap_editor, true)
+    |> put_layout({ListudyWeb.LayoutView, "bootstrap.html"})
   end
 
   defp management_layout(conn) do

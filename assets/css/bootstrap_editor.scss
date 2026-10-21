@@ -1,0 +1,23 @@
+@import './const.css';
+@import './icons.css';
+@import './features/study_extensions.css';
+@import './features/chapter_editor.css';
+@import './bootstrap_ui';
+
+:where(.chapter-editor) :where(button, .button) { @extend .btn; }
+.chapter-editor {
+  --bs-body-bg: var(--bg-color);
+  --bs-body-color: var(--font-color);
+  --bs-border-color: var(--bg-highlight-color);
+  [hidden] { display: none !important; }
+  .form-select { width: auto; }
+  .form-control, .form-select { box-sizing: border-box; }
+  .btn-outline-secondary {
+    --bs-btn-color: var(--font-color);
+    --bs-btn-border-color: var(--bg-highlight-color);
+    --bs-btn-hover-color: var(--font-color);
+    --bs-btn-hover-bg: var(--bg-highlight-color);
+    --bs-btn-active-color: var(--font-color);
+    --bs-btn-active-bg: var(--bg-highlight-color);
+  }
+}
