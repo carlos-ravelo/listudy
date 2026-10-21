@@ -1,4 +1,4 @@
 <details class="analysis-imported-details analysis-game-pgn">
   <summary>Game PGN</summary>
-  <textarea readonly aria-label="Game PGN" rows="10" spellcheck="false"><%= @game.pgn %></textarea>
+  <textarea class="form-control" readonly aria-label="Game PGN" rows="10" spellcheck="false"><%= @game.pgn %></textarea>
 </details>

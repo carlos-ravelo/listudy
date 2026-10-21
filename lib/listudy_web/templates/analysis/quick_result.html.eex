@@ -28,9 +28,9 @@
       <div id="analysis-replay-error" class="error infoBox" role="alert" hidden></div>
       <div id="quick-analysis-board" class="cg-wrap analysis-result-board" data-pgn="<%= @pgn_text %>" aria-label="Game board"></div>
       <div class="analysis-result-navigation" aria-label="Game navigation">
-        <button type="button" id="btn-prev" disabled>← Previous</button>
-        <button type="button" id="btn-comparison" disabled>Comparison position</button>
-        <button type="button" id="btn-next" disabled>Next →</button>
+        <button type="button" class="btn btn-outline-secondary" id="btn-prev" disabled>← Previous</button>
+        <button type="button" class="btn btn-outline-secondary" id="btn-comparison" disabled>Comparison position</button>
+        <button type="button" class="btn btn-outline-secondary" id="btn-next" disabled>Next →</button>
       </div>
       <p id="analysis-board-status" class="analysis-board-status" aria-live="polite"></p>
       <div id="analysis-outcomes" aria-live="polite">
@@ -64,5 +64,5 @@
     <%= render "_imported_game_details.html", game: @imported_game %>
   <% end %>
 </div>
-<script defer src="<%= Routes.static_path(@conn, "/js/quick_result.js") %>"></script>
+<script defer src="<%= Routes.static_path(@conn, "/js/quick_result.js") %>?v=bootstrap-analysis-1"></script>
 <script defer src="<%= Routes.static_path(@conn, "/js/analysis_games.js") %>"></script>

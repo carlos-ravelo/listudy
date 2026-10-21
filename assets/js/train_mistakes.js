@@ -1,3 +1,4 @@
+import { hasBlockingUi, setupBlockingUi } from './modules/blocking_ui.js';
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js');
 const { expectedMoves } = require('./modules/analysis/training_moves');
@@ -81,7 +82,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         stats.studySessions = { ...stats.studySessions, [record.id]: record };
         persist();
     }});
-    const eligible = () => sessionOpen && !document.hidden && document.hasFocus();
+    setupBlockingUi();
+    const eligible = () => sessionOpen && !document.hidden && document.hasFocus() && !hasBlockingUi();
+    document.addEventListener('ui-blocking-changed', () => { tracker.tick(Date.now(), eligible()); tracker.persist(); });
     const activity = () => tracker.activity(Date.now(), eligible());
     document.addEventListener('pointerdown', activity, true);
     document.addEventListener('keydown', activity, true);
@@ -149,7 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const practice = document.createElement('a');
         practice.href = url.pathname + url.search;
         practice.textContent = 'Practice this line';
-        practice.className = 'button practice-primary training-practice-line';
+        practice.className = 'button btn btn-primary practice-primary training-practice-line';
         chaptersEl.appendChild(practice);
         const makeLink = chapter => {
             const link = document.createElement('a');

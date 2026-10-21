@@ -5,14 +5,14 @@
 
   <%= form_for @conn, Routes.analysis_path(@conn, :games), [method: :get, class: "analysis-games-filters practice-panel"], fn _f -> %>
     <label>Period
-      <select name="period" aria-label="Period">
+      <select class="form-select" name="period" aria-label="Period">
         <option value="all" <%= if @library.period == "all", do: "selected" %>>All dates</option>
         <option value="last_week" <%= if @library.period == "last_week", do: "selected" %>>Last week</option>
         <option value="last_month" <%= if @library.period == "last_month", do: "selected" %>>Last month</option>
       </select>
     </label>
     <label>Repertoire comparison
-      <select name="status" aria-label="Repertoire comparison">
+      <select class="form-select" name="status" aria-label="Repertoire comparison">
         <option value="">Any result</option>
         <%= for status <- ~w(deviation match ambiguous out_of_scope error) do %>
           <option value="<%= status %>" <%= if @library.status == status, do: "selected" %>><%= analysis_status_label(status) %></option>
@@ -23,14 +23,14 @@
       <summary>More filters<%= if @library.platform || @library.study_id, do: " (#{Enum.count([@library.platform, @library.study_id], & &1)})" %></summary>
       <div class="analysis-games-more-panel">
         <label>Platform
-          <select name="platform" aria-label="Platform">
+          <select class="form-select" name="platform" aria-label="Platform">
             <option value="">Both platforms</option>
             <option value="lichess" <%= if @library.platform == "lichess", do: "selected" %>>Lichess</option>
             <option value="chess_com" <%= if @library.platform == "chess_com", do: "selected" %>>Chess.com</option>
           </select>
         </label>
         <label>Study
-          <select name="study_id" aria-label="Study">
+          <select class="form-select" name="study_id" aria-label="Study">
             <option value="">All studies</option>
             <%= for study <- @library.studies do %>
               <option value="<%= study.id %>" <%= if @library.study_id == study.id, do: "selected" %>><%= study.title %></option>
@@ -39,7 +39,7 @@
         </label>
       </div>
     </details>
-    <button type="submit" class="practice-primary">Filter games</button>
+    <button type="submit" class="btn btn-primary practice-primary">Filter games</button>
   <% end %>
   <div class="analysis-games-active-filters">
     <%= if @library.platform do %>
@@ -58,11 +58,11 @@
     <div class="analysis-games-empty practice-panel">
       <%= if @library.has_games do %>
         <h2>No games match these filters</h2>
-        <%= link "Reset filters", to: Routes.analysis_path(@conn, :games), class: "button practice-primary" %>
+        <%= link "Reset filters", to: Routes.analysis_path(@conn, :games), class: "button btn btn-primary practice-primary" %>
       <% else %>
         <h2>No imported games yet</h2>
         <p>Connect an account or sync games to start comparing them with your repertoire.</p>
-        <%= link "Connect or sync games", to: Routes.analysis_path(@conn, :index), class: "button practice-primary" %>
+        <%= link "Connect or sync games", to: Routes.analysis_path(@conn, :index), class: "button btn btn-primary practice-primary" %>
       <% end %>
     </div>
   <% else %>

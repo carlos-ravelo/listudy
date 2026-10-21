@@ -158,6 +158,7 @@ defmodule ListudyWeb.AnalysisTrainingTest do
            |> hd()
            |> Floki.text() == "Z daily repertoire"
 
+    assert_workspace_resources(html)
     assert html =~ "Also in 2 chapters"
     assert html =~ "Other matching lines (1)"
     refute html =~ "Choose a result"
@@ -311,8 +312,7 @@ defmodule ListudyWeb.AnalysisTrainingTest do
     assert html =~ "data-confirm="
     assert [%{deviations: 2, relevant_games: 2, positions: [_]}] = conn.assigns.studies_stats
     train = conn_for(user) |> get("/analysis/#{study.id}/train") |> html_response(200)
-    assert train =~ "/css/app.css"
-    refute train =~ "/css/bootstrap_ui.css"
+    assert_workspace_resources(train)
     assert train =~ "data-study-pgn="
     assert train =~ "same reviews and study progress"
     if path = System.get_env("LISTUDY_ANALYSIS_PREVIEW"), do: File.write!(path, html)
@@ -354,6 +354,7 @@ defmodule ListudyWeb.AnalysisTrainingTest do
     assert ListudyWeb.AnalysisView.game_opponent(won) == "vs Opponent"
     assert Enum.find(library.games, &(&1.id == unknown.id)).game_result == nil
     html = conn_for(user) |> get("/analysis/games?platform=lichess") |> html_response(200)
+    assert_workspace_resources(html)
     assert html =~ "You as White"
     assert html =~ "Game result: Won"
     assert html =~ "Result unavailable"
@@ -380,6 +381,7 @@ defmodule ListudyWeb.AnalysisTrainingTest do
     assert ListudyWeb.AnalysisView.game_outcome(row) == "Won"
     assert ListudyWeb.AnalysisView.game_opponent(row) == "vs Rival"
     html = conn_for(user) |> get("/analysis/games?platform=lichess") |> html_response(200)
+    assert_workspace_resources(html)
     assert html =~ "No games match these filters"
     assert html =~ "Reset filters"
 
@@ -392,6 +394,45 @@ defmodule ListudyWeb.AnalysisTrainingTest do
     empty = conn_for(other) |> get("/analysis/games") |> html_response(200)
     assert empty =~ "No imported games yet"
     assert empty =~ "Connect or sync games"
+    assert_workspace_resources(empty)
+
+    if dir = System.get_env("LISTUDY_WORKSPACE_PREVIEW") do
+      File.write!(Path.join(dir, "empty.html"), empty)
+      File.write!(Path.join(dir, "filtered_empty.html"), html)
+    end
+  end
+
+  test "uploaded comparisons and unmatched imported games share workspace resources", %{
+    user: user
+  } do
+    study(user, "Repertoire", "1. e4 e5 2. Nf3 *")
+
+    html =
+      conn_for(user)
+      |> post("/analysis/quick", %{"pgn" => "1. e4 e5 2. d4 *"})
+      |> html_response(200)
+
+    assert_workspace_resources(html)
+    assert html =~ "Practice this line"
+    game = game(user, "1. d4 d5 2. c4 *")
+
+    unavailable =
+      conn_for(user) |> get("/analysis/games/#{game.id}/compare") |> html_response(200)
+
+    assert_workspace_resources(unavailable)
+    assert unavailable =~ "No chapter in your current repertoire matches"
+
+    if dir = System.get_env("LISTUDY_WORKSPACE_PREVIEW") do
+      File.write!(Path.join(dir, "uploaded.html"), html)
+      File.write!(Path.join(dir, "unavailable.html"), unavailable)
+    end
+  end
+
+  defp assert_workspace_resources(html) do
+    assert html =~ "/css/bootstrap_analysis.css"
+    assert html =~ "/js/bootstrap_analysis.js"
+    refute html =~ "/css/app.css"
+    refute html =~ "/js/app.js"
   end
 
   test "game evidence endpoint is restricted to the study owner", %{user: user} do

@@ -1,7 +1,7 @@
 <% {study, result} = hd(@group.chapters) %>
 <section class="analysis-match-group<%= if @index == 0, do: " is-selected" %>" data-match-group="<%= @index %>">
   <%= if @selectable do %>
-    <button type="button" class="analysis-group-choice" data-select-group="<%= @index %>"
+    <button type="button" class="btn analysis-group-choice" data-select-group="<%= @index %>"
       aria-pressed="<%= if @index == 0, do: "true", else: "false" %>"
       aria-controls="analysis-outcome-<%= @index %>" disabled>
       <span class="analysis-group-count"><%= if @index == 0, do: "Best match", else: "Alternative line" %></span>

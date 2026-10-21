@@ -332,7 +332,7 @@ defmodule ListudyWeb.AnalysisController do
         _ -> ""
       end
 
-    render(conn, "train.html",
+    render(workspace_layout(conn), "train.html",
       study: study,
       mistakes_json: Jason.encode!(mistakes),
       study_pgn: pgn,
@@ -381,7 +381,7 @@ defmodule ListudyWeb.AnalysisController do
 
   def games(conn, params) do
     library = ImportedGames.list_recent(conn.assigns.current_user.id, params)
-    render(conn, "games.html", library: library)
+    render(workspace_layout(conn), "games.html", library: library)
   end
 
   def game(conn, %{"id" => id} = params) do
@@ -412,7 +412,7 @@ defmodule ListudyWeb.AnalysisController do
 
     case Games.Analyzer.analyze_single_pgn(user_id, game.pgn, selection) do
       {:ok, choices, unavailable_studies} ->
-        render(conn, "quick_result.html",
+        render(workspace_layout(conn), "quick_result.html",
           choices: choices,
           unavailable_studies: unavailable_studies,
           pgn_text: game.pgn,
@@ -422,7 +422,7 @@ defmodule ListudyWeb.AnalysisController do
         )
 
       {:error, reason} ->
-        render(conn, "game_comparison_unavailable.html",
+        render(workspace_layout(conn), "game_comparison_unavailable.html",
           game: game,
           reason: reason,
           back_path: back_path,
@@ -437,7 +437,7 @@ defmodule ListudyWeb.AnalysisController do
 
     case Listudy.Games.Analyzer.analyze_single_pgn(user.id, pgn_text, params) do
       {:ok, choices, unavailable_studies} ->
-        render(conn, "quick_result.html",
+        render(workspace_layout(conn), "quick_result.html",
           choices: choices,
           unavailable_studies: unavailable_studies,
           pgn_text: pgn_text
@@ -453,5 +453,12 @@ defmodule ListudyWeb.AnalysisController do
         |> put_flash(:error, "Analysis could not be completed: #{reason}")
         |> redirect(to: Routes.analysis_path(conn, :index))
     end
+  end
+
+  defp workspace_layout(conn) do
+    conn
+    |> assign(:bootstrap_ui, true)
+    |> assign(:bootstrap_analysis, true)
+    |> put_layout({ListudyWeb.LayoutView, "bootstrap.html"})
   end
 end

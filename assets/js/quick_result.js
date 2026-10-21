@@ -1,3 +1,4 @@
+import { hasBlockingUi } from './modules/blocking_ui.js';
 import { createGameReplay } from './modules/analysis/game_replay.js';
 
 function setupComparison() {
@@ -79,7 +80,7 @@ function setupComparison() {
             button.addEventListener('click', () => seek(Number(button.dataset.jumpPly)));
         });
         document.addEventListener('keydown', event => {
-            if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
+            if (hasBlockingUi() || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
                 event.target.closest('input, textarea, select, [contenteditable], summary, [role="dialog"]')) return;
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
                 event.preventDefault();

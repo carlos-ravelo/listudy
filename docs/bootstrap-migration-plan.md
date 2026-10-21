@@ -4,7 +4,8 @@ Fecha: 2026-10-21. Rama: `migration/bootstrap-ui`. Análisis inicial y bibliotec
 personal y entrenamiento migrados. Los cuatro diálogos de entrenamiento usan
 Bootstrap. Colecciones y selector de aperturas completan la fase 4; creación
 y mantenimiento cargan ahora sus propios recursos Bootstrap. El editor de capítulos
-y la creación desde cero también usan recursos Bootstrap separados.
+y la creación desde cero también usan recursos Bootstrap separados. Partidas,
+comparación y práctica de errores completan la migración de páginas de análisis.
 
 ## Pendientes y siguiente entrega
 
@@ -20,18 +21,20 @@ y la creación desde cero también usan recursos Bootstrap separados.
 - [x] Fase 4: colecciones con modal compartido, conservando borradores.
 - [x] Fase 4: selector de aperturas y recursos Bootstrap de creación y mantenimiento.
 - [x] Fase 5: editor de capítulos y creación desde cero con recursos Bootstrap.
-- [ ] Fase 5: restantes páginas de análisis; completar la limpieza de estilos y
-  variantes de creación, mantenimiento y demás páginas migradas.
+- [x] Fase 5: partidas importadas, comparación y práctica de errores.
+- [ ] Biblioteca simplificada de tácticas: completar esta página del fork antes
+  de pasar a las heredadas.
+- [ ] Fase 5: completar la limpieza de estilos y variantes de creación,
+  mantenimiento y demás páginas migradas.
 - [ ] Fase 6: migrar páginas heredadas y retirar Skeleton y el gestor antiguo
   cuando no queden consumidores.
 - [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
 - [ ] Después de la migración de componentes: análisis de reutilización de JS.
 
-La siguiente entrega corresponde a las restantes páginas de análisis de fase 5:
-partidas, entrenamiento de errores y comparación con repertorios. Después queda
-la convergencia de estilos y variantes de las páginas migradas. La biblioteca
-simplificada de tácticas y las demás páginas sin activar Bootstrap conservan sus
-recursos anteriores.
+La siguiente entrega continúa con la biblioteca simplificada de tácticas, que
+todavía conserva sus recursos anteriores, y la convergencia de estilos y variantes
+de las páginas migradas. Estas tareas del fork tienen prioridad sobre las
+páginas heredadas de fase 6.
 
 ## Primera entrega
 
@@ -252,13 +255,43 @@ tras errores de guardado.
 La comparación de regiones cubre 1280, 900, 390 y 320 px en claro y oscuro para
 edición, creación de repertorio y creación de tácticas. Las pruebas del editor y
 creación cubren historial, variantes, promociones, composición de posiciones,
-análisis local Stockfish y guardado. Las páginas restantes de análisis y la
-limpieza transversal de estilos siguen pendientes; la fase 5 permanece parcial.
+análisis local Stockfish y guardado. La limpieza transversal de estilos sigue
+pendiente; la fase 5 permanece parcial. Las páginas restantes de análisis se
+incorporan en la entrega siguiente.
 
 Validación: 16 pruebas del servidor; cuatro pruebas unitarias de carga, historial,
 promoción y composición; `chapter_editor_browser.cjs`,
 `study_creation_browser.cjs` y `bootstrap_editor_browser.cjs`. El build de
 producción conserva las advertencias existentes de Sass y tamaño de recursos.
+
+## Fase 5: partidas, comparación y práctica de errores
+
+Todas las páginas de análisis usan ahora el layout Bootstrap: partidas importadas,
+comparación de partidas guardadas, comparación de un PGN cargado, resultados sin
+coincidencias y práctica de errores. Comparten `bootstrap_analysis.js` /
+`bootstrap_analysis.css`, navegación, preferencias y controles, sin cargar
+Skeleton ni `app.js`. El recurso de la página inicial sigue siendo `bootstrap_ui`.
+Se mantienen las columnas, las dimensiones del tablero, los grupos de capítulos,
+los filtros y la lógica de revisión. Los scripts de reproducción y práctica
+llevan versión para evitar reutilizar código anterior desde caché.
+
+Los atajos de reproducción consultan `hasBlockingUi`, también durante las
+transiciones de los diálogos. La práctica usa el mismo detector y sus eventos
+para excluir de la sesión el tiempo dedicado a preferencias. Sus controles,
+pistas, respuestas, resúmenes y datos de progreso conservan su comportamiento.
+
+Validación: 14 pruebas del servidor; pruebas unitarias de progreso de partidas,
+sesiones y movimientos aceptados; regresión de comparación y la prueba
+`bootstrap_analysis_workspace_browser.cjs`. Esta última compara las regiones
+antes/después a 1280, 900, 390 y 320 px en claro y oscuro, y verifica atajos,
+preferencias, pausa del tiempo, pistas, respuestas, resumen, filtros y estados
+vacíos, sin coincidencias y PGN cargado. El build de producción pasa con las
+advertencias existentes de Sass y tamaño de recursos.
+
+La regresión general `analysis_training_browser.cjs` conserva el fallo previo en
+la línea 202: espera visible `#smart_run_status` al volver a la práctica de una
+línea. Los pasos anteriores de práctica correcta, progreso compartido y
+sincronización pasan. Ese fallo sigue registrado y no se da por resuelto.
 
 ## Objetivo y alcance
 
@@ -329,7 +362,7 @@ dependen de que la integración y la limpieza de la anterior estén verificadas.
 | 2 | Completada para biblioteca personal | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
 | 3 | Completada | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
 | 4 | Completada | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
-| 5 | Parcial: diálogos, creación, mantenimiento y editor | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
+| 5 | Parcial: páginas de análisis, diálogos, creación, mantenimiento y editor | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
 | 6 | Pendiente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
 
 ## Fase 0: integración y reglas comunes

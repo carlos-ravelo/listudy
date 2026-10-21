@@ -27,7 +27,7 @@
     </div>
     <%= if state == :player do %>
       <% {study, chapter} = hd(@group.chapters) %>
-      <p><%= link "Practice this line", to: practice_path(@conn, study, chapter), class: "button button-primary" %></p>
+      <p><%= link "Practice this line", to: practice_path(@conn, study, chapter), class: "button btn btn-primary button-primary" %></p>
     <% end %>
   <% else %>
     <p class="analysis-outcome-note"><%= if result["reason"] == "book_ended",
@@ -44,7 +44,7 @@
       <ul>
         <%= for departure <- result["earlier_departures"] do %>
           <li>
-            <button type="button" class="analysis-departure" data-jump-ply="<%= departure["ply"] %>" disabled>
+            <button type="button" class="btn analysis-departure" data-jump-ply="<%= departure["ply"] %>" disabled>
               <%= move_label(departure["fen"]) %> <%= departure["played"] %>
             </button>
             <span>Repertoire: <strong><%= Enum.join(departure["expected"], " / ") %></strong></span>

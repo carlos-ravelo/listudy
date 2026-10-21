@@ -1,0 +1,21 @@
+@import './const.css';
+@import './icons.css';
+@import './features/analysis_comparison.css';
+@import './bootstrap_ui';
+
+:where(.analysis-workspace) :where(button, .button) { @extend .btn; }
+.analysis-workspace {
+  --bs-body-bg: var(--bg-color);
+  --bs-body-color: var(--font-color);
+  --bs-border-color: var(--analysis-divider);
+  .btn { margin-bottom: 0; }
+  .form-control, .form-select { box-sizing: border-box; }
+  .btn-outline-secondary {
+    --bs-btn-color: var(--font-color);
+    --bs-btn-border-color: var(--analysis-divider);
+    --bs-btn-hover-color: var(--font-color);
+    --bs-btn-hover-bg: var(--bg-highlight-color);
+    --bs-btn-active-color: var(--font-color);
+    --bs-btn-active-bg: var(--bg-highlight-color);
+  }
+}

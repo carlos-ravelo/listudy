@@ -22,13 +22,13 @@
   <div class="training-sidebar">
     <div class="training-toolbar">
       <label class="training-scope-label">Practice
-        <select id="training-scope" aria-label="Practice scope" disabled>
+        <select class="form-select" id="training-scope" aria-label="Practice scope" disabled>
           <option value="due">Due now</option>
           <option value="all">All game positions</option>
         </select>
       </label>
       <label>Period
-        <select id="time-filter" aria-label="Time period">
+        <select class="form-select" id="time-filter" aria-label="Time period">
           <option value="all" <%= if @filter == "all", do: "selected" %>>All time</option>
           <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
           <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
@@ -44,21 +44,21 @@
         <h2 id="training-status" tabindex="-1" aria-live="polite">Your move</h2>
         <p id="mistake-info"></p>
         <div class="training-actions" role="group" aria-label="Position tools">
-          <button id="hint-btn" type="button" class="button button-outline practice-secondary">Hint</button>
-          <button id="solve-btn" type="button" class="button button-outline practice-secondary">Show answer</button>
-          <button id="skip-mistake-btn" type="button" class="button button-outline practice-secondary">Skip</button>
-          <button id="next-mistake-btn" type="button" class="button button-primary practice-primary" hidden>Next position</button>
+          <button id="hint-btn" type="button" class="button btn btn-outline-secondary button-outline practice-secondary">Hint</button>
+          <button id="solve-btn" type="button" class="button btn btn-outline-secondary button-outline practice-secondary">Show answer</button>
+          <button id="skip-mistake-btn" type="button" class="button btn btn-outline-secondary button-outline practice-secondary">Skip</button>
+          <button id="next-mistake-btn" type="button" class="button btn btn-primary button-primary practice-primary" hidden>Next position</button>
         </div>
       </section>
       <div id="training-chapters" class="training-chapters" aria-label="Study chapters" hidden></div>
-      <button id="finish-training-btn" type="button" class="training-text-button">Finish session</button>
+      <button id="finish-training-btn" type="button" class="btn training-text-button">Finish session</button>
     </div>
 
   </div>
   <section id="training-empty" class="training-end-panel practice-panel" hidden aria-labelledby="training-empty-title">
     <h2 id="training-empty-title">You're up to date</h2>
     <p id="training-empty-description">Your game positions will return when their next review is due.</p>
-    <button type="button" data-review-all class="button practice-primary">Review all game positions</button>
+    <button type="button" data-review-all class="button btn btn-primary practice-primary">Review all game positions</button>
     <%= link "Analysis overview", to: Routes.analysis_path(@conn, :index, filter: @filter) %>
   </section>
   <section id="training-summary" class="training-end-panel practice-panel" hidden aria-labelledby="training-summary-title">
@@ -66,12 +66,12 @@
     <p id="training-summary-result"></p>
     <p id="training-summary-time"></p>
     <div class="training-summary-actions">
-      <button id="training-remaining" type="button" class="button button-primary practice-primary" hidden>Practice remaining</button>
-      <button type="button" data-review-all class="button button-outline practice-secondary">Review all game positions</button>
+      <button id="training-remaining" type="button" class="button btn btn-primary button-primary practice-primary" hidden>Practice remaining</button>
+      <button type="button" data-review-all class="button btn btn-outline-secondary button-outline practice-secondary">Review all game positions</button>
       <%= link "Back to analysis", to: Routes.analysis_path(@conn, :index, filter: @filter) %>
     </div>
   </section>
   <%= if @chapter_error do %><p class="training-chapters-error"><%= @chapter_error %></p><% end %>
 </div>
 
-<script defer type="text/javascript" src="/js/train_mistakes.js?v=training-6"></script>
+<script defer type="text/javascript" src="/js/train_mistakes.js?v=bootstrap-analysis-1"></script>
