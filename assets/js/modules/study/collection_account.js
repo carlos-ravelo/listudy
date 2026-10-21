@@ -1,4 +1,5 @@
 import { CollectionStore } from './collection_store.js';
+import { JsonRequestError, requestJson } from '../request_json.js';
 
 export class CollectionAccount {
     constructor(store, userId, report) {
@@ -23,18 +24,14 @@ export class CollectionAccount {
     }
 
     async request(method = 'GET', body) {
-        const token = document.querySelector('meta[name="csrf-token"]')?.content;
-        const response = await fetch('/api/collections', {
-            method, credentials: 'same-origin',
-            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'x-csrf-token': token || '' },
-            ...(body ? { body: JSON.stringify(body) } : {})
-        });
-        const result = await response.json();
-        if (!response.ok) {
-            if (response.status === 409) this.blocked = true;
-            throw new Error(result.error || 'Could not save collections to your account. Your local copy is kept.');
+        try {
+            return await requestJson('/api/collections', {
+                method, body, errorMessage: 'Could not save collections to your account. Your local copy is kept.'
+            });
+        } catch (error) {
+            if (error instanceof JsonRequestError && error.status === 409) this.blocked = true;
+            throw error;
         }
-        return result;
     }
 
     accept(result) {

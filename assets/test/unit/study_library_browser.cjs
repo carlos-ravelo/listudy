@@ -28,7 +28,7 @@ ids.forEach((id, i) => state.studies[id] = { location: 'daily', group: ['white',
 references.forEach((_, i) => state.studies[2000+i] = { location: 'library', group: i % 2 ? 'black' : 'white' });
 const initial = structuredClone(state);
 const favorites = new Set(ids);
-let failNext = false;
+let failNext = false, invalidNext = false;
 const visibility = {};
 const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 (async () => {
@@ -55,6 +55,7 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     const errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     await page.route('**/api/study-library',async route=>{
+        if (invalidNext) { invalidNext=false; await route.fulfill({status:502,contentType:'text/html',body:'Upstream unavailable'}); return; }
         if (failNext) { failNext=false; await route.fulfill({status:503,json:{error:'Could not save your organization. Try again.'}}); return; }
         const op=route.request().postDataJSON();
         if(op.action==='move') for(const id of op.study_ids){
@@ -124,6 +125,13 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     failNext=true;
     await page.locator('[data-library-bulk-privacy="true"]').click();
     await page.waitForFunction(()=>document.querySelector('[data-library-save-status]').classList.contains('is-error'));
+    assert(ids.every(id=>visibility[id]===false));
+    assert((await page.locator('[data-library-selected]').textContent()).startsWith('3 '));
+    invalidNext=true;
+    await page.locator('[data-library-bulk-privacy="true"]').click();
+    await page.waitForFunction(()=>document.querySelector('[data-library-save-status]').classList.contains('is-error'));
+    const fallback=await page.locator('[data-study-library]').evaluate(node=>JSON.parse(node.dataset.libraryLabels).failed);
+    assert.equal(await page.locator('[data-library-save-status]').textContent(),fallback);
     assert(ids.every(id=>visibility[id]===false));
     assert((await page.locator('[data-library-selected]').textContent()).startsWith('3 '));
     await page.locator('[data-library-bulk-privacy="true"]').click();

@@ -26,7 +26,8 @@ Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
   del clic; cada consumidor conserva su nombre, contenido y flujo adicional.
 
 - `modules/request_json.js`: transporte JSON compartido por carga/guardado del
-  editor, mantenimiento de capítulos y creación de estudios desde colecciones.
+  editor, mantenimiento de capítulos, creación de estudios desde colecciones,
+  organización de biblioteca y sincronización de colecciones con la cuenta.
   Centraliza credenciales, cabeceras JSON/CSRF y errores `JsonRequestError` con
   `status` y `data`. Propaga `AbortSignal`, conserva cancelaciones y no reintenta.
   Las revisiones, comprobaciones de respuestas tardías, borradores y mensajes
@@ -51,9 +52,21 @@ Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
   teclas modificadoras y estados del editor permanecen en cada consumidor.
   El visor también ignora eventos durante composición IME.
 
+## Ampliación posterior
+
+La segunda revisión encontró dos consumidores adicionales del mismo transporte:
+`components/study_library.js` y `study/collection_account.js`. Ambos reutilizan
+`requestJson`; no se añadió otro wrapper. La biblioteca conserva la selección y
+sus mensajes localizados cuando falla una operación. `CollectionAccount` conserva
+la cola de snapshots, sus revisiones y la copia local pendiente; identifica los
+conflictos mediante `JsonRequestError.status === 409` y bloquea nuevas escrituras
+hasta una recarga explícita, incluso si el servidor devuelve un 409 sin JSON.
+Las pruebas cubren cambios durante un guardado, errores HTTP, respuestas inválidas,
+recuperación y conflictos al reabrir una cuenta con cambios locales pendientes.
+
 ## Estado
 
-Las extracciones identificadas en esta auditoría están completadas. Las pruebas
+Las extracciones iniciales y la ampliación de transporte están completadas. Las pruebas
 cubren los consumidores y los contratos compartidos; no hay nuevas extracciones
 pendientes dentro de este alcance.
 

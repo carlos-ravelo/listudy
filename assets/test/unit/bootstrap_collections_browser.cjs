@@ -7,13 +7,15 @@ const root=path.resolve(__dirname,'../../..');
 const fixture=process.env.LISTUDY_STUDY_GAME_PREVIEW||'/tmp/listudy-bootstrap-study-after.html';
 const pgn='[Event "Alpha"]\n\n1. e4 e5 *\n\n[Event "Beta"]\n\n1. d4 d5 *';
 (async()=>{
- let data={active:'Default',collections:{Default:[]}},revision=0,failSave=false,created;
+ let data={active:'Default',collections:{Default:[]}},revision=0,failSave=false,conflictSave=false,writes=0,created;
  const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
   const json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));};
   if(url.pathname==='/api/collections'){
    if(req.method==='PUT'){
+    writes++;
     let body='';for await(const chunk of req)body+=chunk;
+    if(conflictSave){conflictSave=false;res.statusCode=409;return json({error:'Collections changed elsewhere.'});}
     if(failSave){failSave=false;res.statusCode=503;return json({error:'Could not save collections.'});}
     data=JSON.parse(body).data;revision++;
    }
@@ -77,6 +79,19 @@ const pgn='[Event "Alpha"]\n\n1. e4 e5 *\n\n[Event "Beta"]\n\n1. d4 d5 *';
   assert(await modal.evaluate(node=>node.contains(document.activeElement)),'Create failure must leave focus inside the modal');
   await page.keyboard.press('Escape');assert(await modal.isHidden());await open();
   await page.locator('#collection_cancel_study').click();
+  conflictSave=true;
+  await page.locator('#collection_active_name').fill('Local conflict draft');
+  await page.locator('#collection_active_name').dispatchEvent('change');
+  await page.waitForFunction(()=>document.querySelector('#collection_save_status').textContent==='Collections changed elsewhere.');
+  assert.equal(await page.locator('#collection_active_name').inputValue(),'Local conflict draft');
+  assert((await page.locator('.collection-row').textContent()).includes('Beta'));
+  const writesAtConflict=writes;
+  await page.locator('#collection_retry_save').click();
+  await page.waitForFunction(()=>document.querySelector('#collection_save_status').textContent.includes('Reload saved collections before saving'));
+  assert.equal(writes,writesAtConflict,'Retry cannot overwrite a conflicting remote collection');
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#collection_reload').click();
+  await page.waitForFunction(()=>document.querySelector('#collection_save_status').textContent==='Saved to your account');
+  assert.equal(await page.locator('#collection_active_name').inputValue(),'Tournament');
   for(const width of [1280,900,390,320]){
    await page.setViewportSize({width,height:700});
    for(const theme of ['light','dark']){

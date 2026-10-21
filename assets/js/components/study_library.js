@@ -1,4 +1,5 @@
 import { normalizeSearchText } from '../modules/search_text.js';
+import { requestJson } from '../modules/request_json.js';
 import {setupColorToggles} from "./color_toggles.js";
 
 export function setupStudyLibrary(library = document.querySelector('[data-study-library]'), widgets = {}) {
@@ -168,13 +169,10 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         disable(true);
         message(labels.saving);
         try {
-            const response = await fetch(library.dataset.libraryEndpoint, {
-                method: 'PATCH', credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
-                body: JSON.stringify(operation)
+            const result = await requestJson(library.dataset.libraryEndpoint, {
+                method: 'PATCH', body: operation, errorMessage: labels.failed
             });
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok || !result.data) throw new Error(result.error || labels.failed);
+            if (!result?.data) throw new Error(result?.error || labels.failed);
             state = result.data;
             library.dataset.libraryState = JSON.stringify(state);
             if (operation.action === 'set_privacy') {
