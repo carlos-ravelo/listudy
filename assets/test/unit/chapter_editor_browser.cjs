@@ -24,7 +24,7 @@ const html = `<!doctype html><html class="blue cburnett"><head>
 <link rel="stylesheet" href="/css/chessground.css"></head><body><main class="container">
 <section id="chapter_editor" class="chapter-editor" x-data="chapterEditor" @beforeunload.window="beforeLeave($event)" @keydown.window="navigateKey($event)" data-editor="${escape(JSON.stringify({chapters: data.chapters.map(({title}) => ({title})), chapter_index: 0, chapter: data.chapters[0]}))}"
 data-revision="original" data-save-url="/save" data-load-url="/chapter" data-loading="Loading" data-load-error="Load failed" data-color="white" data-start="Start"
-data-variation="Variation" data-discard-prompt="Discard?" data-saving="Saving"
+data-variation="Variation" data-promote="Promote to main line" data-discard-prompt="Discard?" data-saving="Saving"
 data-saved="Saved" data-save-error="Save failed" data-unsaved="Unsaved" data-invalid-move="Illegal">
 ${chapterPicker}
 <button id="editor_save" :disabled="saving || !dirty" @click="save()">Save</button>
@@ -119,7 +119,7 @@ ${editorControls}${annotationControl}
         assert.equal(await page.inputValue('#editor_annotation'), '0');
         await page.click('#editor_redo');
         assert.equal(await page.inputValue('#editor_annotation'), '6');
-        await page.click('#editor_promote');
+        await page.locator('#editor_moves .study-tree-promote').click();
         const main = await state();
         assert.ok(main.pgn.indexOf('c5') < main.pgn.indexOf('e5'));
         assert.equal(main.canPromote, false);

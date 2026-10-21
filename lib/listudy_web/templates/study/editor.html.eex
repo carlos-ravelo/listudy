@@ -17,6 +17,7 @@
          data-color="<%= @study.color %>"
          data-start="<%= dgettext "study", "Starting position" %>"
          data-variation="<%= dgettext "study", "Variation" %>"
+         data-promote="<%= dgettext "study", "Promote to main line" %>"
          data-discard-prompt="<%= dgettext "study", "Discard your unsaved chapter changes?" %>"
          data-unsaved="<%= dgettext "study", "Unsaved changes" %>"
          data-saved="<%= dgettext "study", "Chapter saved" %>"

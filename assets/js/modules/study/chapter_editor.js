@@ -153,19 +153,20 @@ export function createChapterEditor(chapter) {
             if (JSON.stringify(nags) === JSON.stringify(current.nags || [])) return false;
             return edit([{target: current, key: 'nags', after: nags}], path, true);
         },
-        promoteVariation() {
-            if (!path.some(index => index > 0)) return false;
+        promoteVariation(at = path) {
+            if (!at.some(index => index > 0)) return false;
+            position(at);
             const fields = [];
             let parent = tree;
-            for (let depth = 0; depth < path.length; depth++) {
+            for (let depth = 0; depth < at.length; depth++) {
                 const key = depth ? 'children' : 'root';
                 const siblings = parent[key];
-                const selected = siblings[path[depth]];
-                if (path[depth]) fields.push({target: parent, key,
-                    after: [selected, ...siblings.filter((_, index) => index !== path[depth])]});
+                const selected = siblings[at[depth]];
+                if (at[depth]) fields.push({target: parent, key,
+                    after: [selected, ...siblings.filter((_, index) => index !== at[depth])]});
                 parent = selected;
             }
-            return edit(fields, path.map(() => 0), true);
+            return edit(fields, at.map(() => 0), true);
         },
         deleteFromHere() {
             if (!path.length) return false;

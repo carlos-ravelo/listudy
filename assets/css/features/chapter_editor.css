@@ -163,6 +163,19 @@
   resize: vertical;
 }
 
+.chapter-editor .study-tree-promote {
+  height: auto;
+  min-height: 44px;
+  max-width: 100%;
+  margin: 0 0 .35rem;
+  padding: .35rem .6rem;
+  font-size: .8rem;
+  line-height: 1.4;
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 .chapter-editor #editor_comment {
   flex: 1;
   height: 12em;

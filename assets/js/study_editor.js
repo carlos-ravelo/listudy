@@ -53,6 +53,8 @@ Alpine.data('chapterEditor', () => {
                 element: this.$refs.moves,
                 startLabel: config.start,
                 variationLabel: config.variation,
+                promoteLabel: config.promote,
+                onPromote: path => this.promoteVariation(path),
                 onSelect: path => this.selectPosition(path)
             });
             if (this.$refs.chapterTitle) chapterPicker = setupChapterPicker({
@@ -166,7 +168,8 @@ Alpine.data('chapterEditor', () => {
                 ? `https://lichess.org/analysis/${position.fen()}?color=${orientation}`
                 : `https://lichess.org/analysis/pgn/${encodeURIComponent(position.pgn())}?color=${orientation}`;
             moveTree.update({ reading: true, chapter: this.chapter, root: editor.tree.root,
-                fen: currentChapter.fen, path: editor.path });
+                fen: currentChapter.fen, path: editor.path,
+                editingDisabled: this.setupMode || this.saving || this.loading || !!this.pendingPromotion });
             chapterPicker?.update();
             if (this.analysisEnabled) this.analyzePosition();
         },
@@ -227,7 +230,7 @@ Alpine.data('chapterEditor', () => {
         deleteFromHere() { this.applyEdit('deleteFromHere'); },
         undo() { this.applyEdit('undo'); },
         redo() { this.applyEdit('redo'); },
-        promoteVariation() { this.applyEdit('promoteVariation'); },
+        promoteVariation(path) { this.applyEdit('promoteVariation', path); },
         setAnnotation(value) { this.applyEdit('setAnnotation', Number(value)); },
 
         copyCurrentMove(event) {

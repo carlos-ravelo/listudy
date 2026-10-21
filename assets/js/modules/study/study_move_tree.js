@@ -47,12 +47,14 @@ export function readChapterPosition(root, fen, path) {
     return position;
 }
 
-export function setupStudyMoveTree({ element, onSelect, startLabel, variationLabel }) {
+export function setupStudyMoveTree({ element, onSelect, startLabel, variationLabel, onPromote, promoteLabel }) {
     let previousRoot;
     let previousFen;
     let previousChapter;
     let active;
     const buttons = new Map();
+    const promoteButtons = [];
+    let editingDisabled = false;
     if (!element) return { update() {} };
 
     function moveButton(label, path, accessibleLabel = label) {
@@ -101,12 +103,25 @@ export function setupStudyMoveTree({ element, onSelect, startLabel, variationLab
             const summary = document.createElement('summary');
             summary.textContent = `${variationLabel} · ${variation.moves[0].label}`;
             details.appendChild(summary);
+            if (onPromote) {
+                const promote = document.createElement('button');
+                promote.type = 'button';
+                promote.className = 'study-tree-promote';
+                promote.textContent = promoteLabel;
+                promote.setAttribute('aria-label', `${promoteLabel} · ${variation.moves[0].label}`);
+                promote.onclick = () => {
+                    if (!editingDisabled) onPromote([...variation.moves[0].path]);
+                };
+                promoteButtons.push(promote);
+                details.appendChild(promote);
+            }
             renderLine(variation, details);
             container.appendChild(details);
         });
     }
 
-    function update({ reading, chapter, root, fen, path }) {
+    function update({ reading, chapter, root, fen, path, editingDisabled: disabled = false }) {
+        editingDisabled = disabled;
         element.hidden = !reading;
         if (!reading) return;
         if (root !== previousRoot || fen !== previousFen || chapter !== previousChapter) {
@@ -114,10 +129,12 @@ export function setupStudyMoveTree({ element, onSelect, startLabel, variationLab
             previousFen = fen;
             previousChapter = chapter;
             buttons.clear();
+            promoteButtons.length = 0;
             active = null;
             element.replaceChildren(moveButton(startLabel, []));
             renderLine(chapterMoveLines(root, fen), element);
         }
+        promoteButtons.forEach(button => { button.disabled = editingDisabled; });
         const selected = buttons.get(path.join('.'));
         if (selected === active) return;
         const moveHasFocus = active && document.activeElement === active;

@@ -91,4 +91,23 @@ assert.equal(blackMove.attributes.get('data-move-prefix'), '17...');
 assert.equal(blackMove.parentElement.children[0].textContent, '17.');
 assert.equal(blackMove.parentElement.children[1].textContent, '—');
 assert.equal(blackMove.parentElement.children[2], blackMove);
+const editableElement = new Element('div');
+let promoted;
+const editable = context.setupStudyMoveTree({ element: editableElement, onSelect() {},
+    startLabel: 'Start', variationLabel: 'Variation', promoteLabel: 'Promote to main line',
+    onPromote: path => { promoted = path; } });
+const editUpdate = editingDisabled => editable.update({reading: true, chapter: 0, root, path: [0], editingDisabled});
+editUpdate(false);
+const actions = all(editableElement).filter(node => node.className === 'study-tree-promote');
+assert.equal(actions.length, 3);
+const nestedAction = actions.find(node => node.attributes.get('aria-label') === 'Promote to main line · 2. Nc3');
+nestedAction.onclick();
+assert.equal(JSON.stringify(promoted), '[0,1,1]');
+promoted = undefined;
+editUpdate(true);
+assert(actions.every(node => node.disabled));
+nestedAction.onclick();
+assert.equal(promoted, undefined);
+editUpdate(false);
+assert(actions.every(node => !node.disabled));
 console.log('Study move tree regression checks passed.');

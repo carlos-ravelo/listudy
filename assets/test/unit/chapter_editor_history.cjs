@@ -65,6 +65,18 @@ assert.equal(promote.tree.root[0].move, 'd4');
 promote.undo();
 assert.equal(promote.tree.root[0].move, 'e4');
 
+const direct = make();
+direct.select([0, 0]);
+assert.equal(direct.promoteVariation([0, 1, 1]), true);
+assert.equal(direct.path.join(','), '0,0,0');
+assert.equal(direct.tree.root[0].children[0].children[0].move, 'Nc3');
+assert.ok(direct.pgn().indexOf('c5') < direct.pgn().indexOf('e5'));
+direct.undo();
+assert.equal(snapshot(direct), original);
+assert.equal(direct.path.join(','), '0,0');
+direct.redo();
+assert.equal(direct.path.join(','), '0,0,0');
+
 const marks = make();
 assert.equal(marks.setAnnotation(4), false);
 assert.equal(marks.canUndo, false);
