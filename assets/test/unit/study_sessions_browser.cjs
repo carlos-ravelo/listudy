@@ -8,7 +8,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const source = read('lib/listudy_web/templates/study/show.html.eex');
 const render = text => text.replace(/<%=\s*dgettext[^%]*%>/g, expression =>
     expression.match(/"(?:\\.|[^"\\])*"/g)[1].slice(1, -1)).replace(/<%[\s\S]*?%>/g, '');
-const settings = render(source.match(/<dialog id="study_settings_dialog"[\s\S]*?<\/dialog>/)[0]);
+const settings = render(read('lib/listudy_web/templates/study/_study_settings.html.eex'));
 const feedback = render(source.match(/<!-- Active session feedback -->[\s\S]*?(?=<dialog)/)[0]);
 const statsPanel = render(source.match(/<section class="study-time-summary"[\s\S]*?<\/section>/)[0]);
 const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,6 +17,7 @@ const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="w
 ${feedback}${settings}<div id="progress_modal">${statsPanel}</div></main>
 <script type="module">
 import { setupStudySessions } from '/assets/js/modules/study_sessions.js';
+import { setupStudySettingsTabs } from '/assets/js/modules/study_page_controls.js';
 let stats = JSON.parse(localStorage.getItem('session-test-stats') || '{"version":1,"chapters":{}}');
 if (!localStorage.getItem('smart_session_goal')) localStorage.setItem('smart_session_goal', '5');
 const labels = { session:'Session', newMoves:'new', practiced:'practiced', decisions:'decisions', sessions:'sessions',
@@ -29,7 +30,12 @@ window.feed = (key, learning=false) => controller.decision('smart',key,learning,
 window.boundary = () => controller.boundary();
 window.getStats = () => stats;
 window.controller = controller;
-document.getElementById('open_settings').onclick=()=>document.getElementById('study_settings_dialog').showModal();
+setupStudySettingsTabs();
+document.getElementById('open_settings').onclick=()=>{
+ const dialog = document.getElementById('study_settings_dialog');
+ dialog.dispatchEvent(new CustomEvent('study-settings-select',{detail:'practice'}));
+ dialog.showModal();
+};
 controller.begin('smart');
 window.ready=true;
 </script></body></html>`;

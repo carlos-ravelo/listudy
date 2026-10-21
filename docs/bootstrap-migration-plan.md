@@ -1,7 +1,31 @@
 # Plan de migración de componentes a Bootstrap
 
-Fecha: 2026-10-21. Estado: entregas de análisis y biblioteca implementadas en
-`migration/bootstrap-ui`; migración de entrenamiento y fases posteriores pendientes.
+Fecha: 2026-10-21. Rama: `migration/bootstrap-ui`. Análisis inicial y biblioteca
+personal migrados; fase 3 iniciada con la detección común de diálogos bloqueantes.
+Los diálogos de entrenamiento todavía utilizan sus contenedores originales.
+
+## Pendientes y siguiente entrega
+
+- [x] Recursos separados, modal compartido, navegación y tema común.
+- [x] Página inicial de análisis e importación PGN (fase 1).
+- [x] Biblioteca personal: grupos, mover estudios y menús (fase 2).
+- [x] Normalización de controles en los diálogos ya migrados.
+- [x] Detección común de diálogos para tiempo, atajos y feedback de entrenamiento.
+- [ ] Fase 3: trasladar ajustes, información, historial Sparring y progreso a
+  `ui_modal`; sustituir las pestañas manuales y adaptar los eventos de cierre.
+- [ ] Fase 3: preparar los estilos necesarios y activar el layout Bootstrap en
+  la página de entrenamiento; verificar profundidad, revisiones y modos de juego.
+- [ ] Fase 4: colecciones y selector de aperturas, conservando borradores.
+- [ ] Fase 5: extender componentes comunes al editor, creación, mantenimiento y
+  restantes páginas de análisis; eliminar reglas visuales redundantes.
+- [ ] Fase 6: migrar páginas heredadas y retirar Skeleton y el gestor antiguo
+  cuando no queden consumidores.
+- [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
+- [ ] Después de la migración de componentes: análisis de reutilización de JS.
+
+La siguiente entrega de interfaz es la fase 3. Su preparación no significa que
+sus cuatro diálogos estén migrados. La biblioteca simplificada de tácticas y las
+demás páginas sin activar Bootstrap conservan sus recursos anteriores.
 
 ## Primera entrega
 
@@ -64,8 +88,8 @@ persistencia y movimiento de estudios. La comparación antes/después verifica
 las regiones principales a 1280, 900, 390 y 320 px en claro y oscuro, además del
 diálogo de grupos y los controles de teclado y foco.
 
-La siguiente entrega corresponde a los controles y diálogos de entrenamiento
-de la fase 3; no se han migrado dentro de esta entrega.
+Los controles y diálogos de entrenamiento pertenecen a la fase 3; no se migraron
+dentro de la entrega de biblioteca.
 
 ## Normalización de controles migrados
 
@@ -83,6 +107,26 @@ Bootstrap de PGN y preferencias. La distribución de las páginas se mantiene;
 los diálogos ajustan su altura al contenido normalizado. Las comprobaciones
 visuales conservan la comparación de las regiones principales y comprueban
 tamaños consistentes y ausencia de desbordamiento en los controles.
+
+## Preparación de entrenamiento
+
+`blocking_ui.js` centraliza la detección de diálogos abiertos. Navegación de
+estudios, tiempo de práctica y feedback utilizan la misma condición. Reconoce
+diálogos nativos, modales heredados visibles, colecciones y Bootstrap durante
+sus transiciones de apertura y cierre. Un observador por documento actualiza
+`data-ui-blocked` y notifica cambios; sigue funcionando al insertar o retirar
+diálogos y cuando varios bundles importan el módulo.
+
+Mientras exista un diálogo bloqueante, el tiempo de práctica y la caducidad de
+avisos temporales se pausan, los atajos no avanzan el tablero y el feedback queda
+oculto. Cerrar un diálogo no desbloquea la página si queda otro abierto. Esto
+prepara el cambio de contenedores de fase 3, sin activarlo todavía ni cambiar la
+distribución de entrenamiento.
+
+`blocking_ui_browser.cjs` comprueba estos contratos con los consumidores reales
+y el plugin Bootstrap, incluyendo transiciones, inicialización repetida y
+reemplazo de nodos. Las regresiones de sesiones leen ahora la plantilla extraída
+de ajustes y seleccionan su pestaña Practice antes de editar la meta.
 
 ## Objetivo y alcance
 
@@ -146,15 +190,15 @@ Hitos propios comprobados en el historial:
 Cada fase debe producir un cambio revisable y reversible. Las fases siguientes
 dependen de que la integración y la limpieza de la anterior estén verificadas.
 
-| Fase | Alcance | Resultado exigido |
-| --- | --- | --- |
-| 0 | Layout propio y recursos Bootstrap separados de los heredados | Compilación selectiva, tema único y dependencias compartidas identificadas |
-| 1 | Página de análisis e importación PGN | Primera página con layout Bootstrap y diálogo compartido en uso real |
-| 2 | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
-| 3 | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
-| 4 | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
-| 5 | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
-| 6 | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
+| Fase | Estado | Alcance | Resultado exigido |
+| --- | --- | --- | --- |
+| 0 | Base implementada; hooks LiveView cuando aplique | Layout propio y recursos Bootstrap separados de los heredados | Compilación selectiva, tema único y dependencias compartidas identificadas |
+| 1 | Completada | Página inicial de análisis e importación PGN | Primera página con layout Bootstrap y diálogo compartido en uso real |
+| 2 | Completada para biblioteca personal | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
+| 3 | En preparación; contenedores pendientes | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
+| 4 | Pendiente | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
+| 5 | Parcial: diálogos migrados normalizados | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
+| 6 | Pendiente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
 
 ## Fase 0: integración y reglas comunes
 
@@ -258,9 +302,11 @@ por un dropdown genérico que pierda búsqueda, métricas o navegación.
 
 ## Fase 6: interfaz heredada
 
-Dejar para esta fase ajustes globales de sonido y tablero, libros y sus modales,
-formularios antiguos y estructura general basada en Skeleton. Los cambios de
-separación de recursos y extracción de módulos compartidos pertenecen a fase 0.
+Dejar para esta fase libros y sus modales, formularios antiguos y estructura
+general basada en Skeleton. Sonido y tablero ya usan el modal compartido en las
+páginas migradas; queda retirar sus envoltorios antiguos en las demás páginas.
+Los cambios de separación de recursos y extracción de módulos compartidos
+pertenecen a fase 0.
 
 Eliminar el gestor antiguo de modales cuando no tenga consumidores. Retirar
 Skeleton por familias de estilos, verificando páginas de autenticación, contenido,
@@ -295,5 +341,5 @@ administración e iframes antes de borrar su importación global.
 - [Modales y sus limitaciones](https://getbootstrap.com/docs/5.3/components/modal/).
 - [Arquitectura actual](architecture.md).
 
-Las fases posteriores siguen siendo un plan; el alcance implementado y sus
-límites están registrados en «Primera entrega».
+El estado actual se registra en «Pendientes y siguiente entrega» y en la tabla
+de ejecución. Los apartados de entregas detallan el alcance y sus límites.

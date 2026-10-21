@@ -1,4 +1,5 @@
 import { setupChapterPicker } from './chapter_picker.js';
+import { hasBlockingUi } from './blocking_ui.js';
 
 export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, progressLabels = { unpracticed: 'Not practiced', practiced: 'Moves practiced', needsPractice: 'Needs practice', reviewDue: 'Review due' } }) {
     const select = document.getElementById('chapter_select');
@@ -53,9 +54,8 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
     };
     document.addEventListener('keydown', event => {
         if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
-            document.querySelector?.('dialog[open]') ||
-            event.target.closest('input, textarea, select, [contenteditable="true"]') ||
-            !document.getElementById('collection_modal').hidden) return;
+            hasBlockingUi() ||
+            event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
         if (event.key === 'ArrowLeft') { event.preventDefault(); goBack(); }
         else if (event.key === 'ArrowRight') { event.preventDefault(); goForward(); }
     });

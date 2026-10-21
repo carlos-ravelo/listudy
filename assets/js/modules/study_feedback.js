@@ -1,7 +1,10 @@
+import { hasBlockingUi, setupBlockingUi } from './blocking_ui.js';
+
 export function setupStudyFeedback({ durationMs = 4000 } = {}) {
     const region = document.querySelector('.study-feedback');
     if (!region || region.dataset.initialized) return;
     region.dataset.initialized = 'true';
+    setupBlockingUi();
     let current, returnFocus, timer, remaining = durationMs, deadline, transient = false, frame;
     function pause() {
         if (timer) { clearTimeout(timer); timer = null; remaining = Math.max(0, deadline - Date.now()); }
@@ -14,7 +17,7 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
         if (hadFocus && returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
     }
     function resume() {
-        if (!current || !transient || document.hidden || region.matches(':hover') || region.contains(document.activeElement)) return;
+        if (!current || !transient || document.hidden || hasBlockingUi() || region.matches(':hover') || region.contains(document.activeElement)) return;
         pause(); deadline = Date.now() + remaining;
         timer = setTimeout(dismiss, remaining);
     }
@@ -83,6 +86,10 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
     region.addEventListener('focusin', pause);
     region.addEventListener('focusout', () => requestAnimationFrame(resume));
     document.addEventListener('visibilitychange', () => document.hidden ? pause() : resume());
+    document.addEventListener('ui-blocking-changed', event => {
+        if (event.detail.blocked) pause();
+        else { schedulePosition(); resume(); }
+    });
     window.addEventListener('resize', schedulePosition);
     window.addEventListener('scroll', schedulePosition, { passive: true });
     window.addEventListener('pagehide', dismiss);

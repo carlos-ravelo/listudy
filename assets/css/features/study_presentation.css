@@ -258,7 +258,7 @@
 :is(.study-workspace, .endgame-workspace) .study-feedback .infoBox:not(.hidden) { min-block-size: 44px; box-sizing: border-box; }
 :is(.study-workspace, .endgame-workspace) .study-feedback .close_button { position: absolute; inset-block-start: 0; inset-inline-end: 0; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-height: 44px; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-size: 22px; cursor: pointer; }
 :is(.study-workspace, .endgame-workspace) .study-feedback .close_button:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
-:is(.study-workspace, .endgame-workspace):has(dialog[open]) .study-feedback { visibility: hidden; }
+html[data-ui-blocked] :is(.study-workspace, .endgame-workspace) .study-feedback { visibility: hidden; }
 
 /* Stable labels and quieter cycling values make General settings easier to scan. */
 .study-workspace #settings_panel_general .study-setting-group legend { padding-inline-start: 10px; border-inline-start: 3px solid color-mix(in srgb, var(--primary-color) 45%, var(--font-color)); }

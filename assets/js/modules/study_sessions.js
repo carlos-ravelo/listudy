@@ -1,6 +1,8 @@
 import { createPracticeTracker, practiceTotals, sessionGoal } from './study/practice_sessions.js';
+import { hasBlockingUi, setupBlockingUi } from './blocking_ui.js';
 
 export function setupStudySessions({ getStats, persist, storage, labels, onContinue, onFinish }) {
+    setupBlockingUi();
     const goal = document.getElementById('study_session_goal');
     const counter = document.getElementById('study_session_counter');
     const endPanel = document.getElementById('study_session_end');
@@ -15,8 +17,7 @@ export function setupStudySessions({ getStats, persist, storage, labels, onConti
             persist();
         }
     });
-    const eligible = () => !document.hidden && document.hasFocus() && !document.querySelector('dialog[open]') && !document.querySelector('.study-sparring-paused') &&
-        document.getElementById('progress_modal')?.style.display !== 'block';
+    const eligible = () => !document.hidden && document.hasFocus() && !hasBlockingUi() && !document.querySelector('.study-sparring-paused');
     const duration = ms => {
         const seconds = Math.floor(ms / 1000);
         return seconds >= 3600 ? `${Math.floor(seconds / 3600)}:${String(Math.floor(seconds / 60) % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
@@ -59,6 +60,7 @@ export function setupStudySessions({ getStats, persist, storage, labels, onConti
     function activity() { tracker.activity(Date.now(), eligible()); }
     document.addEventListener('pointerdown', activity, true);
     document.addEventListener('keydown', activity, true);
+    document.addEventListener('ui-blocking-changed', () => tracker.tick(Date.now(), eligible()));
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) { tracker.tick(Date.now(), false); tracker.persist(); storage.forceSyncAll?.(); }
         else activity();
