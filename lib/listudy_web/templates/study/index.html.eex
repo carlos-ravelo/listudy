@@ -1,6 +1,6 @@
 <% tactics = Map.get(assigns, :tactics, false) %>
 <% copy = library_copy(tactics) %>
-<div class="study-library<%= unless tactics, do: " repertoire-library practice-page" %>" data-study-library <%= if tactics, do: "data-library-simple" %> data-library-state="<%= Jason.encode!(@library_data) %>"
+<div class="study-library<%= unless tactics, do: " repertoire-library practice-page" %>" data-study-library data-library-ui="<%= if @conn.assigns[:bootstrap_ui], do: "bootstrap", else: "native" %>" <%= if tactics, do: "data-library-simple" %> data-library-state="<%= Jason.encode!(@library_data) %>"
      data-library-endpoint="/api/study-library"
      data-library-labels="<%= Jason.encode!(%{
        favorites: dgettext("study", "Favorites"), all: copy.all,
@@ -20,8 +20,8 @@
     <h1><%= if tactics, do: gettext("Tactics"), else: copy.title %></h1>
     <%= unless tactics do %>
       <div class="study-library-create-actions">
-      <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, if(tactics, do: [kind: "tactics"], else: [])), class: "button study-library-create" %>
-      <%= link dgettext("study", "Create tactics"), to: Routes.study_path(@conn, :new, @locale, kind: "tactics"), class: "button practice-secondary" %>
+      <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, if(tactics, do: [kind: "tactics"], else: [])), class: "btn button study-library-create" %>
+      <%= link dgettext("study", "Create tactics"), to: Routes.study_path(@conn, :new, @locale, kind: "tactics"), class: "btn button practice-secondary" %>
       </div>
     <% end %>
   </div>
@@ -36,29 +36,29 @@
     <section class="tactics-source-panel tactics-collections" aria-labelledby="tactics-collections-title">
       <header class="tactics-card-heading">
         <h2 id="tactics-collections-title"><%= gettext("Your collections") %></h2>
-        <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, kind: "tactics"), class: "button study-library-create" %>
+        <%= link copy.import_label, to: Routes.study_path(@conn, :new, @locale, kind: "tactics"), class: "btn button study-library-create" %>
       </header>
   <% end %>
   <%= if @studies != [] or @favorites != [] do %>
     <%= unless tactics do %>
     <nav class="study-library-views" data-library-controls hidden aria-label="<%= dgettext("study", "Study lists") %>">
       <%= for {view, label} <- [{"all", copy.all}, {"favorites", dgettext("study", "Favorites")}] do %>
-        <button type="button" data-library-view="<%= view %>" aria-pressed="<%= view == "favorites" %>"><%= label %> <span data-library-view-count="<%= view %>"></span></button>
+        <button class="btn" type="button" data-library-view="<%= view %>" aria-pressed="<%= view == "favorites" %>"><%= label %> <span data-library-view-count="<%= view %>"></span></button>
       <% end %>
     </nav>
     <% end %>
     <div class="study-library-toolbar" data-library-controls hidden>
       <input type="search" data-library-search aria-label="<%= dgettext("study", "Search this list") %>" placeholder="<%= dgettext("study", "Search this list…") %>" autocomplete="off">
       <%= unless tactics do %>
-      <button type="button" data-library-toggle-filters aria-expanded="false" aria-controls="library-filters-panel">
+      <button class="btn" type="button" data-library-toggle-filters aria-expanded="false" aria-controls="library-filters-panel">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
         <%= dgettext("study", "Filters") %><span data-library-filter-count hidden></span>
       </button>
       <details class="study-library-menu study-library-manage">
-        <summary><span aria-hidden="true">⚙</span><span><%= dgettext("study", "Manage") %></span></summary>
-        <div class="study-library-menu-content">
-          <button type="button" data-library-organize aria-pressed="false"><%= dgettext("study", "Organize") %></button>
-          <button type="button" data-library-manage-groups><%= dgettext("study", "Groups") %></button>
+        <summary <%= if @conn.assigns[:bootstrap_ui], do: raw(~s(data-bs-toggle="dropdown" aria-expanded="false")) %>><span aria-hidden="true">⚙</span><span><%= dgettext("study", "Manage") %></span></summary>
+        <div class="study-library-menu-content<%= if @conn.assigns[:bootstrap_ui], do: " dropdown-menu" %>">
+          <button class="btn" type="button" data-library-organize aria-pressed="false"><%= dgettext("study", "Organize") %></button>
+          <button class="btn" type="button" data-library-manage-groups><%= dgettext("study", "Groups") %></button>
         </div>
       </details>
       <% end %>
@@ -77,7 +77,7 @@
         <span><%= dgettext("study", "Study color") %></span>
         <div class="study-library-color-toggles">
           <%= for {color, icon, label} <- [{"white", "♔", dgettext("study", "White")}, {"black", "♚", dgettext("study", "Black")}] do %>
-            <button type="button" data-library-color="<%= color %>" aria-pressed="false" aria-label="<%= label %>"><span aria-hidden="true"><%= icon %></span> <%= label %></button>
+            <button class="btn" type="button" data-library-color="<%= color %>" aria-pressed="false" aria-label="<%= label %>"><span aria-hidden="true"><%= icon %></span> <%= label %></button>
           <% end %>
         </div>
       </div>
@@ -88,12 +88,12 @@
     <div class="study-library-bulk" data-library-bulk hidden>
       <label class="study-library-select-all"><input type="checkbox" data-library-select-all> <%= dgettext("study", "Select visible") %></label>
       <span data-library-selected></span>
-      <button type="button" data-library-bulk-group disabled><%= dgettext("study", "Move to group…") %></button>
+      <button class="btn" type="button" data-library-bulk-group disabled><%= dgettext("study", "Move to group…") %></button>
       <details class="study-library-menu study-library-bulk-edit">
-        <summary><%= dgettext("study", "Edit selected") %></summary>
-        <div class="study-library-menu-content">
-          <button type="button" data-library-bulk-privacy="true" disabled><%= dgettext("study", "Make private") %></button>
-          <button type="button" data-library-bulk-privacy="false" disabled><%= dgettext("study", "Make public") %></button>
+        <summary <%= if @conn.assigns[:bootstrap_ui], do: raw(~s(data-bs-toggle="dropdown" aria-expanded="false")) %>><%= dgettext("study", "Edit selected") %></summary>
+        <div class="study-library-menu-content<%= if @conn.assigns[:bootstrap_ui], do: " dropdown-menu" %>">
+          <button class="btn" type="button" data-library-bulk-privacy="true" disabled><%= dgettext("study", "Make private") %></button>
+          <button class="btn" type="button" data-library-bulk-privacy="false" disabled><%= dgettext("study", "Make public") %></button>
         </div>
       </details>
       <span class="study-library-bulk-edit-help" data-library-bulk-edit-help hidden><%= dgettext("study", "Select only your own studies to change visibility.") %></span>
@@ -106,7 +106,7 @@
       <%= unless tactics do %><h2><%= copy.empty_title %></h2><% end %>
       <p><%= copy.empty_help %></p>
       <div class="study-library-start-actions">
-        <%= link copy.import_empty, to: Routes.study_path(@conn, :new, @locale, if(tactics, do: [kind: "tactics"], else: [])), class: "button study-library-create" %>
+        <%= link copy.import_empty, to: Routes.study_path(@conn, :new, @locale, if(tactics, do: [kind: "tactics"], else: [])), class: "btn button study-library-create" %>
         <%= unless tactics do %>
           <%= link copy.explore, to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @locale) %>
         <% end %>
@@ -125,7 +125,7 @@
   <% end %>
   <div class="study-library-empty" data-library-empty hidden>
     <p data-library-empty-message></p>
-    <button type="button" data-library-show-all><%= copy.show_all %></button>
+    <button class="btn" type="button" data-library-show-all><%= copy.show_all %></button>
   </div>
   <%= if tactics do %>
     </section>
@@ -133,24 +133,18 @@
     <%= render ListudyWeb.ComponentView, "tactics_modes.html", conn: @conn, locale: @locale %>
   <% end %>
   <%= unless tactics do %>
+  <%= if @conn.assigns[:bootstrap_ui] do %>
+    <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "library_groups_dialog", title_id: "library_groups_title", title: dgettext("study", "Study groups"), close_text: dgettext("study", "Close"), animated: false, modal_class: "study-library-modal", content_class: "study-library-dialog", data: [library_groups_dialog: ""], body: render("_library_groups_form.html", copy: copy) %>
+    <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "library_move_dialog", title_id: "library_move_title", title: dgettext("study", "Move to group"), close_text: dgettext("study", "Close"), animated: false, modal_class: "study-library-modal", content_class: "study-library-dialog", data: [library_move_dialog: ""], body: render("_library_move_form.html") %>
+  <% else %>
   <dialog class="study-library-dialog" data-library-groups-dialog aria-labelledby="library_groups_title">
-    <header><h2 id="library_groups_title"><%= dgettext("study", "Study groups") %></h2><form method="dialog"><button><%= dgettext("study", "Close") %></button></form></header>
-    <p><%= copy.groups_help %></p>
-    <div data-library-group-list></div>
-    <form data-library-create-group class="study-library-create-group">
-      <label for="library_group_name"><%= dgettext("study", "New group") %></label>
-      <div><input id="library_group_name" name="name" required maxlength="60" autocomplete="off" placeholder="<%= dgettext("study", "For example, Queen’s Gambit") %>"><button type="submit"><%= dgettext("study", "Create group") %></button></div>
-    </form>
-    <p data-library-dialog-status role="status" aria-live="polite"></p>
+    <header><h2 id="library_groups_title"><%= dgettext("study", "Study groups") %></h2><form method="dialog"><button class="btn"><%= dgettext("study", "Close") %></button></form></header>
+    <%= render "_library_groups_form.html", copy: copy %>
   </dialog>
   <dialog class="study-library-dialog" data-library-move-dialog aria-labelledby="library_move_title">
-    <header><h2 id="library_move_title"><%= dgettext("study", "Move to group") %></h2><form method="dialog"><button><%= dgettext("study", "Close") %></button></form></header>
-    <form data-library-move-form>
-      <label for="library_move_group"><%= dgettext("study", "Group") %></label>
-      <select id="library_move_group" name="group" data-library-move-group></select>
-      <button type="submit"><%= dgettext("study", "Move studies") %></button>
-    </form>
-    <p data-library-dialog-status role="status" aria-live="polite"></p>
+    <header><h2 id="library_move_title"><%= dgettext("study", "Move to group") %></h2><form method="dialog"><button class="btn"><%= dgettext("study", "Close") %></button></form></header>
+    <%= render "_library_move_form.html" %>
   </dialog>
+  <% end %>
   <% end %>
 </div>

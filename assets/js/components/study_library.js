@@ -1,6 +1,6 @@
 import {setupColorToggles} from "./color_toggles.js";
 
-export function setupStudyLibrary(library = document.querySelector('[data-study-library]')) {
+export function setupStudyLibrary(library = document.querySelector('[data-study-library]'), widgets = {}) {
     if (!library || library.dataset.initialized) return;
     let rows = [...library.querySelectorAll('[data-library-row]')];
     if (!rows.length) return;
@@ -49,6 +49,9 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     const selectAll = library.querySelector('[data-library-select-all]');
     const groupsDialog = library.querySelector('[data-library-groups-dialog]');
     const moveDialog = library.querySelector('[data-library-move-dialog]');
+    const showDialog = widgets.showDialog || (dialog => dialog.showModal());
+    const hideDialog = widgets.hideDialog || (dialog => dialog.close());
+    const onDialogClosed = widgets.onDialogClosed || ((dialog, callback) => dialog.addEventListener('close', callback));
     const moveGroup = library.querySelector('[data-library-move-group]');
     const groupList = library.querySelector('[data-library-group-list]');
     const status = library.querySelector('[data-library-save-status]');
@@ -159,6 +162,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         busy = value;
         library.querySelectorAll('button, input, select').forEach(control => { control.disabled = value; });
         if (!value) selection();
+        widgets.focusDialog?.();
     }
     async function mutate(operation) {
         if (busy) return false;
@@ -212,6 +216,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             title.textContent = name;
             const edit = document.createElement('button');
             edit.type = 'button';
+            edit.className = 'btn';
             edit.textContent = labels.edit;
             edit.setAttribute('aria-label', `${labels.edit}: ${name}`);
             edit.onclick = () => {
@@ -226,9 +231,11 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
                 input.setAttribute('aria-label', `${labels.rename}: ${name}`);
                 const save = document.createElement('button');
                 save.type = 'submit';
+                save.className = 'btn';
                 save.textContent = labels.save;
                 const cancel = document.createElement('button');
                 cancel.type = 'button';
+                cancel.className = 'btn';
                 cancel.textContent = labels.cancel;
                 cancel.onclick = () => { row.replaceChildren(title, edit, remove); edit.focus(); };
                 form.append(input, save, cancel);
@@ -244,6 +251,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             };
             const remove = document.createElement('button');
             remove.type = 'button';
+            remove.className = 'btn';
             remove.textContent = labels.remove;
             remove.setAttribute('aria-label', `${labels.remove}: ${name}`);
             remove.onclick = async () => {
@@ -256,13 +264,14 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         });
     }
     function closeMenus(except) {
+        if (widgets.closeMenus) { widgets.closeMenus(except); return; }
         library.querySelectorAll('.study-library-menu[open]').forEach(menu => { if (menu !== except) menu.open = false; });
     }
     function showGroups() {
         if (!returnToMove) dialogReturn = captureFocus();
         closeMenus();
         message('');
-        groupsDialog.showModal();
+        showDialog(groupsDialog);
     }
     function showMove(ids) {
         dialogReturn = captureFocus();
@@ -274,7 +283,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         if (Object.keys(state.groups).length === 0) {
             returnToMove = true;
             showGroups();
-        } else moveDialog.showModal();
+        } else showDialog(moveDialog);
     }
     rows.forEach(row => {
         const id = row.dataset.studyId;
@@ -312,7 +321,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     };
     library.querySelector('[data-library-bulk-group]').onclick = () => showMove(selected);
     const bulkEdit = library.querySelector('.study-library-bulk-edit');
-    bulkEdit.querySelector('summary').onclick = () => closeMenus(bulkEdit);
+    if (!widgets.closeMenus) bulkEdit.querySelector('summary').onclick = () => closeMenus(bulkEdit);
     library.querySelectorAll('[data-library-bulk-privacy]').forEach(button => button.onclick = async () => {
         if (await mutate({ action: 'set_privacy', study_ids: [...selected], private: button.dataset.libraryBulkPrivacy === 'true' })) {
             closeMenus();
@@ -328,30 +337,30 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             input.value = '';
             if (returnToMove) {
                 moveGroup.value = Object.keys(state.groups).find(id => state.groups[id] === name) || '';
-                groupsDialog.close();
+                hideDialog(groupsDialog);
             }
         }
     };
-    groupsDialog.addEventListener('close', () => {
-        if (returnToMove && Object.keys(state.groups).length) { returnToMove = false; moveDialog.showModal(); }
+    onDialogClosed(groupsDialog, () => {
+        if (returnToMove && Object.keys(state.groups).length) { returnToMove = false; showDialog(moveDialog); }
         else { returnToMove = false; restoreFocus(); }
     });
-    moveDialog.addEventListener('close', restoreFocus);
+    onDialogClosed(moveDialog, restoreFocus);
     library.querySelector('[data-library-move-form]').onsubmit = async event => {
         event.preventDefault();
-        if (await mutate({ action: 'move', study_ids: moveIds, group: moveGroup.value || null })) moveDialog.close();
+        if (await mutate({ action: 'move', study_ids: moveIds, group: moveGroup.value || null })) hideDialog(moveDialog);
     };
     library.querySelector('[data-library-show-all]').onclick = () => {
         view = 'all'; search.value = ''; color.value = 'all'; group.value = 'all'; if (kind) kind.value = 'all'; selected.clear(); filter(); search.focus();
     };
-    document.addEventListener('click', event => { if (!event.target.closest('.study-library-menu')) closeMenus(); });
-    document.addEventListener('keydown', event => {
+    if (!widgets.closeMenus) document.addEventListener('click', event => { if (!event.target.closest('.study-library-menu')) closeMenus(); });
+    if (!widgets.closeMenus) document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
             const menu = library.querySelector('.study-library-menu[open]');
             if (menu) { menu.open = false; menu.querySelector('summary').focus(); }
         }
     });
-    library.querySelector('.study-library-manage > summary').onclick = () => closeMenus(library.querySelector('.study-library-manage'));
+    if (!widgets.closeMenus) library.querySelector('.study-library-manage > summary').onclick = () => closeMenus(library.querySelector('.study-library-manage'));
     groupOptions();
     const url = new URL(window.location.href);
     view = hasViews && url.searchParams.get('library_view') !== 'all' ? 'favorites' : 'all';
@@ -364,4 +373,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     filter(false);
 }
 
-document.addEventListener('DOMContentLoaded', () => setupStudyLibrary());
+document.addEventListener('DOMContentLoaded', () => {
+    const library = document.querySelector('[data-study-library]');
+    if (library?.dataset.libraryUi !== 'bootstrap') setupStudyLibrary(library);
+});

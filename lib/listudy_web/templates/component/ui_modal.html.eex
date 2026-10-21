@@ -1,9 +1,9 @@
-<div class="modal fade ui-modal" id="<%= @id %>" tabindex="-1" aria-labelledby="<%= @id %>_title" aria-hidden="true">
+<%= tag(:div, class: "modal#{if Map.get(assigns, :animated, true), do: " fade"} ui-modal #{Map.get(assigns, :modal_class, "")}", id: @id, tabindex: "-1", aria: [labelledby: Map.get(assigns, :title_id, @id <> "_title"), hidden: "true"], data: Map.get(assigns, :data, [])) %>
   <div class="modal-dialog modal-dialog-scrollable<%= if Map.get(assigns, :centered, true), do: " modal-dialog-centered" %>">
-    <div class="modal-content">
+    <div class="modal-content <%= Map.get(assigns, :content_class, "") %>">
       <div class="modal-header">
-        <h2 class="modal-title" id="<%= @id %>_title"><%= @title %></h2>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<%= gettext("Close") %>">×</button>
+        <h2 class="modal-title" id="<%= Map.get(assigns, :title_id, @id <> "_title") %>"><%= @title %></h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<%= gettext("Close") %>"><%= Map.get(assigns, :close_text, "×") %></button>
       </div>
       <div class="modal-body"><%= @body %></div>
     </div>

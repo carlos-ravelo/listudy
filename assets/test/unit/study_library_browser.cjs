@@ -6,7 +6,9 @@ const path = require('node:path');
 const http = require('node:http');
 const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '../../..');
-let html = fs.readFileSync(process.env.LISTUDY_LIBRARY_PREVIEW || '/tmp/listudy-library-preview.html', 'utf8').replace(/<script\b[\s\S]*?<\/script>/gi, '');
+let html = fs.readFileSync(process.env.LISTUDY_LIBRARY_PREVIEW || '/tmp/listudy-library-preview.html', 'utf8');
+const bootstrap = html.includes('data-library-ui="bootstrap"');
+if (!bootstrap) html = html.replace(/<script\b[\s\S]*?<\/script>/gi, '');
 const rows = [...html.matchAll(/<li class="study-library-row"[\s\S]*?<\/li>/g)].map(match => match[0]);
 const ids = rows.map(row => row.match(/data-study-id="(\d+)"/)[1]);
 const names = ['White repertoire — Favorite repertoire', 'Black repertoire — Favorite repertoire', 'Endgame essentials'];
@@ -20,7 +22,7 @@ const extra = references.map((name, i) => rows[2].replace(/data-study-id="\d+"/,
     .replace(/Repertoire \d+/g, name).replace(/Keep this source/g, 'Reference lines and annotated ideas'));
 html = html.replace(/<ul class="study-library-list">[\s\S]*?<\/ul>/, `<ul class="study-library-list">${first.join('')}${extra.join('')}</ul>`);
 html = html.replace('</head>', `<style>${fs.readFileSync(path.join(root, 'assets/css/features/study_library.css'), 'utf8')}${fs.readFileSync(path.join(root, 'assets/css/features/practice_theme.css'), 'utf8')}</style></head>`)
-    .replace('</body>', '<script type="module" src="/assets/js/components/site_navigation.js"></script><script type="module" src="/assets/js/components/study_library.js"></script></body>');
+    .replace('</body>', bootstrap ? '</body>' : '<script type="module" src="/assets/js/components/site_navigation.js"></script><script type="module" src="/assets/js/components/study_library.js"></script></body>');
 let state = { version: 1, groups: { white: 'White repertoire', black: 'Black repertoire', endgames: 'Endgames' }, studies: {} };
 ids.forEach((id, i) => state.studies[id] = { location: 'daily', group: ['white', 'black', 'endgames'][i] });
 references.forEach((_, i) => state.studies[2000+i] = { location: 'library', group: i % 2 ? 'black' : 'white' });
@@ -184,7 +186,10 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     await page.locator('#library_group_name').fill('First group');
     await page.locator('[data-library-create-group] button').click();
     await saved();
-    await page.waitForFunction(()=>document.querySelector('[data-library-move-dialog]').open);
+    await page.waitForFunction(()=>{
+        const dialog = document.querySelector('[data-library-move-dialog]');
+        return dialog.open || dialog.getAttribute('aria-modal') === 'true';
+    });
     assert.equal(await page.locator('[data-library-move-group]').inputValue(),'group-0');
     await page.locator('[data-library-move-form] button').click();
     await saved();

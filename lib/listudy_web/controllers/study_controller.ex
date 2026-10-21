@@ -45,6 +45,15 @@ defmodule ListudyWeb.StudyController do
     owned = MapSet.new(studies, & &1.id)
     favorites = Enum.reject(favorites, &MapSet.member?(owned, &1.id))
 
+    conn =
+      if is_nil(kind) do
+        conn
+        |> assign(:bootstrap_ui, true)
+        |> put_layout({ListudyWeb.LayoutView, "bootstrap.html"})
+      else
+        conn
+      end
+
     render(conn, "index.html",
       studies: studies,
       favorites: favorites,

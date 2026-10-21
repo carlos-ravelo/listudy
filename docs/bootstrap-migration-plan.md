@@ -1,14 +1,14 @@
 # Plan de migración de componentes a Bootstrap
 
-Fecha: 2026-10-21. Estado: primera entrega implementada en
-`migration/bootstrap-ui`; fases posteriores pendientes.
+Fecha: 2026-10-21. Estado: entregas de análisis y biblioteca implementadas en
+`migration/bootstrap-ui`; migración de entrenamiento y fases posteriores pendientes.
 
 ## Primera entrega
 
 Bootstrap 5.3.8 y Popper 2.11.8 están fijados en `assets/package.json`. El lockfile
 local se actualizó; sigue excluido de Git por la política existente del repositorio.
-El layout `bootstrap.html` y los recursos `bootstrap_ui` se utilizan únicamente
-en la página inicial de análisis. Las otras páginas conservan su layout actual.
+La primera entrega activó el layout `bootstrap.html` y los recursos `bootstrap_ui`
+en la página inicial de análisis. El resto se incorpora por entregas independientes.
 
 La entrega reutiliza la navegación y el pie existentes, extrae los campos de
 preferencias de sonido y tablero a plantillas compartidas y utiliza `ui_modal`
@@ -37,6 +37,35 @@ la lógica Smart dentro de esta entrega.
 
 Después de la migración de interfaz queda pendiente la auditoría de reutilización
 de funciones JavaScript solicitada por el usuario.
+
+## Segunda entrega: biblioteca
+
+La biblioteca personal (`/[locale]/studies`) utiliza ahora el mismo layout y
+recursos Bootstrap que análisis. La biblioteca simplificada de tácticas mantiene
+su layout anterior. Las filas compartidas conservan su diseño y comportamiento
+también cuando aparecen en páginas que todavía no utilizan Bootstrap.
+
+Los diálogos de grupos y movimiento reutilizan `ui_modal`; sus formularios se
+definen una vez y las operaciones conservan los permisos y contratos existentes.
+Los menús utilizan Bootstrap Dropdown manteniendo los elementos `details` y
+`summary` actuales, sin moverlos ni cambiar su composición visual. Se mantiene
+el menú abierto ante errores de guardado para permitir reintentar la acción.
+
+La lógica de biblioteca recibe un adaptador de controles: Bootstrap gestiona
+apertura, cierre y teclado; filtros, favoritos, selección y peticiones siguen
+perteneciendo al módulo existente. Se conserva el foco dentro del diálogo cuando
+un guardado deshabilita temporalmente los controles. El flujo de crear la primera
+carpeta y después mover los estudios abre un único modal cada vez.
+
+Validación: 29 pruebas del servidor de biblioteca, tácticas, análisis y recorrido
+del jugador pasaron. El recorrido de navegador de biblioteca cubre filtros,
+favoritos, selección múltiple, permisos, errores, grupos, renombrado, borrado,
+persistencia y movimiento de estudios. La comparación antes/después verifica
+las regiones principales a 1280, 900, 390 y 320 px en claro y oscuro, además del
+diálogo de grupos y los controles de teclado y foco.
+
+La siguiente entrega corresponde a los controles y diálogos de entrenamiento
+de la fase 3; no se han migrado dentro de esta entrega.
 
 ## Objetivo y alcance
 

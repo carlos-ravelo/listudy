@@ -31,13 +31,13 @@
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg><%= length(study.study_favorites) %>
     </span>
   <% else %>
-    <button type="button" class="study-library-favorite" data-library-favorite aria-pressed="<%= favorite %>" aria-label="<%= dgettext("study", "Favorite") %>: <%= study.title %>" title="<%= dgettext("study", "Favorite") %>">
+    <button type="button" class="btn study-library-favorite" data-library-favorite aria-pressed="<%= favorite %>" aria-label="<%= dgettext("study", "Favorite") %>: <%= study.title %>" title="<%= dgettext("study", "Favorite") %>">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>
     </button>
       <details class="study-library-menu">
-        <summary aria-label="<%= dgettext("study", "Study actions") %>: <%= study.title %>"><span aria-hidden="true">⋯</span></summary>
-        <div class="study-library-menu-content">
-          <button type="button" data-library-move-to-group hidden><%= dgettext("study", "Move to group…") %></button>
+        <summary <%= if Map.get(@context.assigns, :bootstrap_ui, false), do: raw(~s(data-bs-toggle="dropdown" aria-expanded="false")) %> aria-label="<%= dgettext("study", "Study actions") %>: <%= study.title %>"><span aria-hidden="true">⋯</span></summary>
+        <div class="study-library-menu-content<%= if Map.get(@context.assigns, :bootstrap_ui, false), do: " dropdown-menu" %>">
+          <button type="button" class="btn" data-library-move-to-group hidden><%= dgettext("study", "Move to group…") %></button>
       <%= if !study.private || @editable do %>
         <%= link dgettext("study", "Clone study"), to: Routes.study_path(@context, :clone, @locale, study), method: :post,
           class: "study-library-edit", aria: [label: dgettext("study", "Clone study") <> ": " <> study.title] %>

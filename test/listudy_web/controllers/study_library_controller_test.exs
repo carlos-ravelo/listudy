@@ -223,6 +223,14 @@ defmodule ListudyWeb.StudyLibraryControllerTest do
              )
 
     assert html =~ "data-library-groups-dialog"
+    assert html =~ "data-library-ui=\"bootstrap\""
+    assert html =~ "/css/bootstrap_ui.css"
+    assert html =~ "/js/bootstrap_ui.js"
+    refute html =~ "/css/app.css"
+    refute html =~ "/js/app.js"
+    assert html =~ "data-bs-toggle=\"dropdown\""
+    assert html =~ "id=\"library_groups_dialog\""
+    assert html =~ "id=\"library_move_dialog\""
     assert length(Regex.scan(~r/data-study-id="#{first.id}"/, html)) == 1
     assert html =~ "data-method=\"delete\""
     assert html =~ "data-confirm="

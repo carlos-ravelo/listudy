@@ -1,0 +1,35 @@
+/* Bootstrap controls use the existing library's geometry and visual rules. */
+:where(.study-library) :where(.btn) {
+  --bs-btn-padding-y: 0;
+  --bs-btn-padding-x: 30px;
+  --bs-btn-font-size: 11px;
+  --bs-btn-font-weight: 600;
+  --bs-btn-line-height: 38px;
+  --bs-btn-color: var(--font-color);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: #bbb;
+  --bs-btn-border-radius: 4px;
+  --bs-btn-hover-color: var(--font-color);
+  --bs-btn-hover-bg: transparent;
+  --bs-btn-hover-border-color: #888;
+  --bs-btn-active-color: var(--font-color);
+  --bs-btn-active-bg: transparent;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+:where(.study-library) :is(input:not([type='checkbox']), select) { box-sizing: border-box; height: 38px; padding: 6px 10px; border: 1px solid #d1d1d1; border-radius: 4px; background: var(--bg-color); color: var(--font-color); }
+.study-library h2 { letter-spacing: -1px; }
+.study-library-menu-content.dropdown-menu { --bs-dropdown-link-hover-color: var(--font-color); --bs-dropdown-link-hover-bg: var(--bg-highlight-color); --bs-dropdown-link-active-color: var(--font-color); --bs-dropdown-link-active-bg: var(--bg-highlight-color); left: auto; right: 0; top: 100%; margin: 0; }
+.study-library-modal { --bs-modal-width: min(560px, calc(100vw - 32px)); --bs-modal-border-radius: 12px; --bs-modal-border-color: var(--library-divider); }
+.bootstrap-ui:has(.study-library-modal.show) .modal-backdrop { --bs-backdrop-opacity: .4; }
+.study-library-modal .modal-content { flex-direction: column; }
+.study-library-modal .modal-header { padding: 0; margin-bottom: 16px; gap: 16px; border-bottom: 1px solid var(--bg-highlight-color); }
+.study-library-modal .modal-body { flex: 0 1 auto; padding: 0; overflow: visible; }
+.study-library-modal .modal-title { font-weight: 600; letter-spacing: -1px; }
+.study-library-modal .btn-close { min-height: 44px; padding: 8px 10px; font-size: 13px; font-weight: 400; border: 1px solid var(--library-divider); border-radius: 4px; }
+.study-library-modal .study-library-dialog { --bs-modal-border-width: 1px; }
+.study-library-modal .study-library-create-group { margin-top: 20px; }
+.study-library-modal .btn { min-height: 44px; }
+.study-library-modal .study-library-dialog input { box-sizing: content-box; }

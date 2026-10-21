@@ -44,6 +44,11 @@ const errors = [];
         await page.screenshot({ path: '/tmp/listudy-bootstrap-modal-after.png' });
         const modal = page.locator('#analysis_pgn_modal');
         assert.equal(await modal.getAttribute('aria-modal'), 'true');
+        assert(await modal.locator('.modal-header').evaluate(header => {
+            const close = header.querySelector('[data-bs-dismiss]');
+            return Math.abs(header.getBoundingClientRect().right - close.getBoundingClientRect().right - parseFloat(getComputedStyle(header).paddingRight)) <= 1;
+        }));
+        assert.equal(await modal.locator('.btn-close').evaluate(node => getComputedStyle(node).filter), 'none');
         await page.locator('#pgn').fill('1. e4 c5 2. Nf3');
         for (let i = 0; i < 6; i++) {
             await page.keyboard.press('Tab');
