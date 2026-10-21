@@ -2,14 +2,18 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const os = require('os');
+const webpack = require('webpack');
+const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'listudy-collection-ui-'));
 const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '../../..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const render = source => source.replace(/<%=\s*dgettext[^%]*%>/g, expression => (expression.match(/"(?:\\.|[^"\\])*"/g)[1]).slice(1, -1)).replace(/<%[\s\S]*?%>/g, '');
-const html = `<html><head><link rel="stylesheet" href="/assets/css/features/study_extensions.css"></head><body>
+const html = `<html><head><link rel="stylesheet" href="/priv/static/css/bootstrap_study.css"></head><body class="bootstrap-ui"><main class="study-workspace">
 <h1>Test study</h1>${render(read('lib/listudy_web/templates/study/_study_tools.html.eex'))}${render(read('lib/listudy_web/templates/study/_chapter_controls.html.eex'))}
 <button id="puzzle_run"></button>
-${read('lib/listudy_web/templates/study/_collection_modal.html.eex')}
+<div id="collection_modal" class="modal ui-modal collection-modal" tabindex="-1" data-user-id=""><div class="modal-dialog modal-dialog-centered"><div class="modal-content collection-dialog"><div class="modal-header"><div><h2 id="collection_heading">Collections</h2>${read('lib/listudy_web/templates/study/_collection_heading.html.eex')}</div><button id="modal_close" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">×</button></div><div class="modal-body">${read('lib/listudy_web/templates/study/_collection_body.html.eex')}</div></div></div></div>
+</main><script src="/bootstrap-modals.js"></script>
 <script type="module">
 import { setupStudyCollections } from '/assets/js/modules/study_collections.js';
 import { setupStudyNavigation, setupStudyToolsMenu } from '/assets/js/modules/study_page_controls.js';
@@ -25,10 +29,13 @@ window.ready = true;
 </script></body></html>`;
 
 (async () => {
+    await new Promise((resolve,reject)=>webpack({mode:'development',context:path.join(root,'assets'),
+        entry:path.join(root,'assets/js/components/bootstrap_modals.js'),output:{path:temp,filename:'bootstrap-modals.js'}
+    },(error,stats)=>error||stats.hasErrors()?reject(error||new Error(stats.toString())):resolve()));
     const server = http.createServer((request, response) => {
         if (request.url === '/') { response.setHeader('Content-Type', 'text/html'); response.end(html); return; }
-        const file = path.resolve(root, '.' + request.url);
-        if (!file.startsWith(path.join(root, 'assets') + path.sep) || !fs.existsSync(file)) { response.statusCode = 404; response.end(); return; }
+        const file = request.url === '/bootstrap-modals.js' ? path.join(temp,'bootstrap-modals.js') : path.resolve(root, '.' + request.url);
+        if ((!file.startsWith(root + path.sep) && !file.startsWith(temp + path.sep)) || !fs.existsSync(file)) { response.statusCode = 404; response.end(); return; }
         response.setHeader('Content-Type', file.endsWith('.css') ? 'text/css' : 'text/javascript');
         response.end(fs.readFileSync(file));
     });
@@ -87,5 +94,6 @@ window.ready = true;
     } finally {
         if (browser) await browser.close();
         await new Promise(resolve => server.close(resolve));
+        fs.rmSync(temp,{recursive:true,force:true});
     }
 })().catch(error => { console.error(error); process.exitCode = 1; });

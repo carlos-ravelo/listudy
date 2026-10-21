@@ -1,3 +1,4 @@
+import { openDialog } from './dialog_lifecycle.js';
 import { CollectionStore } from './study/collection_store.js';
 import { CollectionAccount } from './study/collection_account.js';
 
@@ -25,7 +26,6 @@ export function setupStudyCollections({ getCurrentChapter }) {
     const account = userId ? new CollectionAccount(store, userId, message => showStatus(message)) : null;
     let ready = !account;
     let creating = false;
-    let returnFocus;
     const titleInput = modal.querySelector('#collection_active_name');
     function showStatus(message) {
         status.textContent = message;
@@ -151,7 +151,7 @@ export function setupStudyCollections({ getCurrentChapter }) {
     function perform(action, highlight = -1) {
         try {
             action();
-            if (!modal.hidden) {
+            if (modal.getAttribute('aria-modal') === 'true') {
                 render(highlight);
                 if (!modal.contains(document.activeElement)) focusCollection();
             }
@@ -159,11 +159,10 @@ export function setupStudyCollections({ getCurrentChapter }) {
         }
         catch (error) { alert(error.message || 'The collection could not be saved.'); }
     }
-    function close() { modal.hidden = true; if (returnFocus) returnFocus.focus(); }
     function focusCollection() { navigation.querySelector('[aria-pressed="true"]')?.focus(); }
     function open() {
         if (!ready) return;
-        perform(() => { render(); returnFocus = document.activeElement; modal.hidden = false; focusCollection(); });
+        perform(() => { render(); openDialog(modal, document.activeElement); focusCollection(); });
     }
     add.addEventListener('click', event => {
         event.preventDefault();
@@ -201,7 +200,8 @@ export function setupStudyCollections({ getCurrentChapter }) {
         if (creating || !account) return;
         creating = true;
         const selection = { collection: store.read().active, title: studyForm.elements.title.value, color: studyForm.elements.color.value };
-        studyForm.querySelector('button[type="submit"]').disabled = true;
+        const submit = studyForm.querySelector('button[type="submit"]');
+        submit.disabled = true;
         try {
             await account.flush();
             const response = await fetch('/api/collections/study', {
@@ -213,7 +213,11 @@ export function setupStudyCollections({ getCurrentChapter }) {
             if (!response.ok) throw new Error(result.error || 'The study could not be created.');
             window.location.assign(result.url);
         } catch (error) { showStatus(error.message); }
-        finally { creating = false; studyForm.querySelector('button[type="submit"]').disabled = false; }
+        finally {
+            creating = false;
+            submit.disabled = false;
+            if (modal.getAttribute('aria-modal') === 'true' && !modal.contains(document.activeElement)) submit.focus();
+        }
     };
     selector.addEventListener('change', () => perform(() => store.select(selector.value)));
     modal.querySelector('#btn_new_collection').onclick = () => {
@@ -226,19 +230,8 @@ export function setupStudyCollections({ getCurrentChapter }) {
     modal.querySelector('#modal_clear').onclick = () => perform(() => {
         if (confirm(`Clear all chapters in "${store.read().active}"?`)) store.clear();
     });
-    modal.querySelector('#modal_close').onclick = close;
     modal.querySelector('.collection-options-panel').addEventListener('click', event => {
         if (event.target.closest('button')) modal.querySelector('.collection-options').open = false;
-    });
-    modal.addEventListener('click', event => { if (event.target === modal) close(); });
-    modal.addEventListener('keydown', event => {
-        if (event.key === 'Escape') { event.preventDefault(); close(); }
-        if (event.key === 'Tab') {
-            const focusable = Array.from(modal.querySelectorAll('button:not(:disabled), select, input, summary, a[href]')).filter(node => node.getClientRects().length);
-            const first = focusable[0], last = focusable[focusable.length - 1];
-            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-        }
     });
     modal.querySelector('#modal_download').onclick = () => perform(() => {
         const data = store.read(), items = data.collections[data.active];

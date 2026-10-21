@@ -2,8 +2,11 @@
   <div class="modal-dialog modal-dialog-scrollable<%= if Map.get(assigns, :centered, true), do: " modal-dialog-centered" %>">
     <div class="modal-content <%= Map.get(assigns, :content_class, "") %>">
       <div class="modal-header">
-        <h2 class="modal-title" id="<%= Map.get(assigns, :title_id, @id <> "_title") %>"><%= @title %></h2>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<%= gettext("Close") %>"><%= Map.get(assigns, :close_text, "×") %></button>
+        <div class="ui-modal-heading">
+          <h2 class="modal-title" id="<%= Map.get(assigns, :title_id, @id <> "_title") %>"><%= @title %></h2>
+          <%= Map.get(assigns, :header_extra, "") %>
+        </div>
+        <%= tag(:button, type: "button", class: "btn-close", id: Map.get(assigns, :close_id), data: [bs_dismiss: "modal"], aria: [label: gettext("Close")]) %><%= Map.get(assigns, :close_text, "×") %></button>
       </div>
       <div class="modal-body"><%= @body %></div>
     </div>

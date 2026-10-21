@@ -59,12 +59,14 @@ defmodule ListudyWeb.StudyEditorControllerTest do
           "study_settings_dialog",
           "study_info_dialog",
           "study_sparring_history_dialog",
-          "progress_modal"
+          "progress_modal",
+          "collection_modal"
         ] do
       assert [_] = html_find(html, "##{id}.ui-modal")
     end
 
     assert [] = html_find(html, "dialog, .modal_open, .modal_close")
+    assert [_] = html_find(html, "#collection_modal #modal_close[data-bs-dismiss='modal']")
     assert [_] = html_find(html, "#settings_tab_practice[data-bs-toggle='tab']")
   end
 

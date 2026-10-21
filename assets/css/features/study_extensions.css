@@ -62,7 +62,7 @@
     .study-feature-actions { flex-wrap: nowrap; gap: 4px; margin: 6px 0 8px; }
     .study-feature-actions .button { min-width: 0; min-height: 44px; padding: 4px 6px; display: flex; align-items: center; justify-content: center; font-size: .75rem; line-height: 1.25; letter-spacing: normal; text-transform: none; }
 }
-.study-feature-actions [hidden], .study-chapter-navigation [hidden], .collection-modal[hidden] { display: none !important; }
+.study-feature-actions [hidden], .study-chapter-navigation [hidden] { display: none !important; }
 .study-chapter-navigation { position: relative; width: 100%; margin-top: 10px; }
 .study-chapter-buttons { display: grid; grid-template-columns: 80px minmax(0, 1fr) 80px; gap: 8px; }
 .study-chapter-buttons button { width: 100%; margin: 0; }
@@ -80,11 +80,7 @@
 .chapter-active { font-weight: bold; background: var(--bg-highlight-color, #e2e8f0); }
 .chapter-choice[aria-current="true"] .chapter-choice-label::before { content: '✓ '; }
 .chapter-choice:hover { background: var(--bg-highlight-color, #cbd5e1); }
-.collection-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 9999; display: flex; align-items: center; justify-content: center; }
 .collection-dialog { background: var(--bg-color, #fff); color: var(--font-color, #333); width: 90%; max-width: 600px; max-height: 85vh; border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,.2); }
-.collection-header { padding: 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-.collection-header h2 { margin: 0; font-size: 1.2em; }
-.collection-header select { margin: 0; max-width: 220px; }
 .collection-body { padding: 10px 20px; overflow-y: auto; }
 #collection_list { list-style: none; padding: 0; margin: 0; }
 .collection-footer { padding: 15px 20px; border-top: 1px solid #ddd; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }

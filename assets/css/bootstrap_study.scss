@@ -48,3 +48,19 @@
 .study-workspace .study-training-modal .study-settings-grid { margin-top: 0; }
 .study-workspace .study-training-modal .form-select { margin-bottom: 0; }
 .study-workspace .study-training-modal .study-practice-mode { margin: 0; }
+
+.collection-modal.ui-modal {
+  --bs-modal-width: min(840px, calc(100vw - 24px));
+  background: transparent;
+}
+.collection-modal.ui-modal .modal-dialog { margin: 24px auto; min-height: calc(100% - 48px); }
+.collection-modal.ui-modal .collection-dialog { width: 100%; max-height: 85dvh; }
+.collection-modal.ui-modal .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--bg-highlight-color); }
+.collection-modal.ui-modal .modal-title { font-size: 18px; font-weight: 400; }
+.collection-modal.ui-modal .modal-body { display: flex; flex-direction: column; padding: 0; min-height: 0; overflow: hidden; }
+.collection-modal.ui-modal .collection-workspace { flex: 1 1 auto; }
+.collection-modal.ui-modal .collection-footer { flex-shrink: 0; }
+.bootstrap-ui:has(.collection-modal.show) .modal-backdrop { --bs-backdrop-opacity: .6; }
+@media (max-width: 600px) {
+  .collection-modal.ui-modal .modal-header { padding: 10px; }
+}

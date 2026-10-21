@@ -1,0 +1,2 @@
+<p class="collection-subtitle">Your chapters, ready to become a study.</p>
+<select id="collection_selector" aria-label="Active collection" hidden></select>

@@ -2,7 +2,8 @@
 
 Fecha: 2026-10-21. Rama: `migration/bootstrap-ui`. Análisis inicial y biblioteca
 personal y entrenamiento migrados. Los cuatro diálogos de entrenamiento usan
-Bootstrap; la siguiente fase corresponde a colecciones y selector de aperturas.
+Bootstrap. Colecciones también utiliza el modal compartido; queda pendiente
+el selector de aperturas para terminar la fase 4.
 
 ## Pendientes y siguiente entrega
 
@@ -15,7 +16,10 @@ Bootstrap; la siguiente fase corresponde a colecciones y selector de aperturas.
   `ui_modal`; sustituir las pestañas manuales y adaptar los eventos de cierre.
 - [x] Fase 3: preparar los estilos necesarios y activar el layout Bootstrap en
   la página de entrenamiento; verificar profundidad, revisiones y modos de juego.
-- [ ] Fase 4: colecciones y selector de aperturas, conservando borradores.
+- [x] Fase 4: colecciones con modal compartido, conservando borradores.
+- [ ] Fase 4: selector de aperturas y recursos Bootstrap de sus páginas de
+  creación y mantenimiento; coordinar este cambio con fase 5 para evitar mezclar
+  gestores y hojas de estilo en una misma página.
 - [ ] Fase 5: extender componentes comunes al editor, creación, mantenimiento y
   restantes páginas de análisis; eliminar reglas visuales redundantes.
 - [ ] Fase 6: migrar páginas heredadas y retirar Skeleton y el gestor antiguo
@@ -23,10 +27,10 @@ Bootstrap; la siguiente fase corresponde a colecciones y selector de aperturas.
 - [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
 - [ ] Después de la migración de componentes: análisis de reutilización de JS.
 
-La siguiente entrega de interfaz es la fase 4. Colecciones sigue funcionando
-con su contenedor actual dentro de entrenamiento hasta esa entrega. La biblioteca
-simplificada de tácticas y las demás páginas sin activar Bootstrap conservan sus
-recursos anteriores.
+La siguiente entrega de interfaz es el selector de aperturas, completando la
+fase 4 junto con los recursos necesarios de creación y mantenimiento. Colecciones
+ya usa Bootstrap. La biblioteca simplificada de tácticas y las demás páginas sin
+activar Bootstrap conservan sus recursos anteriores.
 
 ## Primera entrega
 
@@ -148,8 +152,8 @@ pestañas y los listeners de apertura, backdrop y retorno de foco sustituidos.
 Los consumidores de progreso cierran mediante la API del modal compartido;
 el cierre de ajustes mantiene la aplicación de cambios de profundidad. Los
 controles de los diálogos reutilizan la normalización común; los cierres tienen
-un objetivo mínimo de 44 px. Colecciones conserva su lógica y su contenido hasta
-fase 4. No se migra el selector especializado de capítulos a un dropdown genérico.
+un objetivo mínimo de 44 px. Colecciones conservaba su contenedor en esta entrega; su migración
+se registra a continuación en fase 4. No se migra el selector especializado de capítulos a un dropdown genérico.
 
 `bootstrap_study_browser.cjs` compara las regiones principales en 1280, 900,
 390 y 320 px, en claro y oscuro. Verifica pestañas, profundidad, metas de sesión,
@@ -176,6 +180,34 @@ Tamaños gzip de esta compilación: `bootstrap_study.css`, 32 420 bytes;
 gzip; `bootstrap_ui.css`, 23 459 bytes, y `bootstrap_ui.js`, 23 721 bytes. El
 motor de estudio continúa en su bundle independiente de 149 869 bytes gzip.
 Estas medidas describen los recursos; no representan ahorro de tokens.
+
+## Fase 4: entrega de colecciones
+
+`collection_modal` reutiliza `ui_modal`, con el cuerpo y la información de
+cabecera extraídos a parciales. El modal común admite contenido adicional de
+cabecera y un ID opcional para su botón de cierre. Se mantienen sidebar, lista,
+formulario de creación y pie de estado en las posiciones existentes.
+
+`study_collections.js` conserva organización, persistencia y recuperación de
+errores. Solicita la apertura mediante `dialog_lifecycle.js`; Bootstrap gestiona
+Escape, backdrop, scroll, foco contenido y retorno al disparador. Se retiran el
+focus trap y los listeners de cierre propios, además de estilos del contenedor
+y cabecera sustituidos. El cuerpo no se destruye al cerrar: el formulario,
+título y color del borrador siguen disponibles al volver a abrir.
+Si falla la creación después de deshabilitar el botón de envío, se recupera el
+foco dentro del modal para mantener disponibles Escape y el reintento.
+
+`bootstrap_collections_browser.cjs` utiliza la página renderizada y comprueba
+organización, mover capítulos, renombrado, error y reintento de guardado,
+exportación PGN, conservación de borrador, error de creación, foco, cierre,
+persistencia y temas en escritorio/móvil. `study_features_browser.cjs` comprueba
+colecciones de invitado con el mismo plugin Bootstrap y navegación por capítulos.
+Los controladores siguen comprobando acceso y creación de estudios.
+
+Pendiente de fase 4: `_opening_picker.html.eex` y sus consumidores en creación y
+mantenimiento aún usan recursos heredados. Su cambio debe incorporar los recursos
+Bootstrap de esas páginas antes de retirar el diálogo nativo; no se presenta esta
+entrega de colecciones como la fase 4 completa.
 
 ## Objetivo y alcance
 
@@ -245,7 +277,7 @@ dependen de que la integración y la limpieza de la anterior estén verificadas.
 | 1 | Completada | Página inicial de análisis e importación PGN | Primera página con layout Bootstrap y diálogo compartido en uso real |
 | 2 | Completada para biblioteca personal | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
 | 3 | Completada | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
-| 4 | Pendiente | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
+| 4 | Parcial: colecciones migradas; selector pendiente | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
 | 5 | Parcial: diálogos migrados normalizados | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
 | 6 | Pendiente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
 

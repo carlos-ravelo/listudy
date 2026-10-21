@@ -45,6 +45,7 @@ $modal-dialog-margin-y-sm-up: 3rem;
 }
 .ui-modal .modal-content { box-sizing: border-box; }
 .ui-modal .modal-header { padding-bottom: 0; justify-content: space-between; gap: 1.2rem; }
+.ui-modal-heading { min-width: 0; }
 .ui-modal .modal-title { margin: 0; font-size: 20px; font-weight: 400; line-height: 1.25; letter-spacing: normal; }
 .ui-modal .btn-close { box-sizing: border-box; width: auto; height: auto; min-width: 44px; min-height: 44px; margin: 0; padding: 0 12px; border: 0; background: transparent; color: inherit; opacity: 1; filter: none; font: inherit; font-size: 13px; line-height: 1.4; }
 .ui-modal form { margin: 0; }
