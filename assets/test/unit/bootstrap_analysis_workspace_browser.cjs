@@ -21,7 +21,9 @@ const baseline = process.env.LISTUDY_WORKSPACE_BASELINE || '/tmp/listudy-analysi
         const name = url.pathname.slice(1);
         if (['games', 'games.html.filtered', 'train', 'comparison', 'comparison.html.partial', 'comparison.html.single', 'uploaded', 'empty', 'filtered_empty', 'unavailable'].includes(name)) {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.end(fs.readFileSync(path.join(url.searchParams.has('baseline') ? baseline : current, name + '.html'))); return;
+            let html = fs.readFileSync(path.join(url.searchParams.has('baseline') ? baseline : current, name + '.html'), 'utf8');
+            if (url.searchParams.has('baseline')) html = html.replace('/js/app.js', '/js/bootstrap_site.js');
+            res.end(html); return;
         }
         const file = path.join(root, 'priv/static', url.pathname);
         if (!file.startsWith(root + '/priv/static/') || !fs.existsSync(file) || !fs.statSync(file).isFile()) {res.statusCode = 404; res.end(); return;}

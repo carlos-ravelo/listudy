@@ -34,11 +34,19 @@ Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
   error del consumidor; las escrituras sin token CSRF se rechazan antes de enviar.
   El guardado de metadatos con `FormData` y archivos conserva su transporte actual.
 
+- `modules/practice_activity.js`: eventos de actividad, foco, visibilidad,
+  bloqueo e intervalo compartidos por estudio y práctica de errores. Devuelve
+  una función de limpieza idempotente; `setupStudySessions().destroy()` también
+  libera el evento de progreso y sus controles. El estudio conserva renderizado
+  cada segundo, guardado cada 15 segundos y sincronización al ocultarse; errores
+  conserva su intervalo de 15 segundos y su política de persistencia. Cada modo
+  conserva elegibilidad, inactividad del tracker y finalización al salir. La
+  práctica de errores instala el adaptador una vez durante la vida de la página.
+
 ## Próximas extracciones recomendadas
 
 | Prioridad | Duplicación comprobada | Propuesta | Condiciones que deben conservarse |
 | --- | --- | --- | --- |
-| Media | `modules/study_sessions.js` y `train_mistakes.js` conectan el tracker a actividad, visibilidad, foco, bloqueo e intervalos | Adaptador de actividad que devuelva una función de limpieza | Mantener sus distintas políticas de sesión, persistencia, inactividad y salida; probar exclusión del tiempo en diálogos y ausencia de listeners/intervalos duplicados |
 | Media | `study_editor.js` y `quick_result.js` comprueban elementos editables antes de ejecutar atajos | Predicado de destino editable con opciones explícitas | `contenteditable=false`, composición, selección y teclas modificadoras; resumen y diálogo siguen siendo exclusiones de cada función |
 
 ## Orden de implementación
@@ -46,8 +54,9 @@ Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
 1. Completado: normalización de búsqueda y descarga PGN.
 2. Completado: transporte JSON, validado primero en mantenimiento y extendido
    al editor y a creación de estudios desde colecciones.
-3. Adaptador de actividad y política de teclado: refactorizar después de contar
-   con pruebas de ciclo de vida y regresiones de práctica.
+3. Completado: adaptador de actividad, con pruebas de tiempo activo, políticas
+   de persistencia, limpieza y remontaje.
+4. Pendiente: predicado de destino editable y regresiones de atajos.
 
 No conviene unificar por apariencia métodos como `save`, `play` o `refresh`:
 editor, colecciones y entrenamiento tienen contratos y estados diferentes.

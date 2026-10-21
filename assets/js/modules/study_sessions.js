@@ -1,5 +1,6 @@
 import { createPracticeTracker, practiceTotals, sessionGoal } from './study/practice_sessions.js';
 import { hasBlockingUi, setupBlockingUi } from './blocking_ui.js';
+import { setupPracticeActivity } from './practice_activity.js';
 
 export function setupStudySessions({ getStats, persist, storage, labels, onContinue, onFinish }) {
     setupBlockingUi();
@@ -50,30 +51,30 @@ export function setupStudySessions({ getStats, persist, storage, labels, onConti
         }
     }
     goal.value = sessionGoal(storage.getItem('smart_session_goal'));
-    goal.onchange = () => {
+    const changeGoal = () => {
         if (!goal.checkValidity()) { goal.reportValidity(); return; }
         goal.value = sessionGoal(goal.value);
         storage.setItem('smart_session_goal', goal.value);
     };
-    document.getElementById('study_session_continue').onclick = () => { endPanel.hidden = true; onContinue(); };
-    document.getElementById('study_session_finish').onclick = () => { endPanel.hidden = true; onFinish(); };
-    function activity() { tracker.activity(Date.now(), eligible()); }
-    document.addEventListener('pointerdown', activity, true);
-    document.addEventListener('keydown', activity, true);
-    document.addEventListener('ui-blocking-changed', () => tracker.tick(Date.now(), eligible()));
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) { tracker.tick(Date.now(), false); tracker.persist(); storage.forceSyncAll?.(); }
-        else activity();
+    goal.onchange = changeGoal;
+    const continueButton = document.getElementById('study_session_continue');
+    const finishButton = document.getElementById('study_session_finish');
+    const continueSession = () => { endPanel.hidden = true; onContinue(); };
+    const finishSession = () => { endPanel.hidden = true; onFinish(); };
+    continueButton.onclick = continueSession;
+    finishButton.onclick = finishSession;
+    const stopActivity = setupPracticeActivity({
+        tracker, eligible, intervalMs: 1000, persistOnBlocking: false, resumeOnVisible: true,
+        onHidden: () => storage.forceSyncAll?.(),
+        onPageHide: () => { tracker.end('left'); storage.forceSyncAll?.(); renderHistory(); },
+        onInterval() {
+            render();
+            if (Date.now() - lastSave >= 15000) { tracker.persist(); lastSave = Date.now(); }
+        }
     });
-    window.addEventListener('blur', () => { tracker.tick(Date.now(), false); tracker.persist(); });
-    window.addEventListener('focus', activity);
-    window.addEventListener('pagehide', () => { tracker.end('left'); storage.forceSyncAll?.(); renderHistory(); });
-    document.getElementById('progress').addEventListener('click', () => { tracker.tick(Date.now(), eligible()); tracker.persist(); renderHistory(); });
-    setInterval(() => {
-        tracker.tick(Date.now(), eligible());
-        render();
-        if (Date.now() - lastSave >= 15000) { tracker.persist(); lastSave = Date.now(); }
-    }, 1000);
+    const progress = document.getElementById('progress');
+    const showProgress = () => { tracker.tick(Date.now(), eligible()); tracker.persist(); renderHistory(); };
+    progress.addEventListener('click', showProgress);
     renderHistory();
     return {
         begin(mode) {
@@ -103,6 +104,13 @@ export function setupStudySessions({ getStats, persist, storage, labels, onConti
             return true;
         },
         end() { tracker.end(); endPanel.hidden = true; render(); renderHistory(); },
+        destroy() {
+            stopActivity();
+            progress.removeEventListener('click', showProgress);
+            if (goal.onchange === changeGoal) goal.onchange = null;
+            if (continueButton.onclick === continueSession) continueButton.onclick = null;
+            if (finishButton.onclick === finishSession) finishButton.onclick = null;
+        },
         refresh: renderHistory,
         clear() { tracker.clear(); endPanel.hidden = true; render(); renderHistory(); }
     };

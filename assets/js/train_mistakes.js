@@ -9,6 +9,7 @@ import { chapterReviewSignature } from './modules/study/chapter_review.js';
 import { positionCatalog } from './modules/study/position_review.js';
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
 import { createPracticeTracker } from './modules/study/practice_sessions.js';
+import { setupPracticeActivity } from './modules/practice_activity.js';
 import { applyGameEvidence, gamePositionPending, recordGamePractice } from './modules/analysis/game_progress.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -84,15 +85,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }});
     setupBlockingUi();
     const eligible = () => sessionOpen && !document.hidden && document.hasFocus() && !hasBlockingUi();
-    document.addEventListener('ui-blocking-changed', () => { tracker.tick(Date.now(), eligible()); tracker.persist(); });
-    const activity = () => tracker.activity(Date.now(), eligible());
-    document.addEventListener('pointerdown', activity, true);
-    document.addEventListener('keydown', activity, true);
-    document.addEventListener('visibilitychange', () => { tracker.tick(Date.now(), eligible()); tracker.persist(); });
-    window.addEventListener('blur', () => { tracker.tick(Date.now(), false); tracker.persist(); });
-    window.addEventListener('focus', activity);
-    window.addEventListener('pagehide', () => { finishCurrentPractice(); tracker.end('left'); StorageAdapter.forceSyncAll(); });
-    setInterval(() => { tracker.tick(Date.now(), eligible()); tracker.persist(); }, 15000);
+    setupPracticeActivity({ tracker, eligible,
+        onPageHide: () => { finishCurrentPractice(); tracker.end('left'); StorageAdapter.forceSyncAll(); }
+    });
 
     function feedback(state, title, text) {
         statusEl.dataset.feedback = state;
