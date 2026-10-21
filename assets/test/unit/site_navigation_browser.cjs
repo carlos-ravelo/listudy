@@ -47,19 +47,18 @@ const pages = {
         };
         await visit('/en');
         assert(await page.locator('.home-paths').evaluate(node => node.getBoundingClientRect().bottom <= innerHeight));
-        const practice = page.locator('.site-menu[data-nav-section="practice"]');
-        await practice.locator('summary').click();
-        assert(await practice.locator('.site-menu-panel').evaluate(node => getComputedStyle(node).position === 'static'));
+        const preferences = page.locator('.site-menu').filter({has: page.locator('#board_settings')});
+        await preferences.locator(':scope > summary').click();
+        assert(await preferences.locator('.site-menu-panel').evaluate(node => getComputedStyle(node).position === 'static'));
         await page.keyboard.press('Escape');
-        assert.equal(await practice.getAttribute('open'), null);
+        assert.equal(await preferences.getAttribute('open'), null);
         await page.keyboard.press('Escape');
         assert(await page.locator('.site-brand').evaluate(node => document.activeElement === node));
-        const preferences = page.locator('.site-menu').filter({has: page.locator('#board_settings')});
         await preferences.locator(':scope > summary').click();
         await page.locator('#board_settings').click();
         await page.waitForSelector('#board_settings_modal', {state: 'visible'});
         assert.equal(await page.evaluate(() => document.elementFromPoint(20, 20).id), 'board_settings_modal');
-        await page.locator('#board_settings_modal .modal_close').click();
+        await page.locator('#board_settings_modal [data-bs-dismiss="modal"]').click();
         await preferences.locator(':scope > summary').click();
         await page.locator('#toggle_dark_mode').click();
         await page.screenshot({path: '/tmp/listudy-sidebar-home-dark.png', fullPage: true});
@@ -68,7 +67,7 @@ const pages = {
             await page.setViewportSize({width, height: 768});
             for (const route of ['/en', '/en/studies/journey-repertoire', '/analysis']) {
                 await visit(route);
-                if (route !== '/analysis') await page.waitForSelector('cg-board');
+                if (route === '/en/studies/journey-repertoire') await page.waitForSelector('#chessground cg-board');
                 if (!(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))) {
                     await page.screenshot({path: '/tmp/listudy-sidebar-overflow.png', fullPage: true});
                     console.log(await page.evaluate(() => [...document.querySelectorAll('main *')].filter(node => node.getBoundingClientRect().right > innerWidth + 1).map(node => ({tag: node.tagName, id: node.id, cls: String(node.className), width: node.getBoundingClientRect().width, right: node.getBoundingClientRect().right})).slice(0, 15)));
@@ -95,7 +94,7 @@ const pages = {
                         const chapterBounds = await page.locator('.study-chapter-navigation').boundingBox();
                         assert(Math.abs(titleBounds.y + titleBounds.height / 2 - chapterBounds.y - chapterBounds.height / 2) < 2);
                         const actions = await page.locator('#study_board_actions').boundingBox();
-                        assert(actions.y + actions.height <= 768, 'Board controls require scrolling');
+                        assert(actions.y + actions.height <= 768, `Board controls require scrolling: ${JSON.stringify({ board, actions })}`);
                         await title.evaluate(node => { node.textContent = 'A very long repertoire title '.repeat(15); });
                         assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                         const longBoard = await page.locator('#chessground cg-board').boundingBox();
@@ -109,6 +108,15 @@ const pages = {
                         await page.locator('#open_study_settings').click();
                         assert(await page.locator('#study_settings_dialog').isVisible());
                         await page.keyboard.press('Escape');
+                        await page.locator('#study_settings_dialog').waitFor({state: 'hidden'});
+                        for (const height of [640, 900, 768]) {
+                            await page.setViewportSize({width, height});
+                            await page.waitForFunction(() => {
+                                const board = document.querySelector('#chessground cg-board').getBoundingClientRect();
+                                const controls = document.getElementById('study_board_actions').getBoundingClientRect();
+                                return board.width === board.height && controls.bottom <= innerHeight;
+                            });
+                        }
                     }
                     boards.push({width, board: Math.round(board.width)});
                     assert.equal(await page.locator('.site-primary-navigation > a[aria-current="location"]').textContent(), 'Your Studies');
@@ -118,10 +126,10 @@ const pages = {
         }
         await page.setViewportSize({width: 390, height: 844}); await visit('/en');
         await page.locator('.site-menu-toggle').click();
-        await practice.locator('summary').click();
+        await preferences.locator(':scope > summary').click();
         await page.setViewportSize({width: 1366, height: 768});
         await page.waitForFunction(() => document.querySelector('.site-menu-toggle').getAttribute('aria-expanded') === 'false');
-        assert.equal(await practice.getAttribute('open'), null);
+        assert.equal(await preferences.getAttribute('open'), null);
         await page.setViewportSize({width: 390, height: 844});
         assert(await page.locator('.site-navigation-links').isHidden());
         await page.setViewportSize({width: 1366, height: 420}); await visit('/en');

@@ -80,6 +80,17 @@ completadas. Las pruebas
 cubren los consumidores y los contratos compartidos; no hay nuevas extracciones
 pendientes dentro de este alcance.
 
+## Regresiones generales revisadas
+
+Antes de ampliar la auditoría a `study.js`, se resolvieron los tres recorridos
+bloqueados documentados en el [plan de migración](bootstrap-migration-plan.md).
+Las expectativas antiguas de portada, navegación y mensajes Smart se actualizaron
+contra los contratos actuales y los recorridos pasan completos. También se
+corrigió un fallo real de tamaño del tablero: el cálculo reserva ahora su margen
+inferior existente para que los controles quepan en la altura de la ventana.
+Se conserva la distribución y se verifican cambios de altura, anchura y los
+entrenamientos que comparten el módulo de tablero.
+
 ## Orden de implementación
 
 1. Completado: normalización de búsqueda y descarga PGN.

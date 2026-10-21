@@ -41,8 +41,39 @@ sitio. Las reglas existentes de geometría, tipografía y contenido se conservan
 como adaptador de aplicación para mantener los layouts; no se ha sustituido su
 grid por otro distinto. Las propuestas de extracción de funciones JavaScript
 están documentadas en [la auditoría](javascript-reusability-audit.md), para una
-fase de refactorización independiente. Los fallos anteriores de regresiones
-generales siguen documentados y no se consideran resueltos por esta migración.
+fase de refactorización independiente. Las regresiones generales que quedaron pendientes se resolvieron en la revisión
+posterior descrita a continuación.
+
+## Revisión posterior de regresiones generales
+
+Los tres recorridos que estaban bloqueados pasan completos con páginas recién
+renderizadas por los controladores actuales:
+
+- `player_journey_browser.cjs`: la portada presenta dos favoritos, como verifica
+  el controlador, en lugar de los nueve estudios que esperaba la prueba antigua.
+  La cobertura de scroll conserva una lista larga creada solo en la prueba.
+  El recorrido usa los dos paneles actuales de tácticas y distingue los enlaces
+  principales de los enlaces de idioma.
+- `analysis_training_browser.cjs`: la práctica dirigida inicia Smart y conserva
+  su posición de entrada. Una cadena corta de repaso oculta deliberadamente el
+  mensaje vacío; la prueba verifica la sesión activa y la posición en lugar de
+  exigir ese mensaje. El recorrido completo de revisión, sincronización,
+  intervalos, enlaces dirigidos y colas de práctica pasa.
+- `site_navigation_browser.cjs`: usa el menú de preferencias actual, el cierre
+  Bootstrap y espera un tablero únicamente en la página de estudio. La portada
+  ya no contiene un tablero ni el menú antiguo de Practice.
+
+Al avanzar este último recorrido se detectó un fallo real: el cálculo de tamaño
+no reservaba el margen existente entre tablero y controles. A 1366×768 los
+controles terminaban en y=776. `ground.js` descuenta ahora la separación renderizada,
+sin cambiar CSS, estructura ni distribución. La prueba conserva el requisito de
+que los controles quepan y cubre también cambios de altura a 640, 900 y 768 px.
+
+Validación: 23 pruebas de controladores; los tres recorridos completos anteriores;
+`native_training_browser.cjs` para los demás entrenamientos; compilación de
+producción aprobada con las 180 advertencias existentes de Sass y rendimiento.
+Los registros de entregas siguientes describen el estado histórico de cada
+entrega; las limitaciones de estos tres recorridos quedan cerradas aquí.
 
 ## Primera entrega
 
@@ -69,12 +100,13 @@ en claro y oscuro, conservando las dimensiones y posiciones de las regiones
 principales. La prueba `bootstrap_analysis_browser.cjs` verifica modales, foco,
 Escape, backdrop, PGN, filtros, preferencias y navegación móvil.
 
-Limitación detectada: `analysis_training_browser.cjs:202` espera que
+Limitación detectada en esa entrega, resuelta en la revisión posterior:
+`analysis_training_browser.cjs:202` esperaba que
 `#smart_run_status` sea visible al volver a practicar una línea. Esa comprobación
 falla tanto con la página anterior como con la migrada; esperar a su visibilidad
 también agota el tiempo. Los pasos anteriores de revisión, sincronización y
-análisis completan su ejecución. El fallo no se da por resuelto ni se modifica
-la lógica Smart dentro de esta entrega.
+análisis completan su ejecución. En esa entrega no se resolvió ni se modificó la lógica Smart; la expectativa
+se corrigió en la revisión posterior de regresiones.
 
 Después de la migración de interfaz queda pendiente la auditoría de reutilización
 de funciones JavaScript solicitada por el usuario.
@@ -175,8 +207,8 @@ comentarios, historial, navegación desde progreso, retorno del foco y móvil.
 ajustes e historial. Las regresiones de sesiones y práctica débil siguen cubriendo
 sus contratos de dominio. `bootstrap_tactics_browser.cjs` verifica el entrenamiento
 con negras, preferencias separadas, lectura, progreso y exclusión de la pestaña
-Sparring oculta del recorrido de teclado. El fallo previo de Smart descrito en la primera
-entrega sigue registrado y no se da por corregido en esta migración.
+Sparring oculta del recorrido de teclado. El fallo previo de Smart descrito en la primera entrega quedó pendiente
+entonces; su expectativa se corrigió en la revisión posterior de regresiones.
 
 La suite general `player_journey_browser.cjs` se detiene antes de probar los
 estudios: en la portada espera nueve `.home-daily-study` y obtiene dos con las
@@ -297,10 +329,10 @@ preferencias, pausa del tiempo, pistas, respuestas, resumen, filtros y estados
 vacíos, sin coincidencias y PGN cargado. El build de producción pasa con las
 advertencias existentes de Sass y tamaño de recursos.
 
-La regresión general `analysis_training_browser.cjs` conserva el fallo previo en
+En esa entrega, `analysis_training_browser.cjs` conservaba el fallo previo en
 la línea 202: espera visible `#smart_run_status` al volver a la práctica de una
 línea. Los pasos anteriores de práctica correcta, progreso compartido y
-sincronización pasan. Ese fallo sigue registrado y no se da por resuelto.
+sincronización pasan. Su expectativa se corrigió en la revisión posterior de regresiones.
 
 ## Biblioteca simplificada de tácticas
 

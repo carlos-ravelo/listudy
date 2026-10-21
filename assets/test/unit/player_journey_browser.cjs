@@ -140,22 +140,31 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         assert.equal(await page.locator('.home-tactics .home-tactics-link').getAttribute('href'), '/en/tactics');
         assert.equal(await page.locator('cg-board').count(), 0);
         assert.equal(await page.locator('.home-paths > section').count(), 4);
-        assert.equal(await page.locator('.home-daily-study').count(), 9);
+        assert.equal(await page.locator('.home-daily-study').count(), 2);
+        assert.deepEqual(await page.locator('.home-daily-study-title').allTextContents(), ['Saved public repertoire', 'Daily repertoire 1']);
         assert.equal(await page.locator('.home-daily-study[data-last-study="true"]').count(), 1);
         assert.equal(await page.locator('.home-daily-studies-list li').first().locator('.home-daily-study-recent').count(), 1);
         assert.equal(await page.locator('.home-daily-study-most-used').count(), 1);
         assert.equal(await page.locator('.home-daily-sparring').count(), 0);
 
+        await page.locator('.home-daily-studies-list').evaluate(list => {
+            for (let index = 0; index < 9; index++) {
+                const item = list.firstElementChild.cloneNode(true);
+                item.dataset.testOverflow = 'true';
+                list.append(item);
+            }
+        });
         assert(await page.locator('.home-daily-scroll').evaluate(node => node.scrollHeight > node.clientHeight));
         await page.locator('.home-daily-scroll').focus();
         await page.keyboard.press('End');
         await page.waitForFunction(() => document.querySelector('.home-daily-scroll').scrollTop > 0);
         await page.locator('.home-daily-scroll').evaluate(node => node.blur());
+        await page.locator('[data-test-overflow]').evaluateAll(items => items.forEach(item => item.remove()));
         for (const width of [320, 390, 1280]) {
             await page.setViewportSize({width, height: 1100});
             await page.waitForTimeout(100);
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Home grid overflows at ${width}px`);
-            assert.equal(await page.locator('.home-daily-study:visible').count(), 9);
+            assert.equal(await page.locator('.home-daily-study:visible').count(), 2);
             assert.equal(await page.locator('.home-tactics a[href="/en/blind-tactics"]').count(), 1);
             assert.equal(await page.locator('.home-tactics a[href="/en/pieceless-tactics"]').count(), 1);
             for (const theme of ['light', 'dark']) {
@@ -188,9 +197,10 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
         await page.goto(base + '/en/tactics');
         await page.waitForSelector('[data-study-library][data-initialized]');
         assert.equal(await page.locator('main h1').textContent(), 'Tactics');
-        await page.locator('.tactics-sources a').nth(1).click();
+        assert(await page.locator('.puzzle-launcher').isVisible());
         await page.waitForSelector('.tactics-collections:visible');
-        assert.equal(await page.locator('.site-menu[data-nav-section="practice"] a[href="/en/tactics"]').count(), 0);
+        assert.equal(await page.locator('.site-primary-navigation > a[data-nav-section="tactics"]').getAttribute('aria-current'), 'location');
+        assert.equal(await page.locator('.site-menu-panel > a[href="/en/tactics"]').count(), 0);
         for (const width of [320, 1366]) {
             await page.setViewportSize({width, height: 900});
             for (const theme of ['light', 'dark']) {

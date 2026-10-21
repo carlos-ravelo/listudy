@@ -77,7 +77,11 @@ function calculate_width() {
     const frame = gc.querySelector(".study-board-frame");
     if (frame && gc.closest(".study-workspace") && window.innerWidth > 600) {
         const actions = document.getElementById("study_board_actions");
-        const controlsHeight = actions ? actions.offsetHeight + parseFloat(getComputedStyle(actions).marginTop || 0) : 0;
+        const board = document.getElementById("chessground");
+        const gap = actions && board
+            ? Math.max(0, actions.getBoundingClientRect().top - board.getBoundingClientRect().bottom)
+            : 0;
+        const controlsHeight = actions ? actions.offsetHeight + gap : 0;
         return Math.min(gc.clientWidth, Math.max(240, Math.floor(window.innerHeight - frame.getBoundingClientRect().top - controlsHeight - 16)));
     }
     let gc_width = (frame || gc).offsetWidth;
