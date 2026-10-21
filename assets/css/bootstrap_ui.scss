@@ -1,0 +1,69 @@
+// Keep Listudy's existing scale and palette while adopting Bootstrap controls.
+$font-family-sans-serif: Verdana, Geneva, sans-serif;
+$font-size-base: 1.5rem;
+$primary: #206a9d;
+$border-radius: .6rem;
+$btn-font-size: 1.3rem;
+$btn-padding-y: .8rem;
+$btn-padding-x: 1.2rem;
+$modal-md: 60rem;
+$modal-inner-padding: 2rem;
+$modal-header-padding: 2rem;
+$modal-content-border-radius: .8rem;
+$modal-backdrop-opacity: .35;
+$modal-dialog-margin: 1.6rem;
+$modal-dialog-margin-y-sm-up: 3rem;
+
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/root';
+@import 'bootstrap/scss/transitions';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/close';
+@import 'bootstrap/scss/modal';
+@import 'bootstrap/scss/alert';
+
+@import './colors.css';
+@import './components/site_navigation.css';
+@import './components/bootstrap_shell.css';
+@import './features/analysis_games.css';
+@import './features/analysis_presentation.css';
+@import './features/practice_theme.css';
+
+.ui-modal {
+  --bs-modal-bg: var(--bg-color);
+  --bs-modal-color: var(--font-color);
+  --bs-modal-border-color: var(--analysis-divider, var(--bg-highlight-color));
+  --bs-modal-header-border-width: 0;
+  --bs-modal-footer-border-width: 0;
+}
+.ui-modal .modal-content { box-sizing: border-box; }
+.ui-modal .modal-header { padding-bottom: 0; gap: 1.2rem; }
+.ui-modal .modal-title { margin: 0; font-size: 20px; font-weight: 400; line-height: 1.25; letter-spacing: normal; }
+.ui-modal .btn-close { box-sizing: border-box; width: auto; height: auto; min-height: 36px; margin: 0; padding: 0 12px; border: 0; background: transparent; color: inherit; opacity: 1; font: inherit; font-size: 13px; line-height: 1.4; }
+.ui-modal form { margin: 0; }
+.ui-modal .form-control { box-sizing: border-box; }
+.ui-modal textarea { display: inline-block; min-height: 180px; padding: 6px 10px; font-family: monospace; }
+#analysis_pgn_modal .modal-body { padding-top: 16px; }
+.ui-modal .control > .btn { min-height: 36px; padding: 0 30px; background: transparent; color: var(--font-color); border-color: var(--analysis-divider); }
+.ui-modal .row { display: flex; flex-wrap: wrap; gap: 16px; }
+.ui-modal .column { flex: 1 1 200px; min-width: 0; }
+.ui-modal label { display: block; margin-bottom: 5px; font-weight: 600; }
+.ui-modal select { max-width: 100%; margin-bottom: 15px; padding: 6px 10px; color: var(--font-color); background: var(--bg-color); border: 1px solid var(--bg-highlight-color); border-radius: 6px; }
+.ui-modal .settings_piece_container { display: flex; gap: 4px; }
+.ui-modal .settings_piece_container piece { display: block; position: static; width: 45px; height: 45px; background-size: 45px; }
+.ui-modal .settings_piece_container + * { clear: both; }
+.bootstrap-ui.site-layout .modal { z-index: var(--bs-modal-zindex); }
+.bootstrap-ui .alert:empty { display: none; }
+.bootstrap-ui .analysis-overview-page .form-select { width: auto; }
+
+// Preferences retain their existing proportions while using the shared modal.
+:is(#board_settings_modal, #sound_settings_modal) .modal-dialog { width: 75%; max-width: none; margin: 10vw auto; }
+:is(#board_settings_modal, #sound_settings_modal) { --bs-modal-bg: var(--bg-highlight-color); --bs-modal-border-color: var(--font-color); }
+:is(#board_settings_modal, #sound_settings_modal) .modal-title { font-size: 30px; line-height: 1.3; font-weight: 400; letter-spacing: -1px; }
+@media (min-width: 550px) { :is(#board_settings_modal, #sound_settings_modal) .modal-title { font-size: 36px; } }
+#sound_settings_modal .secondary { display: inline-block; height: 38px; padding: 0 30px; color: var(--font-color); text-align: center; font-size: 11px; font-weight: 600; line-height: 38px; letter-spacing: 1px; text-transform: uppercase; background: transparent; border: 1px solid #bbb; border-radius: 4px; margin-bottom: 10px; cursor: pointer; }

@@ -295,11 +295,24 @@ defmodule ListudyWeb.AnalysisTrainingTest do
 
     conn = conn_for(user) |> get("/analysis")
     html = html_response(conn, 200)
+    assert html =~ "/css/bootstrap_ui.css"
+    assert html =~ "/js/bootstrap_ui.js"
+    refute html =~ "/css/app.css"
+    refute html =~ "/js/app.js"
+    assert html =~ "data-bs-target=\"#analysis_pgn_modal\""
+    assert html =~ "id=\"analysis_pgn_modal_title\""
+    assert html =~ "data-modal-autofocus"
+    assert html =~ "for=\"pgn\""
+    assert html =~ "id=\"pgn\""
+    assert html =~ "id=\"board_settings_modal\""
+    assert html =~ "id=\"sound_settings_modal\""
     assert html =~ "games with deviations"
     assert html =~ "Disconnect and delete imported games"
     assert html =~ "data-confirm="
     assert [%{deviations: 2, relevant_games: 2, positions: [_]}] = conn.assigns.studies_stats
     train = conn_for(user) |> get("/analysis/#{study.id}/train") |> html_response(200)
+    assert train =~ "/css/app.css"
+    refute train =~ "/css/bootstrap_ui.css"
     assert train =~ "data-study-pgn="
     assert train =~ "same reviews and study progress"
     if path = System.get_env("LISTUDY_ANALYSIS_PREVIEW"), do: File.write!(path, html)

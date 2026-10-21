@@ -1,7 +1,7 @@
 <div class="whole analysis-workspace analysis-overview-page practice-page" data-progress-user="<%= @current_user.id %>">
   <div class="analysis-page-heading">
     <h1>Analyze Games</h1>
-    <button type="button" class="analysis-pgn-launch practice-primary" data-open-pgn>Analyze a PGN</button>
+    <button type="button" class="analysis-pgn-launch btn btn-primary practice-primary" data-open-pgn data-bs-toggle="modal" data-bs-target="#analysis_pgn_modal">Analyze a PGN</button>
   </div>
 
   <%
@@ -63,11 +63,11 @@
           <%= form_for :analysis, Routes.analysis_path(@conn, :sync), [class: "analysis-account-actions"], fn f -> %>
             <%= hidden_input f, :platform, value: account.key %>
             <%= if account.username do %>
-              <%= submit "Sync games", class: "button button-outline practice-secondary", disabled: sync && sync.status == "running" %>
+              <%= submit "Sync games", class: "btn btn-outline-primary practice-secondary", disabled: sync && sync.status == "running" %>
 
             <% else %>
-              <%= text_input f, :username, placeholder: "#{account.name} username", required: true, "aria-label": "#{account.name} username" %>
-              <%= submit "Connect", class: "button button-primary practice-primary" %>
+              <%= text_input f, :username, placeholder: "#{account.name} username", required: true, class: "form-control", "aria-label": "#{account.name} username" %>
+              <%= submit "Connect", class: "btn btn-primary practice-primary" %>
             <% end %>
           <% end %>
         </article>
@@ -80,7 +80,7 @@
       <h2>Game library</h2>
       <p><strong><%= @lichess_count + @chesscom_count %></strong> imported games</p>
     </div>
-    <%= link "Browse games", to: Routes.analysis_path(@conn, :games), class: "analysis-library-link practice-secondary" %>
+    <%= link "Browse games", to: Routes.analysis_path(@conn, :games), class: "analysis-library-link btn btn-outline-primary practice-secondary" %>
   </section>
 
 
@@ -92,7 +92,7 @@
       </div>
       <div class="analysis-repertoire-filter">
         <label for="time-filter">Period</label>
-        <select id="time-filter">
+        <select id="time-filter" class="form-select">
           <option value="all" <%= if @filter == "all", do: "selected" %>>All time</option>
           <option value="last_week" <%= if @filter == "last_week", do: "selected" %>>Last week</option>
           <option value="last_month" <%= if @filter == "last_month", do: "selected" %>>Last month</option>
@@ -102,7 +102,7 @@
 
     <div class="analysis-repertoires" data-repertoires>
       <div class="analysis-repertoire-tools" data-repertoire-tools hidden>
-        <input type="search" data-repertoire-search placeholder="Search repertoires" aria-label="Search repertoires">
+        <input type="search" class="form-control" data-repertoire-search placeholder="Search repertoires" aria-label="Search repertoires">
         <label><input type="checkbox" data-repertoire-deviations> With deviations</label>
       </div>
       <ul class="analysis-repertoire-list">
@@ -127,7 +127,7 @@
             </span>
             <span class="analysis-repertoire-action">
               <%= if stat.positions != [] do %>
-                <%= link "Train", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), class: "practice-secondary", aria: [label: "Train: " <> stat.study.title] %>
+                <%= link "Train", to: Routes.analysis_path(@conn, :train, stat.study.id, filter: @filter), class: "btn btn-outline-primary practice-secondary", aria: [label: "Train: " <> stat.study.title] %>
               <% end %>
             </span>
           </li>
@@ -136,36 +136,21 @@
       <%= if @studies_stats == [] do %>
         <div class="analysis-targets-empty practice-panel">
           <p><%= dgettext("study", "Import a repertoire to compare your games and practice where you left your preparation.") %></p>
-          <%= link dgettext("study", "Import my repertoire"), to: Routes.study_path(@conn, :new, @locale), class: "button practice-primary" %>
+          <%= link dgettext("study", "Import my repertoire"), to: Routes.study_path(@conn, :new, @locale), class: "btn btn-primary practice-primary" %>
         </div>
       <% end %>
       <p data-repertoire-empty hidden>No repertoires match these filters.</p>
       <div class="analysis-repertoire-pagination" data-repertoire-pagination hidden>
         <span data-repertoire-count role="status" aria-live="polite"></span>
         <nav aria-label="Repertoire pages">
-          <button type="button" data-repertoire-previous>Previous</button>
-          <button type="button" data-repertoire-next>Next</button>
+          <button type="button" class="btn btn-outline-secondary" data-repertoire-previous>Previous</button>
+          <button type="button" class="btn btn-outline-secondary" data-repertoire-next>Next</button>
         </nav>
       </div>
     </div>
     <p class="analysis-history-note">Game counts are history, not a memory score. Practicing updates your reviews without erasing past games. After changing a study, sync games to refresh these comparisons.</p>
   </section>
-  <dialog class="analysis-pgn-dialog" aria-labelledby="analysis-pgn-title">
-    <div class="analysis-pgn-heading"><h2 id="analysis-pgn-title">Analyze a PGN</h2><button type="button" data-close-pgn aria-label="Close">×</button></div>
-    <div class="mt-4">
-      <%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), fn f -> %>
-        <div class="field">
-          <label class="label" for="pgn">Paste a PGN</label>
-          <div class="control">
-            <%= textarea f, :pgn, class: "textarea", rows: 6, placeholder: "1. e4 c5 2. Nf3..." %>
-          </div>
-        </div>
-        <div class="control mt-2">
-          <%= submit "Analyze Game", class: "button is-primary" %>
-        </div>
-      <% end %>
-    </div>
-  </dialog>
+  <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "analysis_pgn_modal", title: "Analyze a PGN", body: render("_pgn_form.html", conn: @conn) %>
 
 </div>
 

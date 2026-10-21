@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html class="blue cburnett" lang="<%= @locale %>">
+  <head>
+    <%= render "_head.html", assigns: assigns, conn: @conn%>
+  </head>
+  <body class="site-layout bootstrap-ui">
+    <a class="site-skip-link" href="#main-content"><%= gettext("Skip to content") %></a>
+    <%= render "_header.html", assigns: assigns, conn: @conn%>
+    <main id="main-content" role="main" class="container" tabindex="-1">
+        <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+        <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+        <%= @inner_content %>
+    </main>
+    <%= render "_footer.html", assigns: assigns, conn: @conn%>
+  </body>
+</html>

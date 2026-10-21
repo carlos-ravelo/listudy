@@ -26,12 +26,6 @@ import "./components/study_library.js"
 import "./components/puzzle_filters.js"
 import "./components/chessboard_settings.js"
 import "./components/support.js"
+import { setupSiteTheme } from './modules/site_theme.js';
 
-let toggle = document.getElementById("toggle_dark_mode");
-if (toggle != null) {
-    toggle.onclick = function() {
-        let theme = localStorage.getItem("data-theme") == "light" ? "dark" : "light";
-        localStorage.setItem("data-theme", theme);
-        document.documentElement.setAttribute('data-theme', theme);
-    }
-}
+setupSiteTheme();

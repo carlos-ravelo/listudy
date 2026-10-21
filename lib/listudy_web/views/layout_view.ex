@@ -2,7 +2,8 @@ defmodule ListudyWeb.LayoutView do
   use ListudyWeb, :view
 
   def app_stylesheet_path(conn) do
-    path = Routes.static_path(conn, "/css/app.css")
+    stylesheet = if conn.assigns[:bootstrap_ui], do: "/css/bootstrap_ui.css", else: "/css/app.css"
+    path = Routes.static_path(conn, stylesheet)
     separator = if String.contains?(path, "?"), do: "&", else: "?"
     path <> separator <> "v=study-maintenance-1"
   end

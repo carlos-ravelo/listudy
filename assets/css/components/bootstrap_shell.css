@@ -1,0 +1,31 @@
+/* Preserve the current page geometry without loading Skeleton or app.scss. */
+html { font-size: 62.5%; }
+body { margin: 0; background: var(--bg-color); color: var(--font-color); font: 400 1.5em/1.6 Verdana, Geneva, sans-serif; }
+.container { position: relative; box-sizing: border-box; width: 100%; max-width: 60em; margin: 0 auto; padding: 0; }
+.container::after { content: ''; display: table; clear: both; }
+@media (min-width: 550px) { .container { padding: 0 1em; } }
+a { color: #1eaedb; }
+a:hover { color: #0fa0ce; }
+p { margin: 0 0 25px; }
+h1, h2, h3, h4 { margin: 0 0 20px; font-weight: 400; }
+h1 { line-height: 1.2; }
+h2 { line-height: 1.25; }
+h3 { line-height: 1.3; }
+h4 { line-height: 1.35; }
+input, select, textarea, button { font-family: inherit; }
+form { margin-bottom: 25px; }
+label { display: block; margin-bottom: 5px; font-weight: 600; }
+input, select, textarea { margin-bottom: 15px; }
+input[type='checkbox'] { margin-right: 4px; }
+.btn { box-sizing: border-box; text-decoration: none; }
+.site-menu-toggle { padding: 0 30px; font-weight: 600; line-height: 38px; cursor: pointer; }
+.analysis-workspace input[type='text'], .analysis-workspace input[type='search'], .analysis-workspace select { box-sizing: border-box; height: 38px; padding: 6px 10px; border: 1px solid var(--bg-highlight-color); }
+.analysis-workspace .form-select { appearance: auto; background-image: none; }
+.analysis-workspace .btn { margin-bottom: 10px; }
+.ui-modal :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--font-color); outline-offset: 2px; }
+.ui-modal .btn { min-height: 38px; }
+.ui-modal .btn-close { min-height: 20px; }
+.ui-modal hr { margin: 20px 0; border: 0; border-top: 1px solid var(--bg-highlight-color); }
+.alert { --bs-alert-padding-x: 15px; --bs-alert-padding-y: 15px; --bs-alert-margin-bottom: 20px; --bs-alert-border-radius: 4px; }
+.alert-info { --bs-alert-color: #31708f; --bs-alert-bg: #d9edf7; --bs-alert-border-color: #bce8f1; }
+.alert-danger { --bs-alert-color: #a94442; --bs-alert-bg: #f2dede; --bs-alert-border-color: #ebccd1; }

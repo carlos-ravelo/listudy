@@ -114,7 +114,10 @@ defmodule ListudyWeb.AnalysisController do
 
     base_stats = Enum.map(base_stats, &Map.put(&1, :positions, positions[&1.study.id] || []))
 
-    render(conn, "index.html",
+    conn
+    |> assign(:bootstrap_ui, true)
+    |> put_layout({ListudyWeb.LayoutView, "bootstrap.html"})
+    |> render("index.html",
       studies_stats: base_stats,
       lichess_count: lichess_count,
       chesscom_count: chesscom_count,

@@ -11,7 +11,9 @@
     "test": "npx codeceptjs run-workers 5 -c test/codecept.conf.js"
   },
   "dependencies": {
+    "@popperjs/core": "2.11.8",
     "alpinejs": "^3.17.4",
+    "bootstrap": "5.3.8",
     "chess.js": "^0.10.3",
     "chessground": "^9.2.1",
     "pgn-parser": "^2.1.1",

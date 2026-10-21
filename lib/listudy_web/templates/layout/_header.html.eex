@@ -29,8 +29,8 @@
           <summary><%= gettext("Preferences") %></summary>
           <div class="site-menu-panel">
             <a href="#" id="toggle_dark_mode"><%= gettext("Toggle Darkmode") %></a>
-            <a href="#" class="modal_open" id="sound_settings"><%= gettext("Sound Settings") %></a>
-            <a href="#" class="modal_open" id="board_settings"><%= gettext("Board Settings") %></a>
+            <a href="#" class="<%= unless @conn.assigns[:bootstrap_ui], do: "modal_open" %>" id="sound_settings" <%= if @conn.assigns[:bootstrap_ui], do: raw(~s(data-bs-toggle="modal" data-bs-target="#sound_settings_modal")) %>><%= gettext("Sound Settings") %></a>
+            <a href="#" class="<%= unless @conn.assigns[:bootstrap_ui], do: "modal_open" %>" id="board_settings" <%= if @conn.assigns[:bootstrap_ui], do: raw(~s(data-bs-toggle="modal" data-bs-target="#board_settings_modal")) %>><%= gettext("Board Settings") %></a>
             <details class="site-language-menu">
               <summary><%= gettext("Language") %></summary>
               <div><%= raw ListudyWeb.Seo.lang_alternatives(@conn) %></div>
@@ -59,42 +59,15 @@
   </nav>
 </header>
 
+<%= if @conn.assigns[:bootstrap_ui] do %>
+  <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "board_settings_modal", title: gettext("Board Settings"), centered: false, body: render(ListudyWeb.ComponentView, "board_preferences.html") %>
+  <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "sound_settings_modal", title: gettext("Sound Settings"), centered: false, body: render(ListudyWeb.ComponentView, "sound_preferences.html") %>
+<% else %>
 <div id="board_settings_modal" class="modal">
   <div class="modal-content">
     <span class="modal_close">&times;</span>
     <h3><%= gettext("Board Settings")%></h3>
-    <div class="row">
-      <div class="one-half column">
-        <label for="chessboard_background"><%= gettext("Select a color:") %></label>
-        <select name="chessboard_background" id="chessboard_background">
-          <option value="blue">Blue</option>
-          <option value="brown">Brown</option>
-          <option value="green">Green</option>
-          <option value="ic">IC</option>
-        </select>
-        <label for="chessboard_pieces"><%= gettext("Select a piece set:") %></label>
-        <select name="chessboard_pieces" id="chessboard_pieces">
-          <option value="cburnett">cburnett</option>
-          <option value="merida">merida</option>
-          <option value="chessnut">chessnut</option>
-          <option value="pirouetti">pirouetti</option>
-          <option value="pixel">pixel</option>
-          <option value="shapes">shapes</option>
-          <option value="letter">letter</option>
-        </select>
-      </div>
-      <div class="one-half column">
-        <div class="chessboard cg-wrap cg-board-wrap orientation-white manipulable"></div>
-        <div class="settings_piece_container">
-          <piece class="white pawn chessground_piece"></piece>
-          <piece class="white knight chessground_piece"></piece>
-          <piece class="white bishop chessground_piece"></piece>
-          <piece class="white rook chessground_piece"></piece>
-          <piece class="white queen chessground_piece"></piece>
-          <piece class="white king chessground_piece"></piece>
-        </div>
-      </div>
-    </div>
+    <%= render ListudyWeb.ComponentView, "board_preferences.html" %>
   </div>
 </div>
 
@@ -102,16 +75,7 @@
   <div class="modal-content">
     <span class="modal_close">&times;</span>
     <h3><%= gettext("Sound Settings")%></h3>
-    <label for="sound_enable"><%= gettext("Play Sound") %></label>
-    <input type="checkbox" checked name="sound_enable" id="sound_enable">
-
-    <label for="sound_volume"><%= gettext("Volume") %></label>
-    <input id="sound_volume" name="sound_volume" type="range" min="0" max="1" step="0.1" value="1">
-    <hr>
-    <h3><%= gettext("Test Sounds")%></h3>
-    <button id="sound_move" class="secondary"><%= gettext("Move") %></button>
-    <button id="sound_capture" class="secondary"><%= gettext("Capture") %></button>
-    <button id="sound_success" class="secondary"><%= gettext("Success") %></button>
-    <button id="sound_error" class="secondary"><%= gettext("Error") %></button>
+    <%= render ListudyWeb.ComponentView, "sound_preferences.html" %>
   </div>
 </div>
+<% end %>

@@ -1,0 +1,11 @@
+<%= form_for @conn, Routes.analysis_path(@conn, :quick_analyze), fn f -> %>
+  <div class="field">
+    <label class="form-label" for="pgn">Paste a PGN</label>
+    <div class="control">
+      <%= textarea f, :pgn, id: "pgn", class: "form-control", rows: 6, placeholder: "1. e4 c5 2. Nf3...", data: [modal_autofocus: true] %>
+    </div>
+  </div>
+  <div class="control">
+    <%= submit "Analyze Game", class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>
