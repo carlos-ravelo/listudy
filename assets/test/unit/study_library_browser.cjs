@@ -74,6 +74,12 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     const visible=page.locator('[data-library-row]:visible');
     const saved=()=>page.waitForFunction(()=>document.querySelector('[data-library-save-status]').textContent==='Organization saved.');
     await goto();
+    assert.equal(await visible.count(),3);
+    assert.equal(await page.locator('[data-library-view="favorites"]').getAttribute('aria-pressed'),'true');
+    await page.locator('[data-library-view="all"]').click();
+    assert(page.url().includes('library_view=all'));
+    await page.reload();
+    await page.waitForSelector('[data-study-library][data-initialized]');
     assert.equal(await visible.count(),30);
     await page.locator('[data-library-view="favorites"]').click();
     assert.equal(await visible.count(),3);

@@ -252,9 +252,13 @@
 .practice-start:hover, .practice-start:focus-visible { color: var(--bg-color); border-color: var(--font-color); }
 
 /* One card per training activity; secondary choices stay within their activity. */
-.home-openings .home-daily-scroll { max-height: 156px; }
-.home-openings .home-daily-studies-list li { height: 52px; box-sizing: border-box; }
+.home-openings .home-daily-scroll { max-height: 168px; }
+.home-openings .home-daily-studies-list li { height: 28px; box-sizing: border-box; }
 .home-openings .home-daily-study { min-height: 0; height: 100%; }
+.home-openings .home-daily-study-copy { display: flex; align-items: center; gap: 8px; }
+.home-openings .home-daily-study-title { flex: 1; }
+.home-openings .home-daily-study-signals { flex: none; flex-wrap: nowrap; gap: 4px; margin-top: 0; }
+.home-openings .home-daily-study-color { font-size: 18px; }
 .home-card-description, .home-analysis > p { margin: 0 0 16px; font-size: 14px; line-height: 1.5; color: color-mix(in srgb, var(--font-color) 80%, var(--bg-color)); }
 .home-analysis .home-path-actions { margin-top: 4px; }
 .home-tactics-variants { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--bg-highlight-color); }
@@ -268,5 +272,12 @@
 .home-openings .home-daily-studies-footer { padding-top: 8px; }
 .home-openings .home-daily-studies-empty .button { display: inline-flex; align-items: center; justify-content: center; height: auto; min-height: 44px; margin: 0; padding: 6px 12px; font-size: 13px; line-height: 1.4; text-transform: none; letter-spacing: normal; }
 @media (max-width: 650px) {
-  .home-openings .home-daily-scroll { max-height: 208px; overflow-y: auto; }
+  .home-openings .home-daily-scroll { max-height: 168px; overflow-y: auto; }
+  .home-openings .home-daily-studies-list li:nth-child(n + 5) { display: flex; }
+  .home-openings .home-daily-study-copy { flex-wrap: wrap; gap: 0 8px; }
+  .home-openings .home-daily-study-title { flex-basis: 100%; }
+  .home-openings .home-daily-studies-list li:has(.home-daily-study-signals) { height: 48px; }
+}
+@media (pointer: coarse) {
+  .home-openings .home-daily-studies-list li { min-height: 44px; }
 }

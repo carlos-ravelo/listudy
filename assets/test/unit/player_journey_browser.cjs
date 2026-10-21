@@ -155,7 +155,7 @@ const tacticsRoute = fs.readFileSync(path.join(tacticsPreviews, 'library.html'),
             await page.setViewportSize({width, height: 1100});
             await page.waitForTimeout(100);
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Home grid overflows at ${width}px`);
-            assert.equal(await page.locator('.home-daily-study:visible').count(), width < 650 ? 4 : 9);
+            assert.equal(await page.locator('.home-daily-study:visible').count(), 9);
             assert.equal(await page.locator('.home-tactics a[href="/en/blind-tactics"]').count(), 1);
             assert.equal(await page.locator('.home-tactics a[href="/en/pieceless-tactics"]').count(), 1);
             for (const theme of ['light', 'dark']) {

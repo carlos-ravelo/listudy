@@ -135,7 +135,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
         selection();
         if (writeUrl) {
             const url = new URL(window.location.href);
-            for (const [key, value] of Object.entries({ library_view: view === 'all' ? '' : view,
+            for (const [key, value] of Object.entries({ library_view: hasViews && view === 'all' ? 'all' : '',
                 q: search.value, kind: kind && kind.value !== 'all' ? kind.value : '',
                 color: color.value === 'all' ? '' : color.value, group: group.value === 'all' ? '' : group.value })) {
                 if (value) url.searchParams.set(key, value); else url.searchParams.delete(key);
@@ -354,7 +354,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
     library.querySelector('.study-library-manage > summary').onclick = () => closeMenus(library.querySelector('.study-library-manage'));
     groupOptions();
     const url = new URL(window.location.href);
-    view = hasViews && url.searchParams.get('library_view') === 'favorites' ? 'favorites' : 'all';
+    view = hasViews && url.searchParams.get('library_view') !== 'all' ? 'favorites' : 'all';
     search.value = url.searchParams.get('q') || '';
     if (kind) kind.value = ['repertoire', 'tactics'].includes(url.searchParams.get('kind')) ? url.searchParams.get('kind') : 'all';
     color.value = ['white', 'black'].includes(url.searchParams.get('color')) ? url.searchParams.get('color') : 'all';

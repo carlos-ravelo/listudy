@@ -43,7 +43,7 @@
     <%= unless tactics do %>
     <nav class="study-library-views" data-library-controls hidden aria-label="<%= dgettext("study", "Study lists") %>">
       <%= for {view, label} <- [{"all", copy.all}, {"favorites", dgettext("study", "Favorites")}] do %>
-        <button type="button" data-library-view="<%= view %>" aria-pressed="<%= view == "all" %>"><%= label %> <span data-library-view-count="<%= view %>"></span></button>
+        <button type="button" data-library-view="<%= view %>" aria-pressed="<%= view == "favorites" %>"><%= label %> <span data-library-view-count="<%= view %>"></span></button>
       <% end %>
     </nav>
     <% end %>
