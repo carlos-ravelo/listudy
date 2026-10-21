@@ -10,7 +10,10 @@ defmodule ListudyWeb.StudyEditorControllerTest do
       })
 
     other =
-      Repo.insert!(%Listudy.Users.User{username: "OtherEditor", email: "other-editor@example.com"})
+      Repo.insert!(%Listudy.Users.User{
+        username: "OtherEditor",
+        email: "other-editor@example.com"
+      })
 
     file_id = "editor#{System.unique_integer([:positive])}"
 
@@ -47,6 +50,22 @@ defmodule ListudyWeb.StudyEditorControllerTest do
     html = owner |> get(Routes.study_path(owner, :show, "en", study)) |> html_response(200)
     assert html =~ "collection_modal"
     assert html =~ "data-user-id=\"#{user.id}\""
+    assert html =~ "/css/bootstrap_study.css"
+    assert html =~ "/js/bootstrap_study.js"
+    refute html =~ "/css/app.css"
+    refute html =~ "/js/app.js"
+
+    for id <- [
+          "study_settings_dialog",
+          "study_info_dialog",
+          "study_sparring_history_dialog",
+          "progress_modal"
+        ] do
+      assert [_] = html_find(html, "##{id}.ui-modal")
+    end
+
+    assert [] = html_find(html, "dialog, .modal_open, .modal_close")
+    assert [_] = html_find(html, "#settings_tab_practice[data-bs-toggle='tab']")
   end
 
   test "library renders owned studies with compact navigation", %{owner_conn: owner, study: study} do

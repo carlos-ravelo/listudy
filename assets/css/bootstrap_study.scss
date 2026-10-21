@@ -1,0 +1,50 @@
+// Study-only surfaces precede the shared Bootstrap theme, as in the legacy bundle.
+@import './const.css';
+@import './icons.css';
+@import './progress_bar.css';
+@import './features/study.css';
+@import './features/study_extensions.css';
+@import './features/study_presentation.css';
+@import './features/sparring.css';
+@import './features/study_collections.css';
+@import './components/ground.css';
+@import './components/popup.css';
+
+@import './bootstrap_ui';
+
+// Existing feature selectors retain the board/sidebar composition.
+:where(.study-workspace) :where(button, .button) { @extend .btn; }
+
+.study-workspace {
+  .with_sidebar { display: flex; }
+  .sidebar_main { flex: 2; }
+  .sidebar { flex: 1; margin-left: 2em; position: relative; }
+  [hidden], [x-cloak] { display: none !important; }
+  button, .button { box-sizing: border-box; cursor: pointer; }
+  fieldset { margin: 0; padding: 0; border: 0; }
+  legend { padding: 0; }
+  .hidden { display: none; }
+  .infoBox { position: relative; padding: 12px 36px 12px 12px; margin: 10px 0; }
+  .success { color: var(--success-color); background: var(--success-bg); }
+  .info { color: var(--info-color); background: var(--info-bg); }
+  .error { color: var(--error-color); background: var(--error-bg); }
+  .study_progress .chapter-progress-summary { color: var(--font-color); font-family: inherit; }
+}
+@media (max-width: 600px) {
+  .study-workspace .with_sidebar { display: block; }
+  .study-workspace .sidebar { margin-left: 0; }
+}
+@media (min-width: 601px) {
+  .study-workspace.practice-page .study-context { min-height: 62px; }
+}
+.study-training-modal {
+  --bs-modal-width: min(560px, calc(100vw - 32px));
+  --bs-modal-border-radius: 12px;
+}
+.study-progress-modal { --bs-modal-width: min(760px, calc(100vw - 32px)); }
+.study-training-modal .modal-body { min-height: 0; }
+.study-workspace .study-training-modal .modal-title { font-weight: 600; }
+.study-workspace .study-training-modal textarea { min-height: 100px; }
+.study-workspace .study-training-modal .study-settings-grid { margin-top: 0; }
+.study-workspace .study-training-modal .form-select { margin-bottom: 0; }
+.study-workspace .study-training-modal .study-practice-mode { margin: 0; }

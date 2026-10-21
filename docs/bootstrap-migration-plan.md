@@ -1,8 +1,8 @@
 # Plan de migración de componentes a Bootstrap
 
 Fecha: 2026-10-21. Rama: `migration/bootstrap-ui`. Análisis inicial y biblioteca
-personal migrados; fase 3 iniciada con la detección común de diálogos bloqueantes.
-Los diálogos de entrenamiento todavía utilizan sus contenedores originales.
+personal y entrenamiento migrados. Los cuatro diálogos de entrenamiento usan
+Bootstrap; la siguiente fase corresponde a colecciones y selector de aperturas.
 
 ## Pendientes y siguiente entrega
 
@@ -11,9 +11,9 @@ Los diálogos de entrenamiento todavía utilizan sus contenedores originales.
 - [x] Biblioteca personal: grupos, mover estudios y menús (fase 2).
 - [x] Normalización de controles en los diálogos ya migrados.
 - [x] Detección común de diálogos para tiempo, atajos y feedback de entrenamiento.
-- [ ] Fase 3: trasladar ajustes, información, historial Sparring y progreso a
+- [x] Fase 3: trasladar ajustes, información, historial Sparring y progreso a
   `ui_modal`; sustituir las pestañas manuales y adaptar los eventos de cierre.
-- [ ] Fase 3: preparar los estilos necesarios y activar el layout Bootstrap en
+- [x] Fase 3: preparar los estilos necesarios y activar el layout Bootstrap en
   la página de entrenamiento; verificar profundidad, revisiones y modos de juego.
 - [ ] Fase 4: colecciones y selector de aperturas, conservando borradores.
 - [ ] Fase 5: extender componentes comunes al editor, creación, mantenimiento y
@@ -23,9 +23,10 @@ Los diálogos de entrenamiento todavía utilizan sus contenedores originales.
 - [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
 - [ ] Después de la migración de componentes: análisis de reutilización de JS.
 
-La siguiente entrega de interfaz es la fase 3. Su preparación no significa que
-sus cuatro diálogos estén migrados. La biblioteca simplificada de tácticas y las
-demás páginas sin activar Bootstrap conservan sus recursos anteriores.
+La siguiente entrega de interfaz es la fase 4. Colecciones sigue funcionando
+con su contenedor actual dentro de entrenamiento hasta esa entrega. La biblioteca
+simplificada de tácticas y las demás páginas sin activar Bootstrap conservan sus
+recursos anteriores.
 
 ## Primera entrega
 
@@ -120,13 +121,61 @@ diálogos y cuando varios bundles importan el módulo.
 Mientras exista un diálogo bloqueante, el tiempo de práctica y la caducidad de
 avisos temporales se pausan, los atajos no avanzan el tablero y el feedback queda
 oculto. Cerrar un diálogo no desbloquea la página si queda otro abierto. Esto
-prepara el cambio de contenedores de fase 3, sin activarlo todavía ni cambiar la
-distribución de entrenamiento.
+preparó el cambio de contenedores de fase 3, sin activarlo en esa entrega ni
+cambiar la distribución de entrenamiento.
 
 `blocking_ui_browser.cjs` comprueba estos contratos con los consumidores reales
 y el plugin Bootstrap, incluyendo transiciones, inicialización repetida y
 reemplazo de nodos. Las regresiones de sesiones leen ahora la plantilla extraída
-de ajustes y seleccionan su pestaña Practice antes de editar la meta.
+de ajustes; la suite de Bootstrap verifica la selección contextual de pestañas.
+
+## Tercera entrega: entrenamiento
+
+La página de estudio, incluidos los estudios de tácticas, activa el layout propio
+con `bootstrap_study.js` y `bootstrap_study.css`. Comparte `bootstrap_common.js`
+con análisis y biblioteca; carga una sola instancia de los plugins y no incorpora
+Skeleton, `app.scss`, `app.js` ni el gestor antiguo de modales. Los estilos de
+estudio y colecciones necesarios se incluyen por separado. La composición del
+tablero, sidebar y navegación se mantiene.
+
+Ajustes, información/comentarios, historial Sparring y progreso usan `ui_modal`.
+Sus cuerpos están en parciales y conservan IDs, traducciones, formularios y
+ámbitos Alpine. Las pestañas General/Practice/Sparring usan Bootstrap Tab, con
+selección contextual y navegación por teclado; Sparring oculto en tácticas se
+excluye también del recorrido de teclado. Se retiran la selección manual de
+pestañas y los listeners de apertura, backdrop y retorno de foco sustituidos.
+
+Los consumidores de progreso cierran mediante la API del modal compartido;
+el cierre de ajustes mantiene la aplicación de cambios de profundidad. Los
+controles de los diálogos reutilizan la normalización común; los cierres tienen
+un objetivo mínimo de 44 px. Colecciones conserva su lógica y su contenido hasta
+fase 4. No se migra el selector especializado de capítulos a un dropdown genérico.
+
+`bootstrap_study_browser.cjs` compara las regiones principales en 1280, 900,
+390 y 320 px, en claro y oscuro. Verifica pestañas, profundidad, metas de sesión,
+comentarios, historial, navegación desde progreso, retorno del foco y móvil.
+`sparring_browser.cjs` utiliza ya los plugins de Bootstrap en sus diálogos de
+ajustes e historial. Las regresiones de sesiones y práctica débil siguen cubriendo
+sus contratos de dominio. `bootstrap_tactics_browser.cjs` verifica el entrenamiento
+con negras, preferencias separadas, lectura, progreso y exclusión de la pestaña
+Sparring oculta del recorrido de teclado. El fallo previo de Smart descrito en la primera
+entrega sigue registrado y no se da por corregido en esta migración.
+
+La suite general `player_journey_browser.cjs` se detiene antes de probar los
+estudios: en la portada espera nueve `.home-daily-study` y obtiene dos con las
+fixtures generadas por `player_journey_test.exs`. No se altera esa expectativa
+en esta entrega. La cobertura de entrenamiento se ejecuta directamente mediante
+las suites de estudio, tácticas y Sparring. `site_navigation_browser.cjs` también
+se detiene antes de abrir entrenamiento: espera un menú de portada
+`.site-menu[data-nav-section="practice"]` que no está en la cabecera renderizada.
+Las comprobaciones de foco y apertura de los nuevos diálogos se ejecutan en
+`bootstrap_study_browser.cjs`.
+
+Tamaños gzip de esta compilación: `bootstrap_study.css`, 32 420 bytes;
+`bootstrap_study.js`, 25 295 bytes. El CSS heredado completo ocupa 35 180 bytes
+gzip; `bootstrap_ui.css`, 23 459 bytes, y `bootstrap_ui.js`, 23 721 bytes. El
+motor de estudio continúa en su bundle independiente de 149 869 bytes gzip.
+Estas medidas describen los recursos; no representan ahorro de tokens.
 
 ## Objetivo y alcance
 
@@ -195,7 +244,7 @@ dependen de que la integración y la limpieza de la anterior estén verificadas.
 | 0 | Base implementada; hooks LiveView cuando aplique | Layout propio y recursos Bootstrap separados de los heredados | Compilación selectiva, tema único y dependencias compartidas identificadas |
 | 1 | Completada | Página inicial de análisis e importación PGN | Primera página con layout Bootstrap y diálogo compartido en uso real |
 | 2 | Completada para biblioteca personal | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
-| 3 | En preparación; contenedores pendientes | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
+| 3 | Completada | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
 | 4 | Pendiente | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
 | 5 | Parcial: diálogos migrados normalizados | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
 | 6 | Pendiente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |

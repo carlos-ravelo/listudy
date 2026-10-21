@@ -103,11 +103,11 @@ const pages = {
                         await title.evaluate(node => { node.textContent = node.title; });
                         await page.locator('#study_more_actions > summary').click();
                         await page.locator('[data-study-dialog="study_info_dialog"]').first().click();
-                        assert(await page.locator('#study_info_dialog').evaluate(node => node.open));
+                        assert(await page.locator('#study_info_dialog').isVisible());
                         await page.keyboard.press('Escape');
                         assert(await page.locator('#study_more_actions > summary').evaluate(node => document.activeElement === node));
                         await page.locator('#open_study_settings').click();
-                        assert(await page.locator('#study_settings_dialog').evaluate(node => node.open));
+                        assert(await page.locator('#study_settings_dialog').isVisible());
                         await page.keyboard.press('Escape');
                     }
                     boards.push({width, board: Math.round(board.width)});

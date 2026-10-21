@@ -12,13 +12,13 @@ const render = source => source.replace(/<%=\s*dgettext[^%]*%>/g,
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const infoBoxes = read('lib/listudy_web/templates/component/infoboxes.html.eex').replace(/<%[\s\S]*?%>/g, '');
 const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="/assets/css/colors.css">
+<link rel="stylesheet" href="/priv/static/css/bootstrap_study.css">
 <link rel="stylesheet" href="/assets/static/css/chessground.css">
 <link rel="stylesheet" href="/assets/css/features/chapter_editor.css">
 <link rel="stylesheet" href="/assets/css/features/study_presentation.css">
 <link rel="stylesheet" href="/assets/css/features/sparring.css">
-<style>:root{--study-divider:#bbb}.study-board-frame{width:min(500px,90vw)}#chessground{width:100%;height:auto;aspect-ratio:1}#study_sparring{max-width:360px}.success{background:var(--success-bg);color:var(--success-color)}.error{background:var(--error-bg);color:var(--error-color)}.info{background:var(--info-bg);color:var(--info-color)}.hidden{display:none}</style></head><body>
-<div class="study-workspace">
+<style>:root{--study-divider:#bbb}.study-board-frame{width:min(500px,90vw)}#chessground{width:100%;height:auto;aspect-ratio:1}#study_sparring{max-width:360px}.success{background:var(--success-bg);color:var(--success-color)}.error{background:var(--error-bg);color:var(--error-color)}.info{background:var(--info-bg);color:var(--info-color)}.hidden{display:none}</style></head><body class="bootstrap-ui">
+<div class="study-workspace" data-training-kind="repertoire">
 <button type="button" id="open_study_settings" data-study-dialog="study_settings_dialog">Settings</button>
 <details id="study_more_actions" class="study-tools-menu"><summary>More</summary><button type="button" data-study-dialog="study_sparring_history_dialog">Sparring history</button></details>
 <div class="study-session-controls"><button id="practice_sparring">Sparring</button><button id="practice_smart">Smart</button><button id="practice_lines">Lines</button></div>
@@ -29,8 +29,8 @@ ${render(read('lib/listudy_web/templates/component/promotion_picker.html.eex'))}
 <nav aria-label="Move navigation"><button id="study_previous_move" aria-label="Previous move">←</button><button id="study_next_move" aria-label="Next move">→</button></nav>
 <div class="study-feedback" role="status" aria-live="polite" aria-label="Move feedback">${infoBoxes}</div>
 ${render(read('lib/listudy_web/templates/study/_sparring.html.eex'))}
-${render(read('lib/listudy_web/templates/study/_study_settings.html.eex').replace('<%= render "_sparring_settings.html" %>', read('lib/listudy_web/templates/study/_sparring_settings.html.eex')))}
-${render(read('lib/listudy_web/templates/study/_sparring_history.html.eex'))}</div>
+<div id="study_settings_dialog" class="modal ui-modal study-training-modal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h2>Settings</h2><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close">Close</button></div><div class="modal-body">${render(read('lib/listudy_web/templates/study/_study_settings.html.eex').replace('<%= render "_sparring_settings.html" %>', read('lib/listudy_web/templates/study/_sparring_settings.html.eex')))}</div></div></div></div>
+<div id="study_sparring_history_dialog" class="modal ui-modal study-training-modal study-sparring" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h2 id="sparring_history_title">Sparring history</h2><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close">Close</button></div><div class="modal-body">${render(read('lib/listudy_web/templates/study/_sparring_history.html.eex'))}</div></div></div></div></div>
 <script>window.sound_enabled=true;window.sound_volume=0.5;window.playedSounds=[];
 window.Audio=class {constructor(src){this.src=src}load(){}cloneNode(){return this}play(){playedSounds.push(this.src);return Promise.resolve()}};</script>
 <script src="/bundle.js"></script><script>
@@ -51,14 +51,14 @@ window.controller=Sparring.setupStudySparring({getPlayer:()=> 'white',getChapter
  showHints(routes){window.hintRoutes=routes;board.setShapes([{orig:'e2',dest:'e4',brush:'green'}])},
  onDecision(record){decisions.push(record)},saveResult(record){savedResults[record.id]=record},getHistory:()=>Object.values(savedResults)});
 moveNavigation=Sparring.setupStudyMoveNavigation({goBack:()=>controller.back(),goForward:()=>controller.forward(),getState:()=>controller.navigation()});
-Sparring.setupStudyToolsMenu();Sparring.setupStudyDialogs();
+Sparring.setupStudyToolsMenu();Sparring.setupBootstrapStudyControls();
 for (const [id,text] of Object.entries({arrows_toggle:'New moves (2 times)',comments_toggle:'When hints are visible',arrow_type:'Moves and annotations',move_delay:'Instant',line_review:'Fast review'})) document.getElementById(id).textContent=text;
 document.getElementById('hints').onclick=()=>controller.hint();
 document.getElementById('reset_line').onclick=()=>controller.start();
 document.getElementById('practice_lines').onclick=()=>{controller.stop();stops++};
 </script></body></html>`;
 const fixtureEntry = path.join(temp, 'fixture.cjs');
-fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/study_adapter.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/uci_engine.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/stockfish.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/study_page_controls.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/study_feedback.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/info_boxes.js'))}),Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground}`);
+fs.writeFileSync(fixtureEntry, `module.exports={...require('/home/cravelo/selfInstalledSoftware/listudy/assets/js/components/bootstrap_modals.js'),...require('/home/cravelo/selfInstalledSoftware/listudy/assets/js/components/bootstrap_study_controls.js'),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/study_adapter.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/sparring/uci_engine.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/stockfish.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/study_page_controls.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/study_feedback.js'))}),...require(${JSON.stringify(path.join(root, 'assets/js/modules/info_boxes.js'))}),Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground}`);
 
 (async () => {
     await new Promise((resolve, reject) => webpack({ mode: 'development',
@@ -149,7 +149,7 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require(${JSON.stringify(path
         assert.equal(await page.evaluate(()=>document.activeElement.id),'open_study_settings');
         assert.equal(await page.evaluate(() => localStorage.getItem('test_strength')), '1');
         async function auditButtons() {
-            const dialog = page.locator('dialog[open]');
+            const dialog = page.locator('.modal[aria-modal="true"]');
             const buttons = await dialog.count() ? dialog.locator('button:visible, summary:visible')
                 : page.locator('#study_sparring button:visible, [data-promotion-picker]:visible button, #practice_sparring, #hints, #reset_line');
             await page.keyboard.press('Tab');

@@ -1,0 +1,19 @@
+<p><%= @study.description %></p>
+<% source = seed_source(@study) %>
+<dl class="study-metadata"><div><dt><%= if source, do: dgettext("study", "Imported by"), else: dgettext("study", "Creator") %></dt>
+<dd><%= link @study.user.username, to: Routes.user_profile_path(@conn, :show, @locale, @study.user.username) %></dd></div>
+<%= if source do %>
+<div><dt><%= dgettext("study", "Source annotations") %></dt><dd>
+<%= for author <- source["authors"] do %><%= link author["name"], to: author["url"], target: "_blank", rel: "noopener noreferrer" %> <% end %>
+</dd></div>
+<div><dt><%= dgettext("study", "Original studies") %></dt><dd>
+<%= for url <- source["sources"] do %><%= link url, to: url, target: "_blank", rel: "noopener noreferrer" %><br><% end %>
+</dd></div>
+<% end %>
+<div><dt><%= dgettext("study", "Opening") %></dt>
+<dd><%= link @opening.name, to: Routes.opening_path(@conn, :show, @locale, @opening.slug) %></dd></div></dl>
+<details id="study_discussion" class="study-controls-panel study-discussion">
+<summary><%= dgettext("comments", "Comments") %></summary>
+<%= render ListudyWeb.CommentView, "show_comments.html", type: "study", id: Integer.to_string(@study.id), action: Routes.comment_path(@conn, :new_comment), conn: @conn %>
+<%= render ListudyWeb.CommentView, "comment_form.html", type: "study", id: Integer.to_string(@study.id), action: Routes.comment_path(@conn, :new_comment), conn: @conn %>
+</details>

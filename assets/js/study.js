@@ -5,6 +5,7 @@ import { tacticsMainline, tacticsCandidates, classifyTacticsMove } from './modul
 import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { setupStudySessions } from './modules/study_sessions.js';
+import { closeDialog, onDialogClosed } from './modules/dialog_lifecycle.js';
 import { setupStudySparring } from './modules/sparring/study_adapter.js';
 import { replayPositionContext } from './modules/study/position_context.js';
 import { setupStudyVisualization } from './modules/study/visualization.js';
@@ -722,7 +723,7 @@ function toggleWeakChapterRun() {
     if (spacedReviewRunActive) stopSpacedReviewRun();
     weakChapterRunActive = true;
     window.dispatchEvent(new Event("study-puzzle-run-off"));
-    document.getElementById("progress_modal").style.display = "none";
+    closeDialog(document.getElementById("progress_modal"));
     selectNextWeakChapter();
 }
 
@@ -761,7 +762,7 @@ function toggleSpacedReviewRun() {
     if (weakChapterRunActive) stopWeakChapterRun();
     spacedReviewRunActive = true;
     window.dispatchEvent(new Event("study-puzzle-run-off"));
-    document.getElementById("progress_modal").style.display = "none";
+    closeDialog(document.getElementById("progress_modal"));
     selectNextDueChapter();
 }
 
@@ -1251,7 +1252,7 @@ function setup_chapter_select() {
         if (!Number.isInteger(index) || index < 0 || index >= trees.length) return;
         select.value = String(index);
         select.dispatchEvent(new Event("change", { bubbles: true }));
-        document.getElementById("progress_modal").style.display = "none";
+        closeDialog(document.getElementById("progress_modal"));
     });
     document.getElementById("progress_modal").addEventListener("study-progress-toggle-weak-run", toggleWeakChapterRun);
     document.getElementById("progress_modal").addEventListener("study-progress-toggle-spaced-run", toggleSpacedReviewRun);
@@ -1766,7 +1767,7 @@ function setup_configs() {
         set_options_values_for_max_depth();
         practiceDepthChanged();
     };
-    document.getElementById('study_settings_dialog').addEventListener('close', () => {
+    onDialogClosed(document.getElementById('study_settings_dialog'), () => {
         if (!depthSettingsChanged) return;
         depthSettingsChanged = false;
         if (readMode) return;

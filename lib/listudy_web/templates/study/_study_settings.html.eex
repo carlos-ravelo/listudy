@@ -1,14 +1,9 @@
-<dialog id="study_settings_dialog" class="study-dialog" aria-labelledby="study_settings_title">
-  <header class="study-dialog-header">
-    <h2 id="study_settings_title"><%= dgettext("study", "Settings") %></h2>
-    <form method="dialog"><button type="submit"><%= dgettext("study", "Close") %></button></form>
-  </header>
   <div class="study-settings-tabs" role="tablist" aria-label="<%= dgettext("study", "Settings sections") %>">
-    <button type="button" id="settings_tab_general" role="tab" aria-controls="settings_panel_general" aria-selected="true" tabindex="0" data-settings-tab="general"><%= dgettext("study", "General") %></button>
-    <button type="button" id="settings_tab_practice" role="tab" aria-controls="settings_panel_practice" aria-selected="false" tabindex="-1" data-settings-tab="practice"><%= dgettext("study", "Practice") %></button>
-    <button type="button" id="settings_tab_sparring" <%= if @study.training_kind == "tactics", do: "hidden" %> role="tab" aria-controls="settings_panel_sparring" aria-selected="false" tabindex="-1" data-settings-tab="sparring"><%= dgettext("study", "Sparring") %></button>
+    <button type="button" class="active" id="settings_tab_general" role="tab" aria-controls="settings_panel_general" aria-selected="true" tabindex="0" data-bs-toggle="tab" data-settings-tab="general" data-bs-target="#settings_panel_general"><%= dgettext("study", "General") %></button>
+    <button type="button" id="settings_tab_practice" role="tab" aria-controls="settings_panel_practice" aria-selected="false" tabindex="-1" data-bs-toggle="tab" data-settings-tab="practice" data-bs-target="#settings_panel_practice"><%= dgettext("study", "Practice") %></button>
+    <button type="button" id="settings_tab_sparring" <%= if @study.training_kind == "tactics", do: "hidden" %> role="tab" aria-controls="settings_panel_sparring" aria-selected="false" tabindex="-1" data-bs-toggle="tab" data-settings-tab="sparring" data-bs-target="#settings_panel_sparring"><%= dgettext("study", "Sparring") %></button>
   </div>
-  <div id="settings_panel_general" class="study-settings-grid" role="tabpanel" aria-labelledby="settings_tab_general" data-settings-panel="general">
+  <div id="settings_panel_general" class="study-settings-grid tab-pane active" role="tabpanel" aria-labelledby="settings_tab_general" data-settings-panel="general">
 <fieldset class="study-setting-group"><legend><%= dgettext("study", "Hints and explanations") %></legend>
 <div class="option_item study-setting-row">
     <span class="study-setting-label" id="setting_arrows_label"><%= dgettext("study", "Move arrows") %></span>
@@ -39,7 +34,7 @@
 </fieldset>
 
   </div>
-  <div id="settings_panel_practice" class="study-settings-grid" role="tabpanel" aria-labelledby="settings_tab_practice" data-settings-panel="practice" hidden>
+  <div id="settings_panel_practice" class="study-settings-grid tab-pane" role="tabpanel" aria-labelledby="settings_tab_practice" data-settings-panel="practice" hidden>
 <fieldset class="study-setting-group"><legend><%= dgettext("study", "Practice depth") %></legend>
 <div class="option_item study-depth-setting">
     <label class="study-depth-toggle"><input type="checkbox" id="limit_practice_depth" aria-describedby="max_depth_help"> <%= dgettext("study", "Limit practice depth") %></label>
@@ -63,7 +58,6 @@
   <p id="study_session_goal_help"><%= dgettext("study", "Applies to your next Smart session. Finish the current chain when the goal is reached. Corrections and automatic moves do not add decisions.") %></p>
 </fieldset>
   </div>
-  <div id="settings_panel_sparring" class="study-settings-grid" role="tabpanel" aria-labelledby="settings_tab_sparring" data-settings-panel="sparring" hidden>
+  <div id="settings_panel_sparring" class="study-settings-grid tab-pane" role="tabpanel" aria-labelledby="settings_tab_sparring" data-settings-panel="sparring" hidden>
 <%= render "_sparring_settings.html" %>
   </div>
-</dialog>

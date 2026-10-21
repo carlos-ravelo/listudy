@@ -17,6 +17,7 @@ for (const mode of ['chapters', 'positions']) {
         document: { getElementById: id => id === 'weak_practice_mode' ? { value: mode } : id === 'chapter_select' ? select : { style: {} } },
         window: { dispatchEvent() {} }, CustomEvent: function() {}, Event: function() {},
         set_read_mode() {}, stopSpacedReviewRun() {}, updateWeakChapterRunUi() {},
+        closeDialog() {},
         startFailedPositions() { positionStarts++; }, stopWeakChapterRun() {},
         set_text() {}, start_training() {}, i18n: {}, success_div: ''
     });

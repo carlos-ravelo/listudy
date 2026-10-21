@@ -2,10 +2,27 @@ defmodule ListudyWeb.LayoutView do
   use ListudyWeb, :view
 
   def app_stylesheet_path(conn) do
-    stylesheet = if conn.assigns[:bootstrap_ui], do: "/css/bootstrap_ui.css", else: "/css/app.css"
+    stylesheet =
+      cond do
+        conn.assigns[:bootstrap_study] -> "/css/bootstrap_study.css"
+        conn.assigns[:bootstrap_ui] -> "/css/bootstrap_ui.css"
+        true -> "/css/app.css"
+      end
+
     path = Routes.static_path(conn, stylesheet)
     separator = if String.contains?(path, "?"), do: "&", else: "?"
     path <> separator <> "v=study-maintenance-1"
+  end
+
+  def app_script_path(conn) do
+    script =
+      cond do
+        conn.assigns[:bootstrap_study] -> "/js/bootstrap_study.js"
+        conn.assigns[:bootstrap_ui] -> "/js/bootstrap_ui.js"
+        true -> "/js/app.js"
+      end
+
+    Routes.static_path(conn, script)
   end
 
   def is_halloween(date) do

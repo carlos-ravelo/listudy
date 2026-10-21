@@ -2,6 +2,9 @@ import Modal from 'bootstrap/js/dist/modal';
 
 // Bootstrap's data API owns opening, dismissal and focus restoration.
 const menuTriggers = new WeakMap();
+document.addEventListener('ui-modal-close', event => {
+    if (event.target.classList.contains('ui-modal')) Modal.getOrCreateInstance(event.target).hide();
+});
 document.addEventListener('show.bs.modal', event => {
     // Navigation links disappear when their enclosing preferences menu closes.
     const summary = event.relatedTarget?.closest('details')?.querySelector('summary');

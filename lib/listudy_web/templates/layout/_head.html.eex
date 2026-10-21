@@ -34,7 +34,7 @@
     <% end %>
 
 
-    <script defer type="text/javascript" src="<%= Routes.static_path(@conn, if(@conn.assigns[:bootstrap_ui], do: "/js/bootstrap_ui.js", else: "/js/app.js")) %>"></script>
+    <script defer type="text/javascript" src="<%= app_script_path(@conn) %>"></script>
     <script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@conn) %>>
       <%!-- This is here to stop the default white theme to flash on load --%>
       <%!-- In the defered app.js script it would only switch after the page is loaded --%>

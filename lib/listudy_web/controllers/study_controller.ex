@@ -287,7 +287,11 @@ defmodule ListudyWeb.StudyController do
           |> put_session(:last_study_user_id, if(user_id == -1, do: nil, else: user_id))
         end
 
-      render(conn, "show.html", study: study, noindex: noindex, opening: opening)
+      conn
+      |> assign(:bootstrap_ui, true)
+      |> assign(:bootstrap_study, true)
+      |> put_layout({ListudyWeb.LayoutView, "bootstrap.html"})
+      |> render("show.html", study: study, noindex: noindex, opening: opening)
     else
       show(conn, id, nil)
     end

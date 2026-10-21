@@ -80,7 +80,6 @@ export function setupStudyMoveNavigation({ goBack, goForward, getState }) {
 
 export function setupPuzzleRun(i18n, { initialMode } = {}) {
     setupStudyToolsMenu();
-    setupStudyDialogs();
     const order = document.getElementById('puzzle_run');
     const smart = document.getElementById('practice_smart');
     const lines = document.getElementById('practice_lines');
@@ -165,66 +164,4 @@ export function setupStudyToolsMenu() {
             summary.focus();
         }
     });
-}
-
-export function setupStudySettingsTabs() {
-    const dialog = document.getElementById('study_settings_dialog');
-    if (!dialog || dialog.dataset.tabsInitialized) return;
-    dialog.dataset.tabsInitialized = 'true';
-    const tabs = [...dialog.querySelectorAll('[data-settings-tab]:not([hidden])')];
-    const panels = [...dialog.querySelectorAll('[data-settings-panel]')];
-    function select(tab, focus = false) {
-        for (const item of tabs) {
-            item.setAttribute('aria-selected', String(item === tab));
-            item.tabIndex = item === tab ? 0 : -1;
-        }
-        for (const panel of panels) panel.hidden = panel.dataset.settingsPanel !== tab.dataset.settingsTab;
-        if (focus) tab.focus();
-    }
-    for (const [index, tab] of tabs.entries()) {
-        tab.addEventListener('click', () => select(tab));
-        tab.addEventListener('keydown', event => {
-            const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length
-                : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length
-                : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
-            if (next === null) return;
-            event.preventDefault(); select(tabs[next], true);
-        });
-    }
-    dialog.addEventListener('study-settings-select', event => {
-        const tab = tabs.find(tab => tab.dataset.settingsTab === event.detail);
-        if (tab) select(tab);
-    });
-}
-
-export function setupStudyDialogs() {
-    setupStudySettingsTabs();
-    const returnFocus = new Map();
-    for (const opener of document.querySelectorAll?.('[data-study-dialog]') || []) {
-        const dialog = document.getElementById(opener.dataset.studyDialog);
-        if (!dialog || opener.dataset.dialogInitialized) continue;
-        opener.dataset.dialogInitialized = 'true';
-        opener.addEventListener('click', () => {
-            returnFocus.set(dialog, opener.closest('details')?.querySelector('summary') || opener);
-            if (opener.dataset.studyComments) {
-                const discussion = dialog.querySelector('#study_discussion');
-                if (discussion) discussion.open = true;
-            }
-            if (dialog.id === 'study_settings_dialog') {
-                const section = document.getElementById('practice_sparring')?.getAttribute('aria-pressed') === 'true' ? 'sparring'
-                    : document.getElementById('study_mode')?.getAttribute('aria-pressed') === 'true' ? 'general' : 'practice';
-                dialog.dispatchEvent(new CustomEvent('study-settings-select', { detail: section }));
-            }
-            if (!dialog.open) dialog.showModal();
-        });
-        if (dialog.dataset.initialized) continue;
-        dialog.dataset.initialized = 'true';
-        dialog.addEventListener('close', () => returnFocus.get(dialog)?.focus());
-        dialog.addEventListener('click', event => {
-            if (event.target !== dialog) return;
-            const bounds = dialog.getBoundingClientRect();
-            if (event.clientX < bounds.left || event.clientX > bounds.right ||
-                event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
-        });
-    }
 }

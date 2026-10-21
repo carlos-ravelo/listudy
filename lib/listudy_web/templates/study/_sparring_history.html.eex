@@ -1,10 +1,4 @@
-<dialog id="study_sparring_history_dialog" class="study-dialog study-sparring" aria-labelledby="sparring_history_title">
-  <header class="study-dialog-header">
-    <h2 id="sparring_history_title"><%= dgettext("study", "Sparring history") %></h2>
-    <form method="dialog"><button type="submit"><%= dgettext("study", "Close") %></button></form>
-  </header>
   <p data-sparring="history-empty" class="sparring-note"><%= dgettext("study", "Your sparring sessions will appear here.") %></p>
   <section data-sparring="history" aria-labelledby="sparring_history_title" hidden>
     <div data-sparring="recent"></div>
   </section>
-</dialog>
