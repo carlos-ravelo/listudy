@@ -2,9 +2,9 @@
 <html class="blue cburnett" lang="<%= @locale %>">
   <head>
     <%= render "_head.html", assigns: assigns, conn: @conn%>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/live_view.js") %>"></script>
+    <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/live_view.js") %>"></script>
   </head>
-  <body class="site-layout">
+  <body class="site-layout bootstrap-ui<%= unless @conn.assigns[:bootstrap_ui], do: " site-standard" %>">
     <a class="site-skip-link" href="#main-content"><%= gettext("Skip to content") %></a>
     <%= render "_header.html", assigns: assigns, conn: @conn%>
     <main id="main-content" role="main" class="container" tabindex="-1">

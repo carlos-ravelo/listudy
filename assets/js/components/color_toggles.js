@@ -14,7 +14,8 @@ export function setupColorToggles(container, onChange) {
 
 export const StudySearchColors = {
     mounted() {
+        this.removeColorToggles?.();
         this.removeColorToggles = setupColorToggles(this.el, color => this.pushEvent('set-color', {color}));
     },
-    destroyed() { this.removeColorToggles(); }
+    destroyed() { this.removeColorToggles?.(); this.removeColorToggles = null; }
 };

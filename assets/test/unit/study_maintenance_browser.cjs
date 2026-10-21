@@ -14,7 +14,7 @@ const section = template.match(/<section class="study-maintenance"[\s\S]*?<\/sec
     .replace('<%= @revision %>', 'revision')
     .replace(/<%= Routes\.study_path\([^%]+%>/g, expression => expression.includes(':manage_chapters') ? '/save' : '/editor')
     .replace(/<%= dgettext\("study", "([^"]+)"\) %>/g, '$1');
-const html = `<html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/app.css"></head><body><main>${section}</main><script src="/js/study_maintenance.js"></script></body></html>`;
+const html = `<html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="test"><link rel="stylesheet" href="/css/bootstrap_management.css"></head><body class="bootstrap-ui"><main>${section}</main><script src="/js/study_maintenance.js"></script></body></html>`;
 
 (async () => {
     let saved, conflict = true;

@@ -1,0 +1,3 @@
+@import './bootstrap_ui';
+
+:where(.study-discovery) :where(button, .button) { @extend .btn; }

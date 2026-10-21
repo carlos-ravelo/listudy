@@ -1,0 +1,65 @@
+// Compatibility adapters preserve existing document geometry while Bootstrap owns controls.
+:where(.site-standard) :where(button, .button, input[type="submit"], input[type="reset"], input[type="button"]) {
+  @extend .btn;
+  box-sizing: border-box;
+  vertical-align: baseline;
+  --bs-btn-padding-y: 0;
+  --bs-btn-padding-x: 30px;
+  --bs-btn-font-size: 11px;
+  --bs-btn-font-weight: 600;
+  --bs-btn-line-height: 38px;
+  --bs-btn-color: var(--font-color);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: #bbb;
+  --bs-btn-border-radius: 4px;
+  --bs-btn-hover-color: var(--font-color);
+  --bs-btn-hover-bg: transparent;
+  --bs-btn-hover-border-color: #888;
+  height: 38px;
+  letter-spacing: .1rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+:where(.site-standard) :where(.button-primary) { @extend .btn-primary; }
+:where(.site-standard) :where(input[type="email"], input[type="number"], input[type="search"], input[type="text"], input[type="tel"], input[type="url"], input[type="password"], textarea) {
+  @extend .form-control;
+  box-sizing: border-box;
+  font: revert;
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  height: 38px;
+  padding: 6px 10px;
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+  box-shadow: none;
+  appearance: none;
+}
+:where(.site-standard) :where(select) {
+  @extend .form-select;
+  box-sizing: border-box;
+  font: revert;
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  height: 38px;
+  padding: 6px 10px;
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+  appearance: auto;
+}
+:where(.site-standard) textarea { height: 12em; width: 35em; max-width: 100%; }
+.site-standard fieldset { padding: 0; border-width: 0; }
+.site-standard legend { display: block; margin-bottom: .5rem; font-weight: 600; }
+.site-standard label > .label-body { display: inline-block; margin-left: .5rem; font-weight: normal; }
+.book-modal .modal-dialog { width: 75%; max-width: none; margin: 10% auto; }
+.book-modal { --bs-modal-bg: var(--bg-highlight-color); --bs-modal-border-color: var(--font-color); }
+.book-modal .modal-title { font-size: 15px; font-weight: 700; }
+
+.site-standard .book-expert-trigger { display: inline; padding: 0; height: auto; border: 0; background: transparent; font: inherit; color: inherit; text-transform: none; letter-spacing: normal; }
+
+.site-standard :where(button, input, select, textarea):not(:where(.ui-modal *)) { font-family: revert; }

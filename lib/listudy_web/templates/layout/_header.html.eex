@@ -29,8 +29,8 @@
           <summary><%= gettext("Preferences") %></summary>
           <div class="site-menu-panel">
             <a href="#" id="toggle_dark_mode"><%= gettext("Toggle Darkmode") %></a>
-            <a href="#" class="<%= unless @conn.assigns[:bootstrap_ui], do: "modal_open" %>" id="sound_settings" <%= if @conn.assigns[:bootstrap_ui], do: raw(~s(data-bs-toggle="modal" data-bs-target="#sound_settings_modal")) %>><%= gettext("Sound Settings") %></a>
-            <a href="#" class="<%= unless @conn.assigns[:bootstrap_ui], do: "modal_open" %>" id="board_settings" <%= if @conn.assigns[:bootstrap_ui], do: raw(~s(data-bs-toggle="modal" data-bs-target="#board_settings_modal")) %>><%= gettext("Board Settings") %></a>
+            <a href="#" id="sound_settings" data-bs-toggle="modal" data-bs-target="#sound_settings_modal"><%= gettext("Sound Settings") %></a>
+            <a href="#" id="board_settings" data-bs-toggle="modal" data-bs-target="#board_settings_modal"><%= gettext("Board Settings") %></a>
             <details class="site-language-menu">
               <summary><%= gettext("Language") %></summary>
               <div><%= raw ListudyWeb.Seo.lang_alternatives(@conn) %></div>
@@ -59,23 +59,6 @@
   </nav>
 </header>
 
-<%= if @conn.assigns[:bootstrap_ui] do %>
   <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "board_settings_modal", title: gettext("Board Settings"), centered: false, body: render(ListudyWeb.ComponentView, "board_preferences.html", bootstrap_ui: true) %>
   <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "sound_settings_modal", title: gettext("Sound Settings"), centered: false, body: render(ListudyWeb.ComponentView, "sound_preferences.html", bootstrap_ui: true) %>
-<% else %>
-<div id="board_settings_modal" class="modal">
-  <div class="modal-content">
-    <span class="modal_close">&times;</span>
-    <h3><%= gettext("Board Settings")%></h3>
-    <%= render ListudyWeb.ComponentView, "board_preferences.html" %>
-  </div>
-</div>
 
-<div id="sound_settings_modal" class="modal">
-  <div class="modal-content">
-    <span class="modal_close">&times;</span>
-    <h3><%= gettext("Sound Settings")%></h3>
-    <%= render ListudyWeb.ComponentView, "sound_preferences.html" %>
-  </div>
-</div>
-<% end %>

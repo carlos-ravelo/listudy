@@ -10,20 +10,10 @@
           <% modal_id = "#{er.player.slug}-#{i}-#{@book.slug}" %>
           <span class="book-expert-name-tag">
             <nobr>
-            <span class="modal_open" id="<%= modal_id %>"><%= er.player.name %></span>
+            <button type="button" class="book-expert-trigger" data-bs-toggle="modal" data-bs-target="#<%= modal_id %>_modal"><%= er.player.name %></button>
             </nobr>
           </span>
-          <div id="<%= modal_id %>_modal" class="modal">
-            <div class="modal-content">
-              <span class="modal_close">&times;</span>
-              <figure>
-                <blockquote class="book-blockquote">
-                  <p><%= er.text %></p>
-                </blockquote>
-                <figcaption class="book-figcaption">—<%= link er.player.name, to: Routes.player_path(@conn, :book_recommendation, @locale, er.player.slug ) %>, <i><%= er.source %></i></figcaption>
-              </figure>
-
-            </div>
+          <%= render ListudyWeb.ComponentView, "ui_modal.html", id: modal_id <> "_modal", title: er.player.name, centered: false, animated: false, modal_class: "book-modal", body: render("_recommendation_body.html", conn: @conn, locale: @locale, er: er) %>
           </div>
         <% end %>
         </div>

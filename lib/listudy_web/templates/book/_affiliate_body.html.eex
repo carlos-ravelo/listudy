@@ -1,0 +1,15 @@
+    <p><%= dgettext("book", "If you buy the book through this link we will receive a small provison for the referral. There will be no additional costs for you.") %>
+    <%= if @shop.name == "Amazon" do %>
+      <%= dgettext("book", "As an Amazon Associate I earn from qualifying purchases.") %>
+    <% end %>
+    </p>
+    <a class="btn btn-primary" rel="sponsored noopener nofollow"
+       target="_blank"
+      <%= if @shop.name == "Amazon" do %>
+         href="https://amazon.com/dp/<%= @book.amazon_id%>/?tag=listudy-20"
+      <% end %>
+       >
+
+        <%= dgettext("book", "Continue")%>
+
+    </a>

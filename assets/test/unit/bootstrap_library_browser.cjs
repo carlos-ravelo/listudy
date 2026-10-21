@@ -15,7 +15,9 @@ const baseline = process.env.LISTUDY_LIBRARY_BASELINE || '/tmp/listudy-bootstrap
         }
         if (url.pathname === '/en/studies') {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.end(fs.readFileSync(url.searchParams.has('baseline') ? baseline : current)); return;
+            let html = fs.readFileSync(url.searchParams.has('baseline') ? baseline : current, 'utf8');
+            if (url.searchParams.has('baseline')) html = html.replace('/js/app.js', '/js/bootstrap_site.js').replace('data-library-ui="native"', 'data-library-ui="bootstrap"');
+            res.end(html); return;
         }
         const file = path.join(root, 'priv/static', url.pathname);
         if (!file.startsWith(root + '/priv/static/') || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.statusCode = 404; res.end(); return; }

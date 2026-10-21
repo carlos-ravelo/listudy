@@ -58,8 +58,10 @@ const fixtures = process.env.LISTUDY_NATIVE_PREVIEW || '/tmp/listudy-native-prev
         await page.locator('#training_restart').click();
         assert.equal(await page.evaluate(() => hidden_moves), 1);
         await page.evaluate(() => ground.selectSquare('g1'));
+        await page.waitForFunction(() => window.clicked_piece === 'g1');
         assert.equal(await page.evaluate(() => ground.state.drawable.shapes.length), 0, 'Strict training does not reveal legal destinations');
         await page.evaluate(() => ground.selectSquare('g3'));
+        await page.waitForFunction(() => window.clicked_piece === 'g3');
         blindRuns = await records('blind');
         if (blindRuns.at(-1).errors !== 1) console.error(await page.evaluate(() => ({clicked: window.clicked_piece, current_move, history: current_chess.history(), legal: [...legal_moves], info: document.getElementById('info').textContent, error: document.getElementById('error').textContent})));
         assert.equal(blindRuns.at(-1).errors, 1, 'Wrong imagined destinations count as errors even when illegal');

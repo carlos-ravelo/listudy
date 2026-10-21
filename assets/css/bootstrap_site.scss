@@ -1,10 +1,11 @@
+@import './bootstrap_ui';
 /* This file is for your main application css. */
 
 @import "./colors.css";
 @import "./const.css";
 @import "./navigation.css";
 @import "./components/site_navigation.css";
-@import "./skeleton.css";
+@import "./components/site_foundation.css";
 @import "./progress_bar.css";
 @import "./inputs.css";
 @import "./icons.css";
@@ -31,7 +32,7 @@
 @import "./components/practice_controls.css";
 @import "./features/practice_theme.css";
 @import "./components/breadcrumbs.css";
-@import "./components/modal.css";
+
 @import "./components/popup.css";
 @import "./components/ground.css";
 @import "./components/support.css";
@@ -251,3 +252,5 @@ iframe {
 .settings_piece_container {
     display: flex;
 }
+
+@import './components/site_controls';

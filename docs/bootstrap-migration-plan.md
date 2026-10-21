@@ -28,17 +28,21 @@ La biblioteca simplificada de tácticas también usa el layout compartido.
 - [x] Fase 5: estilos de colecciones reunidos y reglas obsoletas retiradas.
 - [x] Fase 5: variantes y superficies compartidas de biblioteca y entrenamiento,
   conservando los estilos propios de tablero y composición.
-- [ ] Fase 6: migrar páginas heredadas y retirar Skeleton y el gestor antiguo
-  cuando no queden consumidores.
-- [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
-- [ ] Después de la migración de componentes: análisis de reutilización de JS.
+- [x] Fase 6: recursos Bootstrap generales, búsqueda pública y demás LiveView,
+  formularios, contenido, administración, iframes y diálogos de libros.
+- [x] Retirada de las importaciones y fuentes de Skeleton y del gestor antiguo
+  de modales; geometría existente conservada en un adaptador de aplicación.
+- [x] LiveView: script diferido y hook de color con montaje idempotente,
+  delegación tras parches y limpieza al destruirse.
+- [x] Auditoría posterior de reutilización de JS: `javascript-reusability-audit.md`.
 
-La fase 5 queda completada para las páginas migradas del fork. La siguiente
-entrega inicia fase 6 con el inventario de consumidores heredados y la búsqueda
-pública de estudios, que ya reutiliza las filas de biblioteca. Al migrar ese
-primer consumidor LiveView se incorporarán sus hooks de montaje y destrucción.
-El catálogo de ejercicios y las demás páginas pendientes se migrarán por familias;
-Skeleton y el gestor antiguo se retirarán solo cuando no tengan consumidores.
+La migración de recursos y componentes queda completada para las familias del
+sitio. Las reglas existentes de geometría, tipografía y contenido se conservan
+como adaptador de aplicación para mantener los layouts; no se ha sustituido su
+grid por otro distinto. Las propuestas de extracción de funciones JavaScript
+están documentadas en [la auditoría](javascript-reusability-audit.md), para una
+fase de refactorización independiente. Los fallos anteriores de regresiones
+generales siguen documentados y no se consideran resueltos por esta migración.
 
 ## Primera entrega
 
@@ -378,6 +382,47 @@ migradas; la migración del sitio completo continúa en fase 6. Las limitaciones
 anteriores de las regresiones generales siguen registradas y no se dan por
 resueltas al completar esta fase visual.
 
+## Fase 6: recursos generales, LiveView y libros
+
+Las páginas restantes usan `bootstrap_site.js` / `bootstrap_site.css`, incluidos
+contenido, formularios generales, administración, entrenamiento nativo y el
+iframe de ejercicios. La búsqueda pública usa `bootstrap_discovery` y conserva
+las filas compartidas de estudios. Los LiveView mantienen sus rutas y eventos;
+`live_view.js` carga diferido. El hook de color es idempotente al montar, conserva
+la delegación al reemplazar controles y elimina sus listeners al destruirse.
+
+Se eliminan `app.js`, `app.scss`, `skeleton.css` y el gestor y estilos antiguos de
+modales. `site_foundation.css` conserva las reglas derivadas de geometría,
+tipografía, contenido y utilidades con su atribución original. `site_controls.scss`
+adapta los selectores generales a controles Bootstrap conservando dimensiones y
+la tipografía nativa donde era parte del layout. Este adaptador es intencional;
+no equivale a haber reemplazado las composiciones existentes por el grid de
+Bootstrap. No se cambia la distribución de las páginas.
+
+Preferencias de sonido/tablero y los dos tipos de diálogo de libros usan
+`ui_modal`. Los detalles de afiliación y las recomendaciones tienen parciales
+propios y disparadores accesibles; Bootstrap gestiona foco, Escape y backdrop.
+Los filtros de puzzles se inicializan desde el recurso común, conservando su
+cookie de rating también en el centro de tácticas.
+
+Validación: la suite completa del servidor web más búsqueda de estudios pasa
+111 pruebas. La comprobación de páginas generales compara regiones antes/después
+en 1280, 900, 390 y 320 px, en ambos temas, incluyendo inicio, contenido,
+registro, búsquedas LiveView, libros, finales, herramienta de ejercicios,
+iframe y administración. También verifica preferencias, foco/restauración en
+libros y ciclo de vida del hook. Las regresiones de entrenamiento nativo cubren
+juego visual, errores, reintentos y promociones. El build conserva advertencias
+de Sass y tamaño de recursos. La auditoría de JS posterior se entrega por separado.
+
+Recursos emitidos (bytes gzip, sin contar los bundles de motor/LiveView que ya
+se cargaban por separado): `bootstrap_site.css` 45 889 y `bootstrap_site.js`
+26 815; `bootstrap_discovery.css` 24 005 y `bootstrap_discovery.js` 24 374.
+Las cifras se registran para seguimiento, no como una reducción frente al bundle
+anterior. La tabla de administración ya desborda en móvil en la referencia;
+la comparación exige no aumentar ese desbordamiento sin modificar su layout.
+La prueba nativa espera ahora los callbacks asíncronos de Chessground antes de
+leer el registro de errores, evitando una carrera de la propia prueba.
+
 ## Objetivo y alcance
 
 Reducir HTML, CSS y JavaScript repetidos mediante Bootstrap 5.3 y plantillas
@@ -448,7 +493,7 @@ dependen de que la integración y la limpieza de la anterior estén verificadas.
 | 3 | Completada | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
 | 4 | Completada | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
 | 5 | Completada para las páginas migradas del fork | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
-| 6 | Pendiente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
+| 6 | Completada con adaptador de geometría existente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
 
 ## Fase 0: integración y reglas comunes
 

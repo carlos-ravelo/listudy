@@ -3,7 +3,7 @@
   <head>
     <%= render "_head.html", assigns: assigns, conn: @conn%>
   </head>
-  <body>
+  <body class="bootstrap-ui site-standard">
     <main role="main" class="container">
       <%= @inner_content %>
     </main>

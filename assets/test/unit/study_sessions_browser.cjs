@@ -12,8 +12,8 @@ const settings = '<dialog id="study_settings_dialog"><form method="dialog"><butt
 const feedback = render(source.slice(source.indexOf('<!-- Active session feedback -->'), source.indexOf('<div class="study-comment-panel"')));
 const statsPanel = render(read('lib/listudy_web/templates/study/_study_progress.html.eex').match(/<section class="study-time-summary"[\s\S]*?<\/section>/)[0]);
 const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="/priv/static/css/app.css"><style>${read('assets/css/features/study_presentation.css')}</style></head>
-<body><main class="container study-workspace"><button id="open_settings">Settings</button><button id="progress">Progress</button>
+<link rel="stylesheet" href="/priv/static/css/bootstrap_study.css"><style>${read('assets/css/features/study_presentation.css')}</style></head>
+<body class="bootstrap-ui"><main class="container study-workspace"><button id="open_settings">Settings</button><button id="progress">Progress</button>
 ${feedback}${settings}<div id="progress_modal">${statsPanel}</div></main>
 <script type="module">
 import { setupStudySessions } from '/assets/js/modules/study_sessions.js';

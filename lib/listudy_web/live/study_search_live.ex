@@ -14,12 +14,12 @@ defmodule ListudyWeb.StudySearchLive do
       <form class="study-discovery-toolbar study-library-toolbar" phx-change="suggest" phx-submit="search" role="search">
         <div class="study-discovery-search">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
-          <input id="study-search" type="search" aria-label="<%= dgettext("study", "Search for studies") %>" name="q" value="<%= @query %>" placeholder="<%= dgettext("study", "Search") %>…" autocomplete="off" phx-debounce="250" maxlength="100"/>
+          <input class="form-control" id="study-search" type="search" aria-label="<%= dgettext("study", "Search for studies") %>" name="q" value="<%= @query %>" placeholder="<%= dgettext("study", "Search") %>…" autocomplete="off" phx-debounce="250" maxlength="100"/>
         </div>
         <div id="study-search-colors" phx-hook="StudySearchColors" class="study-discovery-selectors study-library-color-toggles" role="group" aria-label="<%= dgettext("study", "Study color") %>">
           <input type="hidden" name="color" value="<%= @color %>"/>
           <%= for {value, label, piece} <- [{"white", dgettext("study", "White"), "♔"}, {"black", dgettext("study", "Black"), "♚"}] do %>
-            <button type="button" data-library-color="<%= value %>" aria-pressed="<%= @color == value %>">
+            <button class="btn" type="button" data-library-color="<%= value %>" aria-pressed="<%= @color == value %>">
               <span class="study-discovery-selector-piece" aria-hidden="true"><%= piece %></span><%= label %>
             </button>
           <% end %>

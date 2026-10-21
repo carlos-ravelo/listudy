@@ -18,7 +18,9 @@ const baseline = process.env.LISTUDY_TACTICS_BASELINE || '/tmp/listudy-tactics-b
             const file = url.searchParams.get('fixture') || 'library';
             if (!['library', 'library-collections', 'empty', 'filtered'].includes(file)) {res.statusCode = 404; res.end(); return;}
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.end(fs.readFileSync(path.join(url.searchParams.has('baseline') ? baseline : current, file + '.html'))); return;
+            let html = fs.readFileSync(path.join(url.searchParams.has('baseline') ? baseline : current, file + '.html'), 'utf8');
+            if (url.searchParams.has('baseline')) html = html.replace('/js/app.js', '/js/bootstrap_site.js').replace('data-library-ui="native"', 'data-library-ui="bootstrap"');
+            res.end(html); return;
         }
         const file = path.join(root, 'priv/static', url.pathname);
         if (!file.startsWith(root + '/priv/static/') || !fs.existsSync(file) || !fs.statSync(file).isFile()) {res.statusCode = 404; res.end(); return;}
@@ -94,6 +96,7 @@ const baseline = process.env.LISTUDY_TACTICS_BASELINE || '/tmp/listudy-tactics-b
         await page.locator('#library-puzzles button[type=submit]').click();
         await page.locator('#started').waitFor();
         assert.deepEqual(submitted, {theme: 'fork', min_rating: '1600', max_rating: '1800'});
+        assert.equal((await page.context().cookies()).find(cookie => cookie.name === 'puzzle_rating')?.value, '1600:1800');
         assert.deepEqual(errors, []);
         console.log('Bootstrap tactics library: preserved panels/themes, guest layout, shared search, saved collections, preferences, visualization links and puzzle filter submission passed');
     } finally {await browser.close(); await new Promise(resolve => server.close(resolve));}
