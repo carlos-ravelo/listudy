@@ -1,4 +1,5 @@
 import { normalizeSearchText } from './modules/search_text.js';
+import { requestJson } from './modules/request_json.js';
 import { openDialog, closeDialog } from './modules/dialog_lifecycle.js';
 import Alpine from 'alpinejs';
 
@@ -140,15 +141,10 @@ Alpine.data('studyMaintenance', () => {
             if (this.saving || !this.dirty) return;
             this.saving = true; this.status = config.saving;
             try {
-                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                if (!token) throw new Error(config.saveError);
-                const response = await fetch(config.saveUrl, {
-                    method: 'POST', credentials: 'same-origin',
-                    headers: { 'Content-Type': 'application/json', 'x-csrf-token': token },
-                    body: JSON.stringify({ revision: config.revision, chapters: this.chapters })
+                const result = await requestJson(config.saveUrl, {
+                    method: 'POST', errorMessage: config.saveError,
+                    body: { revision: config.revision, chapters: this.chapters }
                 });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || config.saveError);
                 this.chapters = result.chapters;
                 original = JSON.stringify(this.chapters);
                 config.revision = result.revision;

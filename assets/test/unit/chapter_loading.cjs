@@ -26,6 +26,7 @@ const context = vm.createContext({
     document: {querySelector: () => ({getAttribute: () => 'csrf'})},
     fetch: (url, options) => new Promise(resolve => requests.push({url: String(url), options, resolve}))
 });
+vm.runInContext(read('modules/request_json.js').replace(/^export /gm, ''), context);
 vm.runInContext(read('study_editor.js').replace(/^import .*;\n/gm, ''), context);
 const controller = factory();
 controller.$el = {dataset: {
@@ -96,7 +97,7 @@ const respond = (request, index, revision = 'original') => request.resolve({ok: 
 
     const conflict = change(0);
     assert.equal(new URL(requests[4].url).searchParams.get('revision'), 'saved');
-    requests[4].resolve({ok: false, json: async () => ({error: 'Study changed'})});
+    requests[4].resolve({ok: false, status: 409, json: async () => ({error: 'Study changed'})});
     await conflict;
     assert.equal(controller.chapter, 2);
     assert.equal(controller.comment, 'Saved third chapter');

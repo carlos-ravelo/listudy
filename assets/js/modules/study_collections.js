@@ -1,4 +1,5 @@
 import { downloadPgn } from './download_pgn.js';
+import { requestJson } from './request_json.js';
 import { openDialog } from './dialog_lifecycle.js';
 import { CollectionStore } from './study/collection_store.js';
 import { CollectionAccount } from './study/collection_account.js';
@@ -205,13 +206,10 @@ export function setupStudyCollections({ getCurrentChapter }) {
         submit.disabled = true;
         try {
             await account.flush();
-            const response = await fetch('/api/collections/study', {
-                method: 'POST', credentials: 'same-origin',
-                headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'x-csrf-token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
-                body: JSON.stringify({ revision: account.revision, ...selection })
+            const result = await requestJson('/api/collections/study', {
+                method: 'POST', errorMessage: 'The study could not be created.',
+                body: { revision: account.revision, ...selection }
             });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'The study could not be created.');
             window.location.assign(result.url);
         } catch (error) { showStatus(error.message); }
         finally {

@@ -16,7 +16,7 @@ Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
 - `study/practice_sessions.js`: modelo de sesiones, objetivos y tiempo activo.
   Estudio y práctica de errores comparten el modelo.
 
-## Primera extracción completada
+## Extracciones completadas
 
 - `modules/search_text.js`: `normalizeSearchText(value)` compartido por los modos
   simple y completo de biblioteca y el selector de aperturas. Los consumidores
@@ -25,19 +25,27 @@ Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
   colecciones, Lichess y sparring. Conserva el MIME PGN y libera la URL después
   del clic; cada consumidor conserva su nombre, contenido y flujo adicional.
 
+- `modules/request_json.js`: transporte JSON compartido por carga/guardado del
+  editor, mantenimiento de capítulos y creación de estudios desde colecciones.
+  Centraliza credenciales, cabeceras JSON/CSRF y errores `JsonRequestError` con
+  `status` y `data`. Propaga `AbortSignal`, conserva cancelaciones y no reintenta.
+  Las revisiones, comprobaciones de respuestas tardías, borradores y mensajes
+  permanecen en cada consumidor. Las respuestas sin JSON usan el mensaje de
+  error del consumidor; las escrituras sin token CSRF se rechazan antes de enviar.
+  El guardado de metadatos con `FormData` y archivos conserva su transporte actual.
+
 ## Próximas extracciones recomendadas
 
 | Prioridad | Duplicación comprobada | Propuesta | Condiciones que deben conservarse |
 | --- | --- | --- | --- |
-| Media | `study_editor.js`, `study_maintenance.js` y `modules/study_collections.js` repiten cabeceras JSON/CSRF y tratamiento de respuestas | Transporte `requestJson` compartido, con AbortSignal y errores HTTP tipados | No reintentar escrituras automáticamente; conservar conflictos 409, revisiones, cancelación, mensajes localizados y borradores en el consumidor |
 | Media | `modules/study_sessions.js` y `train_mistakes.js` conectan el tracker a actividad, visibilidad, foco, bloqueo e intervalos | Adaptador de actividad que devuelva una función de limpieza | Mantener sus distintas políticas de sesión, persistencia, inactividad y salida; probar exclusión del tiempo en diálogos y ausencia de listeners/intervalos duplicados |
 | Media | `study_editor.js` y `quick_result.js` comprueban elementos editables antes de ejecutar atajos | Predicado de destino editable con opciones explícitas | `contenteditable=false`, composición, selección y teclas modificadoras; resumen y diálogo siguen siendo exclusiones de cada función |
 
 ## Orden de implementación
 
 1. Completado: normalización de búsqueda y descarga PGN.
-2. Transporte JSON: introducir primero un consumidor y cubrir fallos, conflictos
-   y cancelaciones antes de extenderlo.
+2. Completado: transporte JSON, validado primero en mantenimiento y extendido
+   al editor y a creación de estudios desde colecciones.
 3. Adaptador de actividad y política de teclado: refactorizar después de contar
    con pruebas de ciclo de vida y regresiones de práctica.
 

@@ -1,4 +1,5 @@
 import { hasBlockingUi } from './modules/blocking_ui.js';
+import { requestJson } from './modules/request_json.js';
 import { Chessground } from 'chessground';
 import { createChapterEditor } from './modules/study/chapter_editor.js';
 import { lichessAnalysisUrl, prepareLichessAnalysis } from './modules/study/lichess_analysis.js';
@@ -359,10 +360,8 @@ Alpine.data('chapterEditor', () => {
                 const url = new URL(config.loadUrl, window.location.href);
                 url.searchParams.set('chapter_index', String(index));
                 url.searchParams.set('revision', config.revision);
-                const response = await fetch(url, {credentials: 'same-origin', signal: chapterAbort.signal});
-                const result = await response.json();
+                const result = await requestJson(url, { signal: chapterAbort.signal, errorMessage: config.loadError });
                 if (request !== chapterRequest) return;
-                if (!response.ok) throw new Error(result.error || config.loadError);
                 if (result.revision !== config.revision || result.editor?.chapter_index !== index) throw new Error(config.loadError);
                 const next = createChapterEditor(result.editor.chapter);
                 currentChapter = result.editor.chapter;
@@ -396,19 +395,12 @@ Alpine.data('chapterEditor', () => {
             this.status = config.saving;
             this.refresh();
             try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-                    document.querySelector('input[name="_csrf_token"]')?.value;
-                if (!csrfToken) throw new Error(config.saveError);
-                const response = await fetch(config.saveUrl, {
-                    method: 'POST', credentials: 'same-origin',
-                    headers: { 'Content-Type': 'application/json',
-                        'x-csrf-token': csrfToken },
-                    body: JSON.stringify(this.draft ? {draft: {title: editor.tree.title, training_kind: this.trainingKind,
+                const result = await requestJson(config.saveUrl, {
+                    method: 'POST', errorMessage: config.saveError,
+                    body: this.draft ? {draft: {title: editor.tree.title, training_kind: this.trainingKind,
                         color: this.studyColor, private: this.privateStudy, pgn: editor.pgn()}} :
-                        { revision: config.revision, chapter_index: this.chapter, tree: editor.tree })
+                        { revision: config.revision, chapter_index: this.chapter, tree: editor.tree }
                 });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || config.saveError);
                 if (this.draft) { this.dirty = false; this.pgnEdited = false; window.location.assign(result.url); return; }
                 config.revision = result.revision;
                 currentChapter = JSON.parse(JSON.stringify({ ...currentChapter, ...editor.tree }));
