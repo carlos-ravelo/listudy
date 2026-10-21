@@ -3,4 +3,4 @@
 
 <%= render "form.html", assigns: assigns, action: Routes.study_path(@conn, :create, @locale) %>
 </div>
-<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_maintenance.js") %>"></script>
+<script defer type="text/javascript" src="<%= maintenance_script_path(@conn) %>"></script>

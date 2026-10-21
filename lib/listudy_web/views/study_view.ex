@@ -80,12 +80,20 @@ defmodule ListudyWeb.StudyView do
   end
 
   def study_script_path(conn) do
-    path = Routes.static_path(conn, "/js/study.js")
+    versioned_script_path(conn, "/js/study.js", "chapter-editor-1")
+  end
+
+  def maintenance_script_path(conn) do
+    versioned_script_path(conn, "/js/study_maintenance.js", "bootstrap-opening-1")
+  end
+
+  defp versioned_script_path(conn, script, version) do
+    path = Routes.static_path(conn, script)
     separator = if String.contains?(path, "?"), do: "&", else: "?"
 
     # Escape existing one-year browser caches for the old unversioned URL.
     # Subsequent undigested requests revalidate under the endpoint's policy.
-    path <> separator <> "v=chapter-editor-1"
+    path <> separator <> "v=" <> version
   end
 
   def selected_opening(assigns) do

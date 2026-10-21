@@ -1,0 +1,22 @@
+@import './const.css';
+@import './icons.css';
+@import './features/study_maintenance.css';
+@import './features/study_presentation.css';
+@import './bootstrap_ui';
+
+:where(.study-create, .study-management-page) :where(button, .button) { @extend .btn; }
+:is(.study-create, .study-management-page) {
+  --bs-body-bg: var(--bg-color);
+  --bs-body-color: var(--font-color);
+  --bs-border-color: var(--bg-highlight-color);
+  [hidden], [x-cloak] { display: none !important; }
+  fieldset { margin: 0; padding: 0; border: 0; }
+  legend { padding: 0; }
+  .big_input { width: 100%; }
+  .form-control, .form-select { box-sizing: border-box; }
+  .invalid-feedback { display: block; }
+}
+.study-opening-modal { --bs-modal-width: min(400px, calc(100vw - 32px)); }
+.study-opening-modal .modal-title { font-size: 18px; font-weight: 600; }
+.study-opening-modal .modal-body { display: flex; flex-direction: column; gap: 12px; }
+.study-opening-modal .form-control { margin: 0; }

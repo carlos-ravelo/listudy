@@ -76,6 +76,6 @@
   <span><%= dgettext("study", "This can not be undone!") %></span>
   <%= link dgettext("study", "Delete Study"), to: Routes.study_path(@conn, :delete, @locale, @study), method: :delete, data: [confirm: dgettext("study", "Are you sure?") <> " " <> dgettext("study", "This can not be undone!")], class: "study-management-delete" %>
 </footer>
-<script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/study_maintenance.js") %>"></script>
+<script defer type="text/javascript" src="<%= maintenance_script_path(@conn) %>"></script>
 
 </div>

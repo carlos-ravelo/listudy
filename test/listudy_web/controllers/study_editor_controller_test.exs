@@ -3,6 +3,13 @@ defmodule ListudyWeb.StudyEditorControllerTest do
   alias Listudy.Repo
 
   setup %{conn: conn} do
+    catalog = File.read!("priv/repo/data/common_openings.json") |> Jason.decode!(keys: :atoms)
+
+    for attributes <- Enum.take(catalog.openings, 3) do
+      Repo.get_by(Listudy.Openings.Opening, name: attributes.name) ||
+        Repo.insert!(Listudy.Openings.Opening.changeset(%Listudy.Openings.Opening{}, attributes))
+    end
+
     owner =
       Repo.insert!(%Listudy.Users.User{
         username: "ChapterEditor",
@@ -197,6 +204,28 @@ defmodule ListudyWeb.StudyEditorControllerTest do
     refute page =~ "1. d4 d5 *"
   end
 
+  test "metadata validation keeps Bootstrap resources and entered values", %{
+    owner_conn: owner,
+    study: study
+  } do
+    html =
+      owner
+      |> put(Routes.study_path(owner, :update, "en", study), %{
+        "study" => %{"title" => "a", "description" => "Unsaved description"}
+      })
+      |> html_response(200)
+
+    assert html =~ "/css/bootstrap_management.css"
+    assert [_] = html_find(html, "#study_title[value='a']")
+    assert [_] = html_find(html, ".invalid-feedback[phx-feedback-for='study_title']")
+    assert html =~ "Unsaved description"
+
+    if preview_path = System.get_env("LISTUDY_MANAGEMENT_PREVIEW") do
+      File.mkdir_p!(Path.dirname(preview_path))
+      File.write!(Path.rootname(preview_path) <> "-error.html", html)
+    end
+  end
+
   test "maintenance is owner-only and saves reordered chapters", %{
     conn: conn,
     owner_conn: owner,
@@ -210,8 +239,19 @@ defmodule ListudyWeb.StudyEditorControllerTest do
     assert conn |> post(url, %{}) |> json_response(403) == %{"error" => "Forbidden"}
     assert other |> post(url, %{}) |> json_response(403) == %{"error" => "Forbidden"}
 
-    assert owner |> get(Routes.study_path(conn, :edit, "en", study)) |> html_response(200) =~
-             "studyMaintenance"
+    html = owner |> get(Routes.study_path(conn, :edit, "en", study)) |> html_response(200)
+    assert html =~ "studyMaintenance"
+    assert html =~ "/css/bootstrap_management.css"
+    assert html =~ "/js/bootstrap_management.js"
+    assert [_] = html_find(html, "#study_opening_picker.ui-modal")
+    refute html =~ "/css/app.css"
+    refute html =~ "select2.min"
+    refute html =~ "jquery-3.5.1"
+
+    if preview_path = System.get_env("LISTUDY_MANAGEMENT_PREVIEW") do
+      File.mkdir_p!(Path.dirname(preview_path))
+      File.write!(preview_path, html)
+    end
 
     {:ok, %{"chapters" => chapters}} = Listudy.Games.ChessEngine.maintenance(pgn)
     params = %{revision: Listudy.StudyPgn.revision(pgn), chapters: Enum.reverse(chapters)}

@@ -15,7 +15,7 @@
 
   <div class="study-metadata-title">
   <%= label f, :title, dgettext("study", "Title") %>
-  <%= text_input f, :title, class: "big_input", minlength: 3, maxlength: 60, placeholder: if(tactics, do: dgettext("study", "Tactics from my book"), else: dgettext("study", "Caro-Kann Defense")), required: true %>
+  <%= text_input f, :title, class: "big_input form-control", minlength: 3, maxlength: 60, placeholder: if(tactics, do: dgettext("study", "Tactics from my book"), else: dgettext("study", "Caro-Kann Defense")), required: true %>
   <%= error_tag f, :title %>
   </div>
 
@@ -23,7 +23,7 @@
   <div class="study-metadata-description">
 
   <%= label f, :description, dgettext("study", "Description (optional)") %>
-  <%= textarea f, :description, class: "big_input", rows: 2, maxlength: 1000, placeholder: if(tactics, do: dgettext("study", "Exercises and explanations to practice…"), else: dgettext("study", "In this study I work on my 1.e4 openings...")) %>
+  <%= textarea f, :description, class: "big_input form-control", rows: 2, maxlength: 1000, placeholder: if(tactics, do: dgettext("study", "Exercises and explanations to practice…"), else: dgettext("study", "In this study I work on my 1.e4 openings...")) %>
   <%= error_tag f, :description %>
 
   </div>
@@ -33,7 +33,7 @@
   <div class="study-management-kind">
     <%= if maintenance do %>
     <%= label f, :training_kind, dgettext("study", "Practice type") %>
-    <%= select f, :training_kind, [{dgettext("study", "Repertoire"), "repertoire"}, {dgettext("study", "Tactics collection"), "tactics"}], "x-model": "kind" %>
+    <%= select f, :training_kind, [{dgettext("study", "Repertoire"), "repertoire"}, {dgettext("study", "Tactics collection"), "tactics"}], "x-model": "kind", class: "form-select" %>
     <% else %>
     <fieldset class="study-segmented-field">
       <legend><%= dgettext("study", "Practice type") %></legend>
@@ -57,7 +57,7 @@
     <div class="study-management-side" x-show="kind === 'repertoire'" x-cloak>
       <%= if maintenance do %>
       <%= label f, :color, dgettext("study", "For which side is this study") %>
-      <%= select(f, :color, ["White": "white", "Black": "black"]) %>
+      <%= select(f, :color, ["White": "white", "Black": "black"], class: "form-select") %>
       <% else %>
       <fieldset class="study-segmented-field">
         <legend><%= dgettext("study", "For which side is this study") %></legend>
@@ -76,7 +76,7 @@
     <%= if maintenance do %>
     <div class="study-management-private">
       <%= label f, :private, dgettext("study", "Keep this study private") %>
-      <%= checkbox f, :private %>
+      <%= checkbox f, :private, class: "form-check-input" %>
     </div>
     <% end %>
   </div>
@@ -89,38 +89,17 @@
     <p class="study-management-status" role="status" x-text="status"></p>
   <% end %>
 
-  <%= if Map.get(@assigns, :maintenance, false) do %>
-  <script type="text/javascript" src="<%= Routes.static_path(@assigns.conn, "/js/jquery-3.5.1.min.js") %>"></script>
-  <script type="text/javascript" src="<%= Routes.static_path(@assigns.conn, "/js/select2.min.js") %>"></script>
-  <link rel="stylesheet" href="<%= Routes.static_path(@assigns.conn, "/css/select2.min.css") %>"/>
-
-  
-<style>
-.select2-container {
-  color: black;
-}
-</style>
-
-<script <%= raw ListudyWeb.Plugs.CSP.put_nonce(@assigns.conn) %>>
-$(document).ready(function() {
-    <%= unless Map.get(@assigns, :maintenance, false) do %>
-    $('#study_opening_id').select2({width: '100%'});
-    <% end %>
-});
-</script>
-  <% end %>
-
 <%= unless maintenance do %>
 <div class="study-form-footer">
   <div class="study-management-private">
-    <%= checkbox f, :private %>
+    <%= checkbox f, :private, class: "form-check-input" %>
     <%= label f, :private, dgettext("study", "Keep this study private") %>
   </div>
 <% end %>
 <div class="study-form-actions" <%= if Map.get(@assigns, :maintenance, false) and is_nil(@assigns.changeset.action), do: raw("x-show=\"changed\" x-cloak") %>>
-  <%= submit "Save", class: if(Map.get(@assigns, :maintenance, false), do: "primary", else: "button practice-primary"), "x-bind:disabled": "typeof saving !== 'undefined' && saving" %>
+  <%= submit "Save", class: if(Map.get(@assigns, :maintenance, false), do: "btn btn-primary primary", else: "btn btn-primary practice-primary"), "x-bind:disabled": "typeof saving !== 'undefined' && saving" %>
   <%= unless Map.get(@assigns, :maintenance, false) do %>
-    <%= link dgettext("study", "Back"), to: Routes.study_path(@assigns.conn, :index, @assigns.locale), class: "button practice-secondary" %>
+    <%= link dgettext("study", "Back"), to: Routes.study_path(@assigns.conn, :index, @assigns.locale), class: "btn btn-outline-secondary practice-secondary" %>
   <% end %>
 </div>
 <%= unless maintenance do %>
@@ -129,7 +108,7 @@ $(document).ready(function() {
     <aside class="study-create-options" aria-label="<%= dgettext("study", "Study sources") %>">
       <section class="study-create-card" aria-labelledby="study-create-scratch-title">
         <h2 id="study-create-scratch-title"><%= dgettext("study", "Start from scratch") %></h2>
-        <%= link dgettext("study", "Start on the board"), to: Routes.study_path(@assigns.conn, :new, @assigns.locale, source: "blank", kind: Ecto.Changeset.get_field(@assigns.changeset, :training_kind)), class: "button practice-primary" %>
+        <%= link dgettext("study", "Start on the board"), to: Routes.study_path(@assigns.conn, :new, @assigns.locale, source: "blank", kind: Ecto.Changeset.get_field(@assigns.changeset, :training_kind)), class: "btn btn-primary practice-primary" %>
         <p><%= dgettext("study", "Play your moves or set up a position. No file needed.") %></p>
       </section>
       <section class="study-create-card" aria-labelledby="study-create-import-title">

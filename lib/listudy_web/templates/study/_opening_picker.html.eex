@@ -11,25 +11,5 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg>
   </button>
   <%= error_tag @f, :opening_id %>
-  <dialog id="study_opening_picker" class="study-opening-dialog" x-ref="dialog"
-          aria-labelledby="study_opening_picker_title" @click="if ($event.target === $el) $el.close()">
-    <div class="study-opening-dialog-content">
-      <header>
-        <h2 id="study_opening_picker_title"><%= dgettext("study", "Choose opening") %></h2>
-        <button type="button" class="study-opening-close" @click="$refs.dialog.close()"><%= dgettext("study", "Close") %></button>
-      </header>
-      <input type="search" x-ref="search" x-model="query" @keydown.enter.prevent
-             aria-label="<%= dgettext("study", "Search openings") %>" autocomplete="off"
-             placeholder="<%= dgettext("study", "Search openings…") %>">
-      <ul class="study-opening-options">
-        <%= for opening <- @openings do %>
-          <li x-show="matches($el.dataset.name)" data-name="<%= opening.name %>">
-            <button type="button" data-id="<%= opening.id %>" data-name="<%= opening.name %>"
-                    :aria-pressed="selected === $el.dataset.id" @click="choose($el.dataset.id, $el.dataset.name)"><%= opening.name %></button>
-          </li>
-        <% end %>
-      </ul>
-      <p class="study-opening-empty" x-show="!names.some(value => matches(value))" role="status"><%= dgettext("study", "No openings match your search.") %></p>
-    </div>
-  </dialog>
+  <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "study_opening_picker", title_id: "study_opening_picker_title", title: dgettext("study", "Choose opening"), modal_class: "study-opening-modal", animated: false, body: render("_opening_options.html", openings: @openings) %>
 </div>

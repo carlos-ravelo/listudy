@@ -1,3 +1,4 @@
+import { openDialog, closeDialog } from './modules/dialog_lifecycle.js';
 import Alpine from 'alpinejs';
 
 Alpine.data('studyOpeningPicker', () => ({
@@ -13,15 +14,14 @@ Alpine.data('studyOpeningPicker', () => ({
     },
     open() {
         this.query = '';
-        this.$refs.dialog.showModal();
-        this.$nextTick(() => this.$refs.search.focus());
+        openDialog(this.$root.querySelector('.ui-modal'), this.$root.querySelector('#study_opening_picker_button'));
     },
     choose(id, name) {
         this.selected = id;
         this.name = name;
         this.$refs.value.value = id;
         this.$refs.value.dispatchEvent(new Event('change', { bubbles: true }));
-        this.$refs.dialog.close();
+        closeDialog(this.$root.querySelector('.ui-modal'));
     }
 }));
 

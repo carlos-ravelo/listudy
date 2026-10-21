@@ -2,8 +2,8 @@
 
 Fecha: 2026-10-21. Rama: `migration/bootstrap-ui`. Análisis inicial y biblioteca
 personal y entrenamiento migrados. Los cuatro diálogos de entrenamiento usan
-Bootstrap. Colecciones también utiliza el modal compartido; queda pendiente
-el selector de aperturas para terminar la fase 4.
+Bootstrap. Colecciones y selector de aperturas completan la fase 4; creación
+y mantenimiento cargan ahora sus propios recursos Bootstrap.
 
 ## Pendientes y siguiente entrega
 
@@ -17,20 +17,19 @@ el selector de aperturas para terminar la fase 4.
 - [x] Fase 3: preparar los estilos necesarios y activar el layout Bootstrap en
   la página de entrenamiento; verificar profundidad, revisiones y modos de juego.
 - [x] Fase 4: colecciones con modal compartido, conservando borradores.
-- [ ] Fase 4: selector de aperturas y recursos Bootstrap de sus páginas de
-  creación y mantenimiento; coordinar este cambio con fase 5 para evitar mezclar
-  gestores y hojas de estilo en una misma página.
-- [ ] Fase 5: extender componentes comunes al editor, creación, mantenimiento y
-  restantes páginas de análisis; eliminar reglas visuales redundantes.
+- [x] Fase 4: selector de aperturas y recursos Bootstrap de creación y mantenimiento.
+- [ ] Fase 5: extender componentes comunes al editor y restantes páginas de
+  análisis; completar la limpieza de estilos y variantes de creación, mantenimiento
+  y demás páginas migradas.
 - [ ] Fase 6: migrar páginas heredadas y retirar Skeleton y el gestor antiguo
   cuando no queden consumidores.
 - [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
 - [ ] Después de la migración de componentes: análisis de reutilización de JS.
 
-La siguiente entrega de interfaz es el selector de aperturas, completando la
-fase 4 junto con los recursos necesarios de creación y mantenimiento. Colecciones
-ya usa Bootstrap. La biblioteca simplificada de tácticas y las demás páginas sin
-activar Bootstrap conservan sus recursos anteriores.
+La siguiente entrega corresponde a fase 5: editor de capítulos y restantes
+páginas de análisis. La biblioteca simplificada de tácticas y las demás páginas
+sin activar Bootstrap conservan sus recursos anteriores. El editor de tablero
+que se abre con `source=blank` todavía usa su layout heredado.
 
 ## Primera entrega
 
@@ -204,10 +203,33 @@ persistencia y temas en escritorio/móvil. `study_features_browser.cjs` comprueb
 colecciones de invitado con el mismo plugin Bootstrap y navegación por capítulos.
 Los controladores siguen comprobando acceso y creación de estudios.
 
-Pendiente de fase 4: `_opening_picker.html.eex` y sus consumidores en creación y
-mantenimiento aún usan recursos heredados. Su cambio debe incorporar los recursos
-Bootstrap de esas páginas antes de retirar el diálogo nativo; no se presenta esta
-entrega de colecciones como la fase 4 completa.
+El selector de aperturas quedó pendiente en la entrega de colecciones. Su
+migración se completa en la entrega descrita a continuación.
+
+## Fase 4: selector de aperturas y formularios
+
+El selector usa `ui_modal` y el parcial `_opening_options.html.eex`. Alpine
+conserva búsqueda normalizada, selección y actualización del campo oculto;
+`dialog_lifecycle.js` delega apertura y cierre a la única instancia de Bootstrap
+del recurso común. Se conservan los borradores de metadatos y capítulos al abrir,
+cancelar o seleccionar una apertura. Enter en la búsqueda no envía el formulario.
+
+Creación por importación y mantenimiento usan el layout Bootstrap con recursos
+`bootstrap_management.js` / `bootstrap_management.css`, sin `app.js`, Skeleton,
+jQuery ni Select2. La carga de estos dos últimos no tenía inicialización efectiva
+y se retira. El editor de tablero y la creación desde cero quedan para fase 5.
+Los errores HTML de creación conservan estos recursos, y los errores de campo
+renderizados por Phoenix siguen visibles pese al `display: none` predeterminado
+de Bootstrap para `.invalid-feedback`. El script de Alpine tiene URL versionada
+para evitar ejecutar una copia antigua que todavía espere un `dialog` nativo.
+
+Se mantienen columnas, paneles y orden de los formularios, normalizando campos y
+acciones a las variantes Bootstrap. El alcance no incluye cambiar sus layouts.
+La prueba `bootstrap_management_browser.cjs` compara anchos y columnas en 1280,
+900, 390 y 320 px, con ambos temas, y verifica búsqueda, selección, Escape,
+backdrop, foco, borradores, guardado con error y respuesta HTML de validación.
+`study_maintenance_browser.cjs` conserva la regresión de renombrado, ordenación,
+duplicación, borrado, conflictos y guardado de capítulos.
 
 ## Objetivo y alcance
 
@@ -277,8 +299,8 @@ dependen de que la integración y la limpieza de la anterior estén verificadas.
 | 1 | Completada | Página inicial de análisis e importación PGN | Primera página con layout Bootstrap y diálogo compartido en uso real |
 | 2 | Completada para biblioteca personal | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
 | 3 | Completada | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
-| 4 | Parcial: colecciones migradas; selector pendiente | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
-| 5 | Parcial: diálogos migrados normalizados | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
+| 4 | Completada | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
+| 5 | Parcial: diálogos, creación y mantenimiento | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
 | 6 | Pendiente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
 
 ## Fase 0: integración y reglas comunes

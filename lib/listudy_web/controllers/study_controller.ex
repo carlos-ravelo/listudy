@@ -114,7 +114,7 @@ defmodule ListudyWeb.StudyController do
             revision: ""
           )
         else
-          render(conn, "new.html", changeset: changeset, openings: openings)
+          render(management_layout(conn), "new.html", changeset: changeset, openings: openings)
         end
 
       {:error, error} ->
@@ -219,7 +219,7 @@ defmodule ListudyWeb.StudyController do
           )
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render(conn, "new.html",
+          render(management_layout(conn), "new.html",
             changeset: changeset,
             openings: Listudy.Openings.list_openings_study_form()
           )
@@ -231,6 +231,7 @@ defmodule ListudyWeb.StudyController do
 
         conn
         |> put_flash(:info, reason)
+        |> management_layout()
         |> render("new.html", changeset: changeset, openings: openings)
     end
   end
@@ -501,6 +502,13 @@ defmodule ListudyWeb.StudyController do
     end
   end
 
+  defp management_layout(conn) do
+    conn
+    |> assign(:bootstrap_ui, true)
+    |> assign(:bootstrap_management, true)
+    |> put_layout({ListudyWeb.LayoutView, "bootstrap.html"})
+  end
+
   defp render_edit(conn, study, changeset) do
     pgn =
       case File.read(get_path(id_from_slug(study.slug) <> ".pgn")) do
@@ -514,7 +522,7 @@ defmodule ListudyWeb.StudyController do
         _ -> {[], [], dgettext("study", "This study could not be opened in the editor.")}
       end
 
-    render(conn, "edit.html",
+    render(management_layout(conn), "edit.html",
       study: study,
       source_sites: Enum.map_join(sites, "\n", fn site -> "[Site \"#{site}\"]" end),
       changeset: changeset,
