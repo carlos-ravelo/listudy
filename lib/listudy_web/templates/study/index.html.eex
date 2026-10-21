@@ -31,7 +31,7 @@
       <h2 id="puzzle-launcher-title"><%= gettext("Included puzzles") %></h2>
       <%= render ListudyWeb.ComponentView, "puzzle_filters.html", conn: @conn, locale: @locale,
             id: "library-puzzles", filters: @puzzle_filters, themes: @puzzle_themes,
-            count: @puzzle_count, live: false, error: nil %>
+            count: @puzzle_count, live: false, error: nil, bootstrap: true %>
     </section>
     <section class="tactics-source-panel tactics-collections" aria-labelledby="tactics-collections-title">
       <header class="tactics-card-heading">
@@ -48,7 +48,7 @@
     </nav>
     <% end %>
     <div class="study-library-toolbar" data-library-controls hidden>
-      <input type="search" data-library-search aria-label="<%= dgettext("study", "Search this list") %>" placeholder="<%= dgettext("study", "Search this list…") %>" autocomplete="off">
+      <input class="form-control" type="search" data-library-search aria-label="<%= dgettext("study", "Search this list") %>" placeholder="<%= dgettext("study", "Search this list…") %>" autocomplete="off">
       <%= unless tactics do %>
       <button class="btn" type="button" data-library-toggle-filters aria-expanded="false" aria-controls="library-filters-panel">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>

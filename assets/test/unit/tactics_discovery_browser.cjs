@@ -80,8 +80,9 @@ const fixtures = process.env.LISTUDY_DISCOVERY_PREVIEW || '/tmp/listudy-discover
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                 const panels = page.locator('.tactics-source-panel:visible');
                 assert.equal(await panels.count(), 2);
-                const panel = await panels.boundingBox(), modes = await page.locator('.tactics-modes').boundingBox();
-                assert(modes.y >= panel.y + panel.height, 'Visualization follows the selected source');
+                const bounds = await Promise.all((await panels.all()).map(panel => panel.boundingBox()));
+                const modes = await page.locator('.tactics-modes').boundingBox();
+                assert(modes.y >= Math.max(...bounds.map(panel => panel.y + panel.height)), 'Visualization follows both puzzle sources');
                 for (const theme of ['light', 'dark']) {
                     await page.evaluate(theme => document.documentElement.setAttribute('data-theme', theme), theme);
                     await page.screenshot({path: `/tmp/listudy-tactics-hierarchy-${source ? 'collections' : 'included'}-${width}-${theme}.png`, fullPage: true});

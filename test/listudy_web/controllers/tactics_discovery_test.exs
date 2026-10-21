@@ -12,13 +12,21 @@ defmodule ListudyWeb.TacticsDiscoveryTest do
     conn: conn
   } do
     html = conn |> get("/en/tactics") |> html_response(200)
+    assert html =~ "/css/bootstrap_tactics.css"
+    refute html =~ "/css/app.css"
     assert [_] = html_find(html, ".tactics-modes a[href='/en/blind-tactics']")
     assert [_] = html_find(html, ".tactics-modes a[href='/en/pieceless-tactics']")
     assert [_] = html_find(html, "form#library-puzzles[action='/en/tactics/puzzles/start']")
     assert [] = html_find(html, "[data-nav-section=practice]")
     assert [_] = html_find(html, "a[data-nav-section=tactics]")
     assert [_, _] = html_find(html, ".tactics-cards > .tactics-source-panel")
-    assert [] = html_find(html, ".tactics-sources, .study-library-views, .tactics-source-panel[hidden]")
+
+    assert [] =
+             html_find(
+               html,
+               ".tactics-sources, .study-library-views, .tactics-source-panel[hidden]"
+             )
+
     preview("library", html)
     collections = build_conn() |> get("/en/tactics?source=collections") |> html_response(200)
     assert [_, _] = html_find(collections, ".tactics-cards > .tactics-source-panel")

@@ -46,13 +46,10 @@ defmodule ListudyWeb.StudyController do
     favorites = Enum.reject(favorites, &MapSet.member?(owned, &1.id))
 
     conn =
-      if is_nil(kind) do
-        conn
-        |> assign(:bootstrap_ui, true)
-        |> put_layout({ListudyWeb.LayoutView, "bootstrap.html"})
-      else
-        conn
-      end
+      conn
+      |> assign(:bootstrap_ui, true)
+      |> assign(:bootstrap_tactics, kind == "tactics")
+      |> put_layout({ListudyWeb.LayoutView, "bootstrap.html"})
 
     render(conn, "index.html",
       studies: studies,

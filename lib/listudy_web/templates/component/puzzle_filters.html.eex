@@ -1,7 +1,7 @@
 <form id="<%= @id %>" class="puzzle-filters" action="<%= Routes.puzzle_catalog_path(@conn, :start, @locale) %>" method="get" <%= if @live do %>phx-change="preview_filters" phx-submit="apply_filters"<% end %>>
   <div class="puzzle-theme-field">
     <label for="<%= @id %>-theme"><%= gettext("Theme") %></label>
-    <select id="<%= @id %>-theme" name="theme" autocomplete="off">
+    <select class="<%= if Map.get(assigns, :bootstrap, false), do: "form-select" %>" id="<%= @id %>-theme" name="theme" autocomplete="off">
       <%= options_for_select([{gettext("All themes"), ""} | Enum.map(@themes, fn [theme, _count] -> {ListudyWeb.PuzzleCatalogView.theme_name(theme), theme} end)], @filters["theme"]) %>
     </select>
   </div>
@@ -10,18 +10,18 @@
     <div class="puzzle-rating-fields">
       <div>
         <label for="<%= @id %>-min"><%= gettext("Minimum") %></label>
-        <input id="<%= @id %>-min" name="min_rating" type="number" inputmode="numeric" autocomplete="off" min="0" max="4000" step="1" value="<%= @filters["min_rating"] %>" phx-debounce="300" aria-describedby="<%= @id %>-status" <%= if @error && @filters["min_rating"] > @filters["max_rating"], do: raw("aria-invalid=\"true\"") %>>
+        <input class="<%= if Map.get(assigns, :bootstrap, false), do: "form-control" %>" id="<%= @id %>-min" name="min_rating" type="number" inputmode="numeric" autocomplete="off" min="0" max="4000" step="1" value="<%= @filters["min_rating"] %>" phx-debounce="300" aria-describedby="<%= @id %>-status" <%= if @error && @filters["min_rating"] > @filters["max_rating"], do: raw("aria-invalid=\"true\"") %>>
       </div>
       <span class="puzzle-rating-separator" aria-hidden="true">–</span>
       <div>
         <label for="<%= @id %>-max"><%= gettext("Maximum") %></label>
-        <input id="<%= @id %>-max" name="max_rating" type="number" inputmode="numeric" autocomplete="off" min="0" max="4000" step="1" value="<%= @filters["max_rating"] %>" phx-debounce="300" aria-describedby="<%= @id %>-status" <%= if @error && @filters["min_rating"] > @filters["max_rating"], do: raw("aria-invalid=\"true\"") %>>
+        <input class="<%= if Map.get(assigns, :bootstrap, false), do: "form-control" %>" id="<%= @id %>-max" name="max_rating" type="number" inputmode="numeric" autocomplete="off" min="0" max="4000" step="1" value="<%= @filters["max_rating"] %>" phx-debounce="300" aria-describedby="<%= @id %>-status" <%= if @error && @filters["min_rating"] > @filters["max_rating"], do: raw("aria-invalid=\"true\"") %>>
       </div>
     </div>
   </fieldset>
   <div class="puzzle-filter-footer">
     <div class="puzzle-filter-action">
-      <button type="submit" class="puzzle-practice-button" phx-disable-with="<%= gettext("Loading…") %>"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M5 3l8 5-8 5z"/></svg><%= if @live, do: gettext("Apply and practice"), else: gettext("Practice puzzles") %></button>
+      <button type="submit" class="puzzle-practice-button<%= if Map.get(assigns, :bootstrap, false), do: " btn btn-primary" %>" phx-disable-with="<%= gettext("Loading…") %>"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M5 3l8 5-8 5z"/></svg><%= if @live, do: gettext("Apply and practice"), else: gettext("Practice puzzles") %></button>
     </div>
     <p id="<%= @id %>-status" class="puzzle-filter-status" role="status" aria-live="polite" aria-atomic="true" <%= if !@error && @count != 0, do: "hidden" %> <%= if @error, do: raw("data-filter-error=\"true\"") %>>
       <%= if @error do %>

@@ -6,6 +6,7 @@ Bootstrap. Colecciones y selector de aperturas completan la fase 4; creación
 y mantenimiento cargan ahora sus propios recursos Bootstrap. El editor de capítulos
 y la creación desde cero también usan recursos Bootstrap separados. Partidas,
 comparación y práctica de errores completan la migración de páginas de análisis.
+La biblioteca simplificada de tácticas también usa el layout compartido.
 
 ## Pendientes y siguiente entrega
 
@@ -22,8 +23,7 @@ comparación y práctica de errores completan la migración de páginas de anál
 - [x] Fase 4: selector de aperturas y recursos Bootstrap de creación y mantenimiento.
 - [x] Fase 5: editor de capítulos y creación desde cero con recursos Bootstrap.
 - [x] Fase 5: partidas importadas, comparación y práctica de errores.
-- [ ] Biblioteca simplificada de tácticas: completar esta página del fork antes
-  de pasar a las heredadas.
+- [x] Biblioteca simplificada de tácticas con buscador y preferencias compartidos.
 - [ ] Fase 5: completar la limpieza de estilos y variantes de creación,
   mantenimiento y demás páginas migradas.
 - [ ] Fase 6: migrar páginas heredadas y retirar Skeleton y el gestor antiguo
@@ -31,10 +31,10 @@ comparación y práctica de errores completan la migración de páginas de anál
 - [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
 - [ ] Después de la migración de componentes: análisis de reutilización de JS.
 
-La siguiente entrega continúa con la biblioteca simplificada de tácticas, que
-todavía conserva sus recursos anteriores, y la convergencia de estilos y variantes
-de las páginas migradas. Estas tareas del fork tienen prioridad sobre las
-páginas heredadas de fase 6.
+La siguiente entrega corresponde a la convergencia de estilos y variantes de
+las páginas migradas: centralizar las variables de campos y botones secundarios,
+unificar sus adaptadores y retirar las reglas sin consumidores comprobados.
+Estas tareas del fork tienen prioridad sobre las páginas heredadas de fase 6.
 
 ## Primera entrega
 
@@ -74,8 +74,9 @@ de funciones JavaScript solicitada por el usuario.
 ## Segunda entrega: biblioteca
 
 La biblioteca personal (`/[locale]/studies`) utiliza ahora el mismo layout y
-recursos Bootstrap que análisis. La biblioteca simplificada de tácticas mantiene
-su layout anterior. Las filas compartidas conservan su diseño y comportamiento
+recursos Bootstrap que análisis. La biblioteca simplificada de tácticas mantuvo
+su layout anterior en esta entrega y se incorpora en la entrega específica
+descrita más adelante. Las filas compartidas conservan su diseño y comportamiento
 también cuando aparecen en páginas que todavía no utilizan Bootstrap.
 
 Los diálogos de grupos y movimiento reutilizan `ui_modal`; sus formularios se
@@ -293,6 +294,32 @@ la línea 202: espera visible `#smart_run_status` al volver a la práctica de un
 línea. Los pasos anteriores de práctica correcta, progreso compartido y
 sincronización pasan. Ese fallo sigue registrado y no se da por resuelto.
 
+## Biblioteca simplificada de tácticas
+
+El centro de tácticas usa el layout Bootstrap con `bootstrap_tactics.js` /
+`bootstrap_tactics.css`. Reutiliza `bootstrap_common.js`, la plantilla de
+biblioteca, su buscador simplificado y los diálogos comunes de preferencias,
+sin `app.js` ni Skeleton. Los ejercicios incluidos, las colecciones propias y
+guardadas y los enlaces de visualización conservan su distribución. No se añaden
+las funciones de organización de la biblioteca personal a este centro.
+
+El componente `puzzle_filters` recibe una opción explícita `bootstrap` para
+normalizar campos y botón de práctica cuando lo consume esta página. Su valor
+predeterminado mantiene compatibles los consumidores LiveView pendientes de
+migración; el componente no inspecciona las asignaciones internas del socket.
+Los estilos comunes de enlaces de visualización se extraen a
+`features/tactics_discovery.css`, usado por ambos sistemas de recursos.
+
+Validación: 25 pruebas de servidor para biblioteca, clasificación, catálogo,
+filtros y LiveView. `bootstrap_tactics_library_browser.cjs` compara regiones a
+1366, 900, 390 y 320 px en claro y oscuro, con colecciones y como invitado, y
+verifica búsqueda inicial, resultados vacíos, restablecimiento, colecciones
+guardadas, preferencias, enlaces y envío de filtros con valores seleccionados.
+La regresión de descubrimiento cubre también las guías y herramientas que siguen
+usando el layout anterior. Su comprobación de regiones ahora mide los dos
+paneles visibles, en lugar de pedir un único elemento a un selector múltiple.
+El build de producción pasa con las advertencias de Sass y tamaño de recursos.
+
 ## Objetivo y alcance
 
 Reducir HTML, CSS y JavaScript repetidos mediante Bootstrap 5.3 y plantillas
@@ -359,7 +386,7 @@ dependen de que la integración y la limpieza de la anterior estén verificadas.
 | --- | --- | --- | --- |
 | 0 | Base implementada; hooks LiveView cuando aplique | Layout propio y recursos Bootstrap separados de los heredados | Compilación selectiva, tema único y dependencias compartidas identificadas |
 | 1 | Completada | Página inicial de análisis e importación PGN | Primera página con layout Bootstrap y diálogo compartido en uso real |
-| 2 | Completada para biblioteca personal | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
+| 2 | Completada: biblioteca personal y biblioteca simplificada de tácticas | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
 | 3 | Completada | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
 | 4 | Completada | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
 | 5 | Parcial: páginas de análisis, diálogos, creación, mantenimiento y editor | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |

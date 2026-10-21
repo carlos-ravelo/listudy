@@ -52,6 +52,18 @@ defmodule ListudyWeb.TacticsLibraryTest do
     end
   end
 
+  defp assert_bootstrap_library(html) do
+    assert html =~ "/css/bootstrap_tactics.css"
+    assert html =~ "/js/bootstrap_tactics.js"
+    assert html =~ ~s(data-library-ui="bootstrap")
+    refute html =~ "/css/app.css"
+    refute html =~ "/js/app.js"
+    assert [_] = html_find(html, "#library-puzzles-theme.form-select")
+    assert [_, _] = html_find(html, "#library-puzzles input.form-control")
+    assert [_] = html_find(html, "#library-puzzles button.btn.btn-primary")
+    assert [] = html_find(html, "#library_groups_dialog, #library_move_dialog")
+  end
+
   test "studies manage both training kinds while tactics stays focused on puzzles", %{
     conn: conn
   } do
@@ -68,6 +80,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
 
     auth = Pow.Plug.assign_current_user(conn, owner, [])
     html = auth |> get("/en/tactics") |> html_response(200)
+    assert_bootstrap_library(html)
     assert html =~ "Your collections"
     assert html =~ "data-study-library"
     assert html =~ "Book exercises"
@@ -122,6 +135,7 @@ defmodule ListudyWeb.TacticsLibraryTest do
     conn: conn
   } do
     html = conn |> get("/en/tactics") |> html_response(200)
+    assert_bootstrap_library(html)
     assert html =~ "Your collections"
     assert html =~ "/en/tactics/puzzles/start"
     preview("empty", html)
@@ -145,6 +159,29 @@ defmodule ListudyWeb.TacticsLibraryTest do
                normal,
                "input[type='radio'][name='study[training_kind]'][value='repertoire'][checked]"
              )
+  end
+
+  test "the Bootstrap hub preserves selected catalog filters", %{conn: conn} do
+    Repo.insert!(%Listudy.Tactics.Tactic{
+      source: "lichess",
+      source_id: "bootstrap-hub",
+      rating: 1600,
+      themes: ["fork"]
+    })
+
+    html =
+      conn |> get("/en/tactics?theme=fork&min_rating=1500&max_rating=1700") |> html_response(200)
+
+    assert_bootstrap_library(html)
+
+    assert ["fork"] ==
+             html_find(html, "#library-puzzles-theme option[selected]")
+             |> Floki.attribute("value")
+
+    assert ["1500"] == html_find(html, "#library-puzzles-min") |> Floki.attribute("value")
+    assert ["1700"] == html_find(html, "#library-puzzles-max") |> Floki.attribute("value")
+    assert [_] = html_find(html, "#library-puzzles-status[hidden]")
+    preview("filtered", html)
   end
 
   test "tactics collections are excluded from repertoire discovery and game comparison" do

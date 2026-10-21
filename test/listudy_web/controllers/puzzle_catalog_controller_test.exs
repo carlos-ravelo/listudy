@@ -45,6 +45,7 @@ defmodule ListudyWeb.PuzzleCatalogControllerTest do
     {:ok, view, html} = live(conn, url)
     assert html |> html_find(".puzzle-current-rating strong") |> Floki.text() == "1700"
     assert html =~ "lichess:one"
+    assert [] = html_find(html, ".puzzle-filters .form-select, .puzzle-filters .form-control")
     render_click(view, "next")
 
     path =
@@ -88,8 +89,11 @@ defmodule ListudyWeb.PuzzleCatalogControllerTest do
     filters = %{"theme" => "pin", "min_rating" => "2000", "max_rating" => "2300"}
     html = render_change(view, "preview_filters", filters)
     assert html =~ "lichess:inline-one"
+
     assert ["pin"] ==
-             html |> html_find("#practice-puzzles-theme option[selected]") |> Floki.attribute("value")
+             html
+             |> html_find("#practice-puzzles-theme option[selected]")
+             |> Floki.attribute("value")
 
     assert ["2000"] ==
              html |> html_find("#practice-puzzles-min") |> Floki.attribute("value")
@@ -140,7 +144,12 @@ defmodule ListudyWeb.PuzzleCatalogControllerTest do
 
   test "the catalog opens practice immediately and the tactics hub offers filters", %{conn: conn} do
     puzzle =
-      Repo.insert!(%Tactic{source: "lichess", source_id: "direct", rating: 1000, themes: ["fork"]})
+      Repo.insert!(%Tactic{
+        source: "lichess",
+        source_id: "direct",
+        rating: 1000,
+        themes: ["fork"]
+      })
 
     path = conn |> get("/en/tactics/puzzles?theme=fork") |> redirected_to()
     assert URI.parse(path).path == "/en/tactics/puzzles/#{puzzle.id}"
