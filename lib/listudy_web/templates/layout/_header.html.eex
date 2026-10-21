@@ -60,8 +60,8 @@
 </header>
 
 <%= if @conn.assigns[:bootstrap_ui] do %>
-  <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "board_settings_modal", title: gettext("Board Settings"), centered: false, body: render(ListudyWeb.ComponentView, "board_preferences.html") %>
-  <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "sound_settings_modal", title: gettext("Sound Settings"), centered: false, body: render(ListudyWeb.ComponentView, "sound_preferences.html") %>
+  <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "board_settings_modal", title: gettext("Board Settings"), centered: false, body: render(ListudyWeb.ComponentView, "board_preferences.html", bootstrap_ui: true) %>
+  <%= render ListudyWeb.ComponentView, "ui_modal.html", id: "sound_settings_modal", title: gettext("Sound Settings"), centered: false, body: render(ListudyWeb.ComponentView, "sound_preferences.html", bootstrap_ui: true) %>
 <% else %>
 <div id="board_settings_modal" class="modal">
   <div class="modal-content">

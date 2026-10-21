@@ -67,6 +67,23 @@ diálogo de grupos y los controles de teclado y foco.
 La siguiente entrega corresponde a los controles y diálogos de entrenamiento
 de la fase 3; no se han migrado dentro de esta entrega.
 
+## Normalización de controles migrados
+
+Antes de extender la migración a entrenamiento, se adopta una base común de
+controles Bootstrap en los diálogos de biblioteca, PGN y preferencias. Los campos
+de creación y renombrado de grupos usan `form-control`; los selectores usan
+`form-select`; las acciones usan las variantes primaria y secundaria. Sonido
+utiliza los controles de checkbox y rango de Bootstrap en las páginas migradas.
+Las páginas con recursos heredados conservan sus controles anteriores.
+
+`bootstrap_controls.scss` concentra el tamaño mínimo de 44 px, el tema de los
+campos y las acciones secundarias. Se elimina la excepción `content-box` que
+hacía más altos los campos de grupos y las reglas que anulaban los controles
+Bootstrap de PGN y preferencias. La distribución de las páginas se mantiene;
+los diálogos ajustan su altura al contenido normalizado. Las comprobaciones
+visuales conservan la comparación de las regiones principales y comprueban
+tamaños consistentes y ausencia de desbordamiento en los controles.
+
 ## Objetivo y alcance
 
 Reducir HTML, CSS y JavaScript repetidos mediante Bootstrap 5.3 y plantillas
@@ -74,13 +91,14 @@ compartidas de Phoenix. Priorizar la interfaz añadida o ampliada en este fork.
 Alpine conserva el estado de aplicación; Bootstrap gestiona sus controles de UI.
 
 Restricción de diseño acordada: conservar la distribución visual actual,
-navegación, colores, tamaños y densidad de las pantallas. La separación del layout
-se refiere a su plantilla técnica y recursos, no a un rediseño. Bootstrap debe
-adaptarse a la interfaz existente. Las guías de diseño no autorizan cambios
-estéticos ni de composición. Comparar capturas antes/después y corregir las
-diferencias introducidas por los estilos predeterminados de Bootstrap.
-Cualquier sugerencia de cambio visual o de distribución debe consultarse con el
-usuario antes de aplicarla.
+navegación y tema. La separación del layout se refiere a su plantilla técnica y
+recursos, no a un rediseño. Adoptar los controles y comportamientos de Bootstrap
+cuando mejoren la implementación; está autorizada la normalización de campos,
+botones, espaciado interno y estados de foco. No conservar excepciones heredadas
+solo para reproducir inconsistencias anteriores. Comparar capturas antes/después
+y verificar la composición de las pantallas y sus funciones. Cualquier propuesta
+de cambio en la distribución debe consultarse con el usuario antes de aplicarla.
+Las guías de diseño no autorizan cambios de layout.
 
 «Páginas actuales del fork» significa las páginas que tenemos hoy, después de
 nuestros cambios: biblioteca, análisis, editor y entrenamiento. Se adaptan esas

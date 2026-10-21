@@ -2,6 +2,6 @@
     <div data-library-group-list></div>
     <form data-library-create-group class="study-library-create-group">
       <label for="library_group_name"><%= dgettext("study", "New group") %></label>
-      <div><input id="library_group_name" name="name" required maxlength="60" autocomplete="off" placeholder="<%= dgettext("study", "For example, Queen’s Gambit") %>"><button class="btn" type="submit"><%= dgettext("study", "Create group") %></button></div>
+      <div><input class="form-control" id="library_group_name" name="name" required maxlength="60" autocomplete="off" placeholder="<%= dgettext("study", "For example, Queen’s Gambit") %>"><button class="btn btn-primary" type="submit"><%= dgettext("study", "Create group") %></button></div>
     </form>
     <p data-library-dialog-status role="status" aria-live="polite"></p>

@@ -31,5 +31,3 @@
 .study-library-modal .btn-close { min-height: 44px; padding: 8px 10px; font-size: 13px; font-weight: 400; border: 1px solid var(--library-divider); border-radius: 4px; }
 .study-library-modal .study-library-dialog { --bs-modal-border-width: 1px; }
 .study-library-modal .study-library-create-group { margin-top: 20px; }
-.study-library-modal .btn { min-height: 44px; }
-.study-library-modal .study-library-dialog input { box-sizing: content-box; }

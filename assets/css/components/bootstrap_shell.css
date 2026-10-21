@@ -23,7 +23,6 @@ input[type='checkbox'] { margin-right: 4px; }
 .analysis-workspace .form-select { appearance: auto; background-image: none; }
 .analysis-workspace .btn { margin-bottom: 10px; }
 .ui-modal :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--font-color); outline-offset: 2px; }
-.ui-modal .btn { min-height: 38px; }
 .ui-modal .btn-close { min-height: 20px; }
 .ui-modal hr { margin: 20px 0; border: 0; border-top: 1px solid var(--bg-highlight-color); }
 .alert { --bs-alert-padding-x: 15px; --bs-alert-padding-y: 15px; --bs-alert-margin-bottom: 20px; --bs-alert-border-radius: 4px; }

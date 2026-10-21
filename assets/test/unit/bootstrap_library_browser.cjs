@@ -89,29 +89,39 @@ const baseline = process.env.LISTUDY_LIBRARY_BASELINE || '/tmp/listudy-bootstrap
             assert(await dialog.evaluate(node => node.contains(document.activeElement)));
         }
         await page.screenshot({ path: '/tmp/listudy-bootstrap-library-groups.png' });
-        const dialogGeometry = () => page.evaluate(() => Object.fromEntries([
-            '.study-library-dialog', '#library_groups_title', '.study-library-create-group',
-            '.study-library-dialog :is(header, .modal-header) button'
-        ].map(selector => {
-            const node = document.querySelector(selector), bounds = node.getBoundingClientRect();
-            return [selector, { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }];
-        })));
-        const afterDialog = await dialogGeometry();
+        for (const width of [1280, 900, 390, 320]) {
+            await page.setViewportSize({ width, height: 900 });
+            for (const theme of ['light', 'dark']) {
+                await page.evaluate(value => {
+                    document.documentElement.dataset.theme = value;
+                    document.documentElement.dataset.bsTheme = value;
+                }, theme);
+                const controls = await dialog.evaluate(node => {
+                    const input = node.querySelector('.form-control');
+                    const button = node.querySelector('button[type="submit"]');
+                    const panel = node.querySelector('.modal-content').getBoundingClientRect();
+                    return {
+                        inputHeight: input.getBoundingClientRect().height,
+                        buttonHeight: button.getBoundingClientRect().height,
+                        sizing: getComputedStyle(input).boxSizing,
+                        left: panel.left, right: panel.right,
+                        overflow: node.scrollWidth > innerWidth,
+                        inputColor: getComputedStyle(input).color,
+                        inputBackground: getComputedStyle(input).backgroundColor
+                    };
+                });
+                assert.equal(controls.inputHeight, 44, `${width}px ${theme}: normalized field height`);
+                assert.equal(controls.buttonHeight, 44, `${width}px ${theme}: normalized action height`);
+                assert.equal(controls.sizing, 'border-box');
+                assert(controls.left >= 0 && controls.right <= width && !controls.overflow);
+                assert.notEqual(controls.inputColor, controls.inputBackground);
+                await page.screenshot({ path: `/tmp/listudy-bootstrap-library-controls-${width}-${theme}.png` });
+            }
+        }
         await page.keyboard.press('Escape');
         assert(await dialog.isHidden());
         assert(await manage.locator('summary').evaluate(node => node === document.activeElement));
-        await visit(true);
-        await page.locator('.study-library-manage > summary').click();
-        await page.locator('[data-library-manage-groups]').click();
-        await page.screenshot({ path: '/tmp/listudy-bootstrap-library-groups-before.png' });
-        const beforeDialog = await dialogGeometry();
-        for (const [selector, bounds] of Object.entries(beforeDialog)) {
-            for (const dimension of ['x', 'y', 'width', 'height']) {
-                assert(Math.abs(bounds[dimension] - afterDialog[selector][dimension]) <= 1,
-                    `Groups dialog: ${selector} ${dimension} changed`);
-            }
-        }
         assert.deepEqual(errors, []);
-        console.log('Library Bootstrap layout equivalence, themes, dropdown dismissal, focus containment and return passed');
+        console.log('Library Bootstrap layout, normalized controls, themes, dropdown dismissal and focus passed');
     } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

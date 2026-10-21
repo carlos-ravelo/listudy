@@ -1,14 +1,14 @@
     <div class="row">
       <div class="one-half column">
         <label for="chessboard_background"><%= gettext("Select a color:") %></label>
-        <select name="chessboard_background" id="chessboard_background">
+        <select class="<%= if Map.get(assigns, :bootstrap_ui, false), do: "form-select" %>" name="chessboard_background" id="chessboard_background">
           <option value="blue">Blue</option>
           <option value="brown">Brown</option>
           <option value="green">Green</option>
           <option value="ic">IC</option>
         </select>
         <label for="chessboard_pieces"><%= gettext("Select a piece set:") %></label>
-        <select name="chessboard_pieces" id="chessboard_pieces">
+        <select class="<%= if Map.get(assigns, :bootstrap_ui, false), do: "form-select" %>" name="chessboard_pieces" id="chessboard_pieces">
           <option value="cburnett">cburnett</option>
           <option value="merida">merida</option>
           <option value="chessnut">chessnut</option>

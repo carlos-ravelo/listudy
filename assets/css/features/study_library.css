@@ -38,8 +38,8 @@
 .study-library-dialog h2 { margin: 0; font-size: 20px; font-weight: 600; }
 .study-library-dialog p { font-size: 13px; line-height: 1.6; }
 .study-library-dialog form { margin-bottom: 0; }
-.study-library-dialog button { min-height: 44px; height: auto; margin: 0; padding: 8px 10px; color: var(--font-color); font: inherit; font-size: 13px; font-weight: 400; letter-spacing: normal; text-transform: none; border-color: var(--library-divider); }
-.study-library .study-library-dialog :is(input, select) { min-width: 0; min-height: 44px; margin: 0; padding: 8px; border: 1px solid var(--library-divider); border-radius: 6px; background: var(--bg-color); color: var(--font-color); font: inherit; font-size: 14px; }
+dialog.study-library-dialog button { min-height: 44px; height: auto; margin: 0; padding: 8px 10px; color: var(--font-color); font: inherit; font-size: 13px; font-weight: 400; letter-spacing: normal; text-transform: none; border-color: var(--library-divider); }
+.study-library dialog.study-library-dialog :is(input, select) { min-width: 0; min-height: 44px; margin: 0; padding: 8px; border: 1px solid var(--library-divider); border-radius: 6px; background: var(--bg-color); color: var(--font-color); font: inherit; font-size: 14px; }
 .study-library .study-library-dialog input:user-invalid { border-color: var(--error-color); }
 .study-library-group-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; margin: 8px 0; }
 .study-library-group-row > span { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }

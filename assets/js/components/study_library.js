@@ -216,7 +216,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             title.textContent = name;
             const edit = document.createElement('button');
             edit.type = 'button';
-            edit.className = 'btn';
+            edit.className = 'btn btn-outline-secondary';
             edit.textContent = labels.edit;
             edit.setAttribute('aria-label', `${labels.edit}: ${name}`);
             edit.onclick = () => {
@@ -225,17 +225,18 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
                 const form = document.createElement('form');
                 form.className = 'study-library-group-editor';
                 const input = document.createElement('input');
+                input.className = 'form-control';
                 input.value = name;
                 input.required = true;
                 input.maxLength = 60;
                 input.setAttribute('aria-label', `${labels.rename}: ${name}`);
                 const save = document.createElement('button');
                 save.type = 'submit';
-                save.className = 'btn';
+                save.className = 'btn btn-primary';
                 save.textContent = labels.save;
                 const cancel = document.createElement('button');
                 cancel.type = 'button';
-                cancel.className = 'btn';
+                cancel.className = 'btn btn-outline-secondary';
                 cancel.textContent = labels.cancel;
                 cancel.onclick = () => { row.replaceChildren(title, edit, remove); edit.focus(); };
                 form.append(input, save, cancel);
@@ -251,7 +252,7 @@ export function setupStudyLibrary(library = document.querySelector('[data-study-
             };
             const remove = document.createElement('button');
             remove.type = 'button';
-            remove.className = 'btn';
+            remove.className = 'btn btn-outline-secondary';
             remove.textContent = labels.remove;
             remove.setAttribute('aria-label', `${labels.remove}: ${name}`);
             remove.onclick = async () => {

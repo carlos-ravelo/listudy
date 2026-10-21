@@ -1,0 +1,39 @@
+// Component defaults shared by migrated dialogs; page geometry stays in feature CSS.
+.bootstrap-ui .ui-modal {
+  --bs-body-bg: var(--bg-color);
+  --bs-body-color: var(--font-color);
+  --bs-border-color: var(--analysis-divider, var(--bg-highlight-color));
+
+  :is(.form-control, .form-select) {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 44px;
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+  }
+
+  .btn {
+    min-height: 44px;
+    margin: 0;
+    font-size: var(--bs-btn-font-size);
+    font-weight: var(--bs-btn-font-weight);
+    line-height: var(--bs-btn-line-height);
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  .btn-outline-secondary {
+    --bs-btn-color: var(--font-color);
+    --bs-btn-border-color: var(--bs-border-color);
+    --bs-btn-hover-color: var(--font-color);
+    --bs-btn-hover-bg: var(--bg-highlight-color);
+    --bs-btn-hover-border-color: var(--font-color);
+    --bs-btn-active-color: var(--font-color);
+    --bs-btn-active-bg: var(--bg-highlight-color);
+    --bs-btn-active-border-color: var(--font-color);
+  }
+
+  :is(.study-library-create-group, .study-library-group-editor) .form-control {
+    margin: 0;
+  }
+}

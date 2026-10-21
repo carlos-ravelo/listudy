@@ -157,6 +157,10 @@ const escape = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
     await page.locator('[data-library-manage-groups]').click();
     await page.locator('.study-library-group-row').filter({hasText:'Tournament preparation'}).getByRole('button',{name:'Edit: Tournament preparation',exact:true}).click();
     const rename=page.getByRole('textbox',{name:'Group name: Tournament preparation',exact:true});
+    if (await page.locator('[data-library-ui="bootstrap"]').count()) {
+        const heights = await rename.evaluate(input => [input, ...input.form.querySelectorAll('button')].map(node => node.getBoundingClientRect().height));
+        assert.deepEqual(heights, [44, 44, 44], 'Rename field and actions use the shared control size');
+    }
     await rename.fill('Main repertoire');
     await rename.locator('..').locator('button[type="submit"]').click();
     await saved();

@@ -1,6 +1,6 @@
     <form data-library-move-form>
       <label for="library_move_group"><%= dgettext("study", "Group") %></label>
-      <select id="library_move_group" name="group" data-library-move-group></select>
-      <button class="btn" type="submit"><%= dgettext("study", "Move studies") %></button>
+      <select class="form-select" id="library_move_group" name="group" data-library-move-group></select>
+      <button class="btn btn-primary" type="submit"><%= dgettext("study", "Move studies") %></button>
     </form>
     <p data-library-dialog-status role="status" aria-live="polite"></p>
