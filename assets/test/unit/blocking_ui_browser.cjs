@@ -67,6 +67,40 @@ window.ready = true;
         page.on('pageerror', error => errors.push(error.message));
         await page.goto(`http://127.0.0.1:${server.address().port}`);
         await page.waitForFunction(() => window.ready);
+        const keyboard = await page.evaluate(() => {
+            const host = document.createElement('div'); document.body.append(host);
+            const initial = backCount, ignored = [];
+            const send = (node, options = {}) => {
+                const event = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true, ...options });
+                const before = backCount;
+                node.dispatchEvent(event);
+                return { count: backCount - before, prevented: event.defaultPrevented };
+            };
+            for (const html of ['<input>', '<textarea></textarea>', '<select></select>',
+                '<div contenteditable><span>Text</span></div>',
+                '<div contenteditable="true"><span>Text</span></div>',
+                '<div contenteditable="plaintext-only"><span>Text</span></div>',
+                '<div contenteditable="true"><span contenteditable="false">Text</span></div>']) {
+                host.innerHTML = html;
+                ignored.push(send(host.querySelector('span') || host.firstElementChild));
+            }
+            for (const options of [{ altKey: true }, { ctrlKey: true }, { metaKey: true },
+                { isComposing: true }]) ignored.push(send(host, options));
+            const prevented = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true });
+            prevented.preventDefault(); host.dispatchEvent(prevented);
+            const protectedCount = backCount - initial;
+            host.innerHTML = '<div contenteditable="false"><span>Static text</span></div>';
+            const staticContent = send(host.querySelector('span'));
+            const shifted = send(host, { shiftKey: true });
+            const missingElement = send(document);
+            host.remove();
+            return { ignored, protectedCount, staticContent, shifted, missingElement };
+        });
+        assert(keyboard.ignored.every(result => result.count === 0 && !result.prevented));
+        assert.equal(keyboard.protectedCount, 0, 'Fields, composition, modifiers and prevented events cannot navigate');
+        for (const result of [keyboard.staticContent, keyboard.shifted, keyboard.missingElement]) {
+            assert.deepEqual(result, { count: 1, prevented: true }, 'Preserve navigation on static content and with Shift');
+        }
         const assertState = async expected => {
             await page.waitForFunction(value => document.documentElement.hasAttribute('data-ui-blocked') === value, expected);
             assert.equal(await page.evaluate(() => blocked()), expected);

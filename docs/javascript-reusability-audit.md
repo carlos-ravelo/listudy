@@ -45,12 +45,15 @@ Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
   práctica de errores instala el adaptador una vez durante la vida de la página.
 
 - `modules/editable_target.js`: `isEditableTarget` compartido por navegación
-  y copia del editor y por los atajos del visor de partidas. La opción
+  y copia del editor, por los atajos del visor de partidas y por la navegación
+  del estudio. La opción
   `includeContentEditableFalse` conserva la protección más amplia del visor;
   el editor permite atajos sobre contenido estático, salvo que un antecesor
   editable siga protegido como antes. Resúmenes, diálogos, selección de texto,
   teclas modificadoras y estados del editor permanecen en cada consumidor.
-  El visor también ignora eventos durante composición IME.
+  El visor y la navegación del estudio también ignoran eventos durante
+  composición IME. El estudio conserva sus flechas con Shift y permite
+  navegar sobre contenido estático con `contenteditable="false"`.
 
 ## Ampliación posterior
 
@@ -64,9 +67,16 @@ hasta una recarga explícita, incluso si el servidor devuelve un 409 sin JSON.
 Las pruebas cubren cambios durante un guardado, errores HTTP, respuestas inválidas,
 recuperación y conflictos al reabrir una cuenta con cambios locales pendientes.
 
+La navegación de `modules/study_page_controls.js` también reutiliza
+`isEditableTarget`: deja de repetir la detección de campos y protege las formas
+vacía y `plaintext-only` de `contenteditable`. Sus pruebas cubren composición,
+modificadores, eventos cancelados, contenido estático y eventos cuyo destino es
+el documento, además del bloqueo de atajos por diálogos.
+
 ## Estado
 
-Las extracciones iniciales y la ampliación de transporte están completadas. Las pruebas
+Las extracciones iniciales y las ampliaciones de transporte y navegación están
+completadas. Las pruebas
 cubren los consumidores y los contratos compartidos; no hay nuevas extracciones
 pendientes dentro de este alcance.
 

@@ -1,5 +1,6 @@
 import { setupChapterPicker } from './chapter_picker.js';
 import { hasBlockingUi } from './blocking_ui.js';
+import { isEditableTarget } from './editable_target.js';
 
 export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, progressLabels = { unpracticed: 'Not practiced', practiced: 'Moves practiced', needsPractice: 'Needs practice', reviewDue: 'Review due' } }) {
     const select = document.getElementById('chapter_select');
@@ -53,9 +54,9 @@ export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, pro
         } catch (error) { console.error('Clipboard copy failed:', error); }
     };
     document.addEventListener('keydown', event => {
-        if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
+        if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey ||
             hasBlockingUi() ||
-            event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+            isEditableTarget(event.target)) return;
         if (event.key === 'ArrowLeft') { event.preventDefault(); goBack(); }
         else if (event.key === 'ArrowRight') { event.preventDefault(); goForward(); }
     });
