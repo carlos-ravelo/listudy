@@ -24,17 +24,20 @@ La biblioteca simplificada de tácticas también usa el layout compartido.
 - [x] Fase 5: editor de capítulos y creación desde cero con recursos Bootstrap.
 - [x] Fase 5: partidas importadas, comparación y práctica de errores.
 - [x] Biblioteca simplificada de tácticas con buscador y preferencias compartidos.
-- [ ] Fase 5: completar la limpieza de estilos y variantes de creación,
-  mantenimiento y demás páginas migradas.
+- [x] Fase 5: adaptadores compartidos de tema para campos y botones secundarios.
+- [x] Fase 5: estilos de colecciones reunidos y reglas obsoletas retiradas.
+- [ ] Fase 5: continuar la convergencia de variantes y superficies en biblioteca
+  y entrenamiento; mantener los estilos propios de tablero y composición.
 - [ ] Fase 6: migrar páginas heredadas y retirar Skeleton y el gestor antiguo
   cuando no queden consumidores.
 - [ ] Incorporar hooks de montaje/destrucción cuando se migre una página LiveView.
 - [ ] Después de la migración de componentes: análisis de reutilización de JS.
 
-La siguiente entrega corresponde a la convergencia de estilos y variantes de
-las páginas migradas: centralizar las variables de campos y botones secundarios,
-unificar sus adaptadores y retirar las reglas sin consumidores comprobados.
-Estas tareas del fork tienen prioridad sobre las páginas heredadas de fase 6.
+La siguiente entrega continúa la convergencia de variantes y superficies de
+biblioteca y entrenamiento. Los adaptadores de tema y botones secundarios ya
+tienen una definición compartida; los estilos propios de tablero y composición
+permanecen en sus componentes. Estas tareas del fork tienen prioridad sobre las
+páginas heredadas de fase 6.
 
 ## Primera entrega
 
@@ -319,6 +322,32 @@ La regresión de descubrimiento cubre también las guías y herramientas que sig
 usando el layout anterior. Su comprobación de regiones ahora mide los dos
 paneles visibles, en lugar de pedir un único elemento a un selector múltiple.
 El build de producción pasa con las advertencias de Sass y tamaño de recursos.
+
+## Fase 5: adaptadores de controles y propiedad de estilos
+
+`components/bootstrap_control_mixins.scss` centraliza el tema Bootstrap de campos
+y los estados de botones secundarios. Editor, creación/mantenimiento, análisis y
+modales consumen estos adaptadores con sus bordes existentes; los diálogos
+conservan su variante de borde al interactuar. Las dimensiones y los selectores
+de cada componente permanecen en sus archivos propios. Un cambio compartido de
+paleta o estado se implementa en una sola definición.
+
+Los estilos base de colecciones pasan de `study_extensions.css` a
+`study_collections.css`. Se conservan sus reglas activas y se eliminan los valores
+que ya estaban sobrescritos de ancho, sombra y espaciado, y la variante
+`collection-danger`, que no tiene consumidores. El editor deja de cargar estos
+estilos de colecciones que no usa. No se retiran estilos ni gestores heredados
+que todavía tengan consumidores.
+
+La compilación produce CSS idéntico al anterior para `bootstrap_ui`,
+`bootstrap_management`, `bootstrap_analysis` y `bootstrap_tactics`. La regresión
+de colecciones compara los estilos anteriores/nuevos de contenedor, columnas,
+filas, selector, botones de navegación y pie a 1280, 900, 390 y 320 px en ambos
+temas. También cubre borradores, foco, movimiento de capítulos, errores de
+guardado, exportación y listas largas. La regresión del editor comprueba la
+composición y los flujos afectados por retirar estilos ajenos a esa página.
+La fase 5 sigue parcial: queda revisar la convergencia de las superficies de
+biblioteca y entrenamiento antes de pasar a páginas heredadas.
 
 ## Objetivo y alcance
 

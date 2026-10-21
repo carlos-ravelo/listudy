@@ -1,4 +1,19 @@
-.collection-dialog { width: min(840px, calc(100vw - 24px)); max-width: 840px; max-height: 85dvh; border: 1px solid var(--bg-highlight-color); box-shadow: none; }
+/* Collection surfaces are owned here, including the shared base styles. */
+.collection-body { overflow-y: auto; }
+#collection_list { list-style: none; padding: 0; margin: 0; }
+.collection-footer { border-top: 1px solid var(--bg-highlight-color); display: flex; }
+.collection-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.collection-actions .collection-action { background: transparent; border: none; box-shadow: none; margin: 0; padding: 5px; cursor: pointer; }
+.collection-action:disabled { opacity: .2; cursor: default; }
+.collection-added { opacity: .5; cursor: default; }
+.collection-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--bg-highlight-color); gap: 8px; }
+.collection-description { line-height: 1.4; overflow-wrap: anywhere; }
+.collection-source { font-size: .75em; opacity: .7; }
+.collection-study { padding: 15px 0 5px; border-bottom: 2px solid #ddd; font-weight: bold; }
+.collection-move { max-width: 90px; padding: 2px; margin: 0; }
+@keyframes collectionFlash { from { background: #d4edda; } to { background: transparent; } }
+.collection-highlight { animation: collectionFlash .8s ease-out; }
+.collection-dialog { background: var(--bg-color, #fff); color: var(--font-color, #333); border-radius: 8px; display: flex; flex-direction: column; width: min(840px, calc(100vw - 24px)); max-width: 840px; max-height: 85dvh; border: 1px solid var(--bg-highlight-color); box-shadow: none; }
 .collection-workspace { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 180px; overflow: hidden; }
 #collection_navigation { display: flex; flex-direction: column; gap: 4px; padding: 0; overflow-y: auto; border: 0; font-variant: normal; }
 .collection-choice { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: auto; min-height: 40px; margin: 0; padding: 6px 8px; border: 1px solid transparent; border-radius: 6px; text-align: left; white-space: normal; font-size: 13px; line-height: 1.3; letter-spacing: normal; text-transform: none; color: var(--font-color); }
@@ -11,7 +26,6 @@
 .collection-content-heading button { margin: 0; font-size: 12px; padding: 0 10px; text-transform: none; letter-spacing: normal; }
 .collection-study { margin: 20px 0 2px; padding: 0; border: 0; font-size: 11px; line-height: 1.5; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; color: #6b7280; }
 .collection-study:first-child { margin-top: 12px; }
-.collection-row { padding: 6px 0; border-color: var(--bg-highlight-color); }
 .collection-source { display: none; }
 .collection-description { min-width: 0; font-size: 13px; }
 .collection-actions .collection-action { min-width: 30px; min-height: 36px; font-size: 13px; }
@@ -19,7 +33,6 @@
 .collection-footer { padding: 10px 16px; border-color: var(--bg-highlight-color); }
 .collection-footer button { margin: 0; height: auto; min-height: 36px; padding: 6px 10px; font-size: 13px; line-height: 1.4; text-transform: none; letter-spacing: normal; }
 .collection-footer .button-primary, #collection_study_form .button-primary { color: var(--bg-color); background: var(--font-color); border-color: var(--font-color); }
-.collection-footer .collection-danger { background: transparent; color: var(--font-color); border-color: transparent; }
 .collection-save-status { padding: 6px 16px; font-size: 12px; color: var(--font-color); }
 .collection-save-status button { padding: 0 6px; margin: 0 0 0 6px; height: auto; font-size: 11px; border: 0; text-transform: none; letter-spacing: normal; text-decoration: underline; }
 #collection_study_form { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--bg-highlight-color); }

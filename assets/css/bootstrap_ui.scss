@@ -68,4 +68,5 @@ $modal-dialog-margin-y-sm-up: 3rem;
 @media (min-width: 550px) { :is(#board_settings_modal, #sound_settings_modal) .modal-title { font-size: 36px; } }
 
 @import './components/bootstrap_library';
+@import './components/bootstrap_control_mixins';
 @import './components/bootstrap_controls';

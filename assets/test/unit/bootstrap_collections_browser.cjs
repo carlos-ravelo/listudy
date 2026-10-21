@@ -28,6 +28,9 @@ const pgn='[Event "Alpha"]\n\n1. e4 e5 *\n\n[Event "Beta"]\n\n1. d4 d5 *';
    res.setHeader('Content-Type','text/html; charset=utf-8');
    res.end(fs.readFileSync(fixture,'utf8').replace(/var pgn = clean_pgn\(`[\s\S]*?`\);/,()=> 'var pgn = '+JSON.stringify(pgn)+';'));return;
   }
+  if(url.pathname==='/baseline/bootstrap_study.css'&&process.env.LISTUDY_COLLECTION_BASELINE_CSS){
+   res.setHeader('Content-Type','text/css');res.end(fs.readFileSync(process.env.LISTUDY_COLLECTION_BASELINE_CSS));return;
+  }
   const file=path.join(root,'priv/static',url.pathname);
   if(!file.startsWith(root+'/priv/static/')||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.statusCode=404;res.end();return;}
   res.setHeader('Content-Type',file.endsWith('.css')?'text/css':file.endsWith('.js')?'text/javascript':'application/octet-stream');res.end(fs.readFileSync(file));
@@ -76,8 +79,22 @@ const pgn='[Event "Alpha"]\n\n1. e4 e5 *\n\n[Event "Beta"]\n\n1. d4 d5 *';
    await page.setViewportSize({width,height:700});
    for(const theme of ['light','dark']){
     await page.evaluate(value=>{document.documentElement.dataset.theme=value;document.documentElement.dataset.bsTheme=value;},theme);
+    await modal.evaluate(root=>Promise.all(root.getAnimations({subtree:true}).filter(animation=>Number.isFinite(animation.effect.getComputedTiming().endTime)).map(animation=>animation.finished.catch(()=>{}))));
     const bounds=await modal.locator('.collection-dialog').boundingBox();assert(bounds.x>=0&&bounds.x+bounds.width<=width);
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    if(process.env.LISTUDY_COLLECTION_BASELINE_CSS){
+     const snapshot=()=>modal.evaluate(root=>[...root.querySelectorAll('.collection-dialog,.collection-workspace,.collection-body,.collection-footer,.collection-row,.collection-move,.collection-choice,.collection-title-input')].map(node=>{
+      const style=getComputedStyle(node),r=node.getBoundingClientRect();
+      return {classes:node.className,x:r.x,y:r.y,width:r.width,height:r.height,styles:Object.fromEntries(['display','grid-template-columns','flex-direction','flex-wrap','justify-content','gap','padding','margin','color','background-color','border','border-radius','box-shadow','font-size','line-height','max-height','overflow-y'].map(key=>[key,style.getPropertyValue(key)]))};
+     }));
+     const after=await snapshot();
+     const stylesheet=page.locator('link[href*="bootstrap_study.css"]');
+     const currentHref=await stylesheet.getAttribute('href');
+     const load=href=>stylesheet.evaluate((link,href)=>new Promise((resolve,reject)=>{link.onload=()=>requestAnimationFrame(()=>requestAnimationFrame(resolve));link.onerror=reject;link.href=href;}),href);
+     await load('/baseline/bootstrap_study.css');
+     assert.deepEqual(after,await snapshot(),`${width}px ${theme}: collection layout and controls match before cleanup`);
+     await load(currentHref);
+    }
     await page.screenshot({path:`/tmp/listudy-bootstrap-collections-${width}-${theme}.png`});
    }
   }
