@@ -41,7 +41,7 @@ the chapter and its playing color, without persisting defaults. The engine retai
 the deferred restart policy: changes apply on settings close, with no reset in
 Read. Duplicate slider input/change events produce one persisted change.
 
-Progress, comments, run coordination, and general page teardown remain subsequent
+Comments, run coordination, and general page teardown remain subsequent
 deliveries.
 
 After delivery 2, `study.js` contains 1,824 lines. Verification passed for six
@@ -56,6 +56,31 @@ preserving its current position. The production build passes with the existing
 Verification covers model cycles, hydration, snapshot isolation, tactics defaults,
 command cleanup, delayed account hydration in Chrome, edited DOM labels, icons,
 sync/reload, existing study geometry, settings tabs, focus, depth, and tactics.
+
+Delivery 3 moves chapter summaries, coverage/recall labels, picker metrics,
+ordering, and tooltips into `study/progress_projection.js`. The existing Alpine
+progress panel and chapter-picker event contract remain unchanged. Projection
+reads failures without creating or replacing saved failure records. Review
+selection and scheduling policy stay in the engine.
+
+`study/progress_publisher.js` publishes fresh summaries and retains one refresh
+timer for the earliest future due date. It exposes cleanup for the later page
+teardown delivery. `components/study_run_status.js` presents Smart, weak/review,
+and failed-position snapshots through Alpine on their existing elements. The
+engine still decides messages, completion, remaining counts, and transitions;
+short Smart review chains retain empty, hidden messages. Study-session time,
+counts, and end actions remain owned by the existing sessions module. After
+delivery 3, `study.js` contains 1,753 lines.
+
+Delivery 3 verification passed: seven unit suites (progress, run status,
+navigation, tactics layers, Smart controls, weak practice, and practice scope),
+23 server tests, and five Chrome suites (study geometry and behavior, analysis
+training, tactics, delayed account hydration, and player journeys). Unit checks
+cover scope and full coverage, recall, ordering, stale failures, preserved
+statistics, empty Smart messages, one due-date timer, long waits, and cleanup.
+Chrome verifies unchanged geometry across screen sizes/themes, progress chapter
+selection, settings behavior, and plain-text status rendering. The production
+build passes with the existing 180 warnings.
 
 ## Responsibility map
 
@@ -222,7 +247,7 @@ reviewing other consumers.
 | --- | --- | --- | --- |
 | 1 (complete) | Preference model and Alpine settings component; initially preserve stored format | Low/medium | Hydration, persistence, languages, tactics defaults, hints/comments, settings browser tests, and player journey |
 | 2 (complete) | Depth component using the existing scope model | Medium | `practice_scope.cjs`, `study_navigation.cjs`, chapter changes, maximum sentinel, restart on close, and no restart in Read |
-| 3 | Progress projection and run indicators; reuse the existing Alpine panel | Medium | Metrics, ordering, due-date timer, chapter selection, empty Smart messages, and sessions |
+| 3 (complete) | Progress projection and run indicators; reuse the existing Alpine panel | Medium | Metrics, ordering, due-date timer, chapter selection, empty Smart messages, and sessions |
 | 4 | Separate comment selection from rendering | Medium | Untrusted PGN text, variations, Read, hidden visualization, and assistance grading |
 | 5 | Extract run/context coordination, then split `handle_move` | High | Smart, mistakes, weak chapters, reviews, Sparring, traps, underpromotion, assistance, cancellation, and directed practice |
 | 6 | Reduce `main` to composition and formalize page teardown | High | Progress identity, resets, hydration/merge, navigation, remounting, and no duplicate resources |

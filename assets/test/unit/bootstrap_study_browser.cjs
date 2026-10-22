@@ -68,6 +68,21 @@ const pgn = '[Event "First chapter"]\n\n1. e4 e5 2. Nf3 Nc6 *\n\n[Event "Second 
         assert(scripts.some(src=>src.includes('/js/bootstrap_study.js')));
         assert(!scripts.some(src=>src.includes('/js/app.js')||src.includes('/js/bootstrap_ui.js')));
         assert.equal(await page.locator('dialog, .modal_open, .modal_close').count(),0);
+        for (const [kind, id] of [['smart', 'smart_run_status'], ['weak', 'weak_run_status'], ['failed', 'failed_positions_status']]) {
+            const message = '<img src=x onerror=alert(1)> ' + kind;
+            await page.evaluate(({kind, message}) => window.dispatchEvent(new CustomEvent('study-run-status-updated', {
+                detail: {kind, message, visible: true}
+            })), {kind, message});
+            await page.waitForFunction(({id, message}) => {
+                const node = document.getElementById(id);
+                return !node.hidden && node.textContent === message;
+            }, {id, message});
+            assert.equal(await page.locator('#' + id + ' img').count(), 0, 'Run messages are rendered as plain text');
+            await page.evaluate(kind => window.dispatchEvent(new CustomEvent('study-run-status-updated', {
+                detail: {kind, message: '', visible: false}
+            })), kind);
+            await page.waitForFunction(id => document.getElementById(id).hidden, id);
+        }
         await page.keyboard.press('ArrowRight');
         const beforeDepthChange = await page.evaluate(() => chess.fen());
         assert(await page.evaluate(() => chess.history().length > 0));

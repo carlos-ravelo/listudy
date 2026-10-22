@@ -117,9 +117,9 @@
         <div class="study-session-progress">
           <div class="option_item_progressbar" style="width: 100%;">
         
-            <p id="failed_positions_status" role="status" hidden></p>
+            <p id="failed_positions_status" x-data="studyRunStatus('failed')" @study-run-status-updated.window="update($event.detail)" x-text="message" :hidden="!visible" role="status" hidden></p>
         
-            <p id="smart_run_status" class="study-weak-run-status" aria-live="polite" hidden></p>
+            <p id="smart_run_status" x-data="studyRunStatus('smart')" @study-run-status-updated.window="update($event.detail)" x-text="message" :hidden="!visible" class="study-weak-run-status" aria-live="polite" hidden></p>
             <p id="study_session_counter" class="study-session-counter" hidden></p>
             <section id="study_session_end" class="study-session-end" hidden aria-labelledby="study_session_end_title">
               <h3 id="study_session_end_title" tabindex="-1"><%= dgettext("study", "Session finished") %></h3>
@@ -129,7 +129,7 @@
                 <button type="button" id="study_session_finish" class="secondary"><%= dgettext("study", "Finish") %></button>
               </div>
             </section>
-            <p id="weak_run_status" class="study-weak-run-status" hidden></p>
+            <p id="weak_run_status" x-data="studyRunStatus('weak')" @study-run-status-updated.window="update($event.detail)" x-text="message" :hidden="!visible" class="study-weak-run-status" hidden></p>
           </div>
         </div>
 

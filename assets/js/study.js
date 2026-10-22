@@ -1,12 +1,14 @@
+import { projectStudyProgress } from './modules/study/progress_projection.js';
+import { createProgressPublisher } from './modules/study/progress_publisher.js';
+import { registerStudyRunStatus, publishStudyRunStatus } from './components/study_run_status.js';
 import { createPracticeDepth } from './modules/study/practice_depth.js';
 import { registerStudyDepth, bindStudyDepth } from './components/study_depth.js';
 import { createStudyPreferences } from './modules/study/preferences.js';
 import { registerStudyPreferences, bindStudyPreferences } from './components/study_preferences.js';
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
-import { chapterLearningProgress } from './modules/study/learning_progress.js';
 import { presentTacticsTrap } from './modules/study/tactics_trap.js';
 import { tacticsMainline, tacticsCandidates, classifyTacticsMove } from './modules/study/tactics_mainline.js';
-import { practiceDepthLimit, scopePositionCatalog, scopeMoveCatalog } from './modules/study/practice_scope.js';
+import { practiceDepthLimit, scopePositionCatalog } from './modules/study/practice_scope.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { setupStudySessions } from './modules/study_sessions.js';
 import { closeDialog, onDialogClosed } from './modules/dialog_lifecycle.js';
@@ -43,13 +45,14 @@ import { lichessAnalysisUrl, prepareLichessAnalysis } from './modules/study/lich
 import { setupStudyCollections } from './modules/study_collections.js';
 import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from './modules/study_page_controls.js';
 import { readStudyActivity, requestedStudyActivity, trackStudyActivity } from './modules/study_activity.js';
-import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterCoverage, chapterMastery, chapterWeakness, weakChapterOrder, beginChapterPractice, finishChapterPractice, recentPracticePerformance, chapterProgressState, bindChapterIdentities } from './modules/study/chapter_stats.js';
+import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterMastery, weakChapterOrder, beginChapterPractice, finishChapterPractice, bindChapterIdentities } from './modules/study/chapter_stats.js';
 import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus } from './modules/study/chapter_review.js';
 import { setupStudyMoveTree, readChapterPosition } from './modules/study/study_move_tree.js';
 import Alpine from 'alpinejs';
 
 registerStudyPreferences(Alpine);
 registerStudyDepth(Alpine);
+registerStudyRunStatus(Alpine);
 window.Alpine = Alpine;
 Alpine.start();
 
@@ -73,7 +76,6 @@ let lineReviewRecorded = false;
 let lineEligibleForReview = true;
 let trainingSessionId = 0;
 let tacticsTrap = null;
-let reviewRefreshTimer;
 const studyColor = color;
 let weakChapterRunActive = false;
 let weakChapterQueue = [];
@@ -166,8 +168,7 @@ function selectNextSmartPosition() {
         trainingSessionId += 1;
         finish_chapter_practice(false);
         ground.set({ movable: { dests: new Map() } });
-        document.getElementById('smart_run_status').textContent = i18n.smart_complete;
-        document.getElementById('smart_run_status').hidden = false;
+        publishStudyRunStatus('smart', i18n.smart_complete, true);
         return;
     }
     const { target, nextDue } = gameLineQueue
@@ -175,21 +176,18 @@ function selectNextSmartPosition() {
         : nextSmartPosition(chapterStats, chapterReviewSignatures, scopedPracticeCatalog(), smartSession);
     smartTarget = target;
     updateContextReplayUi();
-    const status = document.getElementById('smart_run_status');
-    status.hidden = false;
     if (!target) {
         trainingSessionId += 1;
         finish_chapter_practice(false);
         ground.set({ movable: { dests: new Map() } });
-        status.textContent = i18n.smart_complete + (nextDue ? ' · ' + i18n.spaced_review_next + ': ' + new Date(nextDue).toLocaleString() : '');
+        publishStudyRunStatus('smart', i18n.smart_complete + (nextDue ? ' · ' + i18n.spaced_review_next + ': ' + new Date(nextDue).toLocaleString() : ''), true);
         studySessions.boundary('no-work');
         return;
     }
     smartSession.lastChapter = target.chapter;
     smartSession.presentation = (smartSession.presentation || 0) + 1;
-    status.textContent = target.reviewChain ? (target.longReview ? i18n.smart_long_review : '')
-        : target.type === 'line' ? i18n.smart_learning : i18n.smart_review;
-    status.hidden = !status.textContent;
+    publishStudyRunStatus('smart', target.reviewChain ? (target.longReview ? i18n.smart_long_review : '')
+        : target.type === 'line' ? i18n.smart_learning : i18n.smart_review);
     const select = document.getElementById('chapter_select');
     select.value = String(target.chapter);
     select.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { smartRun: true } }));
@@ -208,7 +206,7 @@ function updateSmartRun(initialGameTarget = null) {
     smartSession = null;
     smartTarget = null;
     gameLineQueue = initialGameTarget?.fromGame ? [initialGameTarget] : null;
-    document.getElementById('smart_run_status').hidden = true;
+    publishStudyRunStatus('smart', '', false);
     if ((window.studyPuzzleRunMode ?? localStorage.getItem('puzzleRunMode')) === 'smart') {
         smartSession = { newCount: 0, reviewCount: 0, reviewStreak: 0, lastChapter: null };
         studySessions.begin('smart');
@@ -223,11 +221,11 @@ function currentFailures() {
 }
 
 function updateFailedPositionsUi() {
-    const status = document.getElementById('failed_positions_status');
-    status.hidden = !failedPositionRun;
-    if (failedPositionRun) status.textContent = failedPositionRun.index < failedPositionRun.positions.length
-        ? i18n.failed_position + ' ' + (failedPositionRun.index + 1) + '/' + failedPositionRun.positions.length
-        : i18n.failed_positions_complete;
+    publishStudyRunStatus('failed', failedPositionRun
+        ? failedPositionRun.index < failedPositionRun.positions.length
+            ? i18n.failed_position + ' ' + (failedPositionRun.index + 1) + '/' + failedPositionRun.positions.length
+            : i18n.failed_positions_complete
+        : '', Boolean(failedPositionRun));
 }
 
 function showFailedPosition() {
@@ -288,6 +286,19 @@ const preferences = createStudyPreferences({ storage: StorageAdapter, labels: i1
 const practiceDepth = createPracticeDepth({ storage: StorageAdapter, studyId: study_id });
 let practiceDepthView;
 let depthSettingsChanged = false;
+const progressPublisher = createProgressPublisher({
+    project: now => {
+        const catalog = scopedPracticeCatalog();
+        return projectStudyProgress({
+            stats: chapterStats, moveCatalogs: chapterMoveCatalogs, signatures: chapterReviewSignatures,
+            catalog, chapterNames: trees.map((_, index) => tree_chapter_name(index)),
+            currentChapter: chapter, storage: StorageAdapter, studyId: study_id,
+            reviews: trees.map((_, index) => studyReviewStatus(index, now, catalog)), labels: i18n, now
+        });
+    },
+    publish: summaries => window.dispatchEvent(new CustomEvent('study-progress-updated', { detail: summaries })),
+    afterUpdate: updateWeakChapterRunUi
+});
 
 function combo_text() {
     return "" + combo_count + "x ";
@@ -646,13 +657,11 @@ async function handle_move(orig, dest) {
 }
 
 function updateWeakChapterRunUi() {
-    const status = document.getElementById("weak_run_status");
-    status.hidden = !weakChapterRunActive && !spacedReviewRunActive;
-    status.textContent = spacedReviewRunActive
+    publishStudyRunStatus('weak', spacedReviewRunActive
         ? i18n.spaced_review_active + " · " + (spacedReviewQueue.length + 1) + " " + i18n.weak_run_remaining
         : weakChapterRunActive
             ? i18n.weak_run_active + " · " + (weakChapterQueue.length + 1) + " " + i18n.weak_run_remaining
-            : "";
+            : "", weakChapterRunActive || spacedReviewRunActive);
     window.dispatchEvent(new CustomEvent("study-weak-run-updated", {
         detail: { active: weakChapterRunActive }
     }));
@@ -781,24 +790,6 @@ function finish_chapter_practice(completed) {
     practiceChapter = null;
     StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     update_progress();
-}
-
-function chapter_performance_text(index, recent = recentPracticePerformance(chapterStats, index, chapterReviewSignatures[index])) {
-    const accuracy = i18n.progress_recent_accuracy + ': ' + (recent.accuracy === null ? '—' : recent.accuracy + '%') +
-        (recent.count ? ' (' + recent.count + ' ' + (recent.count === 1 ? i18n.progress_practice : i18n.progress_practices) + ')' : '');
-    const practice = recent.active || recent.last;
-    if (!practice) return accuracy;
-    return accuracy + ' · ' + chapter_practice_text(recent);
-}
-
-function chapter_practice_text(recent, compact = false) {
-    const practice = recent.active || recent.last;
-    if (!practice) return i18n.progress_no_recent_practice;
-    const label = compact
-        ? (recent.active ? i18n.progress_current_short : i18n.progress_last_short)
-        : (recent.active ? i18n.progress_current_practice : i18n.progress_last_practice);
-    return label + ': ' + practice.missedMoves + '/' + practice.testedMoves + ' ' + i18n.progress_moves_missed +
-        (!recent.active && !practice.completed ? ' (' + i18n.progress_incomplete + ')' : '');
 }
 
 /**
@@ -1046,10 +1037,9 @@ function setup_move() {
     }
     display_comments(false);
     if (smartTarget?.type === 'line') {
-        document.getElementById('smart_run_status').textContent = smartTarget.reviewChain
+        publishStudyRunStatus('smart', smartTarget.reviewChain
             ? (smartTarget.longReview ? i18n.smart_long_review : '')
-            : smartIntroductionMove() ? i18n.smart_introduction : i18n.smart_learning;
-        document.getElementById('smart_run_status').hidden = !document.getElementById('smart_run_status').textContent;
+            : smartIntroductionMove() ? i18n.smart_introduction : i18n.smart_learning);
     }
     studyMoveNavigation.update();
     update_read_mode_ui();
@@ -1244,7 +1234,7 @@ function setup_chapter_select() {
         if (contextReplayActive) { trainingSessionId += 1; contextReplayActive = false; }
         smartSession = null;
         smartTarget = null;
-        document.getElementById('smart_run_status').hidden = true;
+        publishStudyRunStatus('smart', '', false);
         updateContextReplayUi();
     });
     let selected = parseInt(StorageAdapter.getItem(select_key) || 0);
@@ -1382,69 +1372,8 @@ function reset_line() {
     start_training();
 }
 
-/*
- * Updates the progress modal html
- */
-async function update_progress() {
-    const chapterSummaries = [];
-    const now = new Date();
-    const scopedCatalog = scopedPracticeCatalog();
-
-    for (let tree_index in trees) {
-        const weakness = chapterWeakness(chapterStats, tree_index);
-        const state = chapterProgressState(chapterStats, tree_index, chapterMoveCatalogs[tree_index], chapterReviewSignatures[tree_index]);
-        const limit = practiceDepthLimit(StorageAdapter, study_id, tree_index);
-        const limited = Number.isFinite(limit);
-        const scope = chapterCoverage(chapterStats, tree_index, scopeMoveCatalog(chapterMoveCatalogs[tree_index], limit));
-        const review = studyReviewStatus(tree_index, now, scopedCatalog);
-        const learning = chapterLearningProgress(chapterStats, tree_index, chapterReviewSignatures[tree_index], scopedCatalog, now);
-        const fullCoverageLabel = i18n.progress_full_coverage + ': ' + state.covered + '/' + state.total + ' (' + state.percent + '%)';
-        const coverageLabel = (limited ? i18n.progress_within_depth + ' ' + limit : i18n.progress_coverage) +
-            ': ' + scope.covered + '/' + scope.total + ' (' + scope.percent + '%)';
-        const recallLabel = i18n.progress_recall + ': ' + (learning.recallAccuracy === null
-            ? i18n.progress_recall_unknown
-            : learning.recallAccuracy + '% (' + learning.recallSamples + ' ' + i18n.progress_graded_reviews + ')');
-        const pendingLabel = i18n.progress_new + ': ' + learning.newContinuations + ' · ' +
-            i18n.progress_due_continuations + ': ' + learning.dueContinuations;
-        chapterSummaries.push({
-            index: Number(tree_index),
-            name: tree_chapter_name(tree_index),
-            ...weakness,
-            ...state,
-            ...learning,
-            coverageComplete: state.total > 0 && state.covered === state.total,
-            scopeComplete: scope.total > 0 && scope.covered === scope.total,
-            limited, fullCoverageLabel,
-            coverageLabel, recallLabel, pendingLabel,
-            progressTooltip: [coverageLabel, ...(limited ? [fullCoverageLabel, i18n.progress_scope_help] : []), i18n.progress_coverage_help, recallLabel, i18n.progress_recall_help,
-                pendingLabel, chapter_performance_text(tree_index, state.recent)].join('\n'),
-            failedPositions: pendingPositions(chapterFailures(chapterStats, tree_index, chapterReviewSignatures[tree_index])).length,
-            reviewDue: review.due,
-            reviewDueAt: review.dueAt ? review.dueAt.getTime() : null,
-            reviewLabel: review.due ? i18n.spaced_review_due
-                : review.dueAt ? i18n.spaced_review_next + ": " + review.dueAt.toLocaleString() : null,
-            pickerTone: review.due ? 'due'
-                : state.recent.accuracy !== null && state.recent.accuracy < 100 ? 'mistakes' : state.covered > 0 ? 'in-progress' : 'new',
-            pickerMetrics: scope.percent + '% ' + (limited ? i18n.progress_within_depth + ' ' + limit : i18n.progress_covered_short) + ' · ' +
-                (learning.dueContinuations ? learning.dueContinuations + ' ' + i18n.progress_due_short
-                    : i18n.progress_recall + ' ' + (learning.recallAccuracy === null ? '—' : learning.recallAccuracy + '%')),
-            current: Number(tree_index) === Number(chapter),
-            recovery: coverageLabel,
-            metrics: chapter_performance_text(tree_index, state.recent)
-        });
-    }
-
-    chapterSummaries.sort((a, b) => Number(b.reviewDue) - Number(a.reviewDue) || Number(a.mastered) - Number(b.mastered) || b.errorRate - a.errorRate || b.errors - a.errors || a.index - b.index);
-    window.dispatchEvent(new CustomEvent("study-progress-updated", { detail: chapterSummaries }));
-    clearTimeout(reviewRefreshTimer);
-    const nextDueAt = chapterSummaries
-        .filter(summary => summary.reviewDueAt && summary.reviewDueAt > now.getTime())
-        .reduce((earliest, summary) => Math.min(earliest, summary.reviewDueAt), Infinity);
-    if (Number.isFinite(nextDueAt)) {
-        reviewRefreshTimer = setTimeout(update_progress, Math.min(nextDueAt - now.getTime() + 1000, 2147483647));
-    }
-
-    updateWeakChapterRunUi();
+function update_progress() {
+    progressPublisher.update();
 }
 
 function setup_progress_modal() {

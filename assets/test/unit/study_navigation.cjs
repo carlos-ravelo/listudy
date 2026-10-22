@@ -7,6 +7,7 @@ function createContext(values) {
     const context = vm.createContext(values);
     const keys = { arrows: 'show_arrows', arrowType: 'arrow_type', comments: 'show_comments',
         review: 'board_review', keyMoves: 'key_moves_mode', moveDelay: 'move_delay_time' };
+    context.publishStudyRunStatus = () => {};
     context.preferences = { get: name => context[keys[name]] };
     context.practiceDepth = { get limit() { return context.depth_limit_enabled ? context.max_depth : Infinity; } };
     return context;

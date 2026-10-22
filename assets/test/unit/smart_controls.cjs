@@ -72,6 +72,9 @@ const smartContext = vm.createContext({ ...state,
     document: { getElementById: id => id === 'chapter_select' ? select : status },
     CustomEvent: class { constructor(type, options) { this.detail = options.detail; } },
     nextSmartPosition: () => ({ target: { chapter: 0, path: [0], type: 'line' } }),
+    publishStudyRunStatus: (kind, message, visible = Boolean(message)) => {
+        assert.equal(kind, 'smart'); status.textContent = message; status.hidden = !visible;
+    },
     scopedPracticeCatalog: () => [],
     studySessions: { boundary() { return false; } },
     readChapterPosition: () => ({ fen: () => 'context position' }),
@@ -96,6 +99,10 @@ smartContext.nextSmartPosition = () => ({ target: { chapter: 0, id: 'known', pat
 smartContext.positionReviews = () => ({ known: { recovered: true } });
 smartContext.selectNextSmartPosition();
 assert.equal(state.replayCount, 0);
+smartContext.nextSmartPosition = () => ({ target: { chapter: 0, path: [], type: 'line', reviewChain: true, longReview: false } });
+smartContext.selectNextSmartPosition();
+assert.equal(status.textContent, '', 'Short review chains keep their deliberately empty status');
+assert.equal(status.hidden, true);
 smartContext.nextSmartPosition = () => ({ target: null, nextDue: new Date('2026-10-15').getTime() });
 smartContext.selectNextSmartPosition();
 assert.equal(smartContext.trainingSessionId, 2);
