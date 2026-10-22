@@ -8,6 +8,7 @@ function createContext(values) {
     const keys = { arrows: 'show_arrows', arrowType: 'arrow_type', comments: 'show_comments',
         review: 'board_review', keyMoves: 'key_moves_mode', moveDelay: 'move_delay_time' };
     context.preferences = { get: name => context[keys[name]] };
+    context.practiceDepth = { get limit() { return context.depth_limit_enabled ? context.max_depth : Infinity; } };
     return context;
 }
 
@@ -41,41 +42,6 @@ const declarations = parser.parse(source, { sourceType: 'module' }).program.body
 const functions = declarations
     .filter(node => node.type === 'FunctionDeclaration' && names.has(node.id.name))
     .map(node => source.slice(node.start, node.end)).join('\n');
-
-// Existing depth preferences stay inactive until explicitly enabled for a chapter.
-const depthStorage = { depth_0: '2' };
-const depthNodes = Object.fromEntries(['max_depth_container', 'max_depth_label', 'max_depth_range',
-    'max_depth_sub', 'max_depth_add', 'limit_practice_depth'].map(id => [id, {
-    classList: { toggle() {} }
-}]));
-const depthContext = createContext({ sparring: null, visualization: null,
-    chapter: 0, max_depth_key_base: 'depth_', DEPTH_MAX: -1, depth_limit_enabled: false,
-    document: { getElementById: id => depthNodes[id] },
-    get_repertoire_depth: () => 5,
-    practiceDepthChanged() {},
-    get_option_from_localstorage: (key, fallback) => depthStorage[key] === undefined ? fallback : Number(depthStorage[key]),
-    StorageAdapter: { getItem: key => depthStorage[key], setItem: (key, value) => depthStorage[key] = String(value) }
-});
-vm.runInContext(declarations.filter(node => node.type === 'FunctionDeclaration' &&
-    ['update_max_depth_label', 'set_options_values_for_max_depth', 'inc_or_dec_max_depth'].includes(node.id.name))
-    .map(node => source.slice(node.start, node.end)).join('\n'), depthContext);
-depthContext.set_options_values_for_max_depth();
-assert.equal(depthContext.depth_limit_enabled, false);
-assert.equal(depthNodes.max_depth_range.disabled, true);
-depthStorage.depth_0_enabled = 'true';
-depthContext.set_options_values_for_max_depth();
-assert.equal(depthContext.max_depth, 2);
-assert.equal(depthNodes.max_depth_range.disabled, false);
-depthContext.inc_or_dec_max_depth(1);
-assert.equal(depthStorage.depth_0, '3');
-depthContext.chapter = 1;
-depthContext.set_options_values_for_max_depth();
-assert.equal(depthContext.depth_limit_enabled, false);
-assert.equal(depthContext.max_depth, -1);
-depthContext.chapter = 0;
-depthContext.set_options_values_for_max_depth();
-assert.equal(depthContext.depth_limit_enabled, true);
-assert.equal(depthContext.max_depth, 3);
 
 function fixture(moves, fen, orientation = 'white') {
     const root = moves.reduceRight((children, move, move_index) => [{ move, move_index, children }], []);

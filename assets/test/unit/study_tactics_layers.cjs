@@ -47,7 +47,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
         display_arrows: noop, display_comments: noop, show_suggestions: noop, update_read_mode_ui: noop,
         updateFailedPositionsUi: noop, update_progress: noop,
         finish_chapter_practice: completed => events.push(['complete', completed]), achievement_end_of_line: noop, right_move_text: () => 'correct',
-        depth_limit_enabled: false, get_move_delay: () => 0, sleep: wait, smartIntroductionMove: () => null,
+        practiceDepth: { limit: Infinity }, get_move_delay: () => 0, sleep: wait, smartIntroductionMove: () => null,
         ai_move: () => undefined
     });
     context.preferences = { get: () => undefined };

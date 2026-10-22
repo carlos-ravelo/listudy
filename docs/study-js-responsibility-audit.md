@@ -31,8 +31,27 @@ and labels no longer act as preference state. The binding returns listener
 cleanup without introducing a second page initializer.
 
 `study.js` decreased from 2,080 to 1,896 lines. The responsibility map and line
-references below describe the original audit revision. Depth, progress, comments,
-run coordination, and general page teardown remain subsequent deliveries.
+references below describe the original audit revision.
+
+Delivery 2 extracts per-chapter depth state into `study/practice_depth.js` and
+rendering into the Alpine `components/study_depth.js` component. The existing
+settings markup, storage keys, disabled state, maximum sentinel, and catalogue
+scope remain compatible. Chapter selection reloads the model after setting up
+the chapter and its playing color, without persisting defaults. The engine retains progress updates and
+the deferred restart policy: changes apply on settings close, with no reset in
+Read. Duplicate slider input/change events produce one persisted change.
+
+Progress, comments, run coordination, and general page teardown remain subsequent
+deliveries.
+
+After delivery 2, `study.js` contains 1,824 lines. Verification passed for six
+unit suites (depth, preferences, navigation, tactics layers, Smart controls, and
+practice scope), 23 server tests, and five Chrome suites (settings hydration,
+study geometry and depth behavior, tactics, analysis training, and player
+journeys). The expanded study browser check covers chapter isolation, the
+maximum sentinel, Full lines and Smart applying changes only on close, and Read
+preserving its current position. The production build passes with the existing
+180 warnings.
 
 Verification covers model cycles, hydration, snapshot isolation, tactics defaults,
 command cleanup, delayed account hydration in Chrome, edited DOM labels, icons,
@@ -202,7 +221,7 @@ reviewing other consumers.
 | Delivery | Work | Relative risk | Required verification |
 | --- | --- | --- | --- |
 | 1 (complete) | Preference model and Alpine settings component; initially preserve stored format | Low/medium | Hydration, persistence, languages, tactics defaults, hints/comments, settings browser tests, and player journey |
-| 2 | Depth component using the existing scope model | Medium | `practice_scope.cjs`, `study_navigation.cjs`, chapter changes, maximum sentinel, restart on close, and no restart in Read |
+| 2 (complete) | Depth component using the existing scope model | Medium | `practice_scope.cjs`, `study_navigation.cjs`, chapter changes, maximum sentinel, restart on close, and no restart in Read |
 | 3 | Progress projection and run indicators; reuse the existing Alpine panel | Medium | Metrics, ordering, due-date timer, chapter selection, empty Smart messages, and sessions |
 | 4 | Separate comment selection from rendering | Medium | Untrusted PGN text, variations, Read, hidden visualization, and assistance grading |
 | 5 | Extract run/context coordination, then split `handle_move` | High | Smart, mistakes, weak chapters, reviews, Sparring, traps, underpromotion, assistance, cancellation, and directed practice |

@@ -36,14 +36,14 @@
   </div>
   <div id="settings_panel_practice" class="study-settings-grid tab-pane" role="tabpanel" aria-labelledby="settings_tab_practice" data-settings-panel="practice" hidden>
 <fieldset class="study-setting-group"><legend><%= dgettext("study", "Practice depth") %></legend>
-<div class="option_item study-depth-setting">
-    <label class="study-depth-toggle"><input type="checkbox" id="limit_practice_depth" aria-describedby="max_depth_help"> <%= dgettext("study", "Limit practice depth") %></label>
-    <div id="max_depth_container">
-      <label for="max_depth_range"><%= dgettext("study", "Max depth: ") %><output id="max_depth_label" class="max_depth_label" for="max_depth_range">1</output></label>
+<div id="study_depth_settings" class="option_item study-depth-setting" x-data="studyDepth" @study-depth-updated.window="update($event.detail)">
+    <label class="study-depth-toggle"><input type="checkbox" id="limit_practice_depth" :checked="enabled" :disabled="!ready" @change="change('enable', $event.target.checked)" aria-describedby="max_depth_help"> <%= dgettext("study", "Limit practice depth") %></label>
+    <div id="max_depth_container" :class="{'option-highlighted': enabled && depth < available}">
+      <label for="max_depth_range"><%= dgettext("study", "Max depth: ") %><output id="max_depth_label" class="max_depth_label" x-text="depth" for="max_depth_range">1</output></label>
       <div class="study-depth-controls">
-        <button type="button" id="max_depth_sub" disabled aria-label="<%= dgettext("study", "Decrease max depth") %>">−</button>
-        <input type="range" id="max_depth_range" class="max_depth_range" min="1" max="1" value="1" disabled aria-describedby="max_depth_help">
-        <button type="button" id="max_depth_add" disabled aria-label="<%= dgettext("study", "Increase max depth") %>">+</button>
+        <button type="button" id="max_depth_sub" @click="change('step', -1)" :disabled="!ready || !enabled || depth <= 1" disabled aria-label="<%= dgettext("study", "Decrease max depth") %>">−</button>
+        <input type="range" id="max_depth_range" class="max_depth_range" :max="available" :value="depth" :disabled="!ready || !enabled || available <= 1" @input="change('depth', $event.target.value)" @change="change('depth', $event.target.value)" min="1" max="1" value="1" disabled aria-describedby="max_depth_help">
+        <button type="button" id="max_depth_add" @click="change('step', 1)" :disabled="!ready || !enabled || depth >= available" disabled aria-label="<%= dgettext("study", "Increase max depth") %>">+</button>
       </div>
     </div>
     <p id="max_depth_help"><%= dgettext("study", "Limits Full lines and Smart to this depth in this chapter. Deeper positions and their review schedules are preserved. Changes apply when you close Settings.") %></p>

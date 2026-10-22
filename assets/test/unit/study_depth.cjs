@@ -1,0 +1,87 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+let factory;
+const context = vm.createContext({ CustomEvent,
+    Alpine: { data(name, value) { assert.equal(name, 'studyDepth'); factory = value; } } });
+for (const file of ['modules/study/practice_depth.js', 'components/study_depth.js', 'modules/study/practice_scope.js']) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8')
+        .replace(/^export /gm, '').replace(/^\{[^}]+\};/gm, ''), context);
+}
+const values = new Map([['max_depth_example_0', '2']]), writes = [];
+const storage = { getItem: key => values.get(key) ?? null,
+    setItem(key, value) { values.set(key, String(value)); writes.push([key, String(value)]); } };
+const model = context.createPracticeDepth({ storage, studyId: 'example' });
+assert.equal(model.change({ type: 'enable', value: true }), false, 'No writes before chapter selection');
+model.selectChapter(0, 5);
+assert.equal(model.limit, Infinity, 'An old saved depth is inactive until enabled');
+assert.equal(model.snapshot().depth, 2);
+assert.equal(writes.length, 0);
+values.set('max_depth_example_0_enabled', 'true');
+model.selectChapter(0, 5);
+assert.equal(model.limit, 2, 'Hydrated settings replace initial defaults without writes');
+assert.equal(writes.length, 0);
+model.change({ type: 'step', value: 1 });
+assert.equal(model.limit, 3);
+assert.equal(context.practiceDepthLimit(storage, 'example', 0), 3);
+model.selectChapter(1, 8);
+assert.equal(model.snapshot().enabled, false);
+assert.equal(model.snapshot().depth, 8);
+model.change({ type: 'enable', value: true });
+assert.equal(model.limit, Infinity);
+model.change({ type: 'depth', value: '2' });
+assert.equal(values.get('max_depth_example_1'), '2');
+assert.equal(values.get('max_depth_example_0'), '3', 'Chapter changes never overwrite another chapter');
+model.selectChapter(0, 5);
+assert.equal(model.limit, 3);
+model.change({ type: 'depth', value: '99' });
+assert.equal(values.get('max_depth_example_0'), '-1', 'The upper bound persists the existing maximum sentinel');
+assert.equal(model.limit, Infinity);
+assert.equal(context.practiceDepthLimit(storage, 'example', 0), Infinity);
+model.selectChapter(0, 7);
+assert.equal(model.snapshot().depth, 7, 'The maximum follows a growing repertoire');
+model.change({ type: 'depth', value: '-20' });
+assert.equal(model.limit, 1);
+assert.equal(model.change({ type: 'step', value: -1 }), false);
+for (const command of [undefined, {}, { type: 'depth', value: 'invalid' }, { type: 'depth', value: 1.5 },
+    { type: 'enable', value: 'true' }, { type: 'step', value: 2 }]) assert.equal(model.change(command), false);
+model.change({ type: 'enable', value: false });
+assert.equal(model.limit, Infinity);
+assert.equal(model.change({ type: 'depth', value: 2 }), false, 'Disabled controls cannot change saved depth');
+assert.equal(values.get('max_depth_example_0'), '1', 'Disabling preserves the chosen depth');
+const beforeReload = writes.length;
+values.set('max_depth_example_2', 'invalid');
+model.selectChapter(2, 4);
+assert.equal(model.snapshot().depth, 4);
+model.selectChapter(2, 1);
+assert.equal(model.snapshot().depth, 1);
+assert.equal(writes.length, beforeReload);
+const snapshot = model.snapshot(); snapshot.depth = 50;
+assert.equal(model.snapshot().depth, 1, 'Snapshots cannot mutate the model');
+
+context.registerStudyDepth(context.Alpine);
+const component = factory(), element = new EventTarget();
+let effects = 0;
+component.$dispatch = (name, detail) => element.dispatchEvent(new CustomEvent(name, { detail }));
+element.addEventListener('study-depth-updated', event => component.update(event.detail));
+component.change('enable', true);
+assert.equal(component.ready, false);
+const binding = context.bindStudyDepth(element, model, () => effects++);
+binding.refresh(0, 5);
+assert.equal(component.ready, true);
+assert.equal(component.enabled, false);
+assert.equal(effects, 0, 'Loading a chapter does not request training changes');
+component.change('enable', true);
+component.change('depth', '2');
+assert.equal(component.depth, 2);
+assert.equal(effects, 2);
+component.change('depth', '2');
+assert.equal(effects, 2, 'Input followed by change produces only one model change');
+binding.refresh(1, 8);
+assert.equal(component.depth, 2);
+assert.equal(effects, 2);
+binding.destroy();
+component.change('depth', '3');
+assert.equal(effects, 2, 'Disposing removes the command listener');
+console.log('Study depth model, Alpine commands, hydration, chapters, bounds, scope compatibility and cleanup passed');

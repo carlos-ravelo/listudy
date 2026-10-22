@@ -27,6 +27,7 @@ const pgn = '[Event "First chapter"]\n\n1. e4 e5 2. Nf3 Nc6 *\n\n[Event "Second 
         if (url.pathname.startsWith('/en/studies/')) {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             res.end(fs.readFileSync(url.searchParams.has('baseline') ? baseline : current, 'utf8')
+                .replace('<div class="option_item study-depth-setting">', '<div id="study_depth_settings" class="option_item study-depth-setting">')
                 .replace(/var pgn = clean_pgn\(`[\s\S]*?`\);/, () => 'var pgn = ' + JSON.stringify(pgn) + ';'));return;
         }
         const file = path.join(root, 'priv/static', url.pathname);
@@ -67,6 +68,9 @@ const pgn = '[Event "First chapter"]\n\n1. e4 e5 2. Nf3 Nc6 *\n\n[Event "Second 
         assert(scripts.some(src=>src.includes('/js/bootstrap_study.js')));
         assert(!scripts.some(src=>src.includes('/js/app.js')||src.includes('/js/bootstrap_ui.js')));
         assert.equal(await page.locator('dialog, .modal_open, .modal_close').count(),0);
+        await page.keyboard.press('ArrowRight');
+        const beforeDepthChange = await page.evaluate(() => chess.fen());
+        assert(await page.evaluate(() => chess.history().length > 0));
         const settings=page.locator('#study_settings_dialog');
         await page.locator('#open_study_settings').click();
         assert.equal(await settings.getAttribute('aria-modal'),'true');
@@ -81,14 +85,41 @@ const pgn = '[Event "First chapter"]\n\n1. e4 e5 2. Nf3 Nc6 *\n\n[Event "Second 
         await page.locator('#settings_tab_practice').click();
         await page.locator('#study_session_goal').fill('25');await page.locator('#study_session_goal').dispatchEvent('change');
         await page.locator('#limit_practice_depth').check();
+        await page.locator('#max_depth_sub').click();
+        assert.equal(await page.locator('#max_depth_label').textContent(), '1');
+        assert(await page.locator('#max_depth_sub').isDisabled());
+        assert(await page.locator('#max_depth_container').evaluate(node => node.classList.contains('option-highlighted')));
         await page.locator('#max_depth_range').fill('2');await page.locator('#max_depth_range').dispatchEvent('change');
+        assert.equal(await page.evaluate(() => chess.fen()), beforeDepthChange, 'Depth edits do not restart the line while settings are open');
+        assert(await page.locator('#max_depth_add').isDisabled());
+        assert(!await page.locator('#max_depth_container').evaluate(node => node.classList.contains('option-highlighted')));
+        assert.equal(await page.evaluate(() => localStorage.getItem(`max_depth_${study_id}_0`)), '-1');
         for(let i=0;i<15;i++){await page.keyboard.press('Tab');assert(await settings.evaluate(node=>node.contains(document.activeElement)));}
         await page.keyboard.press('Escape');assert(await settings.isHidden());
+        assert.equal(await page.evaluate(() => chess.history().length), 0, 'Closing settings applies depth changes to Full lines');
         assert(await page.locator('#open_study_settings').evaluate(node=>node===document.activeElement));
         assert.equal(await page.evaluate(()=>localStorage.getItem('smart_session_goal')),'25');
-        await page.locator('#study_mode').click();await page.locator('#open_study_settings').click();
+        await page.locator('#study_mode').click();
+        await page.locator('#study_next_move').click();
+        const readingFen = await page.evaluate(() => chess.fen());
+        await page.locator('#open_study_settings').click();
         assert.equal(await page.locator('#settings_tab_general').getAttribute('aria-selected'),'true');
+        await page.locator('#settings_tab_practice').click();
+        await page.locator('#max_depth_sub').click();
         await settings.locator('[data-bs-dismiss]').click();
+        assert.equal(await page.evaluate(() => chess.fen()), readingFen, 'Closing settings never resets the Read position');
+        await page.locator('#next_chapter_btn').click();
+        await page.locator('#open_study_settings').click();
+        await page.locator('#settings_tab_practice').click();
+        assert(!await page.locator('#limit_practice_depth').isChecked());
+        assert(await page.locator('#max_depth_range').isDisabled());
+        await page.keyboard.press('Escape');
+        await page.locator('#prev_chapter_btn').click();
+        await page.locator('#open_study_settings').click();
+        await page.locator('#settings_tab_practice').click();
+        assert(await page.locator('#limit_practice_depth').isChecked());
+        assert.equal(await page.locator('#max_depth_range').inputValue(), '1');
+        await page.keyboard.press('Escape');
         await page.locator('#study_more_actions > summary').click();
         await page.locator('[data-study-comments]').click();
         assert(await page.locator('#study_discussion').evaluate(node=>node.open));
@@ -127,6 +158,21 @@ const pgn = '[Event "First chapter"]\n\n1. e4 e5 2. Nf3 Nc6 *\n\n[Event "Second 
         assert(collectionBounds.x>=0&&collectionBounds.x+collectionBounds.width<=320);
         await page.keyboard.press('Escape');
         assert(await page.locator('#collection_modal').isHidden());
+        await page.locator('#practice_smart').click();
+        await page.waitForFunction(() => document.getElementById('practice_smart').getAttribute('aria-pressed') === 'true');
+        await page.evaluate(() => {
+            window.depthChapterSelections = 0;
+            document.getElementById('chapter_select').addEventListener('change', () => window.depthChapterSelections++);
+        });
+        await page.locator('#open_study_settings').click();
+        await page.locator('#settings_tab_practice').click();
+        await page.locator('#limit_practice_depth').check();
+        const nextDepth = await page.locator('#max_depth_range').inputValue() === '1' ? '2' : '1';
+        await page.locator('#max_depth_range').fill(nextDepth);
+        await page.locator('#max_depth_range').dispatchEvent('change');
+        assert.equal(await page.evaluate(() => window.depthChapterSelections), 0, 'Smart keeps its target while settings are open');
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => window.depthChapterSelections > 0);
         assert.deepEqual(errors,[]);
         console.log('Training Bootstrap layout, settings tabs, depth, goals, details/comments, history, progress navigation, focus and mobile passed');
     } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}

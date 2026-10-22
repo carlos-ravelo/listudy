@@ -52,13 +52,17 @@ const keys = ['show_arrows', 'arrow_type', 'show_comments', 'board_review', 'key
         await page.goto(`http://127.0.0.1:${server.address().port}`);
         await page.waitForFunction(() => document.getElementById('settings_panel_general')._x_dataStack);
         assert.equal(await page.locator('#arrows_toggle').isDisabled(), true, 'Do not edit preferences before hydration');
+        assert.equal(await page.locator('#limit_practice_depth').isDisabled(), true, 'Depth is also disabled before hydration');
         assert.equal(writes.length, 0);
         remote = await page.evaluate(() => ({ show_arrows: i18n.arrows_always, arrow_type: i18n.arrow_type_both,
             show_comments: i18n.comments_always_on, board_review: i18n.review_slow,
-            key_moves_mode: i18n.key_move_enabled, move_delay_time: i18n.instant }));
+            key_moves_mode: i18n.key_move_enabled, move_delay_time: i18n.instant,
+            [`max_depth_${study_id}_0`]: '1', [`max_depth_${study_id}_0_enabled`]: 'true' }));
         release();
         await page.waitForFunction(() => !document.getElementById('arrows_toggle').disabled);
         await page.waitForSelector('#chessground cg-board');
+        assert.equal(await page.locator('#limit_practice_depth').isChecked(), true, 'Depth uses hydrated account values');
+        assert.equal(await page.locator('#max_depth_range').inputValue(), '1');
         assert.equal(writes.length, 0, 'Hydration must not send defaults back to the account');
         await page.locator('#open_study_settings').click();
         await page.locator('#settings_tab_general').click();

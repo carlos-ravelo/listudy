@@ -1,3 +1,5 @@
+import { createPracticeDepth } from './modules/study/practice_depth.js';
+import { registerStudyDepth, bindStudyDepth } from './components/study_depth.js';
 import { createStudyPreferences } from './modules/study/preferences.js';
 import { registerStudyPreferences, bindStudyPreferences } from './components/study_preferences.js';
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
@@ -21,7 +23,7 @@ const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js')
 import { turn_color, non_turn_color, setup_chess, uci_to_san, cal_to_ucistr, move_to_ucistr } from './modules/chess_utils.js';
 import { string_hash } from './modules/hash.js';
-import { clear_local_storage, get_option_from_localstorage } from './modules/localstorage.js';
+import { clear_local_storage } from './modules/localstorage.js';
 import { tree_value_add, tree_move_index, tree_children, tree_possible_moves, has_children, tree_value,
          need_hint, update_value, value_sort, tree_get_node, tree_children_filter_sort, tree_get_node_depth,
          tree_get_node_string, tree_size_weighted_random_move, tree_max_num_moves_deep } from './modules/tree_utils.js';
@@ -47,6 +49,7 @@ import { setupStudyMoveTree, readChapterPosition } from './modules/study/study_m
 import Alpine from 'alpinejs';
 
 registerStudyPreferences(Alpine);
+registerStudyDepth(Alpine);
 window.Alpine = Alpine;
 Alpine.start();
 
@@ -282,10 +285,8 @@ const tacticsCollection = document.querySelector('[data-training-kind="tactics"]
 const preferences = createStudyPreferences({ storage: StorageAdapter, labels: i18n, tactics: tacticsCollection });
 
 // Option to control the maximum number of moves being played
-const DEPTH_MAX = -1;  // This constant is used to avoid having to calculate the tree depth when max_depth is at the max depth.
-let max_depth_key_base = "max_depth_" + study_id + "_";
-let max_depth = DEPTH_MAX;
-let depth_limit_enabled = false;
+const practiceDepth = createPracticeDepth({ storage: StorageAdapter, studyId: study_id });
+let practiceDepthView;
 let depthSettingsChanged = false;
 
 function combo_text() {
@@ -570,13 +571,13 @@ async function handle_move(orig, dest) {
         let reply = ai_move(curr_move);
         const naturalEnd = reply == undefined && (!smartTarget?.route || smartTarget.completeLine === true);
         let end_of_line = reply == undefined;
-        if (!end_of_line && !spacedReviewRunActive && !smartSession && depth_limit_enabled && max_depth !== DEPTH_MAX) {
+        if (!end_of_line && !spacedReviewRunActive && !smartSession && Number.isFinite(practiceDepth.limit)) {
             let curr_node = tree_get_node(curr_move);
             let curr_depth = tree_get_node_depth(curr_node);
             if (window.studyFullLines || preferences.get('keyMoves') == i18n.key_move_disabled || window.first_variation === null) {
-                end_of_line = curr_depth >= max_depth;
+                end_of_line = curr_depth >= practiceDepth.limit;
             } else {
-                end_of_line = curr_node.move_index >= window.first_variation && curr_depth >= max_depth;
+                end_of_line = curr_node.move_index >= window.first_variation && curr_depth >= practiceDepth.limit;
             }
             // console.log('CURR_DEPTH', end_of_line, curr_node.move, curr_node.move_index, curr_depth);
         }
@@ -1273,8 +1274,8 @@ function setup_chapter_select() {
         StorageAdapter.setItem(select_key, v);
         window.chapter = Number(v);
         start_training();
+        practiceDepthView.refresh(chapter, get_repertoire_depth());
         update_progress(); // update the progress bar shown
-        set_options_values_for_max_depth();  // update the max depth for the new chapter
         studyFeatureViews.forEach(view => view.update());
     };
 }
@@ -1368,54 +1369,6 @@ function get_repertoire_depth() {
     if (!starting_moves.length) return 1;
     let for_white = color == "white";
     return tree_max_num_moves_deep(starting_moves, for_white);
-}
-
-/**
- * Update option label with a new max depth.
- */
- function update_max_depth_label(depth, tree_depth) {
-    let max_depth_container = document.getElementById("max_depth_container");
-    let max_depth_label = document.getElementById("max_depth_label");
-
-    max_depth_label.innerText = depth;
-    max_depth = depth == tree_depth ? DEPTH_MAX : depth;
-    max_depth_container.classList.toggle("option-highlighted", depth_limit_enabled && max_depth !== DEPTH_MAX);
-    document.getElementById("max_depth_range").disabled = !depth_limit_enabled || tree_depth <= 1;
-    document.getElementById("max_depth_sub").disabled = !depth_limit_enabled || depth <= 1;
-    document.getElementById("max_depth_add").disabled = !depth_limit_enabled || depth >= tree_depth;
-}
-
-/**
- * User clicked on the + or - next to the max depth range control.
- */
-function inc_or_dec_max_depth(delta) {
-    let max_depth_range = document.getElementById("max_depth_range");
-    let tree_depth = get_repertoire_depth();
-    let depth = parseInt(max_depth_range.value, 10) || tree_depth;
-
-    depth += delta;
-    // Make sure it's not lower than 1 or higher than the actual depth of the tree
-    depth = delta > 0 ? Math.min(depth, tree_depth) : Math.max(depth, 1);
-    max_depth_range.value = depth;
-
-    update_max_depth_label(depth, tree_depth);
-
-    StorageAdapter.setItem(max_depth_key_base + chapter, max_depth);
-    practiceDepthChanged();
-}
-
-/**
- * User dragged the max depth range/slider control to a new value.
- */
-function max_depth_changed() {
-    let max_depth_range = document.getElementById("max_depth_range");
-    let tree_depth = get_repertoire_depth();
-    let depth = parseInt(max_depth_range.value, 10) || tree_depth;
-
-    update_max_depth_label(depth, tree_depth);
-
-    StorageAdapter.setItem(max_depth_key_base + chapter, max_depth);
-    practiceDepthChanged();
 }
 
 function practiceDepthChanged() {
@@ -1544,23 +1497,6 @@ async function setup_progress_reset() {
     }
 }
 
-function set_options_values_for_max_depth() {
-    let max_depth_key = max_depth_key_base + chapter;
-    depth_limit_enabled = StorageAdapter.getItem(max_depth_key + "_enabled") === "true";
-    document.getElementById("limit_practice_depth").checked = depth_limit_enabled;
-    max_depth = get_option_from_localstorage(max_depth_key, DEPTH_MAX, undefined, {validate: Number.isInteger, transform: parseInt});
-
-    let tree_depth = get_repertoire_depth();
-    let max_depth_range = document.getElementById("max_depth_range");
-    let depth_as_num = max_depth == DEPTH_MAX ? tree_depth : max_depth;
-    let depth = Math.max(1, Math.min(tree_depth, depth_as_num));
-    max_depth_range.max = tree_depth;
-    max_depth_range.value = depth;
-    max_depth_range.disabled = (tree_depth == 1);
-
-    update_max_depth_label(depth, tree_depth);
-}
-
 async function handle_click() {
     if (currentTacticsTrap()) return;
     // Clearing the overlays here emulates the behaviour of normal arrows in chessground,
@@ -1577,15 +1513,6 @@ function setup_configs() {
     document.getElementById('replay_position_context').onclick = replayContextFromStart;
     document.getElementById("hints").onclick = turn_on_hints_for_current_move;
     document.getElementById("reset_line").onclick = reset_line;
-    document.getElementById("max_depth_sub").onclick = () => inc_or_dec_max_depth(-1);
-    document.getElementById("max_depth_add").onclick = () => inc_or_dec_max_depth(+1);
-    document.getElementById("max_depth_range").onchange = max_depth_changed;
-    document.getElementById("max_depth_range").oninput = max_depth_changed;
-    document.getElementById("limit_practice_depth").onchange = event => {
-        StorageAdapter.setItem(max_depth_key_base + chapter + "_enabled", String(event.target.checked));
-        set_options_values_for_max_depth();
-        practiceDepthChanged();
-    };
     onDialogClosed(document.getElementById('study_settings_dialog'), () => {
         if (!depthSettingsChanged) return;
         depthSettingsChanged = false;
@@ -1761,7 +1688,8 @@ async function main() {
         if (name === 'arrows' || name === 'arrowType') display_arrows(false);
         if (name === 'arrows' || name === 'arrowType' || name === 'comments') display_comments(false);
     });
-    set_options_values_for_max_depth();
+    practiceDepthView = bindStudyDepth(document.getElementById('study_depth_settings'), practiceDepth, practiceDepthChanged);
+    practiceDepthView.refresh(chapter, get_repertoire_depth());
     setup_move_handler(handle_move);
     setup_click_handler(handle_click);
 
