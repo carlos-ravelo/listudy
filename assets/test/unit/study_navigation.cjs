@@ -5,6 +5,8 @@ const vm = require('node:vm');
 const commentContext = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/comments.js'), 'utf8')
     .replace(/^export /gm, ''), commentContext);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/run_lifecycle.js'), 'utf8')
+    .replace(/^export /gm, ''), commentContext);
 
 function createContext(values) {
     const context = vm.createContext(values);
@@ -18,6 +20,8 @@ function createContext(values) {
     context.publishStudyRunStatus = () => {};
     context.preferences = { get: name => context[keys[name]] };
     context.practiceDepth = { get limit() { return context.depth_limit_enabled ? context.max_depth : Infinity; } };
+    context.studyRun = commentContext.createStudyRun({ getChapter: () => context.chapter,
+        replay: options => context.replayPositionContext(options), pause: delay => context.sleep(delay) });
     return context;
 }
 
@@ -39,10 +43,10 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/pos
     .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), moveTreeContext);
 const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
 const reviewContext = createContext({ sparring: null, visualization: null, ...require('ts-fsrs'), ChessModule: chessModule });
-for (const file of ['review_history.js', 'position_review.js', 'failed_positions.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study', file), 'utf8').replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), reviewContext);
+for (const file of ['review_history.js', 'position_review.js', 'failed_positions.js', 'move_grading.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study', file), 'utf8').replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, '').replace(/^export /gm, ''), reviewContext);
 const names = new Set([
     'currentPositionId', 'currentFailures', 'presentPracticePosition', 'replayContextFromStart',
-    'handle_move', 'play_move', 'setup_move', 'change_analysis_board',
+    'handle_move', 'handle_read_move', 'handle_practice_move', 'play_move', 'setup_move', 'change_analysis_board',
     'change_play_stockfish', 'refresh_manual_navigation', 'go_back', 'go_forward',
     'update_read_mode_ui', 'set_read_mode', 'play_read_move', 'seek_read_move',
     'finish_chapter_practice', 'chapter_stats_key', 'smartIntroductionMove'
@@ -68,13 +72,13 @@ function fixture(moves, fen, orientation = 'white') {
             `${fen ? `[SetUp "1"]\n[FEN "${fen}"]\n` : ''}[Event "Chapter"]\n\n${moves.join(' ')} *`],
         lichessAnalysisUrl: moveTreeContext.lichessAnalysisUrl,
         prepareLichessAnalysis: moveTreeContext.prepareLichessAnalysis,
-        trainingSessionId: 0, lineEligibleForReview: true, lineReviewRecorded: false,
+        gradeStudyMove: reviewContext.gradeStudyMove, lineEligibleForReview: true, lineReviewRecorded: false,
         chapterStats: { version: 1, chapters: {} }, practiceChapter: null,
         chapterReviewSignatures: ['chapter'], study_id: 'study',
         beginChapterPractice: statsContext.beginChapterPractice,
         finishChapterPractice: statsContext.finishChapterPractice,
         StorageAdapter: { setItem() {} },
-        contextReplayActive: false, updateContextReplayUi() {}, comments_div: 'comments',
+        updateContextReplayUi() {}, comments_div: 'comments',
         tacticsTrap: null, currentTacticsTrap: () => null, updateTacticsTrapUi() {},
         studySessions: { begin() {}, decision() {}, end() {}, boundary() { return false; } },
         replayPositionContext: moveTreeContext.replayPositionContext,
@@ -290,16 +294,16 @@ function assertSynchronized({ context, board, links }) {
         const test = fixture(moves, fen);
         const { context } = test;
         context.go_back();
-        assert.equal(context.trainingSessionId, 0);
+        assert.equal(context.studyRun.revision, 0);
         assert.equal(context.lineEligibleForReview, true);
         for (const move of moves) {
             context.go_forward();
             assert.equal(context.chess.history().slice(-1)[0], move);
             assertSynchronized(test);
         }
-        const session = context.trainingSessionId;
+        const session = context.studyRun.revision;
         context.go_forward();
-        assert.equal(context.trainingSessionId, session);
+        assert.equal(context.studyRun.revision, session);
         for (const move of moves) {
             context.go_back();
             assertSynchronized(test);
@@ -418,7 +422,7 @@ function assertSynchronized({ context, board, links }) {
     replay.context.positionAttempts.add('previous');
     replay.context.assistedPositions.add('hinted');
     const replaying = replay.context.presentPracticePosition([0, 0, 0, 0], 4);
-    assert.equal(replay.context.contextReplayActive, true);
+    assert.equal(replay.context.studyRun.replaying, true);
     await replay.context.handle_move('e2', 'e4');
     assert.equal(replay.context.attempts, 0);
     for (let index = 0; index < 5; index++) {
@@ -427,7 +431,7 @@ function assertSynchronized({ context, board, links }) {
         await new Promise(setImmediate);
     }
     await replaying;
-    assert.equal(replay.context.contextReplayActive, false);
+    assert.equal(replay.context.studyRun.replaying, false);
     assert.equal(replay.context.chess.history().join(' '), 'e4 e5 Nf3 Nc6');
     assert.equal(replay.context.curr_move.join(','), '0,0,0,0,0');
     assert.equal(replay.context.attempts, 0);
@@ -437,13 +441,13 @@ function assertSynchronized({ context, board, links }) {
     assertSynchronized(replay);
     const canceled = fixture(['e4', 'e5', 'Nf3']);
     const pendingContext = canceled.context.presentPracticePosition([0, 0], 4);
-    canceled.context.trainingSessionId++;
-    canceled.context.contextReplayActive = false;
+    canceled.context.studyRun.invalidate();
+    canceled.context.studyRun.stopReplay();
     canceled.context.chess = new Chess();
     canceled.waits.shift()();
     await pendingContext;
     assert.equal(canceled.context.chess.history().length, 0);
-    assert.equal(canceled.context.contextReplayActive, false);
+    assert.equal(canceled.context.studyRun.replaying, false);
     const chainPractice = fixture(['e4', 'e5', 'Nf3']);
     chainPractice.context.depth_limit_enabled = true;
     chainPractice.context.max_depth = 1;
@@ -500,10 +504,11 @@ function assertSynchronized({ context, board, links }) {
     guided.context.display_comments(true);
     assert.equal(guided.context.commentRows.length, 0, 'Hidden visualization suppresses even explicit comment hints');
     guided.context.visualization = null;
-    guided.context.contextReplayActive = true;
+    const blockedComments = guided.context.studyRun.replayPosition({ root: guided.context.trees[0].root,
+        path: [], count: 0, present() {}, advance() {}, finish() {} });
     guided.context.display_comments(true);
     assert.equal(guided.context.commentRows.length, 0, 'Context replay clears explanations');
-    guided.context.contextReplayActive = false;
+    await blockedComments;
     guided.context.display_comments(false);
     assert.equal(guided.context.commentRows.length, 1, 'Rendering resumes after a clear');
     assert.equal(guided.context.assistedPositions.size, 0);

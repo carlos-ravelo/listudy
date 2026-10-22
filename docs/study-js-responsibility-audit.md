@@ -41,7 +41,7 @@ the chapter and its playing color, without persisting defaults. The engine retai
 the deferred restart policy: changes apply on settings close, with no reset in
 Read. Duplicate slider input/change events produce one persisted change.
 
-Run coordination and general page teardown remain subsequent deliveries.
+General page teardown remains a subsequent delivery.
 
 After delivery 2, `study.js` contains 1,824 lines. Verification passed for six
 unit suites (depth, preferences, navigation, tactics layers, Smart controls, and
@@ -104,6 +104,37 @@ context replay, Smart introduction grading, empty/null annotations, and repeated
 clearing without removing the Alpine template. Empty-panel geometry remains
 unchanged across screen sizes/themes. The production build passes with the
 existing 180 warnings.
+
+Delivery 5 centralizes run revisions, replay state, chapter-aware context replay,
+and stale-work guards in `study/run_lifecycle.js`. Reset/navigation, Smart,
+failed-position, tactics-trap, and settings transitions share this coordinator.
+Replay still uses the existing validated position-context player and delays; an
+older replay cannot unlock a newer one. The coordinator exposes disposal for
+the final page teardown delivery.
+
+`handle_move` now routes traps, Sparring, replay locks, Read, and practice;
+`handle_read_move` handles read-only moves and promotion matching, while
+`handle_practice_move` retains board transitions, completion policies, and
+persistence. `study/move_grading.js` owns continuation introduction, first-attempt
+grading, FSRS updates, Smart counters, and combined recovery state. The engine
+still controls neutral alternatives, trap outcomes, allowed Smart continuations,
+line-review eligibility, failure recording, and persistence order. No layout or
+Alpine ownership changes are introduced in this delivery. After delivery 5,
+`study.js` contains 1,653 lines.
+
+Delivery 5 verification passed: eight unit suites (run lifecycle, move grading,
+navigation, tactics layers, Smart controls, weak practice, practice scope, and
+comments), 23 server tests, and six Chrome suites (study geometry/behavior,
+analysis training, player journeys, comments, tactics, and delayed account
+hydration). Focused checks cover overlapping replay ownership, chapter changes,
+stale callbacks, replay errors/disposal, first-attempt deduplication, hints graded
+as misses, preserved early-practice intervals, introductions, Smart counters,
+and unresolved sibling continuations. Existing navigation/tactics scenarios
+continue exercising cancellation, neutral alternatives, traps, underpromotion,
+Read, and context playback. Geometry, settings restarts, directed practice,
+mode transitions, and preference synchronization remain unchanged. The production
+build passes with the existing 180 warnings.
+
 
 ## Responsibility map
 
@@ -272,7 +303,7 @@ reviewing other consumers.
 | 2 (complete) | Depth component using the existing scope model | Medium | `practice_scope.cjs`, `study_navigation.cjs`, chapter changes, maximum sentinel, restart on close, and no restart in Read |
 | 3 (complete) | Progress projection and run indicators; reuse the existing Alpine panel | Medium | Metrics, ordering, due-date timer, chapter selection, empty Smart messages, and sessions |
 | 4 (complete) | Separate comment selection from rendering | Medium | Untrusted PGN text, variations, Read, hidden visualization, and assistance grading |
-| 5 | Extract run/context coordination, then split `handle_move` | High | Smart, mistakes, weak chapters, reviews, Sparring, traps, underpromotion, assistance, cancellation, and directed practice |
+| 5 (complete) | Extract run/context coordination, then split `handle_move` | High | Smart, mistakes, weak chapters, reviews, Sparring, traps, underpromotion, assistance, cancellation, and directed practice |
 | 6 | Reduce `main` to composition and formalize page teardown | High | Progress identity, resets, hydration/merge, navigation, remounting, and no duplicate resources |
 
 Benefits do not require completing all six deliveries. The first removes visible

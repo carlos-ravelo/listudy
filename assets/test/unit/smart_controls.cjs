@@ -64,7 +64,7 @@ assert.equal(context.window.studyPuzzleRunMode, 'smart', 'Ordinary study visits 
 const study = fs.readFileSync(require('node:path').join(__dirname, '../../js/study.js'), 'utf8');
 const state = { smartSession: { newCount: 2 }, smartTarget: null, chapterStats: {}, chapterReviewSignatures: [],
     smartCatalog: [], gameLineQueue: null, chapter: 0, trees: [{ root: [], headers: {} }], color: 'white',
-    trainingSessionId: 1, lineEligibleForReview: true, selected: null, completed: 0 };
+    lineEligibleForReview: true, selected: null, completed: 0 };
 const status = {};
 const select = { value: '0', dispatchEvent(event) { state.selected = event.detail; } };
 const smartContext = vm.createContext({ ...state,
@@ -89,6 +89,9 @@ const smartContext = vm.createContext({ ...state,
     ground: { set() {} }, i18n: { smart_learning: 'new', smart_complete: 'done', spaced_review_next: 'next' }
 });
 smartContext.window = smartContext;
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/study/run_lifecycle.js'), 'utf8').replace(/^export /gm, ''), smartContext);
+smartContext.studyRun = smartContext.createStudyRun({ getChapter: () => smartContext.chapter });
+smartContext.studyRun.invalidate();
 vm.runInContext(study.slice(study.indexOf('function selectNextSmartPosition()'), study.indexOf('function updateSmartRun(')), smartContext);
 smartContext.selectNextSmartPosition();
 assert.equal(state.selected.smartRun, true);
@@ -105,7 +108,7 @@ assert.equal(status.textContent, '', 'Short review chains keep their deliberatel
 assert.equal(status.hidden, true);
 smartContext.nextSmartPosition = () => ({ target: null, nextDue: new Date('2026-10-15').getTime() });
 smartContext.selectNextSmartPosition();
-assert.equal(smartContext.trainingSessionId, 2);
+assert.equal(smartContext.studyRun.revision, 2);
 assert.equal(state.completed, 1);
 assert(status.textContent.includes('done'));
 assert(status.textContent.includes('next'));
@@ -114,5 +117,5 @@ smartContext.nextSmartPosition = () => { throw new Error('A completed session mu
 smartContext.smartTarget = { type: 'line' };
 smartContext.selectNextSmartPosition();
 assert.equal(smartContext.smartTarget, null);
-assert.equal(smartContext.trainingSessionId, 3);
+assert.equal(smartContext.studyRun.revision, 3);
 assert.equal(status.textContent, 'done');

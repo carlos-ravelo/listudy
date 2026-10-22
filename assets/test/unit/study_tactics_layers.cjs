@@ -17,7 +17,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
     const context = vm.createContext({
         require, ...require('ts-fsrs'), ChessModule, console: { log: noop },
         chapter: 0, studyColor: 'white', color: 'white', readMode: false, tacticsCollection: tactics,
-        trainingSessionId: 1, tacticsTrap: null, sparring: null, contextReplayActive: false,
+        tacticsTrap: null, sparring: null, 
         smartSession: null, smartTarget: null, failedPositionRun: null, spacedReviewRunActive: false,
         weakChapterRunActive: false, chapterReviewSignatures: ['test'],
         chapterStats: { version: 1, chapters: {} }, positionAttempts: new Set(), assistedPositions: new Set(),
@@ -53,10 +53,13 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
     context.preferences = { get: () => undefined };
     context.window = context;
     for (const file of ['tree.js', 'tree_from_pgn.js', 'tree_utils.js', 'study/tactics_mainline.js', 'study/tactics_trap.js',
-        'study/chapter_stats.js', 'study/review_history.js', 'study/position_review.js', 'study/failed_positions.js']) {
+        'study/chapter_stats.js', 'study/review_history.js', 'study/position_review.js', 'study/failed_positions.js',
+        'study/move_grading.js', 'study/run_lifecycle.js']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', file), 'utf8')
             .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, '').replace(/^export /gm, ''), context);
     }
+    context.studyRun = context.createStudyRun({ getChapter: () => context.chapter, replay: async () => false, pause: wait });
+    context.studyRun.invalidate();
     const parsed = require('pgn-parser').parse('[Event "Layers"]\n' + source);
     context.annotate_pgn(parsed);
     context.readingTrees = context.generate_move_trees(parsed, { tactics });
@@ -70,7 +73,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
         }
         function record_line_review(correct) { events.push(['line', correct]); lineReviewRecorded = true; }
         function play_move(san) { chess.move(san); curr_move.push(tree_move_index(curr_move, san)); }
-        function set_read_mode(reading) { readMode = reading; trainingSessionId++; trees = readingTrees; currentTacticsTrap(); }
+        function set_read_mode(reading) { readMode = reading; studyRun.invalidate(); trees = readingTrees; currentTacticsTrap(); }
         function seek_read_move(path) { events.push(['solution', Array.from(path)]); }
     `, Object.assign(context, { events }));
     const promotionStart = study.indexOf('function san_promotion_prefix(');
@@ -168,7 +171,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
         while (!release) await Promise.resolve();
         await cancelled.context.handle_move('e2', 'e4');
         assert.equal(cancelled.context.total_moves, 0, 'Moves are blocked during animation');
-        cancelled.context.trainingSessionId++;
+        cancelled.context.studyRun.invalidate();
         cancelled.context.chapter = 1;
         release();
         await pending;

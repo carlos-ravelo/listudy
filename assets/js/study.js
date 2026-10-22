@@ -1,3 +1,5 @@
+import { createStudyRun } from './modules/study/run_lifecycle.js';
+import { gradeStudyMove } from './modules/study/move_grading.js';
 import { selectStudyComments, projectStudyCommentRows } from './modules/study/comments.js';
 import { registerStudyComments, publishStudyComments } from './components/study_comments.js';
 import { projectStudyProgress } from './modules/study/progress_projection.js';
@@ -18,7 +20,7 @@ import { setupStudySparring } from './modules/sparring/study_adapter.js';
 import { replayPositionContext } from './modules/study/position_context.js';
 import { setupStudyVisualization } from './modules/study/visualization.js';
 import { applyGameEvidence, gameLineTarget } from './modules/analysis/game_progress.js';
-import { positionReviews, recordPositionReview, introducedMoves, recordIntroducedMove, introduceContinuation, recordContinuationReview, scheduledReviews, reviewExposureKey, continuationKey, nextSmartPosition } from './modules/study/position_review.js';
+import { positionReviews, scheduledReviews, nextSmartPosition } from './modules/study/position_review.js';
 import { cachedPositionCatalog } from './modules/study/position_catalog_cache.js';
 import { chapterFailures, recordPositionResult, pendingPositions } from './modules/study/failed_positions.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
@@ -77,7 +79,7 @@ let spacedReviewRunActive = false;
 let spacedReviewQueue = [];
 let lineReviewRecorded = false;
 let lineEligibleForReview = true;
-let trainingSessionId = 0;
+const studyRun = createStudyRun({ getChapter: () => chapter, replay: replayPositionContext, pause: sleep });
 let tacticsTrap = null;
 const studyColor = color;
 let weakChapterRunActive = false;
@@ -88,7 +90,6 @@ let smartTarget = null;
 let smartCatalog = [];
 let positionAttempts = new Set();
 let assistedPositions = new Set();
-let contextReplayActive = false;
 let visualization = null;
 let gameLineQueue = null;
 let studySessions = { begin() {}, decision() {}, end() {}, refresh() {}, clear() {}, boundary() { return false; } };
@@ -99,41 +100,28 @@ function updateContextReplayUi() {
     const practicingPosition = smartSession && smartTarget ||
         failedPositionRun && !failedPositionRun.transitioning && failedPositionRun.index < failedPositionRun.positions.length;
     button.hidden = readMode || !practicingPosition || !window.curr_move || curr_move.length <= 1;
-    button.disabled = contextReplayActive;
+    button.disabled = studyRun.replaying;
 }
 
 async function presentPracticePosition(path, count = 0) {
     const replayChapter = chapter;
-    const sessionId = ++trainingSessionId;
-    contextReplayActive = true;
     lineEligibleForReview = false;
-    const isCurrent = () => trainingSessionId === sessionId && chapter === replayChapter;
-    try {
-        await replayPositionContext({
-            root: trees[chapter].root, fen: trees[chapter].headers.FEN, path, count, isCurrent,
-            pause: sleep,
-            present(position, prefix) {
-                window.chess = position;
-                window.curr_move = [replayChapter, ...prefix];
-                clear_all_text();
-                ground_init_state(position.fen(), color);
-                setup_move();
-            },
-            advance(san) {
-                play_move(san);
-                setup_move();
-            }
-        });
-    } finally {
-        if (isCurrent()) {
-            contextReplayActive = false;
+    await studyRun.replayPosition({
+        root: trees[chapter].root, fen: trees[chapter].headers.FEN, path, count,
+        present(position, prefix) {
+            window.chess = position;
+            window.curr_move = [replayChapter, ...prefix];
+            clear_all_text();
+            ground_init_state(position.fen(), color);
             setup_move();
-        }
-    }
+        },
+        advance(san) { play_move(san); setup_move(); },
+        finish: setup_move
+    });
 }
 
 function replayContextFromStart() {
-    if (currentTacticsTrap() || contextReplayActive || readMode || smartSession && !smartTarget ||
+    if (currentTacticsTrap() || studyRun.replaying || readMode || smartSession && !smartTarget ||
         failedPositionRun?.transitioning || !smartSession && !failedPositionRun) return;
     const path = curr_move.slice(1);
     presentPracticePosition(path, path.length);
@@ -150,7 +138,7 @@ function scopedPracticeCatalog() {
 
 function smartIntroductionMove() {
     if (!smartSession || smartTarget?.type !== 'line' || smartTarget.reviewChain || !smartTarget.route ||
-        readMode || contextReplayActive || turn_color(chess) !== color) return null;
+        readMode || studyRun.replaying || turn_color(chess) !== color) return null;
     const path = curr_move.slice(1);
     if (path.length >= smartTarget.route.length || !path.every((index, depth) => index === smartTarget.route[depth])) return null;
     const move = tree_children(curr_move)[smartTarget.route[path.length]];
@@ -168,7 +156,7 @@ function selectNextSmartPosition() {
     if (studySessions.boundary()) {
         smartTarget = null;
         updateContextReplayUi();
-        trainingSessionId += 1;
+        studyRun.invalidate();
         finish_chapter_practice(false);
         ground.set({ movable: { dests: new Map() } });
         publishStudyRunStatus('smart', i18n.smart_complete, true);
@@ -180,7 +168,7 @@ function selectNextSmartPosition() {
     smartTarget = target;
     updateContextReplayUi();
     if (!target) {
-        trainingSessionId += 1;
+        studyRun.invalidate();
         finish_chapter_practice(false);
         ground.set({ movable: { dests: new Map() } });
         publishStudyRunStatus('smart', i18n.smart_complete + (nextDue ? ' · ' + i18n.spaced_review_next + ': ' + new Date(nextDue).toLocaleString() : ''), true);
@@ -236,8 +224,8 @@ function showFailedPosition() {
     if (!run) return;
     positionAttempts = new Set();
     assistedPositions = new Set();
-    trainingSessionId += 1;
-    contextReplayActive = false;
+    studyRun.invalidate();
+    studyRun.stopReplay();
     run.transitioning = false;
     clear_all_text();
     while (run.index < run.positions.length) {
@@ -355,7 +343,7 @@ function possible_promotion(moves, san) {
 }
 
 function currentTacticsTrap() {
-    if (tacticsTrap && (tacticsTrap.sessionId !== trainingSessionId || readMode || sparring?.active)) {
+    if (tacticsTrap && (!studyRun.isCurrent(tacticsTrap.sessionId) || readMode || sparring?.active)) {
         tacticsTrap = null;
         visualization?.endFailure();
         updateTacticsTrapUi();
@@ -395,20 +383,25 @@ function showTacticsSolution() {
 async function handle_move(orig, dest) {
     if (currentTacticsTrap()) return;
     if (sparring?.active) { await sparring.move(orig, dest); return; }
-    if (contextReplayActive) return;
-    if (readMode) {
-        let san = uci_to_san(chess, orig, dest);
-        const moves = tree_children(curr_move).map(node => node.move);
-        san = possible_promotion(moves, san) || san;
-        if (!play_read_move(san)) {
-            setup_move();
-            set_text(info_div, i18n.read_choose_continuation);
-        }
-        return;
+    if (studyRun.replaying) return;
+    if (readMode) { handle_read_move(orig, dest); return; }
+    await handle_practice_move(orig, dest);
+}
+
+function handle_read_move(orig, dest) {
+    let san = uci_to_san(chess, orig, dest);
+    const moves = tree_children(curr_move).map(node => node.move);
+    san = possible_promotion(moves, san) || san;
+    if (!play_read_move(san)) {
+        setup_move();
+        set_text(info_div, i18n.read_choose_continuation);
     }
+}
+
+async function handle_practice_move(orig, dest) {
     if (smartSession && !smartTarget) return;
     if (failedPositionRun && (failedPositionRun.transitioning || failedPositionRun.index >= failedPositionRun.positions.length)) return;
-    const sessionId = trainingSessionId;
+    const sessionId = studyRun.revision;
 
     clear_all_text();
 
@@ -474,50 +467,25 @@ async function handle_move(orig, dest) {
             set_text(info_div, i18n.smart_introduction_retry);
             return;
         }
-        const cards = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter]);
-        introduceContinuation(cards, positionId, introduction.move);
-        cards[positionId].positionFen = chess.fen().split(' ').slice(0, 4).join(' ');
-        cards[positionId].expected = possible_moves;
-        smartSession.newCount += 1;
-        smartSession.reviewStreak = 0;
-        studySessions.decision('smart', `${smartSession.presentation}|${chapter}|${positionId}`, true, true, true);
+    }
+    const intendedMove = smartTarget?.type === 'line' && smartTarget.route
+        ? tree_children(curr_move)[smartTarget.route[curr_move.length - 1]]?.move
+        : smartTarget?.expectedMove || (wasCorrect ? san : possible_moves[0]);
+    const decision = gradeStudyMove({
+        stats: chapterStats, chapter, signature: chapterReviewSignatures[chapter], positionId, san,
+        possibleMoves: possible_moves, fen: chess.fen(), wasCorrect, introduction: introduction?.move,
+        intendedMove, target: smartTarget, session: smartSession, presentation: smartSession ? smartSession.presentation : studyRun.revision,
+        attempts: positionAttempts, assisted: assistedPositions.has(positionId) || positionAttempts.has(positionId),
+        metrics: studySessions, kind: smartSession ? 'smart' : failedPositionRun ? 'positions' : 'lines'
+    });
+    if (introduction) {
         StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     } else {
-        const assisted = assistedPositions.has(positionId) || positionAttempts.has(positionId);
-        const cards = positionReviews(chapterStats, chapter, chapterReviewSignatures[chapter]);
-        const firstAttempt = !positionAttempts.has(positionId);
-        if (firstAttempt) studySessions.decision(smartSession ? 'smart' : failedPositionRun ? 'positions' : 'lines',
-            `${smartSession ? smartSession.presentation : trainingSessionId}|${chapter}|${positionId}`, false, wasCorrect, assisted);
-        const intendedMove = smartTarget?.type === 'line' && smartTarget.route
-            ? tree_children(curr_move)[smartTarget.route[curr_move.length - 1]]?.move
-            : smartTarget?.expectedMove || (wasCorrect ? san : possible_moves[0]);
-        const previousCard = cards[positionId]?.card;
-        const wasNew = !cards[positionId] || !introducedMoves(chapterStats, chapter, chapterReviewSignatures[chapter], positionId).includes(intendedMove);
-        const review = recordPositionReview(cards, positionId, wasCorrect, assisted, positionAttempts);
-        cards[positionId].positionFen = chess.fen().split(' ').slice(0, 4).join(' ');
-        cards[positionId].expected = possible_moves;
-        const continuationReview = recordContinuationReview(cards, positionId, intendedMove, wasCorrect, assisted,
-            firstAttempt, wasNew, previousCard);
-        if (wasCorrect) recordIntroducedMove(cards, positionId, san);
-        if (smartSession && firstAttempt) {
-            (smartSession.testedContinuations ||= new Set()).add(continuationKey(chapter, positionId, intendedMove));
-            if (wasCorrect && !assisted) (smartSession.recalledOpenings ||= new Set()).add(reviewExposureKey(chess.fen(), san));
-            if (smartTarget?.type === 'line' && !smartTarget.reviewChain && wasNew) {
-                smartSession.newCount += 1;
-                smartSession.reviewStreak = 0;
-            } else if (review || continuationReview) {
-                smartSession.reviewCount = (smartSession.reviewCount || 0) + 1;
-                smartSession.reviewStreak = (smartSession.reviewStreak || 0) + 1;
-            }
-        }
+        const { assisted, recovery } = decision;
         if (assisted && !lineReviewRecorded && lineEligibleForReview) record_line_review(false);
-        const recovery = continuationReview || review || cards[positionId];
-        const unresolvedContinuation = Object.values(cards[positionId]?.moveReviews || {})
-            .some(entry => !entry.recovered && (!entry.introducedAt || entry.card.reps > 0));
-        const gradedRecovery = recovery && (!recovery.introducedAt || recovery.card.reps > 0) ? recovery : null;
         recordPositionResult(currentFailures(), positionId, {
             path: curr_move.slice(1), fen: chess.fen(), played: san, expected: possible_moves
-        }, wasCorrect, gradedRecovery && { ...gradedRecovery, recovered: gradedRecovery.recovered && !unresolvedContinuation });
+        }, wasCorrect, recovery);
         if (trap) {
             record_chapter_attempt(false, null, positionId, assisted);
             update_value(curr_move, 0);
@@ -540,7 +508,7 @@ async function handle_move(orig, dest) {
                 ground.set({ movable: { dests: new Map() } });
                 smartTarget = null;
                 await sleep(500);
-                if (sessionId === trainingSessionId) selectNextSmartPosition();
+                if (studyRun.isCurrent(sessionId)) selectNextSmartPosition();
             } else {
                 ground_undo_last_move();
                 set_text(error_div, i18n.error_wrong_move);
@@ -558,7 +526,7 @@ async function handle_move(orig, dest) {
                 failedPositionRun.index += 1;
                 failedPositionRun.transitioning = true;
                 await sleep(500);
-                if (sessionId !== trainingSessionId) return;
+                if (!studyRun.isCurrent(sessionId)) return;
                 showFailedPosition();
             } else {
                 ground_undo_last_move();
@@ -596,7 +564,7 @@ async function handle_move(orig, dest) {
         }
         if (visualization?.active) ground.set({ movable: { dests: new Map() } });
         await sleep(get_move_delay()); // instant play by the ai feels weird
-        if (sessionId !== trainingSessionId) return;
+        if (!studyRun.isCurrent(sessionId)) return;
         if (end_of_line) {
             finish_chapter_practice(naturalEnd && lineEligibleForReview);
             if (naturalEnd && !lineReviewRecorded && lineEligibleForReview) record_line_review(true);
@@ -616,18 +584,18 @@ async function handle_move(orig, dest) {
             if (smartSession) {
                 if (smartTarget?.reviewChain) smartSession.reviewChains = (smartSession.reviewChains || 0) + 1;
                 smartTarget = null;
-                setTimeout(() => { if (sessionId === trainingSessionId) selectNextSmartPosition(); }, 500);
+                setTimeout(() => { if (studyRun.isCurrent(sessionId)) selectNextSmartPosition(); }, 500);
             } else if (spacedReviewRunActive) {
                 setTimeout(() => {
-                    if (sessionId === trainingSessionId) selectNextDueChapter();
+                    if (studyRun.isCurrent(sessionId)) selectNextDueChapter();
                 }, 500);
             } else if (weakChapterRunActive) {
                 setTimeout(() => {
-                    if (sessionId === trainingSessionId) selectNextWeakChapter();
+                    if (studyRun.isCurrent(sessionId)) selectNextWeakChapter();
                 }, 500);
             } else if (currentRunMode === "next" || currentRunMode === "random") {
                 setTimeout(() => {
-                    if (sessionId !== trainingSessionId) return;
+                    if (!studyRun.isCurrent(sessionId)) return;
                     const targetBtnId = currentRunMode === "next" ? "next_chapter_btn" : "btn_random_chapter";
                     const autoBtn = document.getElementById(targetBtnId);
                     if (autoBtn) autoBtn.click();
@@ -636,7 +604,7 @@ async function handle_move(orig, dest) {
                 if (preferences.get('review') == i18n.review_slow) {
                     await sleep(3000);
                 }
-                if (sessionId !== trainingSessionId) return;
+                if (!studyRun.isCurrent(sessionId)) return;
                 start_training();
             }
         } else {
@@ -839,7 +807,7 @@ function give_hints(once) {
 function display_arrows(once) {
     if (currentTacticsTrap()) { ground.setShapes([]); return; }
     if (visualization?.hidden) { ground.setShapes([]); overlay_manager.clear_overlays(); return; }
-    if (contextReplayActive) { ground.setShapes([]); return; }
+    if (studyRun.replaying) { ground.setShapes([]); return; }
     let shapes = [];
     let all_moves = tree_possible_moves(curr_move);
     let current_move = tree_get_node(curr_move);
@@ -897,7 +865,7 @@ function display_comments(once) {
     if (currentTacticsTrap()) return;
     if (visualization?.hidden) { publishStudyComments(); return; }
     const introduction = smartIntroductionMove();
-    if (contextReplayActive || smartSession && !once && !introduction) { publishStudyComments(); return; }
+    if (studyRun.replaying || smartSession && !once && !introduction) { publishStudyComments(); return; }
     const visible = introduction || readMode || once || preferences.get('comments') == i18n.comments_always_on ||
         preferences.get('comments') == i18n.comments_when_arrows && give_hints(once);
     const selection = selectStudyComments({
@@ -936,9 +904,9 @@ function setup_move() {
         return;
     }
     if (sparring?.active) { sparring.render(); return; }
-    visualization?.block(contextReplayActive || !!failedPositionRun || spacedReviewRunActive || weakChapterRunActive || !!smartSession);
+    visualization?.block(studyRun.replaying || !!failedPositionRun || spacedReviewRunActive || weakChapterRunActive || !!smartSession);
     updateContextReplayUi();
-    if (contextReplayActive) {
+    if (studyRun.replaying) {
         const last = chess.history({ verbose: true }).slice(-1)[0];
         ground.set({ fen: chess.fen(), turnColor: turn_color(chess),
             lastMove: last ? [last.from, last.to] : undefined,
@@ -1029,11 +997,11 @@ function start_training() {
     visualization?.reset();
     if (sparring?.active) { sparring.stop(); studySessions.end(); }
     if (!readMode) studySessions.begin(smartSession ? 'smart' : 'lines');
-    contextReplayActive = false;
+    studyRun.stopReplay();
     failedPositionRun = null;
     updateFailedPositionsUi();
     finish_chapter_practice(false);
-    trainingSessionId += 1;
+    studyRun.invalidate();
     positionAttempts = new Set();
     assistedPositions = new Set();
     lineReviewRecorded = false;
@@ -1163,7 +1131,7 @@ function setup_chapter_select() {
     window.addEventListener('study-puzzle-run-changed', updateSmartRun);
     window.addEventListener('study-puzzle-run-off', () => {
         studySessions.end();
-        if (contextReplayActive) { trainingSessionId += 1; contextReplayActive = false; }
+        if (studyRun.replaying) { studyRun.invalidate(); studyRun.stopReplay(); }
         smartSession = null;
         smartTarget = null;
         publishStudyRunStatus('smart', '', false);
@@ -1257,7 +1225,7 @@ function show_suggestions() {
 
 function turn_on_hints_for_current_move() {
     if (sparring?.active) { sparring.hint(); return; }
-    if (currentTacticsTrap() || readMode || contextReplayActive) return;
+    if (currentTacticsTrap() || readMode || studyRun.replaying) return;
     visualization?.reveal();
     assistedPositions.add(currentPositionId());
     display_arrows(true);
@@ -1379,8 +1347,8 @@ function setup_configs() {
         depthSettingsChanged = false;
         if (readMode) return;
         if (smartSession) {
-            trainingSessionId += 1;
-            contextReplayActive = false;
+            studyRun.invalidate();
+            studyRun.stopReplay();
             selectNextSmartPosition();
         } else if (!failedPositionRun) start_training();
     });
@@ -1466,8 +1434,8 @@ async function main() {
         },
         getBoard: () => ground,
         onBegin() {
-            trainingSessionId += 1;
-            contextReplayActive = false;
+            studyRun.invalidate();
+            studyRun.stopReplay();
             finish_chapter_practice(false);
             stopWeakChapterRun(); stopSpacedReviewRun();
             window.dispatchEvent(new Event('study-puzzle-run-off'));
@@ -1570,8 +1538,8 @@ async function main() {
         goBack: go_back,
         goForward: go_forward,
         getState: () => sparring?.active ? sparring.navigation() : ({
-            canGoBack: !currentTacticsTrap() && !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && curr_move.length > 1,
-            canGoForward: !currentTacticsTrap() && !contextReplayActive && !failedPositionRun && !spacedReviewRunActive && !smartSession && tree_children(curr_move).length > 0
+            canGoBack: !currentTacticsTrap() && !studyRun.replaying && !failedPositionRun && !spacedReviewRunActive && !smartSession && curr_move.length > 1,
+            canGoForward: !currentTacticsTrap() && !studyRun.replaying && !failedPositionRun && !spacedReviewRunActive && !smartSession && tree_children(curr_move).length > 0
         })
     });
     if (hasGamePosition) {
@@ -1661,7 +1629,7 @@ function seek_read_move(path) {
 function refresh_manual_navigation() {
     visualization?.reveal();
     finish_chapter_practice(false);
-    trainingSessionId += 1;
+    studyRun.invalidate();
     lineEligibleForReview = false;
     clear_all_text();
     setup_move();
@@ -1669,7 +1637,7 @@ function refresh_manual_navigation() {
 
 function go_back() {
     if (sparring?.active) { sparring.back(); return; }
-    if (currentTacticsTrap() || contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession || curr_move.length <= 1) return;
+    if (currentTacticsTrap() || studyRun.replaying || failedPositionRun || spacedReviewRunActive || smartSession || curr_move.length <= 1) return;
     chess.undo();
     curr_move.pop();
     refresh_manual_navigation();
@@ -1677,7 +1645,7 @@ function go_back() {
 
 function go_forward() {
     if (sparring?.active) { sparring.forward(); return; }
-    if (currentTacticsTrap() || contextReplayActive || failedPositionRun || spacedReviewRunActive || smartSession) return;
+    if (currentTacticsTrap() || studyRun.replaying || failedPositionRun || spacedReviewRunActive || smartSession) return;
     const nextNode = tree_children(curr_move)[0];
     if (!nextNode) return;
     play_move(nextNode.move);
