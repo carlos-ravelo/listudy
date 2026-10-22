@@ -3,32 +3,32 @@
     <button type="button" id="settings_tab_practice" role="tab" aria-controls="settings_panel_practice" aria-selected="false" tabindex="-1" data-bs-toggle="tab" data-settings-tab="practice" data-bs-target="#settings_panel_practice"><%= dgettext("study", "Practice") %></button>
     <button type="button" id="settings_tab_sparring" <%= if @study.training_kind == "tactics", do: "hidden" %> role="tab" aria-controls="settings_panel_sparring" aria-selected="false" tabindex="-1" data-bs-toggle="tab" data-settings-tab="sparring" data-bs-target="#settings_panel_sparring"><%= dgettext("study", "Sparring") %></button>
   </div>
-  <div id="settings_panel_general" class="study-settings-grid tab-pane active" role="tabpanel" aria-labelledby="settings_tab_general" data-settings-panel="general">
+  <div id="settings_panel_general" x-data="studyPreferences" @study-preferences-updated.window="update($event.detail)" class="study-settings-grid tab-pane active" role="tabpanel" aria-labelledby="settings_tab_general" data-settings-panel="general">
 <fieldset class="study-setting-group"><legend><%= dgettext("study", "Hints and explanations") %></legend>
 <div class="option_item study-setting-row">
     <span class="study-setting-label" id="setting_arrows_label"><%= dgettext("study", "Move arrows") %></span>
-    <button type="button" data-icon="-" id="arrows_toggle" aria-describedby="setting_arrows_label">placeholder</button>
+    <button type="button" data-icon="-" id="arrows_toggle" @click="cycle('arrows')" x-text="values.arrows" :disabled="!ready" aria-describedby="setting_arrows_label">placeholder</button>
   </div>
 <div class="option_item study-setting-row">
     <span class="study-setting-label" id="setting_comments_label"><%= dgettext("study", "Move comments") %></span>
-    <button type="button" data-icon="3" id="comments_toggle" aria-describedby="setting_comments_label" title="<%= dgettext("study", "Option to control when comments are displayed") %>">placeholder</button>
+    <button type="button" data-icon="3" id="comments_toggle" @click="cycle('comments')" x-text="values.comments" :disabled="!ready" aria-describedby="setting_comments_label" title="<%= dgettext("study", "Option to control when comments are displayed") %>">placeholder</button>
   </div>
 <div class="option_item study-setting-row">
     <span class="study-setting-label" id="setting_hint_label"><%= dgettext("study", "Hint content") %></span>
-    <button type="button" data-icon="-" id="arrow_type" aria-describedby="setting_hint_label" title="<%= dgettext("study", "Option to control the type of hints shown. 'Moves' means arrows are displayed for all playable moves in the study. 'Annotations' are arrows and circles from the study or PGN file. These can be created at Lichess.org and other sites.") %>">placeholder</button>
+    <button type="button" data-icon="-" id="arrow_type" @click="cycle('arrowType')" x-text="values.arrowType" :disabled="!ready" aria-describedby="setting_hint_label" title="<%= dgettext("study", "Option to control the type of hints shown. 'Moves' means arrows are displayed for all playable moves in the study. 'Annotations' are arrows and circles from the study or PGN file. These can be created at Lichess.org and other sites.") %>">placeholder</button>
   </div>
 </fieldset>
 <fieldset class="study-setting-group"><legend><%= dgettext("study", "Practice pace") %></legend>
 <div class="option_item" hidden>
-    <a class="icon" data-icon="$" id="key_move" title="<%= dgettext("study", "Don't repeat the early moves that are already known. Skips to the first branching move in the study.") %>">placeholder</a>
+    <a class="icon" data-icon="$" id="key_move" :data-icon="keyMovesEnabled ? '$' : '%'" @click="cycle('keyMoves')" x-text="values.keyMoves" :disabled="!ready" title="<%= dgettext("study", "Don't repeat the early moves that are already known. Skips to the first branching move in the study.") %>">placeholder</a>
   </div>
 <div class="option_item study-setting-row">
     <span class="study-setting-label" id="setting_delay_label"><%= dgettext("study", "Opponent move delay") %></span>
-    <button type="button" data-icon="(" id="move_delay" aria-describedby="setting_delay_label"><%= dgettext("study", "Move delay:") %> <span id="move_delay_time">placeholder</span></button>
+    <button type="button" data-icon="(" id="move_delay" @click="cycle('moveDelay')" :disabled="!ready" aria-describedby="setting_delay_label"><%= dgettext("study", "Move delay:") %> <span id="move_delay_time" x-text="values.moveDelay">placeholder</span></button>
   </div>
 <div class="option_item study-setting-row">
     <span class="study-setting-label" id="setting_review_label"><%= dgettext("study", "End-of-line review") %></span>
-    <button type="button" data-icon="(" id="line_review" aria-describedby="setting_review_label" title="<%= dgettext("study", "At the end of lines the board is only reset after 3 seconds giving you time to review the final position.") %>">placeholder</button>
+    <button type="button" data-icon="(" id="line_review" @click="cycle('review')" x-text="values.review" :disabled="!ready" aria-describedby="setting_review_label" title="<%= dgettext("study", "At the end of lines the board is only reset after 3 seconds giving you time to review the final position.") %>">placeholder</button>
   </div>
 
 </fieldset>

@@ -50,6 +50,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
         depth_limit_enabled: false, get_move_delay: () => 0, sleep: wait, smartIntroductionMove: () => null,
         ai_move: () => undefined
     });
+    context.preferences = { get: () => undefined };
     context.window = context;
     for (const file of ['tree.js', 'tree_from_pgn.js', 'tree_utils.js', 'study/tactics_mainline.js', 'study/tactics_trap.js',
         'study/chapter_stats.js', 'study/review_history.js', 'study/position_review.js', 'study/failed_positions.js']) {

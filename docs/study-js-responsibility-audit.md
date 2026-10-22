@@ -16,6 +16,28 @@ and adapter references, not just mutable state. `handle_move` has 265 lines and
 `main` has 212. These figures come from the AST; they do not measure performance
 or estimate removable code.
 
+## Implementation progress
+
+Delivery 1 is implemented after this audit. `study/preferences.js` owns the six
+cyclic options and reads/writes through `StorageAdapter`; the engine reads their
+values directly. `components/study_preferences.js` registers the Alpine view and
+connects commands to model updates. The existing General panel is the component
+root, preserving markup structure, IDs, classes, and Bootstrap tab ownership.
+
+Stored translated values and tactics-specific keys/defaults remain compatible.
+Preferences reload after hydration; controls stay disabled until the engine
+publishes its ready snapshot. Initialization/reloading does not persist defaults,
+and labels no longer act as preference state. The binding returns listener
+cleanup without introducing a second page initializer.
+
+`study.js` decreased from 2,080 to 1,896 lines. The responsibility map and line
+references below describe the original audit revision. Depth, progress, comments,
+run coordination, and general page teardown remain subsequent deliveries.
+
+Verification covers model cycles, hydration, snapshot isolation, tactics defaults,
+command cleanup, delayed account hydration in Chrome, edited DOM labels, icons,
+sync/reload, existing study geometry, settings tabs, focus, depth, and tactics.
+
 ## Responsibility map
 
 | Current responsibility | Evidence in `assets/js/study.js` | Suggested boundary |
@@ -179,7 +201,7 @@ reviewing other consumers.
 
 | Delivery | Work | Relative risk | Required verification |
 | --- | --- | --- | --- |
-| 1 | Preference model and Alpine settings component; initially preserve stored format | Low/medium | Hydration, persistence, languages, tactics defaults, hints/comments, settings browser tests, and player journey |
+| 1 (complete) | Preference model and Alpine settings component; initially preserve stored format | Low/medium | Hydration, persistence, languages, tactics defaults, hints/comments, settings browser tests, and player journey |
 | 2 | Depth component using the existing scope model | Medium | `practice_scope.cjs`, `study_navigation.cjs`, chapter changes, maximum sentinel, restart on close, and no restart in Read |
 | 3 | Progress projection and run indicators; reuse the existing Alpine panel | Medium | Metrics, ordering, due-date timer, chapter selection, empty Smart messages, and sessions |
 | 4 | Separate comment selection from rendering | Medium | Untrusted PGN text, variations, Read, hidden visualization, and assistance grading |

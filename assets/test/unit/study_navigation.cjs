@@ -2,13 +2,22 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+
+function createContext(values) {
+    const context = vm.createContext(values);
+    const keys = { arrows: 'show_arrows', arrowType: 'arrow_type', comments: 'show_comments',
+        review: 'board_review', keyMoves: 'key_moves_mode', moveDelay: 'move_delay_time' };
+    context.preferences = { get: name => context[keys[name]] };
+    return context;
+}
+
 const parser = require('@babel/parser');
 const chessModule = require('chess.js');
 const Chess = chessModule.Chess || chessModule;
-const statsContext = vm.createContext({ sparring: null, visualization: null,});
+const statsContext = createContext({ sparring: null, visualization: null,});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_stats.js'), 'utf8')
     .replace(/export \{[^}]+\};/, ''), statsContext);
-const moveTreeContext = vm.createContext({ sparring: null, visualization: null, require });
+const moveTreeContext = createContext({ sparring: null, visualization: null, require });
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/download_pgn.js'), 'utf8')
     .replace(/^export /gm, ''), moveTreeContext);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/lichess_analysis.js'), 'utf8')
@@ -19,7 +28,7 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/stu
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/position_context.js'), 'utf8')
     .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), moveTreeContext);
 const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
-const reviewContext = vm.createContext({ sparring: null, visualization: null, ...require('ts-fsrs'), ChessModule: chessModule });
+const reviewContext = createContext({ sparring: null, visualization: null, ...require('ts-fsrs'), ChessModule: chessModule });
 for (const file of ['review_history.js', 'position_review.js', 'failed_positions.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study', file), 'utf8').replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, ''), reviewContext);
 const names = new Set([
     'currentPositionId', 'currentFailures', 'presentPracticePosition', 'replayContextFromStart',
@@ -39,7 +48,7 @@ const depthNodes = Object.fromEntries(['max_depth_container', 'max_depth_label',
     'max_depth_sub', 'max_depth_add', 'limit_practice_depth'].map(id => [id, {
     classList: { toggle() {} }
 }]));
-const depthContext = vm.createContext({ sparring: null, visualization: null,
+const depthContext = createContext({ sparring: null, visualization: null,
     chapter: 0, max_depth_key_base: 'depth_', DEPTH_MAX: -1, depth_limit_enabled: false,
     document: { getElementById: id => depthNodes[id] },
     get_repertoire_depth: () => 5,
@@ -77,7 +86,7 @@ function fixture(moves, fen, orientation = 'white') {
     const board = { orientation };
     const waits = [];
     const timers = [];
-    const context = vm.createContext({ sparring: null, visualization: null,
+    const context = createContext({ sparring: null, visualization: null,
         chess: new Chess(fen), chapter: 0, curr_move: [0],
         trees: [{ root, sourceIndex: 1, headers: fen ? { SetUp: '1', FEN: fen } : {} }],
         chapterPgns: ['[Event "Empty"]\n\n*',

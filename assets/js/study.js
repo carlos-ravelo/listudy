@@ -1,3 +1,5 @@
+import { createStudyPreferences } from './modules/study/preferences.js';
+import { registerStudyPreferences, bindStudyPreferences } from './components/study_preferences.js';
 import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
 import { chapterLearningProgress } from './modules/study/learning_progress.js';
 import { presentTacticsTrap } from './modules/study/tactics_trap.js';
@@ -44,6 +46,7 @@ import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, record
 import { setupStudyMoveTree, readChapterPosition } from './modules/study/study_move_tree.js';
 import Alpine from 'alpinejs';
 
+registerStudyPreferences(Alpine);
 window.Alpine = Alpine;
 Alpine.start();
 
@@ -275,32 +278,8 @@ let combo_count = 0;
 /* Suggestions seen during the current session */
 let seen_suggestions = [];
 
-// Option to control how quickly the ai plays each move
-let move_delay_time_key = "move_delay_time";
-let move_delay_time = get_option_from_localstorage(move_delay_time_key, i18n.instant, [i18n.instant, i18n.fast, i18n.medium, i18n.slow]);
-
-// Option to control how and when arrows are displayed
 const tacticsCollection = document.querySelector('[data-training-kind="tactics"]') !== null;
-let show_arrows_key = tacticsCollection ? "tactics_show_arrows" : "show_arrows";
-const defaultArrows = tacticsCollection ? i18n.arrows_hidden : i18n.arrows_new2x;
-let show_arrows = get_option_from_localstorage(show_arrows_key, defaultArrows, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
-
-// Option to control how and when arrows are displayed
-let arrow_type_key = "arrow_type";
-let arrow_type = get_option_from_localstorage(arrow_type_key, i18n.arrow_type_both, [i18n.arrow_type_playable, i18n.arrow_type_pgn, i18n.arrow_type_both]);
-
-// When enabled the board waits a few seconds at the end of the line before resetting.
-let board_review_key = "board_review";
-let board_review = get_option_from_localstorage(board_review_key, i18n.review_fast, [i18n.review_fast, i18n.review_slow]);
-
-// When enabled, will skip to the first branch point in the PGN tree. If the move list is flat then this has no effect.
-let key_moves_mode_key = "key_moves_mode";
-let key_moves_mode = get_option_from_localstorage(key_moves_mode_key, i18n.key_move_enabled, [i18n.key_move_enabled, i18n.key_move_disabled]);
-
-//  When enabled the comments from the opposite side's responses are also shown.
-let show_comments_key = tacticsCollection ? "tactics_show_comments" : "show_comments";
-const defaultComments = tacticsCollection ? i18n.comments_hidden : i18n.comments_when_arrows;
-let show_comments = get_option_from_localstorage(show_comments_key, defaultComments, [i18n.comments_when_arrows, i18n.comments_always_on, i18n.comments_hidden]);
+const preferences = createStudyPreferences({ storage: StorageAdapter, labels: i18n, tactics: tacticsCollection });
 
 // Option to control the maximum number of moves being played
 const DEPTH_MAX = -1;  // This constant is used to avoid having to calculate the tree depth when max_depth is at the max depth.
@@ -594,7 +573,7 @@ async function handle_move(orig, dest) {
         if (!end_of_line && !spacedReviewRunActive && !smartSession && depth_limit_enabled && max_depth !== DEPTH_MAX) {
             let curr_node = tree_get_node(curr_move);
             let curr_depth = tree_get_node_depth(curr_node);
-            if (window.studyFullLines || key_moves_mode == i18n.key_move_disabled || window.first_variation === null) {
+            if (window.studyFullLines || preferences.get('keyMoves') == i18n.key_move_disabled || window.first_variation === null) {
                 end_of_line = curr_depth >= max_depth;
             } else {
                 end_of_line = curr_node.move_index >= window.first_variation && curr_depth >= max_depth;
@@ -640,7 +619,7 @@ async function handle_move(orig, dest) {
                     if (autoBtn) autoBtn.click();
                 }, 500);
             } else {
-                if (board_review == i18n.review_slow) {
+                if (preferences.get('review') == i18n.review_slow) {
                     await sleep(3000);
                 }
                 if (sessionId !== trainingSessionId) return;
@@ -840,14 +819,14 @@ function get_pgn_shapes(m, keyword) {
  */
 function give_hints(once) {
     if (smartSession && !once) return !!smartIntroductionMove();
-    if (once || show_arrows == i18n.arrows_always) {
+    if (once || preferences.get('arrows') == i18n.arrows_always) {
         return true;
     }
 
     let all_moves = tree_possible_moves(curr_move);
     let min = Math.min(...all_moves.map(m => m.value));
-    if (show_arrows == i18n.arrows_new2x && min < 2 ||
-        show_arrows == i18n.arrows_new5x && min < 5) {
+    if (preferences.get('arrows') == i18n.arrows_new2x && min < 2 ||
+        preferences.get('arrows') == i18n.arrows_new5x && min < 5) {
         return true;
     }
     return false;
@@ -885,10 +864,10 @@ function display_arrows(once) {
         return;
     }
 
-    if (arrow_type == i18n.arrow_type_playable) {
+    if (preferences.get('arrowType') == i18n.arrow_type_playable) {
         shapes.push(...all_moves.map(m => create_playable_arrow(m, max, min)));
 
-    } else if (arrow_type == i18n.arrow_type_pgn) {
+    } else if (preferences.get('arrowType') == i18n.arrow_type_pgn) {
         let all_pgn_circles = get_pgn_shapes(current_move, "csl");
         let all_pgn_arrows = get_pgn_shapes(current_move, "cal");
 
@@ -897,7 +876,7 @@ function display_arrows(once) {
 
         overlay_manager.setup_arrow_overlays(all_moves, all_pgn_arrows, max, min, true);
 
-    } else if (arrow_type = i18n.arrow_type_both) {
+    } else if (preferences.get('arrowType') === i18n.arrow_type_both) {
         let all_pgn_circles = get_pgn_shapes(current_move, "csl");
         shapes.push(...all_pgn_circles.map(a => create_pgn_circle(a)));
 
@@ -986,8 +965,8 @@ function display_comments(once) {
     let current_move = undefined;
     let response_moves = [];
 
-    if (introduction || readMode || once || show_comments == i18n.comments_always_on ||
-        show_comments == i18n.comments_when_arrows && give_hints(once)) {
+    if (introduction || readMode || once || preferences.get('comments') == i18n.comments_always_on ||
+        preferences.get('comments') == i18n.comments_when_arrows && give_hints(once)) {
 
         // Get current move if it has a comment
         if (cm.comments != undefined && cm.comments[0] != undefined && cm.comments[0].text != undefined) {
@@ -1158,7 +1137,7 @@ function start_training() {
     
     // Pass the active color to auto-rotate the board
     ground_init_state(fen, color);
-    if (!readMode && !spacedReviewRunActive && !smartSession && !window.studyFullLines && key_moves_mode == i18n.key_move_enabled && window.first_variation !== null) {
+    if (!readMode && !spacedReviewRunActive && !smartSession && !window.studyFullLines && preferences.get('keyMoves') == i18n.key_move_enabled && window.first_variation !== null) {
         for (let ki = 0; ki < window.first_variation; ++ki) {
             // Moves that are not fully trained are not skipped
             if (tree_children(curr_move)[0]?.value != 5) { break; }
@@ -1362,116 +1341,9 @@ function turn_on_hints_for_current_move() {
     display_comments(true);
 }
 
-function toggle_arrows() {
-    let span = document.getElementById("arrows_toggle");
-    let curr = span.textContent;
-    switch (curr) {
-        case i18n.arrows_new2x:
-            curr = i18n.arrows_new5x;
-            break;
-        case i18n.arrows_new5x:
-            curr = i18n.arrows_always;
-            break;
-        case i18n.arrows_always:
-            curr = i18n.arrows_hidden;
-            break;
-        case i18n.arrows_hidden:
-        default:
-            curr = i18n.arrows_new2x;
-            break;
-    }
-    span.textContent = curr;
-    show_arrows = curr;
-    display_arrows(false);
-    display_comments(false);
-    StorageAdapter.setItem(show_arrows_key, curr);
-}
-
-function toggle_arrow_type() {
-    let span = document.getElementById("arrow_type");
-    let curr = span.textContent;
-    switch (curr) {
-        case i18n.arrow_type_playable:
-            curr = i18n.arrow_type_pgn;
-            break;
-        case i18n.arrow_type_pgn:
-            curr = i18n.arrow_type_both;
-            break;
-        case i18n.arrow_type_both:
-        default:
-            curr = i18n.arrow_type_playable;
-            break;
-    }
-    span.textContent = curr;
-    arrow_type = curr;
-    display_arrows(false);
-    display_comments(false);
-    StorageAdapter.setItem(arrow_type_key, curr);
-}
-
-function toggle_key_move() {
-    let link = document.getElementById("key_move");
-    let curr = link.textContent;
-    switch (curr) {
-        case i18n.key_move_enabled:
-            curr = i18n.key_move_disabled;
-            link.setAttribute("data-icon", "%");
-            break;
-        case i18n.key_move_disabled:
-        default:
-            curr = i18n.key_move_enabled;
-            link.setAttribute("data-icon", "$");
-            break;
-    }
-    key_moves_mode = curr;
-    link.textContent = curr;
-    StorageAdapter.setItem(key_moves_mode_key, curr);
-}
-
-function toggle_review() {
-    let link = document.getElementById("line_review");
-    let curr = link.textContent;
-    switch (curr) {
-        case i18n.review_fast:
-            curr = i18n.review_slow;
-            break;
-        case i18n.review_slow:
-        default:
-            curr = i18n.review_fast;
-            break;
-    }
-    board_review = curr;
-    link.textContent = curr;
-    StorageAdapter.setItem(board_review_key, curr);
-}
-
-function toggle_move_delay() {
-    let span = document.getElementById("move_delay_time");
-    let curr = span.textContent;
-    switch (curr) {
-        case i18n.instant:
-            curr = i18n.fast;
-            break;
-        case i18n.fast:
-            curr = i18n.medium;
-            break;
-        case i18n.medium:
-            curr = i18n.slow;
-            break;
-        case i18n.slow:
-        default:
-            curr = i18n.instant;
-            break;
-    }
-    span.textContent = curr;
-    move_delay_time = curr;
-    StorageAdapter.setItem(move_delay_time_key, curr);
-}
-
-
 function get_move_delay() {
     let delay = 300;
-    switch (move_delay_time) {
+    switch (preferences.get('moveDelay')) {
         case i18n.instant:
             delay = 300;
             break;
@@ -1485,31 +1357,10 @@ function get_move_delay() {
             delay = getRandomIntFromRange(5000, 10000);
             break;
         default:
-            console.log("Got non supported move delay: ", move_delay_time);
+            console.log("Got non supported move delay: ", preferences.get('moveDelay'));
             delay = 300;
     }
     return delay;
-}
-
-function toggle_comments() {
-    let link = document.getElementById("comments_toggle");
-    let curr = link.textContent;
-    switch (curr) {
-        case i18n.comments_always_on:
-            curr = i18n.comments_hidden;
-            break;
-        case i18n.comments_hidden:
-            curr = i18n.comments_when_arrows;
-            break;
-        case i18n.comments_when_arrows:
-        default:
-            curr = i18n.comments_always_on;
-            break;
-        }
-    link.textContent = curr;
-    show_comments = curr;
-    display_comments(false);
-    StorageAdapter.setItem(show_comments_key, curr);
 }
 
 function get_repertoire_depth() {
@@ -1693,32 +1544,6 @@ async function setup_progress_reset() {
     }
 }
 
-/**
- * Initiate all option labels on the page.
- */
-function set_options_values() {
-    let move_delay = document.getElementById("move_delay_time");
-    move_delay.innerText = move_delay_time;
-
-    let arrows_toggle = document.getElementById("arrows_toggle");
-    arrows_toggle.innerText = show_arrows;
-
-    let arrow_type_toggle = document.getElementById("arrow_type");
-    arrow_type_toggle.innerText = arrow_type;
-
-    let line_review = document.getElementById("line_review");
-    line_review.innerText = board_review;
-
-    let key_move = document.getElementById("key_move");
-    key_move.innerText = key_moves_mode;
-    key_move.setAttribute("data-icon", key_moves_mode == i18n.key_move_enabled ? "$" : "%");
-
-    let comments_toggle = document.getElementById("comments_toggle");
-    comments_toggle.innerText = show_comments;
-
-    set_options_values_for_max_depth();
-}
-
 function set_options_values_for_max_depth() {
     let max_depth_key = max_depth_key_base + chapter;
     depth_limit_enabled = StorageAdapter.getItem(max_depth_key + "_enabled") === "true";
@@ -1751,12 +1576,6 @@ function setup_configs() {
 
     document.getElementById('replay_position_context').onclick = replayContextFromStart;
     document.getElementById("hints").onclick = turn_on_hints_for_current_move;
-    document.getElementById("arrows_toggle").onclick = toggle_arrows;
-    document.getElementById("arrow_type").onclick = toggle_arrow_type;
-    document.getElementById("line_review").onclick = toggle_review;
-    document.getElementById("move_delay").onclick = toggle_move_delay;
-    document.getElementById("key_move").onclick = toggle_key_move;
-    document.getElementById("comments_toggle").onclick = toggle_comments;
     document.getElementById("reset_line").onclick = reset_line;
     document.getElementById("max_depth_sub").onclick = () => inc_or_dec_max_depth(-1);
     document.getElementById("max_depth_add").onclick = () => inc_or_dec_max_depth(+1);
@@ -1804,21 +1623,14 @@ async function main() {
     // 1. If the user is authenticated, try to fetch cloud progress/settings
     if (typeof logged_in !== 'undefined' && logged_in) {
         try {
-            if (await StorageAdapter.hydrate(study_id)) {
-                // Reload global variables that were initialized before this async call
-                move_delay_time = get_option_from_localstorage(move_delay_time_key, i18n.instant, [i18n.instant, i18n.fast, i18n.medium, i18n.slow]);
-                show_arrows = get_option_from_localstorage(show_arrows_key, defaultArrows, [i18n.arrows_new2x, i18n.arrows_new5x, i18n.arrows_always, i18n.arrows_hidden]);
-                arrow_type = get_option_from_localstorage(arrow_type_key, i18n.arrow_type_both, [i18n.arrow_type_playable, i18n.arrow_type_pgn, i18n.arrow_type_both]);
-                board_review = get_option_from_localstorage(board_review_key, i18n.review_fast, [i18n.review_fast, i18n.review_slow]);
-                key_moves_mode = get_option_from_localstorage(key_moves_mode_key, i18n.key_move_enabled, [i18n.key_move_enabled, i18n.key_move_disabled]);
-                show_comments = get_option_from_localstorage(show_comments_key, defaultComments, [i18n.comments_when_arrows, i18n.comments_always_on, i18n.comments_hidden]);
-            }
+            await StorageAdapter.hydrate(study_id);
         } catch (error) {
             console.log("Ignored cloud sync fetch error: ", error);
         }
     }
 
     if (!(typeof logged_in !== 'undefined' && logged_in)) await StorageAdapter.ready(study_id);
+    preferences.reload();
     setup_ground();
     setup_chess();
     setup_trees();
@@ -1945,7 +1757,11 @@ async function main() {
         onContinue: updateSmartRun,
         onFinish: () => document.getElementById('stop_smart_run').click()
     });
-    set_options_values();
+    bindStudyPreferences(document.getElementById('settings_panel_general'), preferences, name => {
+        if (name === 'arrows' || name === 'arrowType') display_arrows(false);
+        if (name === 'arrows' || name === 'arrowType' || name === 'comments') display_comments(false);
+    });
+    set_options_values_for_max_depth();
     setup_move_handler(handle_move);
     setup_click_handler(handle_click);
 
