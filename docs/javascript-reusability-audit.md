@@ -69,8 +69,9 @@ targets, and dialog blocking.
 ## Status
 
 The specific review of `study.js` responsibilities, Alpine UI, and components is
-in the [study audit](study-js-responsibility-audit.md). Its deliveries are future
-proposals, separate from the completed extractions listed here.
+in the [study audit](study-js-responsibility-audit.md). Its six implementation
+deliveries are complete, including Alpine boundaries, domain grading/run
+coordination, and page initialization/teardown. Verification is recorded there.
 
 The initial extractions and transport/navigation extensions are complete. Tests
 cover consumers and shared contracts; no extractions remain pending within this

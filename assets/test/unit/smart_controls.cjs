@@ -1,12 +1,13 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const createPageScope = require('./page_scope_helper.cjs');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/study_page_controls.js'), 'utf8');
 const listeners = {};
 const storage = {};
 const nodes = Object.fromEntries(['puzzle_run', 'practice_smart', 'practice_lines', 'line_order_control', 'stop_smart_run'].map(id => [id, { attributes: {}, setAttribute(key, value) { this.attributes[key] = value; } }]));
 let changes = 0;
-const context = vm.createContext({
+const context = vm.createContext({ createPageScope,
     document: { getElementById: id => nodes[id] },
     localStorage: { getItem: key => storage[key], setItem: (key, value) => storage[key] = value },
     window: { addEventListener: (type, callback) => listeners[type] = callback, dispatchEvent: () => changes++ },
@@ -67,7 +68,7 @@ const state = { smartSession: { newCount: 2 }, smartTarget: null, chapterStats: 
     lineEligibleForReview: true, selected: null, completed: 0 };
 const status = {};
 const select = { value: '0', dispatchEvent(event) { state.selected = event.detail; } };
-const smartContext = vm.createContext({ ...state,
+const smartContext = vm.createContext({ createPageScope, ...state,
     localStorage: { getItem: () => 'smart' },
     document: { getElementById: id => id === 'chapter_select' ? select : status },
     CustomEvent: class { constructor(type, options) { this.detail = options.detail; } },

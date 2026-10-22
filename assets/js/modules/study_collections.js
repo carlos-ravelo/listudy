@@ -1,3 +1,4 @@
+import { createPageScope } from './page_scope.js';
 import { downloadPgn } from './download_pgn.js';
 import { requestJson } from './request_json.js';
 import { openDialog } from './dialog_lifecycle.js';
@@ -12,6 +13,7 @@ function element(tag, className, text) {
 }
 
 export function setupStudyCollections({ getCurrentChapter }) {
+    const scope = createPageScope();
     const add = document.getElementById('add_to_collection');
     const manage = document.getElementById('manage_collection');
     const modal = document.getElementById('collection_modal');
@@ -26,21 +28,23 @@ export function setupStudyCollections({ getCurrentChapter }) {
     const studyForm = modal.querySelector('#collection_study_form');
     const addChapter = modal.querySelector('#collection_add_chapter');
     const account = userId ? new CollectionAccount(store, userId, message => showStatus(message)) : null;
+    scope.use(account);
     let ready = !account;
     let creating = false;
     const titleInput = modal.querySelector('#collection_active_name');
     function showStatus(message) {
+        if (!scope.active) return;
         status.textContent = message;
         const healthy = message === 'Saved to your account' || message === 'Saved on this device · saving to account…';
         modal.querySelector('#collection_sync_recovery').hidden = !userId || healthy;
     }
-    titleInput.addEventListener('change', () => {
+    scope.listen(titleInput, 'change', () => {
         const name = titleInput.value.trim();
         if (!name || name === store.read().active) { titleInput.value = store.read().active; return; }
         try { store.rename(name); render(); update(); }
         catch (error) { titleInput.value = store.read().active; alert(error.message); }
     });
-    titleInput.addEventListener('keydown', event => {
+    scope.listen(titleInput, 'keydown', event => {
         if (event.key === 'Enter') { event.preventDefault(); titleInput.blur(); }
         if (event.key === 'Escape') {
             event.preventDefault(); event.stopPropagation();
@@ -50,6 +54,7 @@ export function setupStudyCollections({ getCurrentChapter }) {
     });
 
     function update() {
+        if (!scope.active) return;
         if (!ready) { add.textContent = 'Loading collections…'; manage.hidden = false; return; }
         try {
             const data = store.read();
@@ -81,6 +86,7 @@ export function setupStudyCollections({ getCurrentChapter }) {
     }
 
     function render(highlight = -1) {
+        if (!scope.active) return;
         const data = store.read();
         selector.replaceChildren();
         Object.keys(data.collections).forEach(name => selector.add(new Option(name, name, false, name === data.active)));
@@ -151,9 +157,10 @@ export function setupStudyCollections({ getCurrentChapter }) {
     }
 
     function perform(action, highlight = -1) {
+        if (!scope.active) return;
         try {
             action();
-            if (modal.getAttribute('aria-modal') === 'true') {
+            if (scope.active && modal.getAttribute('aria-modal') === 'true') {
                 render(highlight);
                 if (!modal.contains(document.activeElement)) focusCollection();
             }
@@ -166,7 +173,7 @@ export function setupStudyCollections({ getCurrentChapter }) {
         if (!ready) return;
         perform(() => { render(); openDialog(modal, document.activeElement); focusCollection(); });
     }
-    add.addEventListener('click', event => {
+    scope.listen(add, 'click', event => {
         event.preventDefault();
         if (!ready) return;
         perform(() => {
@@ -174,30 +181,30 @@ export function setupStudyCollections({ getCurrentChapter }) {
             if (chapter) store.add(chapter);
         });
     });
-    manage.addEventListener('click', event => {
+    scope.listen(manage, 'click', event => {
         event.preventDefault();
         open();
     });
-    addChapter.onclick = () => perform(() => { const chapter = getCurrentChapter(); if (chapter) store.add(chapter); });
+    scope.assign(addChapter, 'onclick', () => perform(() => { const chapter = getCurrentChapter(); if (chapter) store.add(chapter); }));
     modal.querySelector('#collection_retry_save').hidden = !account;
     modal.querySelector('#collection_reload').hidden = !account;
-    modal.querySelector('#collection_retry_save').onclick = async () => {
+    scope.assign(modal.querySelector('#collection_retry_save'), 'onclick', async () => {
         try { if (!account.ready) await account.initialize(); else await account.flush(); render(); update(); }
         catch (error) { showStatus(error.message); }
-    };
-    modal.querySelector('#collection_reload').onclick = async () => {
+    });
+    scope.assign(modal.querySelector('#collection_reload'), 'onclick', async () => {
         if (!confirm('Replace this device’s collection draft with the saved account copy? Download your PGN first if you want to keep the draft.')) return;
         try { await account.reload(); render(); update(); }
         catch (error) { showStatus(error.message); }
-    };
+    });
     create.title = userId ? 'Create a study from this collection' : 'Sign in to create a study';
-    create.onclick = () => {
+    scope.assign(create, 'onclick', () => {
         studyForm.hidden = false;
         modal.querySelector('#collection_study_title').value = store.read().active;
         modal.querySelector('#collection_study_title').focus();
-    };
-    modal.querySelector('#collection_cancel_study').onclick = () => { studyForm.hidden = true; create.focus(); };
-    studyForm.onsubmit = async event => {
+    });
+    scope.assign(modal.querySelector('#collection_cancel_study'), 'onclick', () => { studyForm.hidden = true; create.focus(); });
+    scope.assign(studyForm, 'onsubmit', async event => {
         event.preventDefault();
         if (creating || !account) return;
         creating = true;
@@ -206,39 +213,40 @@ export function setupStudyCollections({ getCurrentChapter }) {
         submit.disabled = true;
         try {
             await account.flush();
+            if (!scope.active) return;
             const result = await requestJson('/api/collections/study', {
                 method: 'POST', errorMessage: 'The study could not be created.',
                 body: { revision: account.revision, ...selection }
             });
-            window.location.assign(result.url);
+            if (scope.active) window.location.assign(result.url);
         } catch (error) { showStatus(error.message); }
         finally {
             creating = false;
-            submit.disabled = false;
-            if (modal.getAttribute('aria-modal') === 'true' && !modal.contains(document.activeElement)) submit.focus();
+            if (scope.active) submit.disabled = false;
+            if (scope.active && modal.getAttribute('aria-modal') === 'true' && !modal.contains(document.activeElement)) submit.focus();
         }
-    };
-    selector.addEventListener('change', () => perform(() => store.select(selector.value)));
-    modal.querySelector('#btn_new_collection').onclick = () => {
+    });
+    scope.listen(selector, 'change', () => perform(() => store.select(selector.value)));
+    scope.assign(modal.querySelector('#btn_new_collection'), 'onclick', () => {
         const name = prompt('Enter a name for the new collection:');
         if (name && name.trim()) perform(() => store.create(name.trim()));
-    };
-    modal.querySelector('#btn_delete_collection').onclick = () => perform(() => {
+    });
+    scope.assign(modal.querySelector('#btn_delete_collection'), 'onclick', () => perform(() => {
         if (confirm(`Delete collection "${store.read().active}"?`)) store.delete();
-    });
-    modal.querySelector('#modal_clear').onclick = () => perform(() => {
+    }));
+    scope.assign(modal.querySelector('#modal_clear'), 'onclick', () => perform(() => {
         if (confirm(`Clear all chapters in "${store.read().active}"?`)) store.clear();
-    });
-    modal.querySelector('.collection-options-panel').addEventListener('click', event => {
+    }));
+    scope.listen(modal.querySelector('.collection-options-panel'), 'click', event => {
         if (event.target.closest('button')) modal.querySelector('.collection-options').open = false;
     });
-    modal.querySelector('#modal_download').onclick = () => perform(() => {
+    scope.assign(modal.querySelector('#modal_download'), 'onclick', () => perform(() => {
         const data = store.read(), items = data.collections[data.active];
         if (!items.length) return;
         downloadPgn(items.map(item => item.pgn).join('\n\n'),
             `${data.active.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pgn`);
-    });
-    window.addEventListener('storage', event => {
+    }));
+    scope.listen(window, 'storage', event => {
         if (event.key === store.key) {
             if (account) { account.blocked = true; showStatus('Collections changed in another tab. Reload saved collections before continuing.'); }
             perform(() => {});
@@ -247,5 +255,5 @@ export function setupStudyCollections({ getCurrentChapter }) {
     if (account) account.initialize().catch(() => {}).finally(() => { ready = true; update(); });
     else status.textContent = 'Saved on this device · sign in to create a study and save collections to your account';
     update();
-    return { update };
+    return { update, destroy() { scope.destroy(); list.replaceChildren(); navigation.replaceChildren(); } };
 }

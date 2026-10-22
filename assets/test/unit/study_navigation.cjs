@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const createPageScope = require('./page_scope_helper.cjs');
 const commentContext = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/comments.js'), 'utf8')
     .replace(/^export /gm, ''), commentContext);
@@ -22,6 +23,11 @@ function createContext(values) {
     context.practiceDepth = { get limit() { return context.depth_limit_enabled ? context.max_depth : Infinity; } };
     context.studyRun = commentContext.createStudyRun({ getChapter: () => context.chapter,
         replay: options => context.replayPositionContext(options), pause: delay => context.sleep(delay) });
+    context.pageScope = createPageScope({ timers: {
+        setTimeout: (callback, delay) => context.setTimeout(callback, delay),
+        clearTimeout: id => context.clearTimeout?.(id)
+    } });
+    context.pageScope.sleep = delay => context.sleep(delay);
     return context;
 }
 

@@ -13,7 +13,7 @@ export class CollectionAccount {
         this.dirty = localStorage.getItem(this.dirtyKey) === 'true';
         this.ready = false;
         this.blocked = false;
-        store.onSave = () => {
+        this.onSave = store.onSave = () => {
             this.dirty = true;
             localStorage.setItem(this.dirtyKey, 'true');
             this.report(this.blocked ? 'Saved on this device · collections changed elsewhere. Reload saved collections to continue.' :
@@ -21,6 +21,12 @@ export class CollectionAccount {
             clearTimeout(this.timer);
             if (this.ready && !this.blocked) this.timer = setTimeout(() => this.flush().catch(() => {}), 300);
         };
+    }
+
+    destroy() {
+        clearTimeout(this.timer);
+        if (this.store.onSave === this.onSave) this.store.onSave = null;
+        this.report = () => {};
     }
 
     async request(method = 'GET', body) {

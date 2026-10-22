@@ -2,7 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 (async () => {
-    const source = fs.readFileSync(path.resolve(__dirname, '../../js/modules/study/visualization.js'), 'utf8');
+    const scopeSource = fs.readFileSync(path.resolve(__dirname, '../../js/modules/page_scope.js'), 'utf8').replace(/^export /gm, '');
+    const source = scopeSource + '\n' + fs.readFileSync(path.resolve(__dirname, '../../js/modules/study/visualization.js'), 'utf8').replace(/^import .*\n/gm, '');
     const { visualizationLevel, setupStudyVisualization } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
     const runs = {};
     const add = (target, values = {}) => {

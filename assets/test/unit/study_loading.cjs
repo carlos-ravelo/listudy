@@ -9,7 +9,7 @@ async function test() {
     let refreshed = 0;
     let positionsUrl = '/game-positions';
     const response = new Promise(resolve => { resolveResponse = resolve; });
-    const context = vm.createContext({
+    const context = vm.createContext({ pageScope: { active: true },
         document: { querySelector: () => ({ dataset: { gamePositionsUrl: positionsUrl } }) },
         fetch: () => response,
         chapterStats: { current: true }, chapterReviewSignatures: [], smartCatalog: [],
@@ -25,7 +25,7 @@ async function test() {
         update_progress() { refreshed++; }
     });
     const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
-    vm.runInContext(source.slice(source.indexOf('async function loadGamePositions()'), source.indexOf('async function main()')), context);
+    vm.runInContext(source.slice(source.indexOf('async function loadGamePositions('), source.indexOf('async function initializeStudyProgress()')), context);
     const positions = context.loadGamePositions();
     const refresh = context.refreshGameEvidence(positions);
     assert.equal(saved, 0, 'A pending game request does not block local practice');
@@ -39,6 +39,10 @@ async function test() {
     context.fetch = async () => ({ ok: false });
     await context.refreshGameEvidence(context.loadGamePositions());
     assert.equal(saved, 1, 'Failed requests do not retire evidence');
+    context.pageScope.active = false;
+    context.fetch = async () => ({ ok: true, json: async () => ({ positions: [] }) });
+    await context.refreshGameEvidence(context.loadGamePositions());
+    assert.equal(saved, 1, 'Late evidence cannot update a disposed page');
     positionsUrl = '';
     assert.equal(await context.loadGamePositions(), null);
     console.log('Game evidence loads asynchronously and preserves offline practice');

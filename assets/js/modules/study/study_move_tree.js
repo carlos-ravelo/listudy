@@ -152,5 +152,10 @@ export function setupStudyMoveTree({ element, onSelect, startLabel, variationLab
         else if (move.bottom > panel.bottom) element.scrollTop += move.bottom - panel.bottom;
     }
 
-    return { update };
+    return { update, destroy() {
+        for (const button of buttons.values()) button.onclick = null;
+        for (const button of promoteButtons) button.onclick = null;
+        buttons.clear(); promoteButtons.length = 0; active = null;
+        element.replaceChildren();
+    } };
 }

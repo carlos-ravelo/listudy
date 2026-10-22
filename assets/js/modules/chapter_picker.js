@@ -86,7 +86,12 @@ export function setupChapterPicker({ title, list, previous, next, getOptions, ge
     document.addEventListener('keydown', escape);
     close();
     update();
+    const bindings = [[title, 'onclick'], [search, 'oninput'], [previous, 'onclick'], [next, 'onclick']]
+        .filter(([target]) => target).map(([target, key]) => ({ target, key, handler: target[key] }));
     return { update, destroy() {
+        close();
+        bindings.forEach(({ target, key, handler }) => { if (target[key] === handler) target[key] = null; });
+        items.forEach(item => { item.onclick = null; });
         document.removeEventListener('click', outside);
         document.removeEventListener('keydown', escape);
     } };

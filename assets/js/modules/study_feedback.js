@@ -1,13 +1,15 @@
+import { createPageScope } from './page_scope.js';
 import { hasBlockingUi, setupBlockingUi } from './blocking_ui.js';
 
 export function setupStudyFeedback({ durationMs = 4000 } = {}) {
+    const scope = createPageScope();
     const region = document.querySelector('.study-feedback');
     if (!region || region.dataset.initialized) return;
     region.dataset.initialized = 'true';
     setupBlockingUi();
     let current, returnFocus, timer, remaining = durationMs, deadline, transient = false, frame;
     function pause() {
-        if (timer) { clearTimeout(timer); timer = null; remaining = Math.max(0, deadline - Date.now()); }
+        if (timer) { scope.clearTimeout(timer); timer = null; remaining = Math.max(0, deadline - Date.now()); }
     }
     function dismiss() {
         pause();
@@ -19,7 +21,7 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
     function resume() {
         if (!current || !transient || document.hidden || hasBlockingUi() || region.matches(':hover') || region.contains(document.activeElement)) return;
         pause(); deadline = Date.now() + remaining;
-        timer = setTimeout(dismiss, remaining);
+        timer = scope.timeout(dismiss, remaining);
     }
     function position() {
         frame = null;
@@ -58,14 +60,14 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
             region.style.bottom = 'auto';
         }
     }
-    function schedulePosition() { if (!frame) frame = requestAnimationFrame(position); }
+    function schedulePosition() { if (!frame) frame = scope.frame(position); }
     for (const close of region.querySelectorAll('.close_button')) {
         const button = document.createElement('button');
         button.type = 'button'; button.className = 'close_button'; button.textContent = '×';
         button.setAttribute('aria-label', region.dataset.dismiss || 'Dismiss notification');
         close.replaceWith(button);
     }
-    region.addEventListener('study-feedback-change', event => {
+    scope.listen(region, 'study-feedback-change', event => {
         const { id, text, transient: temporary } = event.detail;
         const box = document.getElementById(id);
         if (!box || !region.contains(box)) return;
@@ -77,20 +79,27 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
         region.scrollTop = 0;
         schedulePosition(); resume();
     });
-    region.addEventListener('click', event => {
+    scope.listen(region, 'click', event => {
         if (!event.target.closest('.close_button')) return;
         event.preventDefault(); event.stopPropagation(); dismiss();
     }, true);
-    region.addEventListener('pointerenter', pause);
-    region.addEventListener('pointerleave', resume);
-    region.addEventListener('focusin', pause);
-    region.addEventListener('focusout', () => requestAnimationFrame(resume));
-    document.addEventListener('visibilitychange', () => document.hidden ? pause() : resume());
-    document.addEventListener('ui-blocking-changed', event => {
+    scope.listen(region, 'pointerenter', pause);
+    scope.listen(region, 'pointerleave', resume);
+    scope.listen(region, 'focusin', pause);
+    scope.listen(region, 'focusout', () => scope.frame(resume));
+    scope.listen(document, 'visibilitychange', () => document.hidden ? pause() : resume());
+    scope.listen(document, 'ui-blocking-changed', event => {
         if (event.detail.blocked) pause();
         else { schedulePosition(); resume(); }
     });
-    window.addEventListener('resize', schedulePosition);
-    window.addEventListener('scroll', schedulePosition, { passive: true });
-    window.addEventListener('pagehide', dismiss);
+    scope.listen(window, 'resize', schedulePosition);
+    scope.listen(window, 'scroll', schedulePosition, { passive: true });
+    scope.listen(window, 'pagehide', dismiss);
+    return { destroy() {
+        scope.destroy();
+        current?.classList.add('hidden');
+        current = null;
+        region.style.maxHeight = '';
+        delete region.dataset.initialized;
+    } };
 }

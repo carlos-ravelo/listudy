@@ -10,5 +10,7 @@ export function closeDialog(dialog) {
 }
 
 export function onDialogClosed(dialog, callback) {
-    dialog.addEventListener(dialog.classList.contains('ui-modal') ? 'hidden.bs.modal' : 'close', callback);
+    const event = dialog.classList.contains('ui-modal') ? 'hidden.bs.modal' : 'close';
+    dialog.addEventListener(event, callback);
+    return () => dialog.removeEventListener(event, callback);
 }

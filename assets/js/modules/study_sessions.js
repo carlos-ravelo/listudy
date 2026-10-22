@@ -105,6 +105,8 @@ export function setupStudySessions({ getStats, persist, storage, labels, onConti
         },
         end() { tracker.end(); endPanel.hidden = true; render(); renderHistory(); },
         destroy() {
+            tracker.end('left');
+            storage.forceSyncAll?.();
             stopActivity();
             progress.removeEventListener('click', showProgress);
             if (goal.onchange === changeGoal) goal.onchange = null;

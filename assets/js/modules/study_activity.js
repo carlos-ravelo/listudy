@@ -20,8 +20,16 @@ export function trackStudyActivity(studyId, storage) {
         if (!modes.includes(mode)) return;
         try { (storage ?? localStorage).setItem(`studyActivity:${studyId}`, mode); } catch (_) {}
     };
-    window.addEventListener('study-reading-updated', event => { if (event.detail.reading) save('read'); });
-    window.addEventListener('study-sparring-updated', event => { if (event.detail.active) save('sparring'); });
-    window.addEventListener('study-puzzle-run-changed', () => save(window.studyPuzzleRunMode === 'smart' ? 'smart' : 'lines'));
+    const reading = event => { if (event.detail.reading) save('read'); };
+    const sparring = event => { if (event.detail.active) save('sparring'); };
+    const changed = () => save(window.studyPuzzleRunMode === 'smart' ? 'smart' : 'lines');
+    window.addEventListener('study-reading-updated', reading);
+    window.addEventListener('study-sparring-updated', sparring);
+    window.addEventListener('study-puzzle-run-changed', changed);
+    save.destroy = () => {
+        window.removeEventListener('study-reading-updated', reading);
+        window.removeEventListener('study-sparring-updated', sparring);
+        window.removeEventListener('study-puzzle-run-changed', changed);
+    };
     return save;
 }

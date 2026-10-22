@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const createPageScope = require('./page_scope_helper.cjs');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const study = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
@@ -15,7 +16,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
     };
     const events = [], state = { movable: {} };
     const context = vm.createContext({
-        require, ...require('ts-fsrs'), ChessModule, console: { log: noop },
+        pageScope: createPageScope(), require, ...require('ts-fsrs'), ChessModule, console: { log: noop },
         chapter: 0, studyColor: 'white', color: 'white', readMode: false, tacticsCollection: tactics,
         tacticsTrap: null, sparring: null, 
         smartSession: null, smartTarget: null, failedPositionRun: null, spacedReviewRunActive: false,
@@ -50,6 +51,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
         practiceDepth: { limit: Infinity }, get_move_delay: () => 0, sleep: wait, smartIntroductionMove: () => null,
         ai_move: () => undefined
     });
+    context.pageScope.sleep = wait;
     context.preferences = { get: () => undefined };
     context.window = context;
     for (const file of ['tree.js', 'tree_from_pgn.js', 'tree_utils.js', 'study/tactics_mainline.js', 'study/tactics_trap.js',

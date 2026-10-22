@@ -1,3 +1,4 @@
+import { createPageScope } from '../page_scope.js';
 const lengths = [1, 2, 4];
 
 export function visualizationLevel(runs = {}, steps = lengths) {
@@ -12,6 +13,7 @@ export function visualizationLevel(runs = {}, steps = lengths) {
 }
 
 export function setupStudyVisualization({ storage, getStats, persist, assist, refresh }) {
+    const scope = createPageScope();
     const panel = document.getElementById('study_visualization');
     if (!panel) return null;
     const enabled = panel.querySelector('input');
@@ -70,14 +72,14 @@ export function setupStudyVisualization({ storage, getStats, persist, assist, re
         if (run) { run.assisted = true; assist(); save(false); }
         render();
     }
-    enabled.onchange = () => {
+    scope.assign(enabled, 'onchange', () => {
         reveal();
         storage.setItem('tactics_visualization', String(enabled.checked));
         if (enabled.checked) document.getElementById('practice_lines').click();
         refresh();
-    };
-    difficulty.onchange = () => { reveal(); storage.setItem('tactics_visualization_length', difficulty.value); render(); };
-    action.onclick = () => {
+    });
+    scope.assign(difficulty, 'onchange', () => { reveal(); storage.setItem('tactics_visualization_length', difficulty.value); render(); });
+    scope.assign(action, 'onclick', () => {
         if (run) { reveal(); refresh(); return; }
         if (!active() || complete) return;
         run = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, at: Date.now(),
@@ -86,12 +88,13 @@ export function setupStudyVisualization({ storage, getStats, persist, assist, re
         opponent = '';
         refresh();
         render();
-    };
-    window.addEventListener('study-reading-updated', event => {
+    });
+    scope.listen(window, 'study-reading-updated', event => {
         if (reading !== event.detail.reading) { reveal(); reading = event.detail.reading; render(); }
     });
-    window.addEventListener('pagehide', () => save(false));
+    scope.listen(window, 'pagehide', () => save(false));
     return {
+        destroy() { save(false); scope.destroy(); },
         get active() { return active(); },
         get hidden() { return active() && !!run && !presentingFailure; },
         render,

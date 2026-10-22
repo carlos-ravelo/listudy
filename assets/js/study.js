@@ -1,3 +1,4 @@
+import { mountStudyPage } from './modules/study/page_lifecycle.js';
 import { createStudyRun } from './modules/study/run_lifecycle.js';
 import { gradeStudyMove } from './modules/study/move_grading.js';
 import { selectStudyComments, projectStudyCommentRows } from './modules/study/comments.js';
@@ -34,7 +35,6 @@ import { tree_value_add, tree_move_index, tree_children, tree_possible_moves, ha
          need_hint, update_value, value_sort, tree_get_node, tree_children_filter_sort, tree_get_node_depth,
          tree_get_node_string, tree_size_weighted_random_move, tree_max_num_moves_deep } from './modules/tree_utils.js';
 import { generate_move_trees, annotate_pgn } from './modules/tree_from_pgn.js';
-import { sleep } from './modules/sleep.js';
 import { getRandomIntFromRange } from './modules/random.js';
 import { unescape_string } from './modules/security_related.js';
 import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_moves,
@@ -62,6 +62,7 @@ window.Alpine = Alpine;
 Alpine.start();
 
 
+let pageScope;
 let studyFeatureViews = [];
 let chapterPgns = [];
 let sparring = null;
@@ -79,7 +80,7 @@ let spacedReviewRunActive = false;
 let spacedReviewQueue = [];
 let lineReviewRecorded = false;
 let lineEligibleForReview = true;
-const studyRun = createStudyRun({ getChapter: () => chapter, replay: replayPositionContext, pause: sleep });
+const studyRun = createStudyRun({ getChapter: () => chapter, replay: replayPositionContext, pause: delay => pageScope.sleep(delay) });
 let tacticsTrap = null;
 const studyColor = color;
 let weakChapterRunActive = false;
@@ -343,6 +344,7 @@ function possible_promotion(moves, san) {
 }
 
 function currentTacticsTrap() {
+    if (!pageScope.active) return null;
     if (tacticsTrap && (!studyRun.isCurrent(tacticsTrap.sessionId) || readMode || sparring?.active)) {
         tacticsTrap = null;
         visualization?.endFailure();
@@ -436,7 +438,7 @@ async function handle_practice_move(orig, dest) {
         studyMoveNavigation.update();
         visualization?.previewFailure();
         const board = await presentTacticsTrap({ board: trap.board, node: result.node,
-            render: renderTacticsTrap, wait: sleep,
+            render: renderTacticsTrap, wait: delay => pageScope.sleep(delay),
             isCurrent: () => currentTacticsTrap() === trap });
         if (!board || currentTacticsTrap() !== trap) return;
     }
@@ -507,7 +509,7 @@ async function handle_practice_move(orig, dest) {
                 play_move(san);
                 ground.set({ movable: { dests: new Map() } });
                 smartTarget = null;
-                await sleep(500);
+                await pageScope.sleep(500);
                 if (studyRun.isCurrent(sessionId)) selectNextSmartPosition();
             } else {
                 ground_undo_last_move();
@@ -525,7 +527,7 @@ async function handle_practice_move(orig, dest) {
                 ground.set({ movable: { dests: new Map() } });
                 failedPositionRun.index += 1;
                 failedPositionRun.transitioning = true;
-                await sleep(500);
+                await pageScope.sleep(500);
                 if (!studyRun.isCurrent(sessionId)) return;
                 showFailedPosition();
             } else {
@@ -563,7 +565,7 @@ async function handle_practice_move(orig, dest) {
             // console.log('CURR_DEPTH', end_of_line, curr_node.move, curr_node.move_index, curr_depth);
         }
         if (visualization?.active) ground.set({ movable: { dests: new Map() } });
-        await sleep(get_move_delay()); // instant play by the ai feels weird
+        await pageScope.sleep(get_move_delay()); // instant play by the ai feels weird
         if (!studyRun.isCurrent(sessionId)) return;
         if (end_of_line) {
             finish_chapter_practice(naturalEnd && lineEligibleForReview);
@@ -584,17 +586,17 @@ async function handle_practice_move(orig, dest) {
             if (smartSession) {
                 if (smartTarget?.reviewChain) smartSession.reviewChains = (smartSession.reviewChains || 0) + 1;
                 smartTarget = null;
-                setTimeout(() => { if (studyRun.isCurrent(sessionId)) selectNextSmartPosition(); }, 500);
+                pageScope.timeout(() => { if (studyRun.isCurrent(sessionId)) selectNextSmartPosition(); }, 500);
             } else if (spacedReviewRunActive) {
-                setTimeout(() => {
+                pageScope.timeout(() => {
                     if (studyRun.isCurrent(sessionId)) selectNextDueChapter();
                 }, 500);
             } else if (weakChapterRunActive) {
-                setTimeout(() => {
+                pageScope.timeout(() => {
                     if (studyRun.isCurrent(sessionId)) selectNextWeakChapter();
                 }, 500);
             } else if (currentRunMode === "next" || currentRunMode === "random") {
-                setTimeout(() => {
+                pageScope.timeout(() => {
                     if (!studyRun.isCurrent(sessionId)) return;
                     const targetBtnId = currentRunMode === "next" ? "next_chapter_btn" : "btn_random_chapter";
                     const autoBtn = document.getElementById(targetBtnId);
@@ -602,7 +604,7 @@ async function handle_practice_move(orig, dest) {
                 }, 500);
             } else {
                 if (preferences.get('review') == i18n.review_slow) {
-                    await sleep(3000);
+                    await pageScope.sleep(3000);
                 }
                 if (!studyRun.isCurrent(sessionId)) return;
                 start_training();
@@ -1114,22 +1116,23 @@ function tree_chapter_name(tree_index) {
 // generate the chapter selection below the game board
 // the chapter value is the id for the tree to use
 function setup_chapter_select() {
+    
     let select_key = study_id + "_selected";
     let select_id = "chapter_select"
     let select = document.getElementById(select_id);
-    document.getElementById("study_progress").addEventListener("study-progress-open-chapter", event => {
+    pageScope.listen(document.getElementById("study_progress"), "study-progress-open-chapter", event => {
         const index = event.detail.index;
         if (!Number.isInteger(index) || index < 0 || index >= trees.length) return;
         select.value = String(index);
         select.dispatchEvent(new Event("change", { bubbles: true }));
         closeDialog(document.getElementById("progress_modal"));
     });
-    document.getElementById("progress_modal").addEventListener("study-progress-toggle-weak-run", toggleWeakChapterRun);
-    document.getElementById("progress_modal").addEventListener("study-progress-toggle-spaced-run", toggleSpacedReviewRun);
-    window.addEventListener("study-puzzle-run-changed", stopWeakChapterRun);
-    window.addEventListener("study-puzzle-run-changed", stopSpacedReviewRun);
-    window.addEventListener('study-puzzle-run-changed', updateSmartRun);
-    window.addEventListener('study-puzzle-run-off', () => {
+    pageScope.listen(document.getElementById("progress_modal"), "study-progress-toggle-weak-run", toggleWeakChapterRun);
+    pageScope.listen(document.getElementById("progress_modal"), "study-progress-toggle-spaced-run", toggleSpacedReviewRun);
+    pageScope.listen(window, "study-puzzle-run-changed", stopWeakChapterRun);
+    pageScope.listen(window, "study-puzzle-run-changed", stopSpacedReviewRun);
+    pageScope.listen(window, 'study-puzzle-run-changed', updateSmartRun);
+    pageScope.listen(window, 'study-puzzle-run-off', () => {
         studySessions.end();
         if (studyRun.replaying) { studyRun.invalidate(); studyRun.stopReplay(); }
         smartSession = null;
@@ -1155,7 +1158,7 @@ function setup_chapter_select() {
         select.appendChild(option);
     }
 
-    select.onchange = function(event) {
+    pageScope.assign(select, 'onchange', function(event) {
         if (sparring?.active) { sparring.stop(); studySessions.end(); }
         if (smartSession && !event.detail?.smartRun) window.dispatchEvent(new Event('study-puzzle-run-off'));
         if (weakChapterRunActive && !(event.detail && event.detail.weakRun)) stopWeakChapterRun();
@@ -1167,7 +1170,7 @@ function setup_chapter_select() {
         practiceDepthView.refresh(chapter, get_repertoire_depth());
         update_progress(); // update the progress bar shown
         studyFeatureViews.forEach(view => view.update());
-    };
+    });
 }
 
 /**
@@ -1277,11 +1280,12 @@ function update_progress() {
 }
 
 function setup_progress_modal() {
+    
     const opener = document.getElementById("progress");
     const list = document.getElementById("study_progress");
-    opener.addEventListener("click", event => {
+    pageScope.listen(opener, "click", event => {
         event.preventDefault();
-        requestAnimationFrame(() => {
+        pageScope.frame(() => {
             const current = list.querySelector('[aria-current="true"]');
             if (!current) return;
             const offset = current.getBoundingClientRect().top - list.getBoundingClientRect().top;
@@ -1291,8 +1295,9 @@ function setup_progress_modal() {
 }
 
 async function setup_progress_reset() {
+    
     let reset = document.getElementById("study_progress_reset");
-    reset.onclick = function() {
+    pageScope.assign(reset, 'onclick', function() {
         if (window.confirm(i18n.confirm_reset_progress)) {
             if (weakChapterRunActive) stopWeakChapterRun();
             if (spacedReviewRunActive) stopSpacedReviewRun();
@@ -1323,7 +1328,7 @@ async function setup_progress_reset() {
             display_arrows(false);
             display_comments(false);
         }
-    }
+    })
 }
 
 async function handle_click() {
@@ -1334,15 +1339,16 @@ async function handle_click() {
 }
 
 function setup_configs() {
+    
     const trapRetry = document.getElementById('study_tactics_retry');
     const trapSolution = document.getElementById('study_tactics_solution');
-    if (trapRetry) trapRetry.onclick = retryTacticsTrap;
-    if (trapSolution) trapSolution.onclick = showTacticsSolution;
+    if (trapRetry) pageScope.assign(trapRetry, 'onclick', retryTacticsTrap);
+    if (trapSolution) pageScope.assign(trapSolution, 'onclick', showTacticsSolution);
 
-    document.getElementById('replay_position_context').onclick = replayContextFromStart;
-    document.getElementById("hints").onclick = turn_on_hints_for_current_move;
-    document.getElementById("reset_line").onclick = reset_line;
-    onDialogClosed(document.getElementById('study_settings_dialog'), () => {
+    pageScope.assign(document.getElementById('replay_position_context'), 'onclick', replayContextFromStart);
+    pageScope.assign(document.getElementById("hints"), 'onclick', turn_on_hints_for_current_move);
+    pageScope.assign(document.getElementById("reset_line"), 'onclick', reset_line);
+    pageScope.use(onDialogClosed(document.getElementById('study_settings_dialog'), () => {
         if (!depthSettingsChanged) return;
         depthSettingsChanged = false;
         if (readMode) return;
@@ -1351,31 +1357,29 @@ function setup_configs() {
             studyRun.stopReplay();
             selectNextSmartPosition();
         } else if (!failedPositionRun) start_training();
-    });
+    }));
 }
 
 window.overlay_manager = new TextOverlayManager();
 
-async function loadGamePositions() {
+async function loadGamePositions(signal) {
     const url = document.querySelector('[data-game-positions-url]')?.dataset.gamePositionsUrl;
     if (!url) return null;
     try {
-        const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal });
         return response.ok ? (await response.json()).positions : null;
     } catch (_) { return null; }
 }
 
 async function refreshGameEvidence(positionsRequest) {
     const positions = await positionsRequest;
-    if (!positions || !applyGameEvidence(chapterStats, chapterReviewSignatures, smartCatalog, positions, new Date(), true).changed) return;
+    if (!pageScope.active || !positions || !applyGameEvidence(chapterStats, chapterReviewSignatures, smartCatalog, positions, new Date(), true).changed) return;
     StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     studySessions.refresh();
     update_progress();
 }
 
-async function main() {
-    setupStudyFeedback();
-    const gamePositionsRequest = loadGamePositions();
+async function initializeStudyProgress() {
     // 1. If the user is authenticated, try to fetch cloud progress/settings
     if (typeof logged_in !== 'undefined' && logged_in) {
         try {
@@ -1386,8 +1390,11 @@ async function main() {
     }
 
     if (!(typeof logged_in !== 'undefined' && logged_in)) await StorageAdapter.ready(study_id);
+    if (!pageScope.active) return;
     preferences.reload();
     setup_ground();
+    pageScope.use(() => ground.destroy?.());
+    pageScope.use(() => overlay_manager.clear_overlays());
     setup_chess();
     setup_trees();
     if (!trees.length) {
@@ -1404,12 +1411,14 @@ async function main() {
     smartCatalog = cachedPositionCatalog(trees, studyColor, tacticsCollection ? 'tactics-defenses-v1|' + pgn : pgn);
     let previousTrees = [];
     try { previousTrees = JSON.parse(await StorageAdapter.legacyTree(study_id + '_tree') || '[]'); } catch (_) {}
+    if (!pageScope.active) return;
     if (!Array.isArray(previousTrees)) previousTrees = [];
     if (reconcileStudyProgress(chapterStats, trees, smartCatalog, chapterReviewSignatures, previousTrees, studyColor)) {
         await StorageAdapter.backup(chapter_stats_key());
+        if (!pageScope.active) return;
         StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
     }
-    window.addEventListener('study-progress-sync-merged', event => {
+    pageScope.listen(window, 'study-progress-sync-merged', event => {
         if (event.detail.key === chapter_stats_key()) {
             chapterStats = JSON.parse(event.detail.value);
             bindChapterIdentities(chapterStats, trees);
@@ -1422,7 +1431,10 @@ async function main() {
         studySessions.refresh();
         update_progress();
     });
-    setup_chapter_select();
+    return true;
+}
+
+function setupStudySparringController() {
     sparring = setupStudySparring({ getChapters: () => trees, getTitle: () => document.querySelector('h1').textContent.trim(), getPlayer: () => studyColor,
         readStrength: () => StorageAdapter.getItem('sparring_strength'),
         writeStrength: level => StorageAdapter.setItem('sparring_strength', String(level)),
@@ -1476,6 +1488,10 @@ async function main() {
         },
         getHistory: () => Object.values(chapterStats.sparringSessions || {})
     });
+    pageScope.use(sparring);
+}
+
+function setupStudyFeatures() {
     const editChapter = document.getElementById('edit_chapter');
     if (editChapter) {
         const updateEditorLink = () => {
@@ -1483,7 +1499,7 @@ async function main() {
             url.searchParams.set('chapter_index', trees[chapter].sourceIndex);
             editChapter.href = url.toString();
         };
-        document.getElementById('chapter_select').addEventListener('change', updateEditorLink);
+        pageScope.listen(document.getElementById('chapter_select'), 'change', updateEditorLink);
         updateEditorLink();
     }
     const getCurrentChapter = () => chapterPgns[trees[chapter].sourceIndex] ? {
@@ -1497,6 +1513,10 @@ async function main() {
         setupStudyCollections({ getCurrentChapter }),
         setupStudyNavigation({ getCurrentChapter, goBack: go_back, goForward: go_forward, progressLabels: { unpracticed: i18n.progress_not_practiced, practiced: i18n.progress_practiced_moves, needsPractice: i18n.progress_needs_practice, reviewDue: i18n.spaced_review_due } })
     ];
+    studyFeatureViews.forEach(view => pageScope.use(view));
+}
+
+function setupStudyPractice(gamePositionsRequest) {
     const gamePractice = new URLSearchParams(window.location.search);
     const hasGamePosition = gamePractice.has('practice_fen') && gamePractice.has('practice_expected');
     const linkedChapter = chapterFromUrl(window.location.search, trees.map((_, index) => tree_chapter_name(index)));
@@ -1513,14 +1533,17 @@ async function main() {
         onContinue: updateSmartRun,
         onFinish: () => document.getElementById('stop_smart_run').click()
     });
-    bindStudyPreferences(document.getElementById('settings_panel_general'), preferences, name => {
+    pageScope.use(studySessions);
+    pageScope.use(puzzleRun);
+    pageScope.use(bindStudyPreferences(document.getElementById('settings_panel_general'), preferences, name => {
         if (name === 'arrows' || name === 'arrowType') display_arrows(false);
         if (name === 'arrows' || name === 'arrowType' || name === 'comments') display_comments(false);
-    });
+    }));
     practiceDepthView = bindStudyDepth(document.getElementById('study_depth_settings'), practiceDepth, practiceDepthChanged);
+    pageScope.use(practiceDepthView);
     practiceDepthView.refresh(chapter, get_repertoire_depth());
-    setup_move_handler(handle_move);
-    setup_click_handler(handle_click);
+    setup_move_handler(pageScope.guard(handle_move));
+    setup_click_handler(pageScope.guard(handle_click));
 
     visualization = setupStudyVisualization({
         storage: StorageAdapter, getStats: () => chapterStats,
@@ -1528,6 +1551,7 @@ async function main() {
         assist: () => assistedPositions.add(currentPositionId()), refresh: setup_move
     });
 
+    pageScope.use(visualization);
     window.total_moves = 0;
 
     resize_ground();
@@ -1542,6 +1566,7 @@ async function main() {
             canGoForward: !currentTacticsTrap() && !studyRun.replaying && !failedPositionRun && !spacedReviewRunActive && !smartSession && tree_children(curr_move).length > 0
         })
     });
+    pageScope.use(studyMoveNavigation);
     if (hasGamePosition) {
         const target = gameLineTarget(scopedPracticeCatalog(), gamePractice.get('practice_fen'), gamePractice.get('practice_expected'), Number(chapter));
         if (target) {
@@ -1558,11 +1583,12 @@ async function main() {
         startLabel: i18n.read_start_position,
         variationLabel: i18n.read_variation
     });
+    pageScope.use(studyMoveTree);
     update_read_mode_ui();
-    window.addEventListener('study-reading-change', event => set_read_mode(event.detail.reading));
-    window.addEventListener('study-reading-move', event => play_read_move(event.detail.move));
-    window.addEventListener('study-puzzle-run-changed', () => set_read_mode(false));
-    window.addEventListener('study-reading-layout-updated', () => {
+    pageScope.listen(window, 'study-reading-change', event => set_read_mode(event.detail.reading));
+    pageScope.listen(window, 'study-reading-move', event => play_read_move(event.detail.move));
+    pageScope.listen(window, 'study-puzzle-run-changed', () => set_read_mode(false));
+    pageScope.listen(window, 'study-reading-layout-updated', () => {
         const navigation = document.getElementById('study_move_navigation');
         const container = document.getElementById(readMode ? 'study_moves_heading' : 'study_board_actions');
         if (navigation.parentElement !== container) container.appendChild(navigation);
@@ -1573,6 +1599,7 @@ async function main() {
     setup_progress_modal();
     setup_progress_reset();
     const saveActivity = trackStudyActivity(study_id);
+    pageScope.use(saveActivity.destroy);
     if (activity === 'read') set_read_mode(true);
     else if (activity === 'sparring') document.getElementById('practice_sparring')?.click();
     else if (!directedPractice) saveActivity(window.studyPuzzleRunMode === 'smart' ? 'smart' : 'lines');
@@ -1584,8 +1611,29 @@ async function main() {
     void refreshGameEvidence(gamePositionsRequest);
 }
 
-window.onresize = onresize;
-main();
+async function main() {
+    pageScope.use(setupStudyFeedback());
+    const abort = new AbortController();
+    pageScope.use(() => abort.abort());
+    const gamePositionsRequest = loadGamePositions(abort.signal);
+    if (!await initializeStudyProgress() || !pageScope.active) return;
+    setup_chapter_select();
+    setupStudySparringController();
+    setupStudyFeatures();
+    setupStudyPractice(gamePositionsRequest);
+}
+
+const studyRoot = document.querySelector('.study-workspace');
+mountStudyPage(studyRoot, scope => {
+    pageScope = scope;
+    pageScope.use(() => Alpine.destroyTree(studyRoot));
+    pageScope.use(() => {
+        studyRoot.querySelectorAll('.ui-modal.show').forEach(closeDialog);
+        studyRun.destroy(); progressPublisher.destroy();
+    });
+    pageScope.assign(window, 'onresize', onresize);
+    return main();
+});
 
 function update_read_mode_ui() {
     studyMoveTree.update({

@@ -41,7 +41,7 @@ the chapter and its playing color, without persisting defaults. The engine retai
 the deferred restart policy: changes apply on settings close, with no reset in
 Read. Duplicate slider input/change events produce one persisted change.
 
-General page teardown remains a subsequent delivery.
+The six planned deliveries are implemented; verification for each delivery is recorded below.
 
 After delivery 2, `study.js` contains 1,824 lines. Verification passed for six
 unit suites (depth, preferences, navigation, tactics layers, Smart controls, and
@@ -134,6 +134,39 @@ continue exercising cancellation, neutral alternatives, traps, underpromotion,
 Read, and context playback. Geometry, settings restarts, directed practice,
 mode transitions, and preference synchronization remain unchanged. The production
 build passes with the existing 180 warnings.
+
+
+Delivery 6 reduces `main` to lifecycle composition: progress initialization,
+Sparring setup, feature adapters, and practice setup. `page_scope.js` owns
+listeners, assigned handlers, timers, animation frames, and adapter cleanup.
+`study/page_lifecycle.js` prevents duplicate mounting, cancels pending startup,
+and releases the page on explicit disposal or non-cached navigation. Cached
+back/forward navigation retains live bindings. Main checks ownership after
+hydration, legacy reads, and backup awaits; late game evidence cannot change a
+disposed page, and its fetch is aborted on disposal.
+
+Study adapters expose cleanup for navigation, pickers, modes/tools, collections,
+feedback, visualization, session tracking, Sparring, and the move tree. Existing
+preference/depth bindings, run cancellation, progress refresh, modal close
+listeners, board resources, and Alpine trees are released by the page owner.
+Open owned dialogs close on disposal. Sessions finalize before tracker cleanup;
+collection debounce timers stop while durable pending drafts remain available.
+Shared application services (storage synchronization, blocking UI, and Bootstrap)
+retain their existing application lifetime. Whole-document navigation remains
+the normal entry-point lifecycle; the generic owner and adapters support clean
+replacement without adding a second Alpine initializer or a new product flow.
+
+Delivery 6 verification passed: 19 unit suites, 23 server tests, and 12 Chrome
+suites. Unit coverage includes resource ownership, waits canceled on disposal,
+idempotent page teardown, replacement ownership, initialization failures,
+chapter identities, progress preservation, offline/conflicting storage,
+collections, activity, sessions, navigation, visualization, grading, and replay.
+The lifecycle browser check covers disposal during account hydration, cached
+back/forward entries, repeated navigation/disposal, retained activity state, and
+closing open dialogs without leaving a backdrop. Existing study geometry,
+analysis training, player journeys, comments, tactics, account hydration,
+Sparring, collections, sessions, feedback, and mode-control suites pass. The
+production build passes with the existing 180 warnings.
 
 
 ## Responsibility map
@@ -304,7 +337,7 @@ reviewing other consumers.
 | 3 (complete) | Progress projection and run indicators; reuse the existing Alpine panel | Medium | Metrics, ordering, due-date timer, chapter selection, empty Smart messages, and sessions |
 | 4 (complete) | Separate comment selection from rendering | Medium | Untrusted PGN text, variations, Read, hidden visualization, and assistance grading |
 | 5 (complete) | Extract run/context coordination, then split `handle_move` | High | Smart, mistakes, weak chapters, reviews, Sparring, traps, underpromotion, assistance, cancellation, and directed practice |
-| 6 | Reduce `main` to composition and formalize page teardown | High | Progress identity, resets, hydration/merge, navigation, remounting, and no duplicate resources |
+| 6 (complete) | Reduce `main` to composition and formalize page teardown | High | Progress identity, resets, hydration/merge, navigation, remounting, and no duplicate resources |
 
 Benefits do not require completing all six deliveries. The first removes visible
 text as the preference controller and establishes a UI boundary without rewriting
