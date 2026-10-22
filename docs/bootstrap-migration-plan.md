@@ -1,672 +1,612 @@
-# Plan de migración de componentes a Bootstrap
-
-Fecha: 2026-10-21. Rama: `migration/bootstrap-ui`. Análisis inicial y biblioteca
-personal y entrenamiento migrados. Los cuatro diálogos de entrenamiento usan
-Bootstrap. Colecciones y selector de aperturas completan la fase 4; creación
-y mantenimiento cargan ahora sus propios recursos Bootstrap. El editor de capítulos
-y la creación desde cero también usan recursos Bootstrap separados. Partidas,
-comparación y práctica de errores completan la migración de páginas de análisis.
-La biblioteca simplificada de tácticas también usa el layout compartido.
-
-## Pendientes y siguiente entrega
-
-- [x] Recursos separados, modal compartido, navegación y tema común.
-- [x] Página inicial de análisis e importación PGN (fase 1).
-- [x] Biblioteca personal: grupos, mover estudios y menús (fase 2).
-- [x] Normalización de controles en los diálogos ya migrados.
-- [x] Detección común de diálogos para tiempo, atajos y feedback de entrenamiento.
-- [x] Fase 3: trasladar ajustes, información, historial Sparring y progreso a
-  `ui_modal`; sustituir las pestañas manuales y adaptar los eventos de cierre.
-- [x] Fase 3: preparar los estilos necesarios y activar el layout Bootstrap en
-  la página de entrenamiento; verificar profundidad, revisiones y modos de juego.
-- [x] Fase 4: colecciones con modal compartido, conservando borradores.
-- [x] Fase 4: selector de aperturas y recursos Bootstrap de creación y mantenimiento.
-- [x] Fase 5: editor de capítulos y creación desde cero con recursos Bootstrap.
-- [x] Fase 5: partidas importadas, comparación y práctica de errores.
-- [x] Biblioteca simplificada de tácticas con buscador y preferencias compartidos.
-- [x] Fase 5: adaptadores compartidos de tema para campos y botones secundarios.
-- [x] Fase 5: estilos de colecciones reunidos y reglas obsoletas retiradas.
-- [x] Fase 5: variantes y superficies compartidas de biblioteca y entrenamiento,
-  conservando los estilos propios de tablero y composición.
-- [x] Fase 6: recursos Bootstrap generales, búsqueda pública y demás LiveView,
-  formularios, contenido, administración, iframes y diálogos de libros.
-- [x] Retirada de las importaciones y fuentes de Skeleton y del gestor antiguo
-  de modales; geometría existente conservada en un adaptador de aplicación.
-- [x] LiveView: script diferido y hook de color con montaje idempotente,
-  delegación tras parches y limpieza al destruirse.
-- [x] Auditoría posterior de reutilización de JS: `javascript-reusability-audit.md`.
-
-La migración de recursos y componentes queda completada para las familias del
-sitio. Las reglas existentes de geometría, tipografía y contenido se conservan
-como adaptador de aplicación para mantener los layouts; no se ha sustituido su
-grid por otro distinto. Las propuestas de extracción de funciones JavaScript
-están documentadas en [la auditoría](javascript-reusability-audit.md), para una
-fase de refactorización independiente. Las regresiones generales que quedaron pendientes se resolvieron en la revisión
-posterior descrita a continuación.
-
-## Revisión posterior de regresiones generales
-
-Los tres recorridos que estaban bloqueados pasan completos con páginas recién
-renderizadas por los controladores actuales:
-
-- `player_journey_browser.cjs`: la portada presenta dos favoritos, como verifica
-  el controlador, en lugar de los nueve estudios que esperaba la prueba antigua.
-  La cobertura de scroll conserva una lista larga creada solo en la prueba.
-  El recorrido usa los dos paneles actuales de tácticas y distingue los enlaces
-  principales de los enlaces de idioma.
-- `analysis_training_browser.cjs`: la práctica dirigida inicia Smart y conserva
-  su posición de entrada. Una cadena corta de repaso oculta deliberadamente el
-  mensaje vacío; la prueba verifica la sesión activa y la posición en lugar de
-  exigir ese mensaje. El recorrido completo de revisión, sincronización,
-  intervalos, enlaces dirigidos y colas de práctica pasa.
-- `site_navigation_browser.cjs`: usa el menú de preferencias actual, el cierre
-  Bootstrap y espera un tablero únicamente en la página de estudio. La portada
-  ya no contiene un tablero ni el menú antiguo de Practice.
-
-Al avanzar este último recorrido se detectó un fallo real: el cálculo de tamaño
-no reservaba el margen existente entre tablero y controles. A 1366×768 los
-controles terminaban en y=776. `ground.js` descuenta ahora la separación renderizada,
-sin cambiar CSS, estructura ni distribución. La prueba conserva el requisito de
-que los controles quepan y cubre también cambios de altura a 640, 900 y 768 px.
-
-Validación: 23 pruebas de controladores; los tres recorridos completos anteriores;
-`native_training_browser.cjs` para los demás entrenamientos; compilación de
-producción aprobada con las 180 advertencias existentes de Sass y rendimiento.
-Los registros de entregas siguientes describen el estado histórico de cada
-entrega; las limitaciones de estos tres recorridos quedan cerradas aquí.
-
-## Primera entrega
-
-Bootstrap 5.3.8 y Popper 2.11.8 están fijados en `assets/package.json`. El lockfile
-local se actualizó; sigue excluido de Git por la política existente del repositorio.
-La primera entrega activó el layout `bootstrap.html` y los recursos `bootstrap_ui`
-en la página inicial de análisis. El resto se incorpora por entregas independientes.
-
-La entrega reutiliza la navegación y el pie existentes, extrae los campos de
-preferencias de sonido y tablero a plantillas compartidas y utiliza `ui_modal`
-para esas preferencias y la importación PGN. El cambio de tema comparte módulo
-con el bundle anterior. Se conservan las rutas, formularios, filtros y lógica de
-sincronización, revisión y entrenamiento.
-
-La base visual conserva los estilos del fork y su escala tipográfica sin cargar
-Skeleton ni `app.scss` en análisis. La limpieza de estilos por componente de la
-fase 5 sigue pendiente; no se presenta esta entrega como una migración completa.
-Los hooks para LiveView se incorporarán cuando haya una página LiveView migrada.
-
-Validación del servidor: 16 pruebas del proyecto de análisis y recorrido del
-jugador pasaron; otras 11 ejecuciones de referencia generaron las páginas
-comparables antes/después. La comprobación visual cubre 1280, 900, 390 y 320 px
-en claro y oscuro, conservando las dimensiones y posiciones de las regiones
-principales. La prueba `bootstrap_analysis_browser.cjs` verifica modales, foco,
-Escape, backdrop, PGN, filtros, preferencias y navegación móvil.
-
-Limitación detectada en esa entrega, resuelta en la revisión posterior:
-`analysis_training_browser.cjs:202` esperaba que
-`#smart_run_status` sea visible al volver a practicar una línea. Esa comprobación
-falla tanto con la página anterior como con la migrada; esperar a su visibilidad
-también agota el tiempo. Los pasos anteriores de revisión, sincronización y
-análisis completan su ejecución. En esa entrega no se resolvió ni se modificó la lógica Smart; la expectativa
-se corrigió en la revisión posterior de regresiones.
-
-Después de la migración de interfaz queda pendiente la auditoría de reutilización
-de funciones JavaScript solicitada por el usuario.
-
-## Segunda entrega: biblioteca
-
-La biblioteca personal (`/[locale]/studies`) utiliza ahora el mismo layout y
-recursos Bootstrap que análisis. La biblioteca simplificada de tácticas mantuvo
-su layout anterior en esta entrega y se incorpora en la entrega específica
-descrita más adelante. Las filas compartidas conservan su diseño y comportamiento
-también cuando aparecen en páginas que todavía no utilizan Bootstrap.
-
-Los diálogos de grupos y movimiento reutilizan `ui_modal`; sus formularios se
-definen una vez y las operaciones conservan los permisos y contratos existentes.
-Los menús utilizan Bootstrap Dropdown manteniendo los elementos `details` y
-`summary` actuales, sin moverlos ni cambiar su composición visual. Se mantiene
-el menú abierto ante errores de guardado para permitir reintentar la acción.
-
-La lógica de biblioteca recibe un adaptador de controles: Bootstrap gestiona
-apertura, cierre y teclado; filtros, favoritos, selección y peticiones siguen
-perteneciendo al módulo existente. Se conserva el foco dentro del diálogo cuando
-un guardado deshabilita temporalmente los controles. El flujo de crear la primera
-carpeta y después mover los estudios abre un único modal cada vez.
-
-Validación: 29 pruebas del servidor de biblioteca, tácticas, análisis y recorrido
-del jugador pasaron. El recorrido de navegador de biblioteca cubre filtros,
-favoritos, selección múltiple, permisos, errores, grupos, renombrado, borrado,
-persistencia y movimiento de estudios. La comparación antes/después verifica
-las regiones principales a 1280, 900, 390 y 320 px en claro y oscuro, además del
-diálogo de grupos y los controles de teclado y foco.
-
-Los controles y diálogos de entrenamiento pertenecen a la fase 3; no se migraron
-dentro de la entrega de biblioteca.
-
-## Normalización de controles migrados
-
-Antes de extender la migración a entrenamiento, se adopta una base común de
-controles Bootstrap en los diálogos de biblioteca, PGN y preferencias. Los campos
-de creación y renombrado de grupos usan `form-control`; los selectores usan
-`form-select`; las acciones usan las variantes primaria y secundaria. Sonido
-utiliza los controles de checkbox y rango de Bootstrap en las páginas migradas.
-Las páginas con recursos heredados conservan sus controles anteriores.
-
-`bootstrap_controls.scss` concentra el tamaño mínimo de 44 px, el tema de los
-campos y las acciones secundarias. Se elimina la excepción `content-box` que
-hacía más altos los campos de grupos y las reglas que anulaban los controles
-Bootstrap de PGN y preferencias. La distribución de las páginas se mantiene;
-los diálogos ajustan su altura al contenido normalizado. Las comprobaciones
-visuales conservan la comparación de las regiones principales y comprueban
-tamaños consistentes y ausencia de desbordamiento en los controles.
-
-## Preparación de entrenamiento
-
-`blocking_ui.js` centraliza la detección de diálogos abiertos. Navegación de
-estudios, tiempo de práctica y feedback utilizan la misma condición. Reconoce
-diálogos nativos, modales heredados visibles, colecciones y Bootstrap durante
-sus transiciones de apertura y cierre. Un observador por documento actualiza
-`data-ui-blocked` y notifica cambios; sigue funcionando al insertar o retirar
-diálogos y cuando varios bundles importan el módulo.
-
-Mientras exista un diálogo bloqueante, el tiempo de práctica y la caducidad de
-avisos temporales se pausan, los atajos no avanzan el tablero y el feedback queda
-oculto. Cerrar un diálogo no desbloquea la página si queda otro abierto. Esto
-preparó el cambio de contenedores de fase 3, sin activarlo en esa entrega ni
-cambiar la distribución de entrenamiento.
-
-`blocking_ui_browser.cjs` comprueba estos contratos con los consumidores reales
-y el plugin Bootstrap, incluyendo transiciones, inicialización repetida y
-reemplazo de nodos. Las regresiones de sesiones leen ahora la plantilla extraída
-de ajustes; la suite de Bootstrap verifica la selección contextual de pestañas.
-
-## Tercera entrega: entrenamiento
-
-La página de estudio, incluidos los estudios de tácticas, activa el layout propio
-con `bootstrap_study.js` y `bootstrap_study.css`. Comparte `bootstrap_common.js`
-con análisis y biblioteca; carga una sola instancia de los plugins y no incorpora
-Skeleton, `app.scss`, `app.js` ni el gestor antiguo de modales. Los estilos de
-estudio y colecciones necesarios se incluyen por separado. La composición del
-tablero, sidebar y navegación se mantiene.
-
-Ajustes, información/comentarios, historial Sparring y progreso usan `ui_modal`.
-Sus cuerpos están en parciales y conservan IDs, traducciones, formularios y
-ámbitos Alpine. Las pestañas General/Practice/Sparring usan Bootstrap Tab, con
-selección contextual y navegación por teclado; Sparring oculto en tácticas se
-excluye también del recorrido de teclado. Se retiran la selección manual de
-pestañas y los listeners de apertura, backdrop y retorno de foco sustituidos.
-
-Los consumidores de progreso cierran mediante la API del modal compartido;
-el cierre de ajustes mantiene la aplicación de cambios de profundidad. Los
-controles de los diálogos reutilizan la normalización común; los cierres tienen
-un objetivo mínimo de 44 px. Colecciones conservaba su contenedor en esta entrega; su migración
-se registra a continuación en fase 4. No se migra el selector especializado de capítulos a un dropdown genérico.
-
-`bootstrap_study_browser.cjs` compara las regiones principales en 1280, 900,
-390 y 320 px, en claro y oscuro. Verifica pestañas, profundidad, metas de sesión,
-comentarios, historial, navegación desde progreso, retorno del foco y móvil.
-`sparring_browser.cjs` utiliza ya los plugins de Bootstrap en sus diálogos de
-ajustes e historial. Las regresiones de sesiones y práctica débil siguen cubriendo
-sus contratos de dominio. `bootstrap_tactics_browser.cjs` verifica el entrenamiento
-con negras, preferencias separadas, lectura, progreso y exclusión de la pestaña
-Sparring oculta del recorrido de teclado. El fallo previo de Smart descrito en la primera entrega quedó pendiente
-entonces; su expectativa se corrigió en la revisión posterior de regresiones.
-
-La suite general `player_journey_browser.cjs` se detiene antes de probar los
-estudios: en la portada espera nueve `.home-daily-study` y obtiene dos con las
-fixtures generadas por `player_journey_test.exs`. No se altera esa expectativa
-en esta entrega. La cobertura de entrenamiento se ejecuta directamente mediante
-las suites de estudio, tácticas y Sparring. `site_navigation_browser.cjs` también
-se detiene antes de abrir entrenamiento: espera un menú de portada
-`.site-menu[data-nav-section="practice"]` que no está en la cabecera renderizada.
-Las comprobaciones de foco y apertura de los nuevos diálogos se ejecutan en
-`bootstrap_study_browser.cjs`.
-
-Tamaños gzip de esta compilación: `bootstrap_study.css`, 32 420 bytes;
-`bootstrap_study.js`, 25 295 bytes. El CSS heredado completo ocupa 35 180 bytes
-gzip; `bootstrap_ui.css`, 23 459 bytes, y `bootstrap_ui.js`, 23 721 bytes. El
-motor de estudio continúa en su bundle independiente de 149 869 bytes gzip.
-Estas medidas describen los recursos; no representan ahorro de tokens.
-
-## Fase 4: entrega de colecciones
-
-`collection_modal` reutiliza `ui_modal`, con el cuerpo y la información de
-cabecera extraídos a parciales. El modal común admite contenido adicional de
-cabecera y un ID opcional para su botón de cierre. Se mantienen sidebar, lista,
-formulario de creación y pie de estado en las posiciones existentes.
-
-`study_collections.js` conserva organización, persistencia y recuperación de
-errores. Solicita la apertura mediante `dialog_lifecycle.js`; Bootstrap gestiona
-Escape, backdrop, scroll, foco contenido y retorno al disparador. Se retiran el
-focus trap y los listeners de cierre propios, además de estilos del contenedor
-y cabecera sustituidos. El cuerpo no se destruye al cerrar: el formulario,
-título y color del borrador siguen disponibles al volver a abrir.
-Si falla la creación después de deshabilitar el botón de envío, se recupera el
-foco dentro del modal para mantener disponibles Escape y el reintento.
-
-`bootstrap_collections_browser.cjs` utiliza la página renderizada y comprueba
-organización, mover capítulos, renombrado, error y reintento de guardado,
-exportación PGN, conservación de borrador, error de creación, foco, cierre,
-persistencia y temas en escritorio/móvil. `study_features_browser.cjs` comprueba
-colecciones de invitado con el mismo plugin Bootstrap y navegación por capítulos.
-Los controladores siguen comprobando acceso y creación de estudios.
-
-El selector de aperturas quedó pendiente en la entrega de colecciones. Su
-migración se completa en la entrega descrita a continuación.
-
-## Fase 4: selector de aperturas y formularios
-
-El selector usa `ui_modal` y el parcial `_opening_options.html.eex`. Alpine
-conserva búsqueda normalizada, selección y actualización del campo oculto;
-`dialog_lifecycle.js` delega apertura y cierre a la única instancia de Bootstrap
-del recurso común. Se conservan los borradores de metadatos y capítulos al abrir,
-cancelar o seleccionar una apertura. Enter en la búsqueda no envía el formulario.
-
-Creación por importación y mantenimiento usan el layout Bootstrap con recursos
-`bootstrap_management.js` / `bootstrap_management.css`, sin `app.js`, Skeleton,
-jQuery ni Select2. La carga de estos dos últimos no tenía inicialización efectiva
-y se retira. El editor de tablero y la creación desde cero se incorporan en
-la entrega de fase 5 descrita a continuación.
-Los errores HTML de creación conservan estos recursos, y los errores de campo
-renderizados por Phoenix siguen visibles pese al `display: none` predeterminado
-de Bootstrap para `.invalid-feedback`. El script de Alpine tiene URL versionada
-para evitar ejecutar una copia antigua que todavía espere un `dialog` nativo.
-
-Se mantienen columnas, paneles y orden de los formularios, normalizando campos y
-acciones a las variantes Bootstrap. El alcance no incluye cambiar sus layouts.
-La prueba `bootstrap_management_browser.cjs` compara anchos y columnas en 1280,
-900, 390 y 320 px, con ambos temas, y verifica búsqueda, selección, Escape,
-backdrop, foco, borradores, guardado con error y respuesta HTML de validación.
-`study_maintenance_browser.cjs` conserva la regresión de renombrado, ordenación,
-duplicación, borrado, conflictos y guardado de capítulos.
-
-## Fase 5: editor y creación desde cero
-
-El editor de capítulos y `source=blank` usan el layout Bootstrap con recursos
-`bootstrap_editor.js` / `bootstrap_editor.css`. Comparten navegación, preferencias,
-tema y variantes de campos y botones; `study_editor.js` conserva una única
-inicialización de Alpine y tiene URL versionada. Estas páginas ya no cargan
-Skeleton ni `app.js`. El tablero, el árbol de variantes, la promoción y la
-composición de posiciones mantienen sus componentes especializados y su distribución.
-
-Los atajos y la copia de jugadas respetan los diálogos bloqueantes compartidos.
-Al abrir preferencias se evita que Ctrl/Cmd+Z sobre el contenedor del diálogo
-haga que Chrome deshaga el último comentario del editor; los campos del propio
-diálogo conservan su edición nativa. Se mantienen borradores y la recuperación
-tras errores de guardado.
-
-La comparación de regiones cubre 1280, 900, 390 y 320 px en claro y oscuro para
-edición, creación de repertorio y creación de tácticas. Las pruebas del editor y
-creación cubren historial, variantes, promociones, composición de posiciones,
-análisis local Stockfish y guardado. La limpieza transversal de estilos sigue
-pendiente; la fase 5 permanece parcial. Las páginas restantes de análisis se
-incorporan en la entrega siguiente.
-
-Validación: 16 pruebas del servidor; cuatro pruebas unitarias de carga, historial,
-promoción y composición; `chapter_editor_browser.cjs`,
-`study_creation_browser.cjs` y `bootstrap_editor_browser.cjs`. El build de
-producción conserva las advertencias existentes de Sass y tamaño de recursos.
-
-## Fase 5: partidas, comparación y práctica de errores
-
-Todas las páginas de análisis usan ahora el layout Bootstrap: partidas importadas,
-comparación de partidas guardadas, comparación de un PGN cargado, resultados sin
-coincidencias y práctica de errores. Comparten `bootstrap_analysis.js` /
-`bootstrap_analysis.css`, navegación, preferencias y controles, sin cargar
-Skeleton ni `app.js`. El recurso de la página inicial sigue siendo `bootstrap_ui`.
-Se mantienen las columnas, las dimensiones del tablero, los grupos de capítulos,
-los filtros y la lógica de revisión. Los scripts de reproducción y práctica
-llevan versión para evitar reutilizar código anterior desde caché.
-
-Los atajos de reproducción consultan `hasBlockingUi`, también durante las
-transiciones de los diálogos. La práctica usa el mismo detector y sus eventos
-para excluir de la sesión el tiempo dedicado a preferencias. Sus controles,
-pistas, respuestas, resúmenes y datos de progreso conservan su comportamiento.
-
-Validación: 14 pruebas del servidor; pruebas unitarias de progreso de partidas,
-sesiones y movimientos aceptados; regresión de comparación y la prueba
-`bootstrap_analysis_workspace_browser.cjs`. Esta última compara las regiones
-antes/después a 1280, 900, 390 y 320 px en claro y oscuro, y verifica atajos,
-preferencias, pausa del tiempo, pistas, respuestas, resumen, filtros y estados
-vacíos, sin coincidencias y PGN cargado. El build de producción pasa con las
-advertencias existentes de Sass y tamaño de recursos.
-
-En esa entrega, `analysis_training_browser.cjs` conservaba el fallo previo en
-la línea 202: espera visible `#smart_run_status` al volver a la práctica de una
-línea. Los pasos anteriores de práctica correcta, progreso compartido y
-sincronización pasan. Su expectativa se corrigió en la revisión posterior de regresiones.
-
-## Biblioteca simplificada de tácticas
-
-El centro de tácticas usa el layout Bootstrap con `bootstrap_tactics.js` /
-`bootstrap_tactics.css`. Reutiliza `bootstrap_common.js`, la plantilla de
-biblioteca, su buscador simplificado y los diálogos comunes de preferencias,
-sin `app.js` ni Skeleton. Los ejercicios incluidos, las colecciones propias y
-guardadas y los enlaces de visualización conservan su distribución. No se añaden
-las funciones de organización de la biblioteca personal a este centro.
-
-El componente `puzzle_filters` recibe una opción explícita `bootstrap` para
-normalizar campos y botón de práctica cuando lo consume esta página. Su valor
-predeterminado mantiene compatibles los consumidores LiveView pendientes de
-migración; el componente no inspecciona las asignaciones internas del socket.
-Los estilos comunes de enlaces de visualización se extraen a
-`features/tactics_discovery.css`, usado por ambos sistemas de recursos.
-
-Validación: 25 pruebas de servidor para biblioteca, clasificación, catálogo,
-filtros y LiveView. `bootstrap_tactics_library_browser.cjs` compara regiones a
-1366, 900, 390 y 320 px en claro y oscuro, con colecciones y como invitado, y
-verifica búsqueda inicial, resultados vacíos, restablecimiento, colecciones
-guardadas, preferencias, enlaces y envío de filtros con valores seleccionados.
-La regresión de descubrimiento cubre también las guías y herramientas que siguen
-usando el layout anterior. Su comprobación de regiones ahora mide los dos
-paneles visibles, en lugar de pedir un único elemento a un selector múltiple.
-El build de producción pasa con las advertencias de Sass y tamaño de recursos.
-
-## Fase 5: adaptadores de controles y propiedad de estilos
-
-`components/bootstrap_control_mixins.scss` centraliza el tema Bootstrap de campos
-y los estados de botones secundarios. Editor, creación/mantenimiento, análisis y
-modales consumen estos adaptadores con sus bordes existentes; los diálogos
-conservan su variante de borde al interactuar. Las dimensiones y los selectores
-de cada componente permanecen en sus archivos propios. Un cambio compartido de
-paleta o estado se implementa en una sola definición.
-
-Los estilos base de colecciones pasan de `study_extensions.css` a
-`study_collections.css`. Se conservan sus reglas activas y se eliminan los valores
-que ya estaban sobrescritos de ancho, sombra y espaciado, y la variante
-`collection-danger`, que no tiene consumidores. El editor deja de cargar estos
-estilos de colecciones que no usa. No se retiran estilos ni gestores heredados
-que todavía tengan consumidores.
-
-La compilación produce CSS idéntico al anterior para `bootstrap_ui`,
-`bootstrap_management`, `bootstrap_analysis` y `bootstrap_tactics`. La regresión
-de colecciones compara los estilos anteriores/nuevos de contenedor, columnas,
-filas, selector, botones de navegación y pie a 1280, 900, 390 y 320 px en ambos
-temas. También cubre borradores, foco, movimiento de capítulos, errores de
-guardado, exportación y listas largas. La regresión del editor comprueba la
-composición y los flujos afectados por retirar estilos ajenos a esa página.
-La fase 5 sigue parcial: queda revisar la convergencia de las superficies de
-biblioteca y entrenamiento antes de pasar a páginas heredadas.
-
-## Fase 5: variantes y superficies compartidas de práctica
-
-`components/practice_controls.css` concentra la paleta de práctica, sus variantes
-primaria y secundaria, foco y superficies con borde de acento. Biblioteca,
-reanudación de sesión y acciones de práctica comparten la definición primaria;
-los filtros del catálogo consumen los mismos valores de color, incluido el foco
-en oscuro. Los recursos Bootstrap y el bundle anterior importan este componente.
-
-`practice_theme.css` conserva composición, tamaños y adaptaciones por pantalla.
-Los paneles de práctica, contexto del estudio, comentarios y fin de sesión
-comparten su borde y fondo; sus paddings y condiciones de visibilidad permanecen
-en los selectores de cada función. No cambia la distribución ni el comportamiento
-de los controles.
-
-`practice_controls_browser.cjs` compara los recursos CSS anteriores y actuales
-para biblioteca, tácticas, práctica de errores, estudio y creación, en 1280, 900,
-390 y 320 px, con temas claro y oscuro. Compara dimensiones y estilos, además de
-hover, foco por teclado y botones deshabilitados. La regresión de estudio cubre
-ajustes, profundidad, objetivos, comentarios, historial y progreso; la de
-descubrimiento comprueba también las páginas que siguen usando los recursos
-anteriores. El build de producción pasa con las advertencias de Sass y tamaño
-de recursos existentes.
-
-Esta entrega cierra la convergencia prevista en fase 5 para las páginas ya
-migradas; la migración del sitio completo continúa en fase 6. Las limitaciones
-anteriores de las regresiones generales siguen registradas y no se dan por
-resueltas al completar esta fase visual.
-
-## Fase 6: recursos generales, LiveView y libros
-
-Las páginas restantes usan `bootstrap_site.js` / `bootstrap_site.css`, incluidos
-contenido, formularios generales, administración, entrenamiento nativo y el
-iframe de ejercicios. La búsqueda pública usa `bootstrap_discovery` y conserva
-las filas compartidas de estudios. Los LiveView mantienen sus rutas y eventos;
-`live_view.js` carga diferido. El hook de color es idempotente al montar, conserva
-la delegación al reemplazar controles y elimina sus listeners al destruirse.
-
-Se eliminan `app.js`, `app.scss`, `skeleton.css` y el gestor y estilos antiguos de
-modales. `site_foundation.css` conserva las reglas derivadas de geometría,
-tipografía, contenido y utilidades con su atribución original. `site_controls.scss`
-adapta los selectores generales a controles Bootstrap conservando dimensiones y
-la tipografía nativa donde era parte del layout. Este adaptador es intencional;
-no equivale a haber reemplazado las composiciones existentes por el grid de
-Bootstrap. No se cambia la distribución de las páginas.
-
-Preferencias de sonido/tablero y los dos tipos de diálogo de libros usan
-`ui_modal`. Los detalles de afiliación y las recomendaciones tienen parciales
-propios y disparadores accesibles; Bootstrap gestiona foco, Escape y backdrop.
-Los filtros de puzzles se inicializan desde el recurso común, conservando su
-cookie de rating también en el centro de tácticas.
-
-Validación: la suite completa del servidor web más búsqueda de estudios pasa
-111 pruebas. La comprobación de páginas generales compara regiones antes/después
-en 1280, 900, 390 y 320 px, en ambos temas, incluyendo inicio, contenido,
-registro, búsquedas LiveView, libros, finales, herramienta de ejercicios,
-iframe y administración. También verifica preferencias, foco/restauración en
-libros y ciclo de vida del hook. Las regresiones de entrenamiento nativo cubren
-juego visual, errores, reintentos y promociones. El build conserva advertencias
-de Sass y tamaño de recursos. La auditoría de JS posterior se entrega por separado.
-
-Recursos emitidos (bytes gzip, sin contar los bundles de motor/LiveView que ya
-se cargaban por separado): `bootstrap_site.css` 45 889 y `bootstrap_site.js`
-26 815; `bootstrap_discovery.css` 24 005 y `bootstrap_discovery.js` 24 374.
-Las cifras se registran para seguimiento, no como una reducción frente al bundle
-anterior. La tabla de administración ya desborda en móvil en la referencia;
-la comparación exige no aumentar ese desbordamiento sin modificar su layout.
-La prueba nativa espera ahora los callbacks asíncronos de Chessground antes de
-leer el registro de errores, evitando una carrera de la propia prueba.
-
-## Objetivo y alcance
-
-Reducir HTML, CSS y JavaScript repetidos mediante Bootstrap 5.3 y plantillas
-compartidas de Phoenix. Priorizar la interfaz añadida o ampliada en este fork.
-Alpine conserva el estado de aplicación; Bootstrap gestiona sus controles de UI.
-
-Restricción de diseño acordada: conservar la distribución visual actual,
-navegación y tema. La separación del layout se refiere a su plantilla técnica y
-recursos, no a un rediseño. Adoptar los controles y comportamientos de Bootstrap
-cuando mejoren la implementación; está autorizada la normalización de campos,
-botones, espaciado interno y estados de foco. No conservar excepciones heredadas
-solo para reproducir inconsistencias anteriores. Comparar capturas antes/después
-y verificar la composición de las pantallas y sus funciones. Cualquier propuesta
-de cambio en la distribución debe consultarse con el usuario antes de aplicarla.
-Las guías de diseño no autorizan cambios de layout.
-
-«Páginas actuales del fork» significa las páginas que tenemos hoy, después de
-nuestros cambios: biblioteca, análisis, editor y entrenamiento. Se adaptan esas
-mismas plantillas a Bootstrap, conservando sus rutas y funciones. No se crean
-copias paralelas de las páginas. «Heredado» identifica las piezas del proyecto
-original que todavía utilizan, como Skeleton, el layout base y algunos controles.
-
-Las páginas migradas utilizarán un layout propio con recursos Bootstrap y nuestro
-tema, sin cargar Skeleton ni el conjunto global de estilos y scripts heredados.
-Se reutiliza la lógica de aplicación y se extraen los módulos compartidos que
-necesiten ambos layouts. La separación se hace por página completa para evitar
-mantener dos sistemas globales de estilos dentro de una misma página.
-
-La prioridad se establece por origen, reutilización y riesgo, no solo por pantalla:
-una página heredada puede contener componentes nuevos del fork.
-
-No se migran en estas fases los motores, el procesamiento PGN, almacenamiento,
-FSRS, legalidad de movimientos ni el funcionamiento del tablero. El selector de
-promoción, árbol de jugadas y selector de capítulos ya compartidos conservan sus
-APIs; solo se revisará su presentación cuando corresponda.
-
-## Evidencia del fork
-
-Referencia de esta revisión: HEAD `4db28cdd`. Comparación con la referencia local
-`upstream/master`; ancestro común `83e0a955f843cdeb11e443417f93f8dabacca226`.
-No se ha actualizado la referencia remota. Ese ancestro incluye integraciones
-de upstream y no se presenta como la fecha original de creación del fork.
-
-Hitos propios comprobados en el historial:
-
-| Área | Evidencia | Clasificación |
+# Bootstrap component migration plan
+
+Date: 2026-10-21. Branch: `migration/bootstrap-ui`.
+Documentation translated to English on 2026-10-22.
+The analysis overview, personal library, and training pages are migrated. The four
+training dialogs use Bootstrap. Collections and the opening picker complete
+phase 4; creation and maintenance load their own Bootstrap resources. Chapter
+editing and blank creation also use separate Bootstrap resources. Games,
+comparison, and mistake practice complete the analysis-page migration. The
+simplified tactics library also uses the shared layout.
+
+## Outstanding work and next delivery
+
+- [x] Separate resources, shared modal, navigation, and theme.
+- [x] Analysis overview and PGN import (phase 1).
+- [x] Personal library: groups, moving studies, and menus (phase 2).
+- [x] Normalize controls in migrated dialogs.
+- [x] Shared blocking-dialog detection for practice time, shortcuts, and feedback.
+- [x] Phase 3: move settings, information, Sparring history, and progress to
+  `ui_modal`; replace manual tabs and adapt close events.
+- [x] Phase 3: prepare styles and enable the Bootstrap training layout; verify
+  depth, reviews, and practice modes.
+- [x] Phase 4: shared collections modal preserving drafts.
+- [x] Phase 4: opening picker and Bootstrap creation/maintenance resources.
+- [x] Phase 5: chapter editor and blank creation with Bootstrap resources.
+- [x] Phase 5: imported games, comparison, and mistake practice.
+- [x] Simplified tactics library with shared search and preferences.
+- [x] Phase 5: shared theme adapters for fields and secondary buttons.
+- [x] Phase 5: consolidated collection styles and removal of obsolete rules.
+- [x] Phase 5: shared library/training variants and surfaces, preserving board
+  styling and screen composition.
+- [x] Phase 6: general Bootstrap resources, public search and other LiveViews,
+  forms, content, administration, iframes, and book dialogs.
+- [x] Remove Skeleton imports/sources and the legacy modal manager; preserve
+  existing geometry in an application adapter.
+- [x] LiveView: deferred script and idempotent color-hook mounting, event
+  delegation after patches, and cleanup on destruction.
+- [x] Follow-up JS reuse audit: `javascript-reusability-audit.md`.
+
+Resource and component migration is complete across the site's page families.
+Existing geometry, typography, and content rules remain as an application
+adapter to preserve layouts; the grid has not been replaced. JavaScript
+extraction proposals are documented in the [audit](javascript-reusability-audit.md)
+as a separate refactoring effort. General regressions left pending during the
+migration were resolved in the follow-up review below.
+
+## Follow-up general regression review
+
+The three previously blocked journeys pass completely with pages freshly
+rendered by current controllers:
+
+- `player_journey_browser.cjs`: the home page displays two favorites, matching
+  the controller test, rather than the nine studies expected by the old browser
+  test. Scroll coverage uses a long list created only inside the test. The
+  journey uses the two current tactics panels and distinguishes primary links
+  from language links.
+- `analysis_training_browser.cjs`: directed practice starts Smart and preserves
+  its entry position. A short review chain deliberately hides its empty message;
+  the test checks the active session and position instead of requiring that
+  message. The complete review, sync, interval, directed-link, and queue journey
+  passes.
+- `site_navigation_browser.cjs`: uses the current preferences menu and Bootstrap
+  close control, and waits for a board only on the study page. The home page no
+  longer contains a board or the old Practice menu.
+
+Advancing the navigation journey exposed a real bug: board sizing did not reserve
+existing spacing between the board and controls. At 1366×768, controls ended at
+y=776. `ground.js` now deducts the rendered gap without changing CSS, structure,
+or distribution. The test still requires controls to fit and also covers height
+changes to 640, 900, and 768 px.
+
+Validation: 23 controller tests; the three complete journeys above;
+`native_training_browser.cjs` for other training modes; a successful production
+build with the existing 180 Sass/performance warnings. The delivery records below
+describe historical status. Limitations affecting these three journeys are now
+closed.
+
+## First delivery
+
+Bootstrap 5.3.8 and Popper 2.11.8 are pinned in `assets/package.json`. The local
+lockfile was updated; existing repository policy still excludes it from Git.
+The first delivery enabled `bootstrap.html` and `bootstrap_ui` resources for the
+analysis overview. Other pages followed in separate deliveries.
+
+This delivery reused navigation and footer, extracted sound/board preferences
+into shared templates, and used `ui_modal` for those preferences and PGN import.
+Theme switching shared a module with the previous bundle. Routes, forms, filters,
+sync, review, and training logic were preserved.
+
+The visual foundation preserved fork styling and typography without loading
+Skeleton or `app.scss` on analysis. Cross-component style cleanup in phase 5 was
+still pending at this point; this was not presented as a complete migration.
+LiveView hooks were deferred until a LiveView page was migrated.
+
+Server validation: 16 analysis/player-journey tests passed; 11 additional
+reference runs generated comparable before/after pages. Visual checks covered
+1280, 900, 390, and 320 px in light/dark themes, preserving main-region positions
+and dimensions. `bootstrap_analysis_browser.cjs` verified modals, focus, Escape,
+backdrop, PGN, filters, preferences, and mobile navigation.
+
+Limitation identified then and resolved in the follow-up review:
+`analysis_training_browser.cjs:202` expected `#smart_run_status` to be visible
+when returning to line practice. This failed with both previous and migrated
+pages; waiting for visibility also timed out. Earlier review, sync, and analysis
+steps passed. Smart logic was not changed in that delivery; the expectation was
+corrected during the subsequent general regression review.
+
+The requested JavaScript reuse audit remained scheduled after UI migration.
+
+## Second delivery: library
+
+The personal library (`/[locale]/studies`) adopted the same Bootstrap layout and
+resources as analysis. The simplified tactics library retained its previous
+layout at this stage and was migrated in a later delivery. Shared rows preserved
+their design and behavior on pages still using legacy resources.
+
+Group/move dialogs reuse `ui_modal`; their forms have one definition and retain
+existing permissions and operation contracts. Menus use Bootstrap Dropdown while
+retaining existing `details`/`summary` markup and visual composition. Menus remain
+open after save failures so users can retry.
+
+Library logic receives a controls adapter: Bootstrap manages opening, closing,
+and keyboard behavior; filters, favorites, selection, and requests remain in the
+existing module. Focus stays inside the dialog while saving temporarily disables
+controls. Creating the first folder and then moving studies opens one modal at
+a time.
+
+Validation: 29 library, tactics, analysis, and player-journey server tests passed.
+The library browser journey covers filters, favorites, multiple selection,
+permissions, errors, groups, rename/delete, persistence, and moving studies.
+Before/after comparisons cover main regions at 1280, 900, 390, and 320 px in both
+themes, plus group dialogs and keyboard/focus behavior.
+
+Training controls and dialogs belonged to phase 3 and were not migrated in the
+library delivery.
+
+## Normalizing migrated controls
+
+Before extending migration to training, library, PGN, and preference dialogs
+adopted a common Bootstrap control foundation. Group creation/rename fields use
+`form-control`, selects use `form-select`, and actions use primary/secondary
+variants. Sound uses Bootstrap checkbox/range controls on migrated pages. Legacy
+pages retained their previous controls during this delivery.
+
+`bootstrap_controls.scss` centralizes the 44 px minimum size, field theme, and
+secondary actions. The `content-box` exception that enlarged group fields and
+rules overriding Bootstrap PGN/preference controls were removed. Page layouts
+remain unchanged; dialogs accommodate normalized content height. Visual checks
+preserve main-region comparison and verify consistent control sizes without
+overflow.
+
+## Training preparation
+
+`blocking_ui.js` centralizes open-dialog detection. Study navigation, practice
+time, and feedback use the same condition. It recognizes native dialogs, visible
+legacy modals, collections, and Bootstrap opening/closing transitions. One
+observer per document updates `data-ui-blocked` and emits changes. It handles
+inserted/removed dialogs and imports from multiple bundles.
+
+While a blocking dialog exists, practice time and transient-message expiry pause,
+shortcuts cannot advance the board, and feedback is hidden. Closing one dialog
+does not unblock the page if another remains open. This prepared phase 3 without
+enabling its new containers or changing training composition in this delivery.
+
+`blocking_ui_browser.cjs` verifies these contracts with real consumers and the
+Bootstrap plugin, including transitions, repeated initialization, and replaced
+nodes. Session regressions read the extracted settings template; Bootstrap tests
+verify contextual tab selection.
+
+## Third delivery: training
+
+Study playback, including tactics studies, enabled its dedicated layout with
+`bootstrap_study.js` and `bootstrap_study.css`. It shares `bootstrap_common.js`
+with analysis/library, loads one instance of plugins, and excludes Skeleton,
+`app.scss`, `app.js`, and the old modal manager. Necessary study/collection styles
+are included separately. Board, sidebar, and navigation composition is preserved.
+
+Settings, information/comments, Sparring history, and progress use `ui_modal`.
+Their bodies are partials retaining IDs, translations, forms, and Alpine scopes.
+General/Practice/Sparring tabs use Bootstrap Tab with contextual selection and
+keyboard navigation. Sparring hidden in tactics is also excluded from keyboard
+focus. Replaced manual tab selection, opening, backdrop, and focus-return
+listeners were removed.
+
+Progress consumers close through the shared modal API; closing settings retains
+application of depth changes. Dialog controls reuse shared normalization; close
+targets are at least 44 px. Collections retained its container during this
+delivery and moved in phase 4. The specialized chapter picker was not replaced
+by a generic dropdown.
+
+`bootstrap_study_browser.cjs` compares main regions at 1280, 900, 390, and 320 px
+in light/dark themes. It checks tabs, depth, session goals, comments, history,
+progress navigation, focus return, and mobile behavior. `sparring_browser.cjs`
+uses Bootstrap plugins for settings/history. Session and weak-practice regressions
+retain domain coverage. `bootstrap_tactics_browser.cjs` verifies training as
+Black, separate preferences, reading, progress, and exclusion of the hidden
+Sparring tab from keyboard focus. The earlier Smart failure remained pending
+then; its expectation was corrected in the follow-up regression review.
+
+At this stage, `player_journey_browser.cjs` stopped before study tests: it expected
+nine `.home-daily-study` elements and received two from `player_journey_test.exs`
+fixtures. That expectation was not changed in this delivery. Study, tactics, and
+Sparring suites directly covered training. `site_navigation_browser.cjs` also
+stopped before training because it expected the removed
+`.site-menu[data-nav-section="practice"]`. New-dialog focus/opening checks ran
+in `bootstrap_study_browser.cjs`. Both blocked journeys were later resolved in
+the follow-up review above.
+
+Build gzip sizes at this delivery: `bootstrap_study.css`, 32,420 bytes;
+`bootstrap_study.js`, 25,295 bytes. Full legacy CSS was 35,180 gzip bytes;
+`bootstrap_ui.css`, 23,459 bytes; `bootstrap_ui.js`, 23,721 bytes. The study engine
+remained a separate 149,869-byte gzip bundle. These describe resources, not token
+savings.
+
+## Phase 4: collections delivery
+
+`collection_modal` reuses `ui_modal`, with body and heading information extracted
+to partials. The shared modal supports additional heading content and an optional
+close-button ID. Sidebar, list, creation form, and status footer retain their
+positions.
+
+`study_collections.js` retains organization, persistence, and error recovery. It
+requests opening through `dialog_lifecycle.js`; Bootstrap handles Escape,
+backdrop, scroll, focus containment, and focus return. The custom focus trap,
+closing listeners, and replaced container/header styles were removed. Closing
+does not destroy the body: form, title, and color drafts remain on reopening.
+Creation failure after disabling submit restores focus inside the modal to keep
+Escape and retry available.
+
+`bootstrap_collections_browser.cjs` uses the rendered page and covers organization,
+chapter moves, rename, failed saves/retry, PGN export, drafts, creation failure,
+focus, dismissal, persistence, and desktop/mobile themes. `study_features_browser.cjs`
+checks guest collections with the same Bootstrap plugin and chapter navigation.
+Controllers continue checking access and study creation.
+
+The opening picker remained pending in this delivery and was completed next.
+
+## Phase 4: opening picker and forms
+
+The picker uses `ui_modal` and `_opening_options.html.eex`. Alpine retains
+normalized search, selection, and hidden-field updates. `dialog_lifecycle.js`
+delegates opening/closing to the one Bootstrap instance from common resources.
+Metadata/chapter drafts survive opening, cancellation, and opening selection.
+Enter in search does not submit the form.
+
+Import creation and maintenance use the Bootstrap layout with
+`bootstrap_management.js` / `bootstrap_management.css`, without `app.js`, Skeleton,
+jQuery, or Select2. The last two had no effective initialization and were removed.
+Board editing and blank creation followed in phase 5. Creation-error HTML retains
+these resources; Phoenix field errors remain visible despite Bootstrap's default
+`display: none` for `.invalid-feedback`. The Alpine script has a versioned URL to
+avoid cached copies expecting a native `dialog`.
+
+Form columns, panels, and order remain unchanged while fields/actions use
+normalized Bootstrap variants. `bootstrap_management_browser.cjs` compares widths
+and columns at 1280, 900, 390, and 320 px in both themes and checks search,
+selection, Escape, backdrop, focus, drafts, failed saves, and validation HTML.
+`study_maintenance_browser.cjs` preserves chapter rename, ordering, duplication,
+deletion, conflict, and saving coverage.
+
+## Phase 5: editor and blank creation
+
+Chapter editing and `source=blank` use the Bootstrap layout with
+`bootstrap_editor.js` / `bootstrap_editor.css`. They share navigation, preferences,
+theme, and field/button variants. `study_editor.js` retains one Alpine startup
+and a versioned URL. These pages no longer load Skeleton or `app.js`. Board,
+variation tree, promotion, and position composition retain their specialized
+components and arrangement.
+
+Shortcuts and move copying respect shared blocking dialogs. Opening preferences
+prevents Ctrl/Cmd+Z on the dialog container from making Chrome undo the editor's
+last comment; fields inside the dialog retain native editing. Drafts and recovery
+after saving failures are preserved.
+
+Region comparison covers 1280, 900, 390, and 320 px in light/dark themes for editing,
+repertoire creation, and tactics creation. Editor/creation tests cover history,
+variations, promotions, position composition, local Stockfish analysis, and saving.
+Cross-page style cleanup and remaining analysis pages were still pending at this
+stage, so phase 5 was partial.
+
+Validation: 16 server tests; four loading/history/promotion/composition unit tests;
+`chapter_editor_browser.cjs`, `study_creation_browser.cjs`, and
+`bootstrap_editor_browser.cjs`. The production build retained existing Sass and
+resource-size warnings.
+
+## Phase 5: games, comparison, and mistake practice
+
+All analysis pages adopted Bootstrap: imported games, saved-game comparison,
+uploaded-PGN comparison, unmatched results, and mistake practice. They share
+`bootstrap_analysis.js` / `bootstrap_analysis.css`, navigation, preferences, and
+controls, without Skeleton or `app.js`. Overview resources remain `bootstrap_ui`.
+Columns, board dimensions, chapter groups, filters, and review logic are retained.
+Replay/practice scripts have versioned URLs to avoid cached legacy code.
+
+Replay shortcuts consult `hasBlockingUi`, including dialog transitions. Practice
+uses the same detector/events to exclude time in preferences. Controls, hints,
+answers, summaries, and progress retain their behavior.
+
+Validation: 14 server tests; game-progress, session, and accepted-move unit tests;
+comparison regression and `bootstrap_analysis_workspace_browser.cjs`. The latter
+compares main regions at 1280, 900, 390, and 320 px in both themes and verifies
+shortcuts, preferences, paused time, hints, answers, summaries, filters, and empty,
+unmatched, and uploaded-PGN states. Production builds pass with existing warnings.
+
+The previously recorded `analysis_training_browser.cjs:202` failure still existed
+at this delivery. Correct practice, shared progress, and sync steps passed; the
+status-visibility expectation was corrected in the follow-up review.
+
+## Simplified tactics library
+
+The tactics hub uses `bootstrap_tactics.js` / `bootstrap_tactics.css` and the
+Bootstrap layout. It reuses `bootstrap_common.js`, the library template, simplified
+search, and shared preference dialogs, without `app.js` or Skeleton. Included
+puzzles, owned/saved collections, and visualization links retain their layout.
+Personal-library organization features are not added to this hub.
+
+`puzzle_filters` receives an explicit `bootstrap` option to normalize fields and
+the practice button. Its default kept pending LiveView consumers compatible; it
+does not inspect internal socket assigns. Shared visualization-link styles moved
+to `features/tactics_discovery.css`, used by both resource systems during migration.
+
+Validation: 25 server tests for library, classification, catalogue, filters, and
+LiveView. `bootstrap_tactics_library_browser.cjs` compares regions at 1366, 900,
+390, and 320 px in both themes, with collections and as a guest. It checks initial
+search, empty results, reset, saved collections, preferences, links, and submitted
+filter values. Discovery regression also covers guides/tools still on the old
+layout at that stage. Region checks measure both visible panels rather than
+expecting one node from a multiple-match selector. Production builds pass with
+Sass/resource-size warnings.
+
+## Phase 5: control adapters and style ownership
+
+`components/bootstrap_control_mixins.scss` centralizes Bootstrap field themes and
+secondary-button states. Editor, creation/maintenance, analysis, and modals use
+these adapters with their existing borders; dialog interaction retains its border
+variant. Dimensions/selectors remain in component files. Shared palette/state
+changes have one definition.
+
+Collection base styles moved from `study_extensions.css` to
+`study_collections.css`. Active rules remain; already overridden width, shadow,
+spacing, and unused `collection-danger` rules were removed. The editor stopped
+loading unused collection styles. Legacy styles/managers with consumers were
+retained at this stage.
+
+The build emitted identical CSS for `bootstrap_ui`, `bootstrap_management`,
+`bootstrap_analysis`, and `bootstrap_tactics`. Collection regression compares old
+and new container, column, row, selector, navigation-button, and footer styles at
+1280, 900, 390, and 320 px in both themes. It also covers drafts, focus, chapter
+moves, failed saves, export, and long lists. Editor regression checks composition
+and flows affected by removing unrelated styles. Library/training surface
+convergence remained pending, so phase 5 was still partial.
+
+## Phase 5: shared practice variants and surfaces
+
+`components/practice_controls.css` centralizes the practice palette, primary and
+secondary variants, focus, and accent-bordered surfaces. Library, session resume,
+and practice actions share primary definitions. Catalogue filters use the same
+colors, including dark-theme focus. Both Bootstrap and the previous bundle used
+this component during migration.
+
+`practice_theme.css` retains composition, sizes, and screen-specific adaptations.
+Practice panels, study context, comments, and session completion share border and
+background definitions; padding and visibility remain feature-owned. Control
+layout and behavior are unchanged.
+
+`practice_controls_browser.cjs` compares old/current CSS for library, tactics,
+mistake practice, study, and creation at 1280, 900, 390, and 320 px in both themes.
+It compares dimensions/styles, hover, keyboard focus, and disabled buttons. Study
+regression covers settings, depth, goals, comments, history, and progress;
+discovery also checks pages still using previous resources at that point. Builds
+pass with existing Sass/resource-size warnings.
+
+This delivery completed phase 5 convergence for migrated pages; site-wide
+migration continued in phase 6. Completing this visual phase did not resolve the
+general regressions, which were handled later as recorded above.
+
+## Phase 6: general resources, LiveView, and books
+
+Remaining pages use `bootstrap_site.js` / `bootstrap_site.css`, including content,
+general forms, administration, native training, and the exercise iframe. Public
+search uses `bootstrap_discovery` and retains shared study rows. LiveViews retain
+routes/events; `live_view.js` loads deferred. Color-hook mounting is idempotent,
+event delegation survives control replacement, and destruction removes listeners.
+
+`app.js`, `app.scss`, `skeleton.css`, and the old modal manager/styles were removed.
+`site_foundation.css` retains derived geometry, typography, content, and utility
+rules with original attribution. `site_controls.scss` adapts general selectors to
+Bootstrap controls while preserving dimensions and native typography where it
+was part of the layout. This application adapter is intentional; existing
+compositions were not replaced with Bootstrap's grid. Page layout is unchanged.
+
+Sound/board preferences and both book-dialog types use `ui_modal`. Affiliate
+details and recommendations have their own partials and accessible triggers;
+Bootstrap handles focus, Escape, and backdrop. Puzzle filters initialize from
+common resources and preserve the rating cookie in the tactics hub.
+
+Validation: the complete web-server suite plus study search passed 111 tests.
+General-page checks compare regions at 1280, 900, 390, and 320 px in both themes,
+including home, content, registration, LiveView search, books, endgames, exercise
+tool, iframe, and administration. They also verify preferences, book focus/return,
+and hook lifecycle. Native-training regressions cover visualization, errors,
+retries, and promotions. Builds retain Sass/resource-size warnings. The later JS
+audit is delivered separately.
+
+Emitted gzip sizes, excluding engine/LiveView bundles already loaded separately:
+`bootstrap_site.css`, 45,889 bytes; `bootstrap_site.js`, 26,815 bytes;
+`bootstrap_discovery.css`, 24,005 bytes; `bootstrap_discovery.js`, 24,374 bytes.
+These are tracking measurements, not claimed reductions from the previous bundle.
+The reference admin table already overflowed on mobile; comparison requires no
+additional overflow without changing its layout. Native tests now await
+Chessground's asynchronous callbacks before reading errors, removing a test race.
+
+## Objective and scope
+
+Reduce repeated HTML, CSS, and JavaScript through Bootstrap 5.3 and shared Phoenix
+templates. Prioritize UI added or extended in this fork. Alpine retains application
+state; Bootstrap manages its UI controls.
+
+Agreed design constraint: preserve current visual distribution, navigation, and
+theme. Layout separation means the technical template/resources, not redesign.
+Adopt Bootstrap controls/behavior when they improve implementation. Normalization
+of fields, buttons, internal spacing, and focus states is authorized. Do not keep
+legacy exceptions solely to reproduce old inconsistencies. Compare before/after
+screenshots and verify screen composition and functionality. Proposed changes to
+screen distribution require asking the user first. Design guidance does not
+authorize layout changes.
+
+"Current fork pages" means today's library, analysis, editor, and training pages,
+after our changes. Adapt the same templates while retaining routes/functions;
+do not create parallel page copies. "Inherited" identifies original pieces they
+still used, including Skeleton, the base layout, and some controls.
+
+Migrated pages use dedicated Bootstrap resources and our theme without loading
+Skeleton or all legacy global resources. Application logic is reused, extracting
+shared modules as needed during transition. Migration happens per complete page
+to avoid maintaining two global style systems on one page.
+
+Priority depends on origin, reuse, and risk, not just screen name: an inherited
+page can contain new fork components.
+
+These UI phases do not migrate engines, PGN processing, storage, FSRS, move
+legality, or board behavior. Shared promotion, move-tree, and chapter-picker APIs
+are retained; presentation is reviewed where appropriate.
+
+## Fork evidence
+
+Reference for the initial review: HEAD `4db28cdd`, compared with the local
+`upstream/master` reference; common ancestor
+`83e0a955f843cdeb11e443417f93f8dabacca226`. The remote reference was not refreshed.
+This ancestor includes upstream integrations and is not presented as the original
+fork-creation date.
+
+Milestones verified in history:
+
+| Area | Evidence | Classification |
 | --- | --- | --- |
-| Análisis de partidas | `e83cbf49`, 2026-06-18 | Añadido en el fork |
-| Colecciones | `17ba2593`, 2026-09-27 | Añadido en el fork |
-| Biblioteca compacta | `d1b02af8`, 2026-10-07 | Añadido en el fork |
-| Diálogos de ajustes e información | `b2599986`, 2026-10-14 | Ampliación propia de estudios |
-| Sparring | `9d66cbd8`, 2026-10-16 | Añadido en el fork |
-| Tema de práctica | `b320fe5f`, 2026-10-17 | Estilos propios compartidos |
-| Selector de capítulos compartido | `5fe2df1d`, 2026-10-19 | Reutilización propia que conservar |
-| Gestor antiguo de modales | `987540c2`, 2020-09-26 | Heredado; compatibilidad inicial |
-| Skeleton | `b60bde49`, 2020-06-26 | Heredado; retirada posterior |
+| Game analysis | `e83cbf49`, 2026-06-18 | Added in the fork |
+| Collections | `17ba2593`, 2026-09-27 | Added in the fork |
+| Compact library | `d1b02af8`, 2026-10-07 | Added in the fork |
+| Settings/information dialogs | `b2599986`, 2026-10-14 | Fork-specific study extension |
+| Sparring | `9d66cbd8`, 2026-10-16 | Added in the fork |
+| Practice theme | `b320fe5f`, 2026-10-17 | Shared fork styling |
+| Shared chapter picker | `5fe2df1d`, 2026-10-19 | Fork reuse to preserve |
+| Legacy modal manager | `987540c2`, 2020-09-26 | Inherited; initial compatibility |
+| Skeleton | `b60bde49`, 2020-06-26 | Inherited; removed later |
 
-## Orden de ejecución
+## Execution order
 
-Cada fase debe producir un cambio revisable y reversible. Las fases siguientes
-dependen de que la integración y la limpieza de la anterior estén verificadas.
+Each phase must produce a reviewable, reversible change. Later phases depend on
+verified integration and cleanup of the previous one.
 
-| Fase | Estado | Alcance | Resultado exigido |
+| Phase | Status | Scope | Required outcome |
 | --- | --- | --- | --- |
-| 0 | Base implementada; hooks LiveView cuando aplique | Layout propio y recursos Bootstrap separados de los heredados | Compilación selectiva, tema único y dependencias compartidas identificadas |
-| 1 | Completada | Página inicial de análisis e importación PGN | Primera página con layout Bootstrap y diálogo compartido en uso real |
-| 2 | Completada: biblioteca personal y biblioteca simplificada de tácticas | Biblioteca: carpetas, mover estudios y menús | Reutilizar el diálogo y unificar menús de acciones |
-| 3 | Completada | Estudios: ajustes, información, historial Sparring y progreso | Migrar los contenedores y pestañas preservando el entrenamiento |
-| 4 | Completada | Colecciones y selector de aperturas | Sustituir gestión manual de foco y cierre preservando borradores |
-| 5 | Completada para las páginas migradas del fork | Botones, formularios y superficies del fork | Unificar variantes y eliminar reglas redundantes |
-| 6 | Completada con adaptador de geometría existente | Componentes heredados y retirada de Skeleton | Completar la convergencia después de estabilizar el fork |
+| 0 | Foundation implemented; LiveView hooks where applicable | Dedicated layout and resources separated from legacy assets | Selective build, one theme, identified shared dependencies |
+| 1 | Complete | Analysis overview and PGN import | First real page using Bootstrap and shared dialog |
+| 2 | Complete: personal and simplified tactics libraries | Library groups, moves, and menus | Reuse dialogs and unify action menus |
+| 3 | Complete | Study settings, information, Sparring history, progress | Migrate containers/tabs while preserving training |
+| 4 | Complete | Collections and opening picker | Replace manual focus/closing while preserving drafts |
+| 5 | Complete for migrated fork pages | Fork buttons, forms, and surfaces | Unify variants and remove redundant rules |
+| 6 | Complete with existing-geometry adapter | Inherited components and Skeleton removal | Complete convergence after stabilizing fork pages |
 
-## Fase 0: integración y reglas comunes
+## Phase 0: integration and common rules
 
-- Fijar una versión exacta de Bootstrap 5.3 al implementar y actualizar el lockfile
-  principal de `assets`. Incorporar Popper si lo necesitan los menús elegidos.
-- Usar el Webpack y Sass existentes con entradas propias para el layout Bootstrap.
-  Importar únicamente componentes necesarios. Rejilla, contenedores y estilos
-  base se incorporan según las necesidades de las páginas migradas.
-- Separar la carga de CSS y JavaScript en los layouts y sus cabeceras. El layout
-  Bootstrap no debe importar `app.scss` ni cargar el `app.js` heredado completo.
-  Extraer sus funciones necesarias, como preferencias de tablero y sonido,
-  navegación y tema, a módulos compartidos sin dependencias de Skeleton.
-- Auditar cabecera, pie, mensajes flash y ajustes globales antes del piloto.
-  Adaptar las piezas necesarias al nuevo layout reutilizando sus datos y lógica.
-  Mantener el layout anterior para las páginas pendientes de migración.
-- Comprobar los recursos y CSS emitidos: `.modal`, `.container` y `.alert` tienen
-  nombres compartidos entre ambos sistemas. El gestor de
-  `assets/js/components/modal.js` y el CSS de modales heredados no deben cargarse
-  en páginas Bootstrap. Contemplar el backdrop y los cambios de scroll del body.
-- Centralizar colores, espaciado, radios, foco y tamaños en un archivo de tema.
-  Conectar el `data-theme` existente con `data-bs-theme`; no crear otra preferencia.
-- Crear el mínimo de infraestructura compartida: plantilla de modal con título,
-  contenido y acciones; variantes de botón; inicialización y limpieza de plugins.
-  Mantener IDs únicos y traducciones. Evitar un nuevo framework de componentes.
-- Definir un único mecanismo para saber si un modal bloquea la interacción.
-  Durante la transición debe reconocer diálogos nativos, modales heredados,
-  colecciones y modales Bootstrap, incluidos sus estados de transición.
-- Adaptar `study_sessions.js`, `study_page_controls.js` y los selectores de
-  visibilidad de feedback que hoy dependen de `dialog[open]` o estilos inline.
-- Hacer la inicialización idempotente. Para nodos reemplazados por LiveView,
-  usar hooks de montaje y destrucción y liberar instancias y listeners.
-- Cada control tiene un solo propietario de apertura, cierre y selección:
-  Bootstrap. Alpine se comunica mediante su API y eventos cuando sea necesario.
+- Pin an exact Bootstrap 5.3 version and update the main `assets` lockfile during
+  implementation. Add Popper if selected menus require it.
+- Use existing Webpack/Sass with dedicated entries. Import only needed components;
+  add grid, containers, and foundation styles according to migrated-page needs.
+- Separate CSS/JS loading in layouts/headers. Bootstrap pages must not import
+  `app.scss` or the full legacy `app.js`. Extract necessary board/sound preferences,
+  navigation, and theme into shared modules independent of Skeleton.
+- Audit header, footer, flash messages, and global settings before the pilot.
+  Reuse data/logic and adapt necessary pieces. Retain the previous layout for
+  pages awaiting migration.
+- Check emitted resources/CSS: `.modal`, `.container`, and `.alert` collide between
+  systems. Do not load `assets/js/components/modal.js` or legacy modal CSS on
+  Bootstrap pages. Account for backdrop and body-scroll changes.
+- Centralize colors, spacing, radii, focus, and sizes in theme definitions. Connect
+  existing `data-theme` to `data-bs-theme`; do not add another preference.
+- Build minimal shared infrastructure: modal template with title/content/actions,
+  button variants, plugin initialization/cleanup. Keep unique IDs/translations;
+  avoid another component framework.
+- Define one blocking-modal detector recognizing native, legacy, collection, and
+  Bootstrap dialogs, including transitions during migration.
+- Adapt `study_sessions.js`, `study_page_controls.js`, and feedback visibility
+  consumers previously relying on `dialog[open]` or inline styles.
+- Make initialization idempotent. Use mount/destroy hooks for LiveView-replaced
+  nodes and release plugin instances/listeners.
+- Bootstrap is the single owner of control opening, closing, and selection.
+  Alpine communicates through APIs/events as needed.
 
-Salida: layout y recursos propios preparados, build correcto y comprobación de
-que las páginas pendientes siguen usando sus recursos anteriores. La fase 1
-valida el nuevo layout sobre una página real.
+Exit criteria: dedicated layout/resources, successful build, and verification
+that pending pages still use their earlier resources. Phase 1 validates the new
+layout on a real page.
 
-## Fase 1: piloto en análisis
+## Phase 1: analysis pilot
 
-Archivos principales: `templates/analysis/index.html.eex`,
-`assets/js/analysis_overview.js` y `analysis_presentation.css`.
+Main files: `templates/analysis/index.html.eex`, `assets/js/analysis_overview.js`,
+and `analysis_presentation.css`.
 
-Adaptar la plantilla actual de análisis al layout Bootstrap, incluyendo botones,
-formularios y estructura necesarios para que funcione sin Skeleton. Revisar las
-dependencias de sus estilos antes de trasladarlos al nuevo conjunto de recursos.
-Las demás páginas de análisis cambian de layout cuando estén adaptadas.
+Adapt the existing analysis template, including buttons, forms, and structure
+needed without Skeleton. Review style dependencies before moving resources.
+Other analysis pages switch layout once adapted.
 
-Migrar el diálogo de importación PGN a la plantilla común. Conservar envío,
-validación y texto introducido tras errores. Reemplazar el cierre manual por
-coordenadas y la restauración de foco por el comportamiento del componente y
-sus eventos. Mantener el enfoque inicial del textarea.
+Migrate PGN import to the common dialog template. Preserve submission, validation,
+and input after errors. Replace coordinate-based manual closing/focus restoration
+with component behavior/events. Retain initial textarea focus.
 
-Verificar Escape, backdrop, foco inicial, retorno al disparador, scroll móvil,
-etiquetado accesible, tema oscuro y ausencia de listeners duplicados.
-Registrar CSS/JS añadido y eliminado y tamaño comprimido de los assets.
-Continuar con las fases posteriores si la solución permite eliminar código
-propio sin acumular una segunda capa de excepciones visuales.
+Verify Escape, backdrop, initial/return focus, mobile scroll, accessible labels,
+dark theme, and no duplicate listeners. Record added/removed CSS/JS and compressed
+asset sizes. Continue if the solution removes custom code without accumulating
+another layer of visual exceptions.
 
-## Fases 2 a 4: comportamientos compartidos
+## Phases 2–4: shared behavior
 
-Biblioteca: `study/index.html.eex`, `components/study_library.js` y
-`study_library.css`. Conservar selección múltiple, filtros, favoritos, permisos
-y resultados de las peticiones. El flujo mover → crear carpeta → volver a mover
-debe cerrar un modal antes de abrir el siguiente; no apilar modales Bootstrap.
-Preservar el foco del disparador incluso si se vuelve a renderizar una fila.
+Library: `study/index.html.eex`, `components/study_library.js`, and
+`study_library.css`. Preserve multiple selection, filters, favorites, permissions,
+and request results. Move → create folder → return to move must close one modal
+before opening another; do not stack Bootstrap modals. Preserve trigger focus
+even after row rerendering.
 
-Estudios: `_study_settings`, diálogo de información, `_sparring_history` y
-`progress_modal` en `show.html.eex`; `study_page_controls.js` y consumidores.
-Conservar la selección contextual de General/Practice/Sparring y sus eventos.
-Para el modal de progreso, verificar todos sus consumidores antes de retirar
-el mecanismo heredado. Los modales deben seguir pausando el tiempo de práctica,
-bloqueando atajos del tablero y ocultando feedback superpuesto.
+Studies: `_study_settings`, information dialog, `_sparring_history`, and
+`progress_modal` in `show.html.eex`, plus `study_page_controls.js` and consumers.
+Preserve contextual General/Practice/Sparring selection/events. Verify all progress
+consumers before removing legacy behavior. Modals must keep pausing practice time,
+blocking board shortcuts, and hiding overlapping feedback.
 
-Colecciones: `_collection_modal.html.eex` y `study_collections.js`.
-Conservar formularios internos, recuperación de errores, selección activa y
-borradores; retirar el focus trap manual solo cuando lo reemplace Bootstrap.
-Migrar después `_opening_picker.html.eex` y `study_maintenance.js`, manteniendo
-la búsqueda y selección Alpine.
+Collections: `_collection_modal.html.eex` and `study_collections.js`. Preserve
+internal forms, error recovery, active selection, and drafts. Remove the manual
+focus trap only when Bootstrap replaces it. Then migrate `_opening_picker.html.eex`
+and `study_maintenance.js`, retaining Alpine search/selection.
 
-En cada componente migrado se adoptan también los botones y campos comunes que
-necesite. Cada página cambia de layout cuando todos sus controles y superficies
-necesarios funcionan sin los recursos heredados. La fase 5 completa la migración
-de las restantes páginas del fork, incluyendo editor, creación y mantenimiento.
+Each migrated component adopts necessary common fields/buttons. A page switches
+layout only once its controls/surfaces work without legacy resources. Phase 5
+completes remaining fork pages, including editor, creation, and maintenance.
 
-## Fase 5: convergencia visual del fork
+## Phase 5: fork visual convergence
 
-Extender las variantes comunes a editor, creación y mantenimiento de estudios,
-análisis, biblioteca y controles nuevos de entrenamiento. Reutilizar
-`study_list_row.html.eex`; no reemplazarlo por otra fila específica por pantalla.
+Extend common variants to editor, creation/maintenance, analysis, library, and new
+training controls. Reuse `study_list_row.html.eex`; do not create a separate row
+implementation for each screen.
 
-Extraer estilos compartidos de `practice_theme.css`, `study_presentation.css`,
-`study_extensions.css`, `study_library.css` y `chapter_editor.css`. El tema define
-los valores visuales; el componente define sus estados; cada pantalla conserva
-solo su composición y las necesidades propias del dominio.
+Extract shared styling from `practice_theme.css`, `study_presentation.css`,
+`study_extensions.css`, `study_library.css`, and `chapter_editor.css`. The theme
+owns visual values, components own states, and screens retain composition and
+domain requirements.
 
-Evaluar Bootstrap Icons como decisión separada, ya que no viene incluido en
-Bootstrap. Centralizar primero los SVG repetidos sin introducir otra dependencia
-si el catálogo actual basta. No reemplazar el selector especializado de capítulos
-por un dropdown genérico que pierda búsqueda, métricas o navegación.
+Evaluate Bootstrap Icons separately; it is not bundled with Bootstrap. Centralize
+repeated SVGs before adding a dependency if the existing catalogue is sufficient.
+Do not replace the specialized chapter picker with a generic dropdown that loses
+search, metrics, or navigation.
 
-## Fase 6: interfaz heredada
+## Phase 6: inherited interface
 
-Dejar para esta fase libros y sus modales, formularios antiguos y estructura
-general basada en Skeleton. Sonido y tablero ya usan el modal compartido en las
-páginas migradas; queda retirar sus envoltorios antiguos en las demás páginas.
-Los cambios de separación de recursos y extracción de módulos compartidos
-pertenecen a fase 0.
+Books/dialogs, older forms, and general Skeleton structure belong to this phase.
+Sound/board preferences already use shared modals on migrated pages; remove old
+wrappers on remaining pages. Resource separation and shared module extraction
+belong to phase 0.
 
-Eliminar el gestor antiguo de modales cuando no tenga consumidores. Retirar
-Skeleton por familias de estilos, verificando páginas de autenticación, contenido,
-administración e iframes antes de borrar su importación global.
+Remove the old modal manager once it has no consumers. Retire Skeleton by style
+family, verifying authentication, content, administration, and iframe pages before
+removing its global import.
 
-## Validación y criterio de terminado
+## Validation and completion criteria
 
-- Registrar capturas antes/después en escritorio y móvil, con tema claro/oscuro.
-- Ejecutar `npm run deploy` desde `assets` en cada entrega de implementación.
-- Seleccionar pruebas existentes según lo cambiado: `study_library_browser.cjs`,
-  `study_navigation.cjs`, `study_modes_browser.cjs`, `study_sessions_browser.cjs`,
-  `study_feedback_browser.cjs`, `sparring_browser.cjs`,
-  `study_maintenance_browser.cjs`, `study_creation_browser.cjs` y
-  `chapter_editor_browser.cjs` bajo `assets/test/unit`.
-- Ejecutar las pruebas de plantillas/controladores correspondientes cuando cambie
-  su renderizado. Añadir cobertura específica para foco, Escape, flujo entre
-  modales y reemplazo de nodos LiveView donde no exista.
-- Una fase termina cuando sus flujos pasan, el teclado y foco funcionan, no hay
-  doble gestión del estado y se han retirado estilos/listeners sustituidos.
-- Comparar tamaño comprimido, reglas y handlers propios eliminados y número de
-  lugares que hay que editar para cambiar un componente. El ahorro de tokens es
-  una expectativa; medirlo solo con tareas comparables, sin prometer porcentajes.
-- Revertir una fase mediante su commit; no añadir flags permanentes que mantengan
-  dos implementaciones del mismo componente. Los datos y contratos de negocio
-  permanecen compatibles durante la migración.
+- Capture desktop/mobile before/after screenshots in light/dark themes.
+- Run `npm run deploy` from `assets` for each implementation delivery.
+- Select relevant existing tests under `assets/test/unit`, including
+  `study_library_browser.cjs`, `study_navigation.cjs`, `study_modes_browser.cjs`,
+  `study_sessions_browser.cjs`, `study_feedback_browser.cjs`, `sparring_browser.cjs`,
+  `study_maintenance_browser.cjs`, `study_creation_browser.cjs`, and
+  `chapter_editor_browser.cjs`.
+- Run corresponding template/controller tests when rendering changes. Add missing
+  coverage for focus, Escape, modal transitions, and LiveView node replacement.
+- A phase is complete when journeys pass, keyboard/focus work, state has one owner,
+  and replaced styles/listeners are removed.
+- Compare compressed sizes, removed custom rules/handlers, and the number of places
+  needed to change a component. Token savings are an expectation requiring
+  comparable-task measurements, not promised percentages.
+- Revert a phase through its commit. Do not add permanent flags maintaining two
+  implementations of the same component. Business data/contracts remain
+  compatible during migration.
 
-## Referencias
+## References
 
-- [Integración oficial con Webpack](https://getbootstrap.com/docs/5.3/getting-started/webpack/).
-- [Importaciones selectivas de Sass y JavaScript](https://getbootstrap.com/docs/5.3/customize/optimize/).
-- [API JavaScript](https://getbootstrap.com/docs/5.3/getting-started/javascript/).
-- [Modales y sus limitaciones](https://getbootstrap.com/docs/5.3/components/modal/).
-- [Arquitectura actual](architecture.md).
+- [Official Webpack integration](https://getbootstrap.com/docs/5.3/getting-started/webpack/).
+- [Selective Sass and JavaScript imports](https://getbootstrap.com/docs/5.3/customize/optimize/).
+- [JavaScript API](https://getbootstrap.com/docs/5.3/getting-started/javascript/).
+- [Modals and limitations](https://getbootstrap.com/docs/5.3/components/modal/).
+- [Current architecture](architecture.md).
 
-El estado actual se registra en «Pendientes y siguiente entrega» y en la tabla
-de ejecución. Los apartados de entregas detallan el alcance y sus límites.
+Current status is recorded under "Outstanding work and next delivery" and in the
+execution table. Delivery records describe each historical scope and limitation.

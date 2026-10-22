@@ -1,209 +1,203 @@
-# Responsabilidades, Alpine y componentes de `study.js`
+# Responsibilities, Alpine, and components in `study.js`
 
-Fecha: 2026-10-22. Referencia: `4962dcc4`. Revisión estática del código actual;
-las líneas indicadas corresponden a esta revisión. No se modifica la aplicación.
+Date: 2026-10-22. Reference: `4962dcc4`. Static review of the current code;
+line numbers refer to that revision. This audit does not change the application.
 
-## Resultado
+## Findings
 
-`study.js` reúne composición de la página, varios flujos de práctica, persistencia
-y presentación. La separación más útil es que el motor publique estado y reciba
-comandos, mientras los componentes de interfaz muestran ese estado. Alpine encaja
-en los controles y las vistas; Chessground y las reglas de entrenamiento conservan
-su propia implementación.
+`study.js` combines page composition, several practice workflows, persistence,
+and presentation. The useful boundary is for the engine to publish state and
+receive commands while UI components display that state. Alpine fits controls
+and views; Chessground and training rules retain their own implementations.
 
-El archivo tiene 2.080 líneas, 90 declaraciones de función, 37 declaraciones de
-importación ES y 59 bindings en declaraciones de variables de nivel superior.
-Estos últimos incluyen constantes y referencias a adaptadores, no solo estado
-mutable. `handle_move` ocupa 265 líneas y `main`, 212. Las cifras se obtuvieron
-del AST; no son una medida de rendimiento ni una estimación de código eliminable.
+The file has 2,080 lines, 90 function declarations, 37 ES import declarations,
+and 59 bindings in top-level variable declarations. The latter include constants
+and adapter references, not just mutable state. `handle_move` has 265 lines and
+`main` has 212. These figures come from the AST; they do not measure performance
+or estimate removable code.
 
-## Mapa de responsabilidades
+## Responsibility map
 
-| Responsabilidad actual | Evidencia en `assets/js/study.js` | Separación aconsejada |
+| Current responsibility | Evidence in `assets/js/study.js` | Suggested boundary |
 | --- | --- | --- |
-| Arranque y composición | `main`, 1801–2012; inicializa almacenamiento, tablero, árboles, sesiones, Sparring, controles y modos | Mantener un punto de composición pequeño que conecte módulos y entregue sus dependencias |
-| Carga de PGN y capítulos | `setup_trees`, 1204; `setup_chapter_select`, 1246; árboles distintos de lectura y práctica | Modelo de documento/capítulos; cambiar capítulo es una operación de dominio con un adaptador de selección |
-| Ejecución de jugadas | `handle_move`, 402; `ai_move`, 1082; `play_move`, 1114; `start_training`, 1123 | Controlador de práctica; separar evaluación, registro y transición antes de mover el flujo completo |
-| Smart y práctica dirigida | `smartIntroductionMove`, 140; `selectNextSmartPosition`, 155; `updateSmartRun`, 198 | Controlador Smart sobre los modelos existentes de selección y revisión |
-| Errores, capítulos débiles y revisiones | `showFailedPosition`, 227; funciones de colas y revisión, 668–777 | Controladores de recorridos con políticas diferenciadas; conservar orden, recuperación y condiciones de finalización |
-| Estado del tablero y reproducción de contexto | `presentPracticePosition`, 94; `setup_move`, 1025 | Adaptador imperativo de Chessground y controlador de reproducción cancelable |
-| Pistas, flechas y explicaciones | `give_hints`, 841; `display_arrows`, 866; `create_comment`, 927; `display_comments`, 980 | Separar las decisiones sobre asistencia de la construcción de comentarios y formas visuales |
-| Preferencias y profundidad | inicialización, 279–310; toggles, 1365–1513; profundidad, 1515–1573; valores, 1699–1737 | Modelo de preferencias + componentes Alpine de ajustes y profundidad |
-| Progreso y persistencia | registro, 787–818; `update_progress`, 1584; reset, 1660; hidratación y sincronización en `main` | Proyección de progreso, persistencia y reset separados del renderizado |
-| Lectura y navegación manual | `update_read_mode_ui`, 2017; `set_read_mode`, 2027; navegación, 2039–2080 | Controlador de lectura que reutilice árbol y navegación existentes; Alpine refleja su estado |
+| Startup and composition | `main`, 1801–2012; initializes storage, board, trees, sessions, Sparring, controls, and modes | Keep a small composition entry point connecting modules and providing dependencies |
+| PGN and chapter loading | `setup_trees`, 1204; `setup_chapter_select`, 1246; separate reading and practice trees | Document/chapter model; changing chapters remains a domain operation with a selection adapter |
+| Move execution | `handle_move`, 402; `ai_move`, 1082; `play_move`, 1114; `start_training`, 1123 | Practice controller; separate evaluation, recording, and transition before extracting the whole workflow |
+| Smart and directed practice | `smartIntroductionMove`, 140; `selectNextSmartPosition`, 155; `updateSmartRun`, 198 | Smart controller using existing selection and review models |
+| Mistakes, weak chapters, and reviews | `showFailedPosition`, 227; queue/review functions, 668–777 | Run controllers with distinct policies; preserve ordering, recovery, and completion rules |
+| Board state and context replay | `presentPracticePosition`, 94; `setup_move`, 1025 | Imperative Chessground adapter and cancelable replay controller |
+| Hints, arrows, and explanations | `give_hints`, 841; `display_arrows`, 866; `create_comment`, 927; `display_comments`, 980 | Separate assistance decisions from comment and shape rendering |
+| Preferences and depth | initialization, 279–310; toggles, 1365–1513; depth, 1515–1573; values, 1699–1737 | Preference model plus Alpine settings and depth components |
+| Progress and persistence | recording, 787–818; `update_progress`, 1584; reset, 1660; hydration/sync in `main` | Progress projection, persistence, and reset separated from rendering |
+| Reading and manual navigation | `update_read_mode_ui`, 2017; `set_read_mode`, 2027; navigation, 2039–2080 | Reading controller reusing existing tree/navigation components; Alpine reflects its state |
 
-Los módulos ya extraídos sí aportan separación: `position_review.js`,
+Existing extractions already provide useful boundaries: `position_review.js`,
 `chapter_stats.js`, `progress_preservation.js`, `position_context.js`,
-`study_sessions.js`, `study_activity.js`, `sparring/study_adapter.js` y
-`study/visualization.js`, entre otros. Hay que reutilizarlos y reducir la
-coordinación que permanece en el archivo, sin crear modelos paralelos.
+`study_sessions.js`, `study_activity.js`, `sparring/study_adapter.js`, and
+`study/visualization.js`, among others. Reuse them and reduce the coordination
+remaining in this file rather than introducing parallel models.
 
-## Interfaz que ya usa Alpine
+## UI already using Alpine
 
-- `show.html.eex:36`: lectura, expansión de comentarios y detección de overflow.
-- `show.html.eex:69`: visibilidad del botón de pistas según el modo de lectura.
-- `_study_progress.html.eex:1`: lista de capítulos mediante `x-for`, estados,
-  métricas, selección de práctica y acciones de revisión.
-- El editor y mantenimiento ya registran componentes con `Alpine.data`.
+- `show.html.eex:36`: reading state, comment expansion, and overflow detection.
+- `show.html.eex:69`: hint-button visibility according to reading mode.
+- `_study_progress.html.eex:1`: chapter list through `x-for`, states, metrics,
+  practice selection, and review actions.
+- Editor and maintenance already register components through `Alpine.data`.
 
-El progreso ya ofrece un límite útil: el motor emite `study-progress-updated`
-y Alpine renderiza sus datos. Lo pendiente ahí es separar la preparación de esos
-datos y su temporizador de las reglas de práctica.
+Progress already has a useful boundary: the engine emits `study-progress-updated`
+and Alpine renders its data. The remaining work is separating data preparation
+and the refresh timer from practice rules.
 
-Bootstrap ya controla los modales y las pestañas a través de
-`bootstrap_modals.js`, `bootstrap_study_controls.js` y `dialog_lifecycle.js`.
-Esos estados deben conservar un único propietario.
+Bootstrap already owns modals and tabs through `bootstrap_modals.js`,
+`bootstrap_study_controls.js`, and `dialog_lifecycle.js`. Those states must retain
+one owner.
 
-## Candidatos para Alpine
+## Alpine candidates
 
-| Prioridad | Candidato | Qué mostraría o manejaría Alpine | Qué conserva el dominio |
+| Priority | Candidate | Alpine responsibilities | Domain responsibilities |
 | --- | --- | --- | --- |
-| Alta | Ajustes de pistas, comentarios, demora y revisión | Etiquetas, iconos, clics y valor seleccionado de los seis controles cíclicos | Valores válidos, defaults, persistencia y efectos sobre el entrenamiento |
-| Alta | Profundidad de práctica | Slider, botones ±, output, checkbox, límites y resaltado | Alcance del catálogo, profundidad por capítulo y aplicación del cambio al cerrar ajustes |
-| Media | Indicadores de recorridos | Texto, visibilidad y disponibilidad de acciones para Smart, errores, revisiones y capítulos débiles | Qué recorrido está activo, contadores, cola y finalización |
-| Media | Explicaciones PGN | Lista de títulos y comentarios, con renderizado seguro | Qué comentarios revelar y cuándo su revelación cuenta como ayuda |
-| Baja | Enlaces de análisis externo | `href` y comando de exportación sobre un snapshot de posición | PGN completo, orientación, variación seleccionada y fallback de Lichess |
+| High | Hint, comment, delay, and review settings | Labels, icons, clicks, and selected values for the six cyclic controls | Valid values, defaults, persistence, and training effects |
+| High | Practice depth | Slider, ± buttons, output, checkbox, bounds, and highlighting | Catalogue scope, per-chapter depth, and applying changes when settings close |
+| Medium | Run indicators | Text, visibility, and action availability for Smart, mistakes, reviews, and weak chapters | Active run, counters, queue, and completion |
+| Medium | PGN explanations | Safely rendered list of headings and comments | Which comments to reveal and when revealing them counts as assistance |
+| Low | External analysis links | `href` and export command from a position snapshot | Complete PGN, orientation, selected variation, and Lichess fallback |
 
-### Ajustes: el primer cambio recomendado
+### Settings: the recommended first change
 
-Los seis toggles (`toggle_arrows`, `toggle_arrow_type`, `toggle_key_move`,
-`toggle_review`, `toggle_move_delay`, `toggle_comments`) leen `textContent`,
-comparan traducciones y escriben tanto el DOM como el estado y el almacenamiento.
-`set_options_values` vuelve a escribir las mismas etiquetas.
+The six toggles (`toggle_arrows`, `toggle_arrow_type`, `toggle_key_move`,
+`toggle_review`, `toggle_move_delay`, `toggle_comments`) read `textContent`, compare
+translations, and write DOM, state, and storage. `set_options_values` writes the
+same labels again.
 
-El valor debe pertenecer al modelo y la etiqueta derivarse de él. Un componente
-registrado como `studyPreferences` podría conectar los controles actuales con un
-modelo de opciones y un helper de ciclo compartido. La plantilla mantendría sus
-botones, clases, IDs, descripciones accesibles y distribución.
+The model should own the value, with the label derived from it. A component
+registered as `studyPreferences` could connect existing controls to an option
+model and shared cycling helper. The template would retain its buttons, classes,
+IDs, accessible descriptions, and layout.
 
-Los valores guardados hoy incluyen textos traducidos. Introducir identificadores
-estables requiere un lector compatible o una migración explícita que conserve
-preferencias válidas. También hay defaults y claves independientes para tácticas
-(`tactics_show_arrows`, `tactics_show_comments`), además de las claves de repertorio.
-No conviene mezclar este cambio de formato con la primera extracción de interfaz.
+Stored values currently include translated strings. Stable identifiers require
+a compatible reader or explicit migration preserving valid preferences. Tactics
+also has separate defaults and keys (`tactics_show_arrows`,
+`tactics_show_comments`) alongside repertoire settings. Do not combine this
+storage-format change with the first UI extraction.
 
-`key_move` está oculto en la plantilla, pero su preferencia aún participa en
-`start_training`; no puede eliminarse solo porque no aparezca en pantalla.
+`key_move` is hidden in the template, but its preference still participates in
+`start_training`; being hidden does not make it removable.
 
-### Profundidad: control visual y efecto diferido
+### Depth: visual control and deferred application
 
-El componente debe recibir el capítulo activo, profundidad disponible, valor y
-habilitación. El motor sigue interpretando `DEPTH_MAX = -1` y aplicando el alcance.
-Un cambio de capítulo debe refrescar el componente sin escribir accidentalmente
-el valor del capítulo anterior.
+The component should receive the active chapter, available depth, value, and
+enabled state. The engine continues interpreting `DEPTH_MAX = -1` and applying
+scope. Chapter changes must refresh the component without accidentally writing
+the previous chapter's value.
 
-Hoy el slider marca `depthSettingsChanged` y actualiza progreso, pero el reinicio
-de práctica se decide mediante `onDialogClosed`. Hay que conservar esa decisión:
-arrastrar el slider no debe reiniciar la sesión repetidamente ni alterar Read.
-Tampoco debe reemplazarse ese cierre por un segundo gestor Alpine del modal.
+Currently, the slider marks `depthSettingsChanged` and updates progress, while
+`onDialogClosed` decides whether to restart practice. Preserve that decision:
+dragging the slider must not repeatedly restart sessions or alter Read. Closing
+must not acquire a second Alpine modal manager.
 
-### Indicadores y comentarios
+### Indicators and comments
 
-Un componente de estado puede presentar `{ visible, message, completed }` y
-acciones disponibles. No debe imponer un mensaje genérico cuando Smart emite
-texto vacío: las cadenas cortas de repaso lo ocultan deliberadamente.
+A status component can present `{ visible, message, completed }` and available
+actions. It must not impose a generic message when Smart emits empty text:
+short review chains deliberately hide it.
 
-La lista de explicaciones podría recibir filas preparadas por el motor y usar
-`x-for`/`x-text`. Hoy `create_comment` construye nodos y delega en `set_text`, que
-usa `textContent` para el texto PGN no confiable. Ese contrato debe mantenerse;
-reemplazarlo por `x-html` cambiaría la seguridad del renderizado.
+An explanation list could receive engine-prepared rows and use `x-for`/`x-text`.
+Currently, `create_comment` constructs nodes and delegates to `set_text`, which
+uses `textContent` for untrusted PGN text. Preserve this contract; replacing it
+with `x-html` would change rendering security.
 
-Revelar comentarios o flechas puede modificar `assistedPositions` y, con ello,
-la calificación. El componente visual no debe decidir si una respuesta fue
-asistida ni registrar una revisión desde un watcher de presentación.
+Revealing comments or arrows can change `assistedPositions` and therefore grading.
+The visual component must not decide whether an answer was assisted or record a
+review from a presentation watcher.
 
-## Qué puede ser reutilizable
+## Reusable candidates
 
-| Pieza propuesta | Reutilización identificada | Alcance y límites |
+| Proposed piece | Identified reuse | Scope and limits |
 | --- | --- | --- |
-| Control de opción cíclica | Seis toggles actuales comparten lectura/ciclo/etiqueta | Helper de opciones + presentación parametrizada; no hace falta un generador general de formularios |
-| Modelo y vista de ajustes de estudio | Repertorios y colecciones tácticas usan la misma pantalla con defaults distintos | Compartir componente y modelo, parametrizando las diferencias; no duplicar la plantilla por tipo de estudio |
-| Indicador de recorrido | Smart, posiciones falladas y recorridos de capítulos actualizan mensajes y visibilidad | Compartir presentación conservando reglas y textos específicos de cada recorrido |
-| Proyección de progreso de capítulos | Panel Alpine y selector de capítulos reciben `study-progress-updated` | Extraer la preparación común de datos que ya comparten; conservar el evento y los consumidores existentes |
-| Explicaciones de jugadas | Read y práctica muestran el mismo formato, con distintas políticas de revelación | Compartir el renderizado; no asumir que el formulario de comentarios del editor tiene el mismo contrato |
-| Controlador de contexto de posición | Smart y práctica de errores ya usan `presentPracticePosition` | Extraer el adaptador que sigue en `study.js`, reutilizando `replayPositionContext`; no crear otra implementación de reproducción |
+| Cyclic option control | Six existing toggles share reading/cycling/label behavior | Option helper plus parameterized presentation; a general form generator is unnecessary |
+| Study-settings model and view | Repertoires and tactics collections use the same screen with different defaults | Share model/component and parameterize differences; do not duplicate templates per study type |
+| Run indicator | Smart, failed positions, and chapter runs update messages and visibility | Share presentation while retaining each run's rules and messages |
+| Chapter-progress projection | Alpine progress panel and chapter picker consume `study-progress-updated` | Extract preparation of the common data they already share; retain the event and consumers |
+| Move explanations | Read and practice use the same format with different reveal policies | Share rendering; do not assume the editor's comment form has the same contract |
+| Position-context controller | Smart and mistake practice already use `presentPracticePosition` | Extract the adapter remaining in `study.js`, reusing `replayPositionContext`; do not build another replay implementation |
 
-Un controlador Smart, un coordinador de capítulos o un módulo de reset también
-pueden mejorar el aislamiento, aunque todavía tengan un único consumidor.
-Eso es modularización; no demuestra por sí solo reutilización entre pantallas.
-El control de profundidad también tiene inicialmente un solo lugar de montaje.
+A Smart controller, chapter coordinator, or reset module can also improve
+isolation with only one consumer. That is modularization, not evidence of reuse
+across screens. The depth control also initially has only one mounting location.
 
-## Qué conservar fuera de Alpine
+## Responsibilities to keep outside Alpine
 
-- Evaluación de jugadas, promociones, selección de continuaciones, NAG/trampas,
-  scheduling, recuperación y registro de resultados.
-- Instancias de `Chess`, Chessground, árboles PGN completos, catálogos, workers
-  y operaciones de almacenamiento. No convertirlos en un store reactivo global.
-- Las animaciones del tablero, formas y overlays: requieren sus APIs imperativas.
-- La persistencia mediante `StorageAdapter`, con hidratación, identidades y
-  sincronización actuales. El mecanismo de persistencia de Alpine no sustituye
-  ese contrato.
-- Modales y pestañas Bootstrap, junto con sus eventos de foco, cierre y bloqueo.
+- Move evaluation, promotions, continuation selection, NAG/traps, scheduling,
+  recovery, and result recording.
+- `Chess` and Chessground instances, complete PGN trees, catalogues, workers, and
+  storage operations. Do not make them a global reactive store.
+- Board animations, shapes, and overlays, which require imperative APIs.
+- `StorageAdapter` persistence with current hydration, identities, and sync.
+  Alpine's persistence mechanism does not replace that contract.
+- Bootstrap modals and tabs, including focus, closing, and blocking events.
 
-`analysis/game_replay.js` ya resuelve reproducción lineal con posiciones cacheadas;
-la práctica de estudios tiene variaciones, puntuación y selección de respuestas.
-No hay evidencia para sustituir ambas por un único reproductor. `game_progress.js`
-ya comparte evidencia procedente de partidas y objetivos de práctica dirigida.
-`training_moves.js` ya concentra la separación de respuestas esperadas. Ninguno
-necesita envolverse otra vez para reducir visualmente el tamaño de `study.js`.
+`analysis/game_replay.js` already handles linear replay with cached positions;
+study practice has variations, scoring, and response selection. There is no
+evidence for replacing both with one player. `game_progress.js` already shares
+game evidence and directed-practice targets. `training_moves.js` already
+centralizes expected-response splitting. None needs another wrapper merely to
+make `study.js` look smaller.
 
-## Acoplamientos y condiciones de extracción
+## Coupling and extraction constraints
 
-1. **Inicialización.** `Alpine.start()` ocurre en la línea 48, antes de las
-   variables locales y de la hidratación asíncrona de `main`. Los nuevos
-   componentes deben registrarse antes del arranque y recibir un estado listo
-   cuando exista. Leer directamente variables aún no inicializadas o persistir
-   defaults desde `init()` puede alterar las preferencias hidratadas.
-2. **Un propietario por estado.** Sustituir las escrituras manuales de un control
-   cuando pase a Alpine. No mantener a la vez `hidden`, `x-show` y handlers
-   imperativos compitiendo por su presentación. Los componentes envían comandos;
-   el motor confirma el estado que deben mostrar.
-3. **Globals y cambios de modo.** `window.chess`, `window.trees`, `window.chapter`,
-   `window.curr_move`, la configuración de la plantilla y varios módulos comparten
-   estado implícito. Read, Sparring y práctica pueden reemplazarlo. La primera
-   entrega debe encapsular el acceso sin cambiar simultáneamente esos contratos.
-4. **Cancelación.** `trainingSessionId` invalida respuestas y pausas al cambiar
-   de contexto. Debe conservarse en jugadas, trampas, contexto y autoavance.
-5. **Ciclo de vida.** `main` instala listeners y un temporizador de revisiones,
-   pero no devuelve un teardown general. `setupStudySessions` ya ofrece
-   `destroy()`; varios otros adaptadores solo exponen `update()`. No hay aquí
-   prueba de duplicación en una carga normal, pero un remontaje exige propagar
-   limpieza de listeners, timers y recursos de cada adaptador.
-6. **Pruebas acopladas al archivo.** `study_navigation.cjs`, `smart_controls.cjs`
-   y `weak_practice_mode.cjs` extraen funciones de `study.js` mediante AST o slices.
-   Las extracciones deberán migrar esas pruebas a imports de los nuevos módulos,
-   manteniendo escenarios de dominio y las regresiones de navegador.
+1. **Initialization.** `Alpine.start()` runs at line 48, before local variables
+   and asynchronous hydration in `main`. New components must register before
+   startup and receive ready state when it exists. Reading uninitialized
+   variables or persisting defaults from `init()` could alter hydrated settings.
+2. **One owner per state.** Replace manual writes when a control moves to Alpine.
+   Do not keep `hidden`, `x-show`, and imperative handlers competing over its
+   presentation. Components send commands; the engine confirms display state.
+3. **Globals and mode changes.** `window.chess`, `window.trees`, `window.chapter`,
+   `window.curr_move`, template configuration, and several modules share implicit
+   state. Read, Sparring, and practice can replace it. The first delivery should
+   encapsulate access without simultaneously changing those contracts.
+4. **Cancellation.** `trainingSessionId` invalidates replies and pauses after
+   context changes. Preserve it for moves, traps, context, and automatic advance.
+5. **Lifecycle.** `main` installs listeners and a review timer without returning
+   general teardown. `setupStudySessions` already exposes `destroy()`; several
+   other adapters expose only `update()`. This is not evidence of duplication
+   during a normal page load, but remounting requires propagating cleanup for
+   each adapter's listeners, timers, and resources.
+6. **File-coupled tests.** `study_navigation.cjs`, `smart_controls.cjs`, and
+   `weak_practice_mode.cjs` extract functions from `study.js` through AST or slices.
+   Extractions must migrate them to imports from the new modules while retaining
+   domain scenarios and browser regressions.
 
-El análisis de bindings detecta siete nombres sin referencias locales:
-`Chessground`, `string_hash`, `clear_local_storage`, `tree_value`, `need_hint`,
-`value_sort` y `chapterMastery`. Son candidatos a una limpieza separada; esto no
-demuestra que sus módulos completos estén sin uso ni permite retirar efectos de
-carga sin revisar sus otros consumidores.
+Binding analysis found seven names without local references: `Chessground`,
+`string_hash`, `clear_local_storage`, `tree_value`, `need_hint`, `value_sort`, and
+`chapterMastery`. These are candidates for separate cleanup. This does not prove
+that entire modules are unused or justify removing load-time effects without
+reviewing other consumers.
 
-## Orden propuesto
+## Proposed delivery order
 
-| Entrega | Trabajo | Riesgo relativo | Verificación necesaria |
+| Delivery | Work | Relative risk | Required verification |
 | --- | --- | --- | --- |
-| 1 | Modelo de preferencias y componente Alpine de ajustes; conservar inicialmente el formato guardado | Bajo/medio | Hidratación, persistencia, idiomas, defaults de tácticas, pistas y comentarios; navegador de ajustes y recorrido del jugador |
-| 2 | Componente de profundidad sobre el modelo de alcance existente | Medio | `practice_scope.cjs`, `study_navigation.cjs`, cambio de capítulo, sentinel de máximo, reinicio al cerrar y ausencia de reinicio en Read |
-| 3 | Proyección de progreso y presentación de indicadores; aprovechar el panel Alpine actual | Medio | Métricas, orden, timer de vencimientos, selección de capítulos, mensajes vacíos de Smart y sesiones |
-| 4 | Selección de comentarios separada de su renderizado | Medio | Texto PGN no confiable, variantes, Read, visualización oculta y calificación de ayuda |
-| 5 | Extraer coordinación de recorridos y contexto; después dividir `handle_move` | Alto | Smart, errores, capítulos débiles, revisiones, Sparring, trampas, underpromotion, ayuda, cancelación y práctica dirigida |
-| 6 | Reducir `main` a composición y formalizar teardown de página | Alto | Identidad de progreso, resets, hidratación/merge, navegación, remount y ausencia de recursos duplicados |
+| 1 | Preference model and Alpine settings component; initially preserve stored format | Low/medium | Hydration, persistence, languages, tactics defaults, hints/comments, settings browser tests, and player journey |
+| 2 | Depth component using the existing scope model | Medium | `practice_scope.cjs`, `study_navigation.cjs`, chapter changes, maximum sentinel, restart on close, and no restart in Read |
+| 3 | Progress projection and run indicators; reuse the existing Alpine panel | Medium | Metrics, ordering, due-date timer, chapter selection, empty Smart messages, and sessions |
+| 4 | Separate comment selection from rendering | Medium | Untrusted PGN text, variations, Read, hidden visualization, and assistance grading |
+| 5 | Extract run/context coordination, then split `handle_move` | High | Smart, mistakes, weak chapters, reviews, Sparring, traps, underpromotion, assistance, cancellation, and directed practice |
+| 6 | Reduce `main` to composition and formalize page teardown | High | Progress identity, resets, hydration/merge, navigation, remounting, and no duplicate resources |
 
-No es necesario completar estas seis entregas antes de obtener beneficios.
-La primera elimina el uso del texto visible como controlador de preferencias y
-establece una frontera de interfaz sin reescribir la validación de jugadas.
+Benefits do not require completing all six deliveries. The first removes visible
+text as the preference controller and establishes a UI boundary without rewriting
+move validation.
 
-Para cada entrega de implementación: pruebas de contrato de lo extraído,
-regresiones de navegador pertinentes y compilación. Cuando cambie la propiedad
-del renderizado, comparar geometría, temas, foco y teclado sin introducir cambios
-de layout. No se promete una reducción de tokens ni un objetivo arbitrario de
-líneas para el archivo.
+Each implementation delivery requires contract tests for extracted behavior,
+relevant browser regressions, and a build. When rendering ownership changes,
+compare geometry, themes, focus, and keyboard behavior without layout changes.
+No token-saving estimate or arbitrary file-length target is promised.
 
-## Alcance de la validación de esta auditoría
+## Audit validation scope
 
-Lectura de funciones, templates, adaptadores y consumidores; análisis del AST de
-`study.js` para tamaños y bindings. No se ejecutaron entrenamientos, benchmarks ni
-suites funcionales para este documento. Los riesgos descritos son condiciones de
-refactorización, no nuevas regresiones reproducidas.
+Function, template, adapter, and consumer review; AST analysis of `study.js` for
+sizes and bindings. No training runs, benchmarks, or functional suites were
+executed for this document. Listed risks are refactoring constraints, not newly
+reproduced regressions.

@@ -1,116 +1,106 @@
-# Auditoría de reutilización de JavaScript
+# JavaScript reusability audit
 
-Fecha: 2026-10-21. Revisión posterior a la migración de componentes Bootstrap.
+Date: 2026-10-21. Review following the Bootstrap component migration.
+Documentation translated to English on 2026-10-22.
 
-## Ya compartido
+## Already shared
 
-- `bootstrap_common.js`: navegación, preferencias, tema y arranque de biblioteca.
-  También conserva los filtros y la preferencia de rating del catálogo, tanto
-  en páginas normales como tras actualizaciones LiveView.
-- `dialog_lifecycle.js` y `blocking_ui.js`: apertura/cierre y detección de diálogos
-  bloqueantes. Los consumidores conservan sus reglas de dominio.
-- `color_toggles.js`: filtros de color de biblioteca y búsqueda pública. El hook
-  LiveView delega eventos, tolera remontajes y elimina sus listeners al destruirse.
-- `promotion_picker.js`, `chapter_picker.js`, `study_move_tree.js`: controles de
-  ajedrez reutilizados sin sustituirlos por menús genéricos.
-- `study/practice_sessions.js`: modelo de sesiones, objetivos y tiempo activo.
-  Estudio y práctica de errores comparten el modelo.
+- `bootstrap_common.js`: navigation, preferences, theme, and library startup.
+  It also preserves catalogue filters and rating preferences on regular pages
+  and after LiveView updates.
+- `dialog_lifecycle.js` and `blocking_ui.js`: dialog opening/closing and detection
+  of blocking dialogs. Consumers retain their domain rules.
+- `color_toggles.js`: library and public-search color filters. The LiveView hook
+  delegates events, tolerates remounting, and removes listeners when destroyed.
+- `promotion_picker.js`, `chapter_picker.js`, `study_move_tree.js`: reusable chess
+  controls that retain their specialized behavior.
+- `study/practice_sessions.js`: session, goal, and active-time model shared by
+  study training and mistake practice.
 
-## Extracciones completadas
+## Completed extractions
 
-- `modules/search_text.js`: `normalizeSearchText(value)` compartido por los modos
-  simple y completo de biblioteca y el selector de aperturas. Los consumidores
-  conservan el recorte de espacios y la selección de campos.
-- `modules/download_pgn.js`: `downloadPgn(pgn, filename)` compartido por
-  colecciones, Lichess y sparring. Conserva el MIME PGN y libera la URL después
-  del clic; cada consumidor conserva su nombre, contenido y flujo adicional.
+- `modules/search_text.js`: `normalizeSearchText(value)` shared by simple and full
+  library modes and the opening picker. Consumers retain trimming and field
+  selection.
+- `modules/download_pgn.js`: `downloadPgn(pgn, filename)` shared by collections,
+  Lichess, and Sparring. It preserves the PGN MIME type and releases the URL after
+  the click; consumers retain filenames, contents, and additional behavior.
+- `modules/request_json.js`: JSON transport shared by editor loading/saving,
+  chapter maintenance, study creation from collections, library organization,
+  and collection account synchronization. It centralizes credentials, JSON/CSRF
+  headers, and `JsonRequestError` with `status` and `data`. It propagates
+  `AbortSignal`, preserves cancellation, and does not retry. Revisions, stale
+  response checks, drafts, and messages remain in consumers. Non-JSON responses
+  use the consumer's error message; writes without a CSRF token fail before
+  sending. Metadata uploads using `FormData` and files retain their transport.
+- `modules/practice_activity.js`: activity, focus, visibility, blocking, and
+  interval events shared by study and mistake practice. It returns an idempotent
+  cleanup function; `setupStudySessions().destroy()` also releases the progress
+  listener and its controls. Study keeps one-second rendering, 15-second saves,
+  and synchronization when hidden. Mistake practice keeps its 15-second interval
+  and persistence policy. Consumers retain eligibility, tracker idleness, and
+  exit handling. Mistake practice installs the adapter once per page lifetime.
+- `modules/editable_target.js`: `isEditableTarget` shared by editor navigation and
+  copy handling, game replay shortcuts, and study navigation. The
+  `includeContentEditableFalse` option preserves broader replay protection.
+  Editor shortcuts remain available on static content unless an editable
+  ancestor remains protected, as before. Summary elements, dialogs, text
+  selection, modifier keys, and editor states remain consumer rules. Replay and
+  study navigation ignore IME composition. Study preserves Shift+arrow behavior
+  and navigation over static `contenteditable="false"` content.
 
-- `modules/request_json.js`: transporte JSON compartido por carga/guardado del
-  editor, mantenimiento de capítulos, creación de estudios desde colecciones,
-  organización de biblioteca y sincronización de colecciones con la cuenta.
-  Centraliza credenciales, cabeceras JSON/CSRF y errores `JsonRequestError` con
-  `status` y `data`. Propaga `AbortSignal`, conserva cancelaciones y no reintenta.
-  Las revisiones, comprobaciones de respuestas tardías, borradores y mensajes
-  permanecen en cada consumidor. Las respuestas sin JSON usan el mensaje de
-  error del consumidor; las escrituras sin token CSRF se rechazan antes de enviar.
-  El guardado de metadatos con `FormData` y archivos conserva su transporte actual.
+## Follow-up extensions
 
-- `modules/practice_activity.js`: eventos de actividad, foco, visibilidad,
-  bloqueo e intervalo compartidos por estudio y práctica de errores. Devuelve
-  una función de limpieza idempotente; `setupStudySessions().destroy()` también
-  libera el evento de progreso y sus controles. El estudio conserva renderizado
-  cada segundo, guardado cada 15 segundos y sincronización al ocultarse; errores
-  conserva su intervalo de 15 segundos y su política de persistencia. Cada modo
-  conserva elegibilidad, inactividad del tracker y finalización al salir. La
-  práctica de errores instala el adaptador una vez durante la vida de la página.
+The second review found two more consumers of the same transport:
+`components/study_library.js` and `study/collection_account.js`. Both reuse
+`requestJson`; no additional wrapper was introduced. The library preserves
+selection and localized messages after failures. `CollectionAccount` retains
+its snapshot queue, revisions, and pending local copy. It recognizes conflicts
+through `JsonRequestError.status === 409` and blocks further writes until an
+explicit reload, including a 409 response without JSON. Tests cover edits during
+saving, HTTP failures, invalid responses, recovery, and conflicts when reopening
+an account with pending local edits.
 
-- `modules/editable_target.js`: `isEditableTarget` compartido por navegación
-  y copia del editor, por los atajos del visor de partidas y por la navegación
-  del estudio. La opción
-  `includeContentEditableFalse` conserva la protección más amplia del visor;
-  el editor permite atajos sobre contenido estático, salvo que un antecesor
-  editable siga protegido como antes. Resúmenes, diálogos, selección de texto,
-  teclas modificadoras y estados del editor permanecen en cada consumidor.
-  El visor y la navegación del estudio también ignoran eventos durante
-  composición IME. El estudio conserva sus flechas con Shift y permite
-  navegar sobre contenido estático con `contenteditable="false"`.
+Navigation in `modules/study_page_controls.js` also reuses `isEditableTarget`,
+protecting empty and `plaintext-only` forms of `contenteditable`. Its tests cover
+composition, modifiers, prevented events, static content, document-level event
+targets, and dialog blocking.
 
-## Ampliación posterior
+## Status
 
-La segunda revisión encontró dos consumidores adicionales del mismo transporte:
-`components/study_library.js` y `study/collection_account.js`. Ambos reutilizan
-`requestJson`; no se añadió otro wrapper. La biblioteca conserva la selección y
-sus mensajes localizados cuando falla una operación. `CollectionAccount` conserva
-la cola de snapshots, sus revisiones y la copia local pendiente; identifica los
-conflictos mediante `JsonRequestError.status === 409` y bloquea nuevas escrituras
-hasta una recarga explícita, incluso si el servidor devuelve un 409 sin JSON.
-Las pruebas cubren cambios durante un guardado, errores HTTP, respuestas inválidas,
-recuperación y conflictos al reabrir una cuenta con cambios locales pendientes.
+The specific review of `study.js` responsibilities, Alpine UI, and components is
+in the [study audit](study-js-responsibility-audit.md). Its deliveries are future
+proposals, separate from the completed extractions listed here.
 
-La navegación de `modules/study_page_controls.js` también reutiliza
-`isEditableTarget`: deja de repetir la detección de campos y protege las formas
-vacía y `plaintext-only` de `contenteditable`. Sus pruebas cubren composición,
-modificadores, eventos cancelados, contenido estático y eventos cuyo destino es
-el documento, además del bloqueo de atajos por diálogos.
+The initial extractions and transport/navigation extensions are complete. Tests
+cover consumers and shared contracts; no extractions remain pending within this
+scope.
 
-## Estado
+## General regression review
 
-La revisión específica de responsabilidades, interfaz Alpine y componentes de
-`study.js` está en [la auditoría de estudio](study-js-responsibility-audit.md).
-Sus entregas son propuestas posteriores; no forman parte de las extracciones ya
-completadas que se enumeran aquí.
+Before extending the audit to `study.js`, the three blocked journeys documented
+in the [migration plan](bootstrap-migration-plan.md) were resolved. Outdated home,
+navigation, and Smart-message expectations were aligned with current contracts,
+and the complete journeys pass. A real board-sizing issue was also fixed: the
+calculation now reserves the existing bottom spacing so controls fit within the
+viewport. The layout is preserved, with coverage for height and width changes and
+other training modes that share the board module.
 
-Las extracciones iniciales y las ampliaciones de transporte y navegación están
-completadas. Las pruebas
-cubren los consumidores y los contratos compartidos; no hay nuevas extracciones
-pendientes dentro de este alcance.
+## Implementation order
 
-## Regresiones generales revisadas
+1. Complete: search normalization and PGN downloading.
+2. Complete: JSON transport, validated first in maintenance, then extended to the
+   editor and study creation from collections.
+3. Complete: activity adapter, with active-time, persistence-policy, cleanup, and
+   remount tests.
+4. Complete: editable-target predicate and regressions for shortcuts, copy,
+   selection, composition, and replay-specific exclusions.
 
-Antes de ampliar la auditoría a `study.js`, se resolvieron los tres recorridos
-bloqueados documentados en el [plan de migración](bootstrap-migration-plan.md).
-Las expectativas antiguas de portada, navegación y mensajes Smart se actualizaron
-contra los contratos actuales y los recorridos pasan completos. También se
-corrigió un fallo real de tamaño del tablero: el cálculo reserva ahora su margen
-inferior existente para que los controles quepan en la altura de la ventana.
-Se conserva la distribución y se verifican cambios de altura, anchura y los
-entrenamientos que comparten el módulo de tablero.
+Methods such as `save`, `play`, or `refresh` should not be unified based on naming
+alone: editors, collections, and training have different contracts and state.
+Bootstrap APIs do not need wrappers that merely rename methods without removing
+a repeated policy.
 
-## Orden de implementación
-
-1. Completado: normalización de búsqueda y descarga PGN.
-2. Completado: transporte JSON, validado primero en mantenimiento y extendido
-   al editor y a creación de estudios desde colecciones.
-3. Completado: adaptador de actividad, con pruebas de tiempo activo, políticas
-   de persistencia, limpieza y remontaje.
-4. Completado: predicado de destino editable y regresiones de atajos, copia,
-   selección, composición y exclusiones propias del visor.
-
-No conviene unificar por apariencia métodos como `save`, `play` o `refresh`:
-editor, colecciones y entrenamiento tienen contratos y estados diferentes.
-Tampoco hace falta envolver las APIs de Bootstrap si el wrapper solo cambia
-nombres y no elimina una política repetida.
-
-Las extracciones conservan las funciones de dominio en cada consumidor.
-El ahorro de tokens no se ha medido. El beneficio comprobable sería reducir los
-lugares que hay que leer y modificar cuando cambia un comportamiento compartido.
+Extractions retain domain behavior in consumers. Token savings have not been
+measured. The verifiable benefit is reducing the places that must be read and
+changed when shared behavior changes.
