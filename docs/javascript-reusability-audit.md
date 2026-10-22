@@ -75,6 +75,11 @@ el documento, además del bloqueo de atajos por diálogos.
 
 ## Estado
 
+La revisión específica de responsabilidades, interfaz Alpine y componentes de
+`study.js` está en [la auditoría de estudio](study-js-responsibility-audit.md).
+Sus entregas son propuestas posteriores; no forman parte de las extracciones ya
+completadas que se enumeran aquí.
+
 Las extracciones iniciales y las ampliaciones de transporte y navegación están
 completadas. Las pruebas
 cubren los consumidores y los contratos compartidos; no hay nuevas extracciones
