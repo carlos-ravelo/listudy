@@ -35,7 +35,7 @@
 
 <div id="study_layout" class="with_sidebar" x-data="{ reading: false, expanded: false, overflowing: false }"
      :class="{ 'study-reading-layout': reading }"
-     @study-reading-updated.window="if (reading !== $event.detail.reading) { reading = $event.detail.reading; $nextTick(() => $dispatch('study-reading-layout-updated')); } expanded = false; $nextTick(() => overflowing = $refs.comments.scrollHeight > $refs.comments.clientHeight)">
+     @study-reading-updated.window="if (reading !== $event.detail.reading) { reading = $event.detail.reading; $nextTick(() => $dispatch('study-reading-layout-updated')); } expanded = false; $nextTick(() => overflowing = $el.querySelector('#comments').scrollHeight > $el.querySelector('#comments').clientHeight)">
   <div id="game_container" class="sidebar_main">
     <%= if @study.training_kind == "tactics" do %>
       <section id="study_visualization" class="study-visualization"
@@ -134,7 +134,7 @@
         </div>
 
         <div class="study-comment-panel" :class="{ 'study-comments-expanded': expanded }">
-          <div id="comments" class="study_comments" x-ref="comments"></div>
+          <div id="comments" class="study_comments" x-ref="comments" x-data="studyComments" @study-comments-updated.window="update($event.detail)"><template x-for="row in rows" :key="row.id"><div :id="row.id" :class="{ hidden: row.hidden }"><div class="bold" :id="row.id + '_bold'" x-text="row.heading"></div><div class="text" :id="row.id + '_text'" x-text="row.text"></div></div></template></div>
           <button type="button" class="study-read-comment-toggle" x-cloak
                   x-show="reading && (overflowing || expanded)" :aria-expanded="expanded"
                   aria-controls="comments" @click="expanded = !expanded">

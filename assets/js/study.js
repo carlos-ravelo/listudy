@@ -1,3 +1,5 @@
+import { selectStudyComments, projectStudyCommentRows } from './modules/study/comments.js';
+import { registerStudyComments, publishStudyComments } from './components/study_comments.js';
 import { projectStudyProgress } from './modules/study/progress_projection.js';
 import { createProgressPublisher } from './modules/study/progress_publisher.js';
 import { registerStudyRunStatus, publishStudyRunStatus } from './components/study_run_status.js';
@@ -23,7 +25,7 @@ require("regenerator-runtime/runtime"); // required for sleep (https://github.co
 
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js')
-import { turn_color, non_turn_color, setup_chess, uci_to_san, cal_to_ucistr, move_to_ucistr } from './modules/chess_utils.js';
+import { turn_color, setup_chess, uci_to_san, cal_to_ucistr, move_to_ucistr } from './modules/chess_utils.js';
 import { string_hash } from './modules/hash.js';
 import { clear_local_storage } from './modules/localstorage.js';
 import { tree_value_add, tree_move_index, tree_children, tree_possible_moves, has_children, tree_value,
@@ -53,6 +55,7 @@ import Alpine from 'alpinejs';
 registerStudyPreferences(Alpine);
 registerStudyDepth(Alpine);
 registerStudyRunStatus(Alpine);
+registerStudyComments(Alpine);
 window.Alpine = Alpine;
 Alpine.start();
 
@@ -272,7 +275,6 @@ function startFailedPositions() {
 
 const mode_free = "free_mode";
 
-const comments_div = "comments";
 
 let combo_count = 0;
 
@@ -437,7 +439,7 @@ async function handle_move(orig, dest) {
         ground.set({ movable: { dests: new Map() } });
         ground.setShapes([]);
         overlay_manager.clear_overlays();
-        document.getElementById(comments_div).innerHTML = '';
+        publishStudyComments();
         studyMoveNavigation.update();
         visualization?.previewFailure();
         const board = await presentTacticsTrap({ board: trap.board, node: result.node,
@@ -891,92 +893,22 @@ function display_arrows(once) {
     ground.setShapes(shapes);
 }
 
-function capitalize_first_letter(word) {
-    return word.charAt(0).toUpperCase() + word.slice(1);
-}
-
-function create_comment(container_div, response_num, move) {
-    var comment_div = document.createElement('div');
-    comment_div.id = 'comment' + response_num;
-
-    var bold_text_elem = document.createElement('div');
-    bold_text_elem.id = comment_div.id + "_bold";
-    bold_text_elem.className = "bold";
-
-    var comment_text_elem = document.createElement('div');
-    comment_text_elem.id = comment_div.id + "_text";
-    comment_text_elem.className = "text";
-
-    comment_div.appendChild(bold_text_elem);
-    comment_div.appendChild(comment_text_elem);
-    container_div.appendChild(comment_div);
-
-    let response_color = capitalize_first_letter(turn_color(chess));
-    let move_color = capitalize_first_letter(non_turn_color(chess));
-    let ext_san = tree_get_node_string(move);
-    let current_move = response_num == undefined;
-    let before_start = current_move && move.move == undefined;
-    let first_move = move.move_index == 0;
-    let text = unescape_string(move.comments[0].text.trim());
-    let bold_text = undefined;
-
-    if (before_start) {
-        bold_text = "";
-    } else if (current_move) {
-        bold_text = move_color + " " + ext_san + ":"
-    } else {  // response move
-        bold_text = response_color + " " + (!first_move ? i18n.response : "") + " " + ext_san + ":";
-    }
-
-    set_text(comment_div.id, text, { bold_text: bold_text });
-}
-
-function create_comment_list(container_id, current_move, response_moves) {
-    let container_div = document.getElementById(container_id);
-    container_div.innerHTML = '';
-
-    if (current_move != undefined) {
-        create_comment(container_div, undefined, current_move);
-    }
-
-    for (let [i, move] of response_moves.entries()) {
-        create_comment(container_div, i, move, true);
-    }
-}
-
-/*
- * Display comments, either only for the current move, or for the opposite side's responses as well
- * if that option is turned on.
- */
 function display_comments(once) {
     if (currentTacticsTrap()) return;
-    if (visualization?.hidden) { document.getElementById(comments_div).innerHTML = ''; return; }
+    if (visualization?.hidden) { publishStudyComments(); return; }
     const introduction = smartIntroductionMove();
-    if (contextReplayActive || smartSession && !once && !introduction) { document.getElementById(comments_div).innerHTML = ""; return; }
-    let cm = tree_get_node(curr_move);
-    let current_move = undefined;
-    let response_moves = [];
-
-    if (introduction || readMode || once || preferences.get('comments') == i18n.comments_always_on ||
-        preferences.get('comments') == i18n.comments_when_arrows && give_hints(once)) {
-
-        // Get current move if it has a comment
-        if (cm.comments != undefined && cm.comments[0] != undefined && cm.comments[0].text != undefined) {
-            current_move = cm;
-        }
-        // Get the reponse moves that has comments
-        let children = tree_children(curr_move);
-        if (children.length > 0) {
-            for (let m of children) {
-                if ((!introduction || m === introduction) && m.comments != undefined && m.comments[0] != undefined && m.comments[0].text != undefined) {
-                    response_moves.push(m);
-                }
-            }
-        }
-    }
-
-    if (!introduction && !readMode && response_moves.length) assistedPositions.add(currentPositionId());
-    create_comment_list("comments", current_move, response_moves);
+    if (contextReplayActive || smartSession && !once && !introduction) { publishStudyComments(); return; }
+    const visible = introduction || readMode || once || preferences.get('comments') == i18n.comments_always_on ||
+        preferences.get('comments') == i18n.comments_when_arrows && give_hints(once);
+    const selection = selectStudyComments({
+        currentMove: tree_get_node(curr_move), responses: tree_children(curr_move),
+        visible, introduction, reading: readMode
+    });
+    if (selection.assisted) assistedPositions.add(currentPositionId());
+    publishStudyComments(projectStudyCommentRows(selection, {
+        turnColor: turn_color(chess), formatMove: tree_get_node_string,
+        responseLabel: i18n.response, decode: unescape_string
+    }));
 }
 
 function change_play_stockfish() {
@@ -1013,7 +945,7 @@ function setup_move() {
             check: chess.in_check(), movable: { dests: new Map() } });
         ground.setShapes([]);
         overlay_manager.clear_overlays();
-        document.getElementById(comments_div).innerHTML = '';
+        publishStudyComments();
         change_play_stockfish();
         change_analysis_board();
         studyMoveNavigation.update();
@@ -1550,7 +1482,7 @@ async function main() {
             window.chess = position;
             const route = routes[0];
             window.curr_move = route ? [route.chapter, ...route.path] : [chapter];
-            if (phase !== 'theory') document.getElementById('comments').replaceChildren();
+            if (phase !== 'theory') publishStudyComments();
             if (phase === 'finished') studySessions.end();
             change_play_stockfish(); change_analysis_board(); studyMoveNavigation.update();
         },

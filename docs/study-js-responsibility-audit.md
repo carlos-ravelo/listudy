@@ -41,8 +41,7 @@ the chapter and its playing color, without persisting defaults. The engine retai
 the deferred restart policy: changes apply on settings close, with no reset in
 Read. Duplicate slider input/change events produce one persisted change.
 
-Comments, run coordination, and general page teardown remain subsequent
-deliveries.
+Run coordination and general page teardown remain subsequent deliveries.
 
 After delivery 2, `study.js` contains 1,824 lines. Verification passed for six
 unit suites (depth, preferences, navigation, tactics layers, Smart controls, and
@@ -81,6 +80,30 @@ statistics, empty Smart messages, one due-date timer, long waits, and cleanup.
 Chrome verifies unchanged geometry across screen sizes/themes, progress chapter
 selection, settings behavior, and plain-text status rendering. The production
 build passes with the existing 180 warnings.
+
+Delivery 4 extracts comment selection and row formatting into
+`study/comments.js`, with `components/study_comments.js` rendering snapshots
+through Alpine `x-for` and `x-text`. The existing headings, IDs, classes, first
+annotation policy, empty-row visibility, and PGN decoding remain compatible.
+Read still reveals variations, while Smart introductions reveal only their
+selected continuation. The engine retains reveal decisions and assistance
+grading; visualization, replay, traps, and Sparring clear the component through
+its snapshot event rather than removing its template. Reading overflow
+measurement queries the existing comment container across the component boundary.
+Empty-panel CSS detects rendered rows rather than the Alpine template, preserving
+its existing border and spacing rules. After delivery 4, `study.js` contains
+1,685 lines.
+
+Delivery 4 verification passed: six unit suites (comments, navigation, tactics
+layers, Smart controls, weak practice, and practice scope), 23 server tests, and
+six Chrome suites (PGN comments, study geometry/behavior, player journeys,
+analysis training, tactics, and delayed account hydration). Coverage includes
+escaped markup rendered as text, alternative variations, first-annotation and
+heading compatibility, explicit hints, Read navigation, hidden visualization,
+context replay, Smart introduction grading, empty/null annotations, and repeated
+clearing without removing the Alpine template. Empty-panel geometry remains
+unchanged across screen sizes/themes. The production build passes with the
+existing 180 warnings.
 
 ## Responsibility map
 
@@ -248,7 +271,7 @@ reviewing other consumers.
 | 1 (complete) | Preference model and Alpine settings component; initially preserve stored format | Low/medium | Hydration, persistence, languages, tactics defaults, hints/comments, settings browser tests, and player journey |
 | 2 (complete) | Depth component using the existing scope model | Medium | `practice_scope.cjs`, `study_navigation.cjs`, chapter changes, maximum sentinel, restart on close, and no restart in Read |
 | 3 (complete) | Progress projection and run indicators; reuse the existing Alpine panel | Medium | Metrics, ordering, due-date timer, chapter selection, empty Smart messages, and sessions |
-| 4 | Separate comment selection from rendering | Medium | Untrusted PGN text, variations, Read, hidden visualization, and assistance grading |
+| 4 (complete) | Separate comment selection from rendering | Medium | Untrusted PGN text, variations, Read, hidden visualization, and assistance grading |
 | 5 | Extract run/context coordination, then split `handle_move` | High | Smart, mistakes, weak chapters, reviews, Sparring, traps, underpromotion, assistance, cancellation, and directed practice |
 | 6 | Reduce `main` to composition and formalize page teardown | High | Progress identity, resets, hydration/merge, navigation, remounting, and no duplicate resources |
 

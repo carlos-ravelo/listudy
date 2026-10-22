@@ -1,0 +1,65 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+let factory;
+const target = new EventTarget();
+const context = vm.createContext({ CustomEvent, window: target,
+    Alpine: { data(name, value) { assert.equal(name, 'studyComments'); factory = value; } } });
+for (const file of ['modules/study/comments.js', 'components/study_comments.js']) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8').replace(/^export /gm, ''), context);
+}
+const current = { move: 'e5', move_index: 1, comments: [{ text: '  Current explanation  ' }] };
+const first = { move: 'Nf3', move_index: 2, comments: [{ text: 'Main continuation' }, { text: 'Unused annotation' }] };
+const alternative = { move: 'Bc4', move_index: 2, comments: [{ text: 'Alternative' }] };
+const noText = { comments: [{ commands: [] }] };
+const args = { currentMove: current, responses: [first, noText, { comments: [{ text: null }] }, alternative], visible: true, introduction: null, reading: false };
+const before = JSON.stringify(args);
+const selection = context.selectStudyComments(args);
+assert.equal(selection.current, current);
+assert.equal(selection.responses.length, 2);
+assert.equal(selection.assisted, true, 'Revealing a response counts as assistance');
+assert.equal(JSON.stringify(args), before);
+const format = { turnColor: 'white', formatMove: move => move.move, responseLabel: 'response', decode: text => text };
+const rows = context.projectStudyCommentRows(selection, format);
+assert.equal(rows[0].id, 'commentundefined');
+assert.equal(rows[0].heading, 'Black e5:');
+assert.equal(rows[0].text, 'Current explanation');
+assert.equal(rows[1].id, 'comment0');
+assert.equal(rows[1].heading, 'White response Nf3:');
+assert.equal(rows[1].text, 'Main continuation', 'Only the existing first annotation is displayed');
+assert.equal(rows[2].id, 'comment1');
+const hidden = context.selectStudyComments({ ...args, visible: false });
+assert.equal(hidden.current, undefined);
+assert.equal(hidden.responses.length, 0);
+assert.equal(hidden.assisted, false);
+assert.equal(context.projectStudyCommentRows(hidden, format).length, 0);
+const reading = context.selectStudyComments({ ...args, reading: true });
+assert.equal(reading.responses.length, 2);
+assert.equal(reading.assisted, false);
+const introduction = context.selectStudyComments({ ...args, introduction: first,
+    responses: [first, { ...first }, alternative] });
+assert.equal(introduction.responses.length, 1, 'Smart introduction reveals only the selected node, including among same-SAN alternatives');
+assert.equal(introduction.responses[0], first);
+assert.equal(introduction.assisted, false);
+const currentOnly = context.selectStudyComments({ ...args, responses: [] });
+assert.equal(currentOnly.assisted, false, 'Explaining the previous move does not reveal a response');
+const opening = context.projectStudyCommentRows({ current: { comments: [{ text: 'Chapter introduction' }] },
+    responses: [{ move: 'e4', move_index: 0, comments: [{ text: 'First move' }] }] }, format);
+assert.equal(opening[0].heading, '');
+assert.equal(opening[1].heading, 'White  e4:', 'First-move headings keep their existing spacing');
+const black = context.projectStudyCommentRows(selection, { ...format, turnColor: 'black' });
+assert.equal(black[0].heading, 'White e5:');
+assert.equal(black[1].heading, 'Black response Nf3:');
+const empty = context.selectStudyComments({ ...args, responses: [{ comments: [{ text: '   ' }] }] });
+assert.equal(empty.assisted, true, 'Empty response annotations preserve the existing grading policy');
+assert.equal(context.projectStudyCommentRows(empty, format)[1].hidden, true);
+context.registerStudyComments(context.Alpine);
+const component = factory();
+target.addEventListener('study-comments-updated', event => component.update(event.detail));
+assert.equal(component.rows.length, 0);
+context.publishStudyComments(rows);
+assert.equal(component.rows[1].heading, 'White response Nf3:');
+context.publishStudyComments();
+assert.equal(component.rows.length, 0, 'Clearing comments resets component state');
+console.log('Study comment selection, variations, headings, assistance, read/introduction modes and Alpine clearing passed');

@@ -45,7 +45,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
         StorageAdapter: { setItem: noop }, chapter_stats_key: () => 'stats',
         updateContextReplayUi: noop, change_play_stockfish: noop, change_analysis_board: noop,
         display_arrows: noop, display_comments: noop, show_suggestions: noop, update_read_mode_ui: noop,
-        updateFailedPositionsUi: noop, update_progress: noop, publishStudyRunStatus: noop,
+        updateFailedPositionsUi: noop, update_progress: noop, publishStudyRunStatus: noop, publishStudyComments: noop,
         finish_chapter_practice: completed => events.push(['complete', completed]), achievement_end_of_line: noop, right_move_text: () => 'correct',
         practiceDepth: { limit: Infinity }, get_move_delay: () => 0, sleep: wait, smartIntroductionMove: () => null,
         ai_move: () => undefined

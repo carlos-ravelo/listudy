@@ -2,11 +2,19 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const commentContext = vm.createContext({});
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/comments.js'), 'utf8')
+    .replace(/^export /gm, ''), commentContext);
 
 function createContext(values) {
     const context = vm.createContext(values);
     const keys = { arrows: 'show_arrows', arrowType: 'arrow_type', comments: 'show_comments',
         review: 'board_review', keyMoves: 'key_moves_mode', moveDelay: 'move_delay_time' };
+    context.selectStudyComments = commentContext.selectStudyComments;
+    context.projectStudyCommentRows = commentContext.projectStudyCommentRows;
+    context.publishStudyComments = rows => { context.commentRows = rows || []; };
+    context.unescape_string = value => value;
+    context.tree_get_node_string = move => move.move || '';
     context.publishStudyRunStatus = () => {};
     context.preferences = { get: name => context[keys[name]] };
     context.practiceDepth = { get limit() { return context.depth_limit_enabled ? context.max_depth : Infinity; } };
@@ -252,10 +260,9 @@ function assertSynchronized({ context, board, links }) {
     reader.show_comments = 'hidden';
     reader.give_hints = () => false;
     reader.tree_get_node = () => ({ comments: [{ text: 'Chapter explanation' }] });
-    reader.create_comment_list = (id, move) => { reader.renderedComment = move; };
     install('display_comments');
     reader.display_comments(false);
-    assert.equal(reader.renderedComment.comments[0].text, 'Chapter explanation');
+    assert.equal(reader.commentRows[0].text, 'Chapter explanation');
     reader.set_read_mode(false);
     assert.equal(reading.board.orientation, 'black');
     assertSynchronized(reading);
@@ -480,7 +487,6 @@ function assertSynchronized({ context, board, links }) {
         .map(node => source.slice(node.start, node.end)).join('\n'), guided.context);
     guided.context.create_arrow_from_move = (san, brush) => ({ san, brush });
     guided.context.ground.setShapes = shapes => { guided.board.shapes = shapes; };
-    guided.context.create_comment_list = (_, current, responses) => { guided.board.comments = responses.map(move => move.move); };
     guided.context.show_arrows = 'hidden';
     guided.context.show_comments = 'hidden';
     assert.equal(guided.context.smartIntroductionMove().move, 'e4');
@@ -488,7 +494,18 @@ function assertSynchronized({ context, board, links }) {
     guided.context.display_comments(false);
     assert.equal(guided.board.shapes.length, 1);
     assert.equal(guided.board.shapes[0].san, 'e4');
-    assert.equal(guided.board.comments.join(','), 'e4');
+    assert.equal(guided.context.commentRows.map(row => row.text).join(','), 'Control the center.');
+    assert.equal(guided.context.assistedPositions.size, 0);
+    guided.context.visualization = { hidden: true };
+    guided.context.display_comments(true);
+    assert.equal(guided.context.commentRows.length, 0, 'Hidden visualization suppresses even explicit comment hints');
+    guided.context.visualization = null;
+    guided.context.contextReplayActive = true;
+    guided.context.display_comments(true);
+    assert.equal(guided.context.commentRows.length, 0, 'Context replay clears explanations');
+    guided.context.contextReplayActive = false;
+    guided.context.display_comments(false);
+    assert.equal(guided.context.commentRows.length, 1, 'Rendering resumes after a clear');
     assert.equal(guided.context.assistedPositions.size, 0);
     assert.equal(guided.context.lineEligibleForReview, false);
     await guided.context.handle_move('c2', 'c4');

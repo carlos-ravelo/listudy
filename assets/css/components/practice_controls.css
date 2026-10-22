@@ -12,7 +12,7 @@
 
 .practice-page .practice-panel,
 .study-workspace.practice-page .study-context,
-.study-workspace.practice-page .study-comment-panel:has(.study_comments:not(:empty)),
+.study-workspace.practice-page .study-comment-panel:has(.study_comments > div),
 .study-workspace.practice-page .study-session-end {
   border: 1px solid var(--practice-divider);
   border-inline-start: 3px solid var(--practice-accent);
