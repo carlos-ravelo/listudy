@@ -73,4 +73,26 @@ defmodule Listudy.StudySearchTest do
 
     assert Enum.map(socket.assigns.matches, & &1.id) == [white.id]
   end
+
+  test "tactics discovery keeps public collections with zero favorites", %{user: user} do
+    repertoire = study(user, "Toggle catalogue repertoire", "black")
+    tactics = study(user, "Toggle catalogue tactics", "black")
+    tactics = tactics |> Ecto.Changeset.change(training_kind: "tactics") |> Repo.update!()
+    private = study(user, "Toggle catalogue private", "black", true)
+    private |> Ecto.Changeset.change(training_kind: "tactics") |> Repo.update!()
+
+    for ordering <- ["newest", "favorites"] do
+      assert Enum.map(Listudy.Studies.search_by_title("Toggle catalogue", ordering), & &1.id) == [
+               repertoire.id
+             ]
+
+      assert Enum.map(
+               Listudy.Studies.search_by_title("Toggle catalogue", ordering, "black", "tactics"),
+               & &1.id
+             ) == [tactics.id]
+
+      assert Listudy.Studies.search_by_title("Toggle catalogue", ordering, "white", "tactics") ==
+               []
+    end
+  end
 end

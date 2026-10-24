@@ -131,7 +131,7 @@ defmodule Listudy.Studies do
 
   defp order_by_favorites(query) do
     from c in query,
-      join: f in StudyFavorite,
+      left_join: f in StudyFavorite,
       on: f.study_id == c.id,
       group_by: c.id,
       order_by: [desc: count(f.id)]
@@ -148,14 +148,14 @@ defmodule Listudy.Studies do
 
   defp by_color(query, _color), do: query
 
-  def search_by_title(word, order, color \\ "all")
+  def search_by_title(word, order, color \\ "all", kind \\ "repertoire")
 
-  def search_by_title(word, "favorites", color) do
+  def search_by_title(word, "favorites", color, kind) when kind in ["repertoire", "tactics"] do
     query =
       Study
       |> by_title(word)
       |> not_private
-      |> where([s], s.training_kind == "repertoire")
+      |> where([s], s.training_kind == ^kind)
       |> by_color(color)
       |> title_limit
       |> order_by_favorites
@@ -163,12 +163,12 @@ defmodule Listudy.Studies do
     Repo.all(query) |> Repo.preload([:study_favorites, :user])
   end
 
-  def search_by_title(word, "newest", color) do
+  def search_by_title(word, "newest", color, kind) when kind in ["repertoire", "tactics"] do
     query =
       Study
       |> by_title(word)
       |> not_private
-      |> where([s], s.training_kind == "repertoire")
+      |> where([s], s.training_kind == ^kind)
       |> by_color(color)
       |> title_limit
       |> order_by_newest

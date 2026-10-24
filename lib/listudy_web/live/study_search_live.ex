@@ -24,20 +24,23 @@ defmodule ListudyWeb.StudySearchLive do
             </button>
           <% end %>
         </div>
-        <div class="study-discovery-selectors" role="group" aria-label="<%= dgettext("study", "Sort studies") %>">
-          <%= for {value, label} <- [{"newest", dgettext("study", "Newest")}, {"favorites", dgettext("study", "Favorites")}] do %>
-            <label>
-              <input type="radio" name="ordering" value="<%= value %>" <%= if @ordering == value, do: "checked" %>/>
-              <span><%= label %></span>
-            </label>
-          <% end %>
+        <div class="study-discovery-selectors study-library-color-toggles">
+          <input type="hidden" name="kind" value="<%= @kind %>"/>
+          <input type="hidden" name="ordering" value="<%= @ordering %>"/>
+          <button class="btn" type="button" phx-click="toggle-kind" aria-pressed="<%= @kind == "tactics" %>"><%= gettext("Tactics") %></button>
+          <button class="btn" type="button" phx-click="toggle-ordering" aria-pressed="<%= @ordering == "favorites" %>"><%= dgettext("study", "Favorites") %></button>
         </div>
       </form>
 
       <%= if @matches == [] do %>
         <div class="study-discovery-empty study-library-empty" role="status">
-          <p><%= dgettext("study", "No studies found. Try another opening or import your repertoire.") %></p>
-          <a href="<%= Routes.study_path(@socket, :new, @locale) %>"><%= dgettext("study", "Import my repertoire") %></a>
+          <%= if @kind == "tactics" do %>
+            <p><%= dgettext("study", "No collections match these filters.") %></p>
+            <a href="<%= Routes.study_path(@socket, :new, @locale, kind: "tactics") %>"><%= dgettext("study", "Create tactics") %></a>
+          <% else %>
+            <p><%= dgettext("study", "No studies found. Try another opening or import your repertoire.") %></p>
+            <a href="<%= Routes.study_path(@socket, :new, @locale) %>"><%= dgettext("study", "Import my repertoire") %></a>
+          <% end %>
         </div>
       <% else %>
         <ul class="study-library-list study_search_results" aria-label="<%= dgettext("study", "Studies") %>">
@@ -55,13 +58,29 @@ defmodule ListudyWeb.StudySearchLive do
     Gettext.put_locale(ListudyWeb.Gettext, locale)
 
     {:ok,
-     assign(socket, query: nil, ordering: "newest", color: "all", matches: result, locale: locale)}
+     assign(socket,
+       query: nil,
+       ordering: "newest",
+       color: "all",
+       kind: "repertoire",
+       matches: result,
+       locale: locale
+     )}
+  end
+
+  def handle_event("toggle-kind", _, socket) do
+    kind = if socket.assigns.kind == "tactics", do: "repertoire", else: "tactics"
+    {:noreply, socket |> assign(:kind, kind) |> search()}
+  end
+
+  def handle_event("toggle-ordering", _, socket) do
+    ordering = if socket.assigns.ordering == "favorites", do: "newest", else: "favorites"
+    {:noreply, socket |> assign(:ordering, ordering) |> search()}
   end
 
   def handle_event("set-color", %{"color" => color}, socket)
       when color in ["all", "white", "black"] do
-    result = Studies.search_by_title(socket.assigns.query || "", socket.assigns.ordering, color)
-    {:noreply, assign(socket, matches: result, color: color)}
+    {:noreply, socket |> assign(:color, color) |> search()}
   end
 
   def handle_event(_, %{"q" => query, "ordering" => order} = params, socket)
@@ -69,7 +88,25 @@ defmodule ListudyWeb.StudySearchLive do
     query = String.slice(query, 0, 100)
     order = if order in ["newest", "favorites"], do: order, else: "newest"
     color = if params["color"] in ["white", "black"], do: params["color"], else: "all"
-    result = Studies.search_by_title(query, order, color)
-    {:noreply, assign(socket, matches: result, ordering: order, color: color, query: query)}
+
+    kind =
+      if params["kind"] in ["repertoire", "tactics"],
+        do: params["kind"],
+        else: socket.assigns.kind
+
+    {:noreply,
+     socket |> assign(ordering: order, color: color, query: query, kind: kind) |> search()}
+  end
+
+  defp search(socket) do
+    result =
+      Studies.search_by_title(
+        socket.assigns.query || "",
+        socket.assigns.ordering,
+        socket.assigns.color,
+        socket.assigns.kind
+      )
+
+    assign(socket, :matches, result)
   end
 end

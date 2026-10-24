@@ -15,13 +15,7 @@
         <% end %>
         <%= link gettext("Endgames"), to: Routes.endgame_path(@conn, :index, @assigns.locale), data: [nav_section: "endgames"] %>
         <%= if Pow.Plug.current_user(@conn) do %>
-          <details class="site-menu">
-            <summary><%= gettext("Explore") %></summary>
-            <div class="site-menu-panel">
-              <%= link gettext("Search for Studies"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @assigns.locale) %>
-              <%= link gettext("Create a new Study"), to: Routes.study_path(@conn, :new, @assigns.locale) %>
-            </div>
-          </details>
+          <%= link gettext("Explore"), to: Routes.search_path(@conn, ListudyWeb.StudySearchLive, @assigns.locale) %>
         <% end %>
       </div>
       <div class="site-account-navigation">

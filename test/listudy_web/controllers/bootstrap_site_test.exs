@@ -56,6 +56,54 @@ defmodule ListudyWeb.BootstrapSiteTest do
     preview("search-empty", html)
   end
 
+  test "tactics and favorites toggle independently and retain search and color", %{conn: conn} do
+    user = Repo.insert!(%Listudy.Users.User{username: "ToggleOwner", email: "toggle@example.com"})
+
+    for {kind, color, private} <- [
+          {"repertoire", "black", false},
+          {"tactics", "black", false},
+          {"tactics", "white", false},
+          {"tactics", "black", true}
+        ] do
+      Repo.insert!(%Listudy.Studies.Study{
+        user_id: user.id,
+        title: "Toggle discovery #{kind} #{color} #{private}",
+        slug: "toggle#{System.unique_integer([:positive])}-search",
+        training_kind: kind,
+        color: color,
+        private: private
+      })
+    end
+
+    {:ok, view, _html} = live(conn, "/en/studies/search")
+    refute has_element?(view, "input[type=radio][name=ordering]")
+    assert has_element?(view, "button[phx-click=toggle-kind][aria-pressed=false]")
+
+    view
+    |> element("form[role=search]")
+    |> render_change(%{"q" => "Toggle discovery", "color" => "black"})
+
+    html = view |> element("button[phx-click=toggle-kind]") |> render_click()
+    assert html =~ "Toggle discovery tactics black false"
+    refute html =~ "Toggle discovery repertoire"
+    refute html =~ "Toggle discovery tactics white"
+    refute html =~ "Toggle discovery tactics black true"
+
+    html = view |> element("button[phx-click=toggle-ordering]") |> render_click()
+    assert html =~ "Toggle discovery tactics black false"
+    assert has_element?(view, "button[phx-click=toggle-kind][aria-pressed=true]")
+    assert has_element?(view, "button[phx-click=toggle-ordering][aria-pressed=true]")
+
+    html = view |> element("button[phx-click=toggle-kind]") |> render_click()
+    assert html =~ "Toggle discovery repertoire black false"
+    refute html =~ "Toggle discovery tactics"
+    assert has_element?(view, "button[phx-click=toggle-ordering][aria-pressed=true]")
+
+    view |> element("button[phx-click=toggle-ordering]") |> render_click()
+    assert has_element?(view, "button[phx-click=toggle-ordering][aria-pressed=false]")
+    assert has_element?(view, "#study-search[value='Toggle discovery']")
+  end
+
   test "representative site pages render their existing workflows", %{conn: conn} do
     for {name, route} <- [
           {"home", "/en"},
