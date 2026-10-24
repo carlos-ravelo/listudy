@@ -1,0 +1,951 @@
+[Event "The Woodpecker Method (Part 4): Puzzle no. 151"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 151"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/Xyt0uEE0"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "8/6k1/1P1p2p1/3Ppn2/3q4/8/6PP/rR2QB1K b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:05:34"]
+[ChapterMode "gamebook"]
+
+{ Part 3: https://lichess.org/study/fIfq3LZR }
+1... Ng3+ 2. hxg3 Ra8 3. Rd1 Rh8# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 152"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 152"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/ZEujGseb"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "8/7R/2r5/8/P3n3/8/3nk1PP/R5K1 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:07:14"]
+[ChapterMode "gamebook"]
+
+1... Nf3+ 2. gxf3 Rg6+ 3. Kh1 Nf2# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 153"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 153"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/P5vK2Lts"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "3rrk2/R4ppB/7p/1p2N1q1/nPbP1p2/2PQ1P2/6PP/4R1K1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:08:41"]
+[ChapterMode "gamebook"]
+
+1. Qxc4 bxc4 2. Rxf7# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 154"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 154"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/ofgZcyv0"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "5kr1/5p2/8/1Q1bPp2/8/P5P1/q1rBBK1P/3R4 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:09:47"]
+[ChapterMode "gamebook"]
+
+1. Qxd5 Qxd5 2. Bh6+ Ke7 3. Rxd5 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 155"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 155"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/Q1Sqyco3"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "3rrnk1/1bq2pp1/ppnppb1p/8/2P1PPQ1/1PN2N2/PB4PP/1B1R1R1K w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:10:50"]
+[ChapterMode "gamebook"]
+
+1. Nd5 exd5 2. Bxf6 Ng6 3. Bxd8 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 156"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 156"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/2ReiLMCO"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "1n3rk1/p2pQpp1/4q2p/1r6/4B3/4P1P1/P4P1P/2RR2K1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:13:27"]
+[ChapterMode "gamebook"]
+
+1. Bh7+ Kxh7 2. Qxf8 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 157"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 157"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/vhgtlvww"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "4R3/p4pk1/5qpp/1PnP4/3Q3P/6P1/r1r1BPK1/3R4 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:16:44"]
+[ChapterMode "gamebook"]
+
+1. Rg8+ Kxg8 2. Qxf6 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 158"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 158"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/FSGk6QCC"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "4rrk1/1p1n1pb1/2ppq1p1/p3p1Bp/P1P1P2P/2NP2P1/1P2QPK1/3R1R2 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:23:26"]
+[ChapterMode "gamebook"]
+
+1. Nd5 cxd5 2. cxd5 Qg4 3. f3 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 159"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 159"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/7ggyu8m9"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r3rbk1/1b3Npp/1q1p2n1/2pP4/5R2/1PN3Q1/4P1BP/5R1K w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:24:55"]
+[ChapterMode "gamebook"]
+
+1. Qxg6 hxg6 2. Rh4 Bc8 3. Rh8# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 160"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 160"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/NlxOYpRQ"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "5nk1/1b1qQpp1/p3p3/3pP1N1/3P3P/1p1B4/1P3PP1/6K1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:26:34"]
+[ChapterMode "gamebook"]
+
+1. Bh7+ Nxh7 2. Qxd7 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 161"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 161"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/3Ym3sjkP"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "4r2k/3n2bB/2p1NqQ1/2Pp4/5B2/r6P/5PP1/4R1K1 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:27:42"]
+[ChapterMode "gamebook"]
+
+1... Rxe6 2. Rxe6 Ra1+ 3. Kh2 Qxf4+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 162"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 162"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/M3Y2xXYw"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2b4k/p3q2p/2p1p3/2PpPpr1/3P3Q/4P2B/3b1B1P/R6K b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:28:10"]
+[ChapterMode "gamebook"]
+
+1... Bxe3 2. Bxe3 Rg1+ 3. Bxg1 Qxh4 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 163"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 163"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/d1Ansr0Y"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "7r/3b1pk1/2p2qp1/8/1P1bNP2/r2B4/3Q2PP/2R2R1K b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "12:32:00"]
+[ChapterMode "gamebook"]
+
+1... Rxh2+ 2. Kxh2 Qh4# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 164"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 164"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/ByCRXYXQ"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "1r1r4/5ppk/1p5p/2b1Pp1Q/8/q7/3B1PPP/2RR2K1 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:12:35"]
+[ChapterMode "gamebook"]
+
+1... Rxd2 2. Rxd2 Qxc1+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 165"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 165"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/0D8CR4zV"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "4kr2/p1Bbpp2/1p4p1/n6p/2B1P2P/2K2P2/P2R2P1/8 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:22:58"]
+[ChapterMode "gamebook"]
+
+1. Bb5 Bxb5 2. Rd8# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 166"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 166"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/4aRyocGp"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2n2k2/2b2pp1/2p1pnp1/2Pp2N1/3P1PP1/3BP2P/3BK3/8 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:23:45"]
+[ChapterMode "gamebook"]
+
+1. Bxg6 fxg6 2. Nxe6+ Ke7 3. Nxc7 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 167"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 167"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/cIMwXh1h"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r5k1/pb1p1Rpq/2n1p1Q1/1p2P3/3P2P1/P7/1P1K4/5R2 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:24:52"]
+[ChapterMode "gamebook"]
+
+1. Rf8+ Rxf8 2. Rxf8+ Kxf8 3. Qxh7 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 168"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 168"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/yX0DcR5v"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "1k1r1q1r/2p2ppp/Qp6/3b1N2/8/P5P1/1P3P1P/2R2RK1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:25:45"]
+[ChapterMode "gamebook"]
+
+1. Rxc7 Kxc7 2. Qa7+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 169"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 169"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/4EOw1CHa"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "6k1/4qp2/1B4pp/2R1b3/P2Nb3/1P2Q3/r4PPP/6K1 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:27:06"]
+[ChapterMode "gamebook"]
+
+1... Qxc5 2. Bxc5 Ra1+ 3. Qe1 Rxe1# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 170"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 170"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/Rx7cT8ez"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "R3n1k1/7p/3prppB/1p2p3/1P2P2Q/7P/5PPK/1q6 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:27:56"]
+[ChapterMode "gamebook"]
+
+1. Rxe8+ Rxe8 2. Qxf6 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 171"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 171"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/kHgC4TDh"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2rr4/pp4kp/6p1/3nNp2/2B5/2n3P1/P2R1PKP/R7 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:28:51"]
+[ChapterMode "gamebook"]
+
+1... Ne3+ 2. fxe3 Rxd2+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 172"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 172"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/xplMGr4g"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "5rk1/ppr2Npp/2q1Pp2/3n4/8/6Q1/P5PP/3R1R1K w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:29:33"]
+[ChapterMode "gamebook"]
+
+1. Rxd5 Qxd5 2. Qxc7 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 173"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 173"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/fAYA7g2U"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r7/5kpp/2p1pq2/1bP2p2/p4Q2/5BP1/PP3P1P/4R1K1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:30:11"]
+[ChapterMode "gamebook"]
+
+1. Bxc6 Bxc6 2. Qc7+ Qe7 3. Qxc6 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 174"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 174"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/zDK8a3Pn"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "8/1p3pkp/pb2p1p1/8/4P2P/1N4P1/P1R1KP2/7r b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:30:37"]
+[ChapterMode "gamebook"]
+
+1... Bxf2 2. Kxf2 Rh2+ 3. Ke1 Rxc2 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 175"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 175"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/3N1A3BpC"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2r5/pp1b4/4p3/3pPk2/5P2/8/1K6/3R2R1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "14:31:02"]
+[ChapterMode "gamebook"]
+
+1. Rd4 Rc2+ 2. Kxc2 Ba4+ 3. Rxa4 a6 4. Rg5# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 176"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 176"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/DTJ5RaVB"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r2r2k1/1p1n1bpp/1pp1pp2/8/Pb1PP1P1/1BNRBP1P/1P3K2/2R5 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:06:38"]
+[ChapterMode "gamebook"]
+
+1... Nc5 2. dxc5 Rxd3 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 177"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 177"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/kh7k76Qt"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "8/1R3pbp/4p1k1/5p2/8/2N2P2/1P1r1P1P/4K3 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:07:35"]
+[ChapterMode "gamebook"]
+
+1... Rxb2 2. Rxb2 Bxc3+ 3. Kd1 Bxb2 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 178"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 178"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/bwYGWMXH"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "5k1r/ppq3b1/8/3Pp2p/3n4/7Q/PP3PPP/3RR1K1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:08:42"]
+[ChapterMode "gamebook"]
+
+1. Rxd4 exd4 2. Qf5+ Qf7 3. Qc8+ Qe8 4. Qxe8# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 179"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 179"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/BHwQ7Dmh"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r3qn1k/pp3pp1/2b1p2p/4P1BP/2B3Q1/8/PPP3P1/2K1R3 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:10:27"]
+[ChapterMode "gamebook"]
+
+1. Bf6 gxf6 2. exf6 Nd7 3. Qg7# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 180"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 180"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/9j4pui0M"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "3r2k1/1b3p1p/pp4p1/4PqP1/3NpP2/1P2Q2P/P6K/2R5 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:12:02"]
+[ChapterMode "gamebook"]
+
+1... Rxd4 2. Qxd4 Qxf4+ 3. Kg1 Qxc1+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 181"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 181"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/Gn8Ie9AG"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "4r1rk/p3q2p/3p1n1Q/3P4/Pp1n1P2/3BN2R/1PPK1P2/R7 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:13:07"]
+[ChapterMode "gamebook"]
+
+1. Qxf6+ Qg7 2. Rxh7# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 182"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 182"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/AyT9zIOG"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2kr3r/1pq3p1/p1p3Qp/P1n1p3/8/RbN1P1P1/1P2P1BP/5RK1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:15:02"]
+[ChapterMode "gamebook"]
+
+1. Rxb3 Nxb3 2. Qe6+ Kb8 3. Qxb3 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 183"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 183"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/icQFwBKl"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2rq1rk1/1p4bp/4p1p1/p2p1bP1/P2N4/2PnB3/QP4BP/R5RK b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:16:29"]
+[ChapterMode "gamebook"]
+
+1... Qxg5 2. Bxg5 Nf2# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 184"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 184"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/i2M8cv2u"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2k4r/pp3p2/1np3q1/2Q3p1/3R4/1P2P1P1/P4PB1/6K1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:17:25"]
+[ChapterMode "gamebook"]
+
+1. Bh3+ Rxh3 2. Qf8+ Kc7 3. Qd8# *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 185"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 185"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/y3jjudkH"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r1b2rk1/p1q2n1p/6p1/2Ppp3/8/2Q2NPP/P4PB1/1R3RK1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:18:42"]
+[ChapterMode "gamebook"]
+
+1. Nxe5 Nxe5 2. Bxd5+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 186"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 186"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/N0Lmg5sQ"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "1r6/RP5p/P1kp4/2n2p2/8/4PKP1/5P1P/8 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:20:01"]
+[ChapterMode "gamebook"]
+
+1. Ra8 Kc7 2. a7 Rxb7 3. Rc8+ Kxc8 4. a8=Q+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 187"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 187"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/Tm4RCYUn"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r2qk2r/3bb1pp/5p2/1p1Q4/1pNP4/4P3/PB4PP/R4RK1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:20:55"]
+[ChapterMode "gamebook"]
+
+1. Ne5 Rf8 2. Nxd7 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 188"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 188"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/q0kIZrWu"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r3k1r1/p4p1p/3bpBp1/3p1b2/5P2/3BP2P/PP4P1/1K1R3R w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:21:44"]
+[ChapterMode "gamebook"]
+
+1. e4 Be7 2. Bb5+ Kd8 3. Bxe7+ Kxe7 4. exf5 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 189"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 189"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/amnfE6Ld"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "4r2k/6b1/8/p2R3p/1pP1p1Nq/8/PP3P1P/3Q3K w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:22:30"]
+[ChapterMode "gamebook"]
+
+1. Nf6 Bxf6 2. Rxh5+ Qxh5 3. Qxh5+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 190"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 190"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/FNXBAOhi"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2r4k/2q4p/p2bPp2/1p6/6QP/3B4/PPP5/1K4R1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:23:14"]
+[ChapterMode "gamebook"]
+
+1. e7 Qxe7 2. Qxc8+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 191"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 191"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/gaQia08Z"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "3n4/2p2pk1/3r2p1/6Np/1P1q3P/4QR2/5PP1/6K1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:42:24"]
+[ChapterMode "gamebook"]
+
+1. Rxf7+ Nxf7 2. Ne6+ Rxe6 3. Qxd4+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 192"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 192"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/BlTpR21M"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r1q2rk1/3bpp1p/3p2p1/3P4/Pnn1P3/2N2NP1/1R1Q1PB1/4R1K1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:43:26"]
+[ChapterMode "gamebook"]
+
+1. Qh6 f6 2. Rxb4 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 193"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 193"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/suoE3FIE"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2r2rk1/p4ppp/1p6/2b5/5Pn1/1Q2PR1P/P5P1/R1B1qBK1 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:44:40"]
+[ChapterMode "gamebook"]
+
+1... Nxe3 2. Bxe3 Bxe3+ 3. Qxe3 Qxa1 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 194"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 194"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/JDGBRWxY"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "5r1k/2p5/5qp1/1Pb1p2p/4B2P/3P2P1/4QPK1/5R2 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:45:37"]
+[ChapterMode "gamebook"]
+
+1. Bxg6 Qxg6 2. Qxe5+ Kg8 3. Qxc5 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 195"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 195"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/8km4YSkK"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2kB2r1/p3R3/q1p3r1/bp2Qp2/2PP3p/1P4P1/P4P2/5K2 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:46:39"]
+[ChapterMode "gamebook"]
+
+1. Rc7+ Kb8 2. Rxc6+ Kb7 3. Rxa6 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 196"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 196"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/x06CdCAj"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "1r3k2/2p3Rp/2b5/p1Pp2p1/P2B1pq1/2PB2P1/7P/5RK1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:47:36"]
+[ChapterMode "gamebook"]
+
+1. Rxf4+ gxf4 2. Rxg4 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 197"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 197"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/ufPXaTX6"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "6k1/5rpp/4Qn2/3p4/1q1P4/1p2P2P/6P1/3B1RK1 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:48:29"]
+[ChapterMode "gamebook"]
+
+1. Bh5 Qb7 2. Bxf7+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 198"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 198"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/EGKJn0X5"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "6rk/7p/8/1p3R2/pN6/P1n2B1P/4brPK/4R3 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:49:53"]
+[ChapterMode "gamebook"]
+
+1... Bxf3 2. Rxf3 Rgxg2+ 3. Kh1 Rh2+ 4. Kg1 Ne2+ *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 199"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 199"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/38GZxLCW"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "2r3k1/p2b2pp/1pqr4/2p1R3/4P3/P1Q3PP/1P4BK/3R4 w - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:50:46"]
+[ChapterMode "gamebook"]
+
+1. Re7 Rd4 2. Rxd4 cxd4 3. Qxd4 *
+
+
+[Event "The Woodpecker Method (Part 4): Puzzle no. 200"]
+[Date "2025.08.30"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "?"]
+[Opening "?"]
+[StudyName "The Woodpecker Method (Part 4)"]
+[ChapterName "Puzzle no. 200"]
+[ChapterURL "https://lichess.org/study/z5vB3TII/IEXltdZB"]
+[Annotator "https://lichess.org/@/AarusH1311"]
+[FEN "r3r1k1/p2q1pbp/6p1/3Q2B1/8/5P2/PP4PP/R2R2K1 b - - 0 1"]
+[SetUp "1"]
+[UTCDate "2025.08.30"]
+[UTCTime "15:51:57"]
+[ChapterMode "gamebook"]
+
+1... Re1+ 2. Rxe1 Qxd5 { Part 5: https://lichess.org/study/k6kRDIK1 } *
+
+

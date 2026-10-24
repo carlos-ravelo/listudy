@@ -287,6 +287,1378 @@
           "prose_comments": 4
         }
       ]
+    },
+    {
+      "id": "woodpecker_1",
+      "slug": "seedwoodpecker01-the-woodpecker-method-part-1",
+      "title": "The Woodpecker Method (Part 1)",
+      "color": "white",
+      "training_kind": "tactics",
+      "pgn_file": "lichess_woodpecker_part_1.pgn",
+      "sha256": "0bae103146203de78b579286b67f1e215648f92dd7f6bde15084130d75df9969",
+      "retrieved_on": "2026-10-24",
+      "description": "Tactics exercises from The Woodpecker Method, part 1. Source annotators: AarusH1311. Original study: https://lichess.org/study/4xLfA0En",
+      "sources": [
+        "https://lichess.org/study/4xLfA0En"
+      ],
+      "authors": [
+        {
+          "name": "AarusH1311",
+          "url": "https://lichess.org/@/AarusH1311"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "Puzzle no. 1",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/CWl2Wv5T",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.2",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/zXJP4Ikp",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 3",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/a8g8zxtu",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 4",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/BhM6hKE2",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 5",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/4OUpGnza",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.6",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/3o4F65Pp",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 7",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/sL0uQmqR",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 8",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/bmNQH09b",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 9",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/Ia0Fnhms",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 10",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/BNFTHxXm",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 11",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/cL9KyCQa",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 12",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/IojUBkGK",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 13",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/Mn8kfQAR",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 14",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/i8DUZZW1",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 15",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/3tjOLUVl",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 16",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/W6eAjCk8",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 17",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/JLMvjXd6",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 18",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/3q3Uxsg3",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 19",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/INBryy4v",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.20",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/QMDVfpdY",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.21",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/iUWgDxs3",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.22",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/CRFS6nzT",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.23",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/BunLRTy2",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.24",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/B0YfaF6F",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.25",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/qq6gtHbE",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.26",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/3gKxYa8t",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.27",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/yBr6iDbR",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.28",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/QoBjZVww",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no.29",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/fAu49zTD",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 30",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/G4kl7nMD",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 31",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/ci1nzQV8",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 32",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/ctNAOBVn",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 33",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/YXoobKx3",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 34",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/YhbETkA1",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 35",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/VG5fYraV",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 36",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/bFg6Dn8P",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 37",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/0CXTbfVX",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 38",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/JACp56zS",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 39",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/BlReTP6c",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 40",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/a6CkWtwS",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 41",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/9H4UxVXZ",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 42",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/bVP3n82q",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 43",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/iSTQiRjq",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 44",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/uGSRkCY4",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 45",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/MB26VDTo",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 46",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/rzmwcX5P",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 47",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/QOICKgVu",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 48",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/G3V0A8Lq",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 49",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/t1Fw9Yw3",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 50",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/jYULQw3Q",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 51",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/ey5YFcyO",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 52",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/agoLFYRM",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 53",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/TeWAEzga",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 54",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/rtrAXbaS",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 55",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/Omj6osY6",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 56",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/u2GajxtL",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 57",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/CabJQmTi",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 58",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/puaakoKF",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 59",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/pnp7Wz5U",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 60",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/N52WOwtE",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 61",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/8ltcz2SP",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 62",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/fqN0SDLZ",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 63",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/TXsE4UhS",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 64",
+          "chapter_url": "https://lichess.org/study/4xLfA0En/ceREwj1O",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        }
+      ],
+      "source_pgn_file": "lichess_woodpecker_part_1_source.pgn",
+      "source_sha256": "8bc7629c2d4f7fbff445758960fe23ad265a6aad5f34aba6e7f910e76038f07a",
+      "fen_normalizations": [
+        {
+          "original_fen": "2kr1bnr/p1ppqp1p/bpn5/1N4p1/P2PPp2/5N2/1PP2KPP/R1BQ1B1R w k - 0 1",
+          "import_fen": "2kr1bnr/p1ppqp1p/bpn5/1N4p1/P2PPp2/5N2/1PP2KPP/R1BQ1B1R w - - 0 1"
+        },
+        {
+          "original_fen": "rnbqkb1r/pp1p2pp/2p2p2/4p3/2B5/2P2N2/PPP2PPP/RNBQ1RK1 w Qkq - 0 1",
+          "import_fen": "rnbqkb1r/pp1p2pp/2p2p2/4p3/2B5/2P2N2/PPP2PPP/RNBQ1RK1 w kq - 0 1"
+        }
+      ]
+    },
+    {
+      "id": "woodpecker_2",
+      "slug": "seedwoodpecker02-the-woodpecker-method-part-2",
+      "title": "The Woodpecker Method (Part 2)",
+      "color": "white",
+      "training_kind": "tactics",
+      "pgn_file": "lichess_woodpecker_part_2.pgn",
+      "sha256": "61405b6d0c3c5c02db7f11a7ef4f087e0627310e7ab9d627b5e5b362ed214687",
+      "retrieved_on": "2026-10-24",
+      "description": "Tactics exercises from The Woodpecker Method, part 2. Source annotators: AarusH1311. Original study: https://lichess.org/study/KicQp8vU",
+      "sources": [
+        "https://lichess.org/study/KicQp8vU"
+      ],
+      "authors": [
+        {
+          "name": "AarusH1311",
+          "url": "https://lichess.org/@/AarusH1311"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "Puzzle no. 65",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/B9yCPUPA",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 66",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/8T4S32Tw",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 67",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/6JwuaBxz",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 68",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/zatrjbTi",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 69",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/2itSluqb",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 70",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/SAlLN7Ob",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 71",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/tYfjmKTK",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 72",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/bldO1KXl",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 73",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/rnrGbzdz",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 74",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/XiXOMktW",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 75",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/Pp3ZZO4H",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 76",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/yRJI15dK",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 77",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/iAGMAfqS",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 78",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/R6sD2eqH",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 79",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/jYXk5NiR",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 80",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/p8ZdwbY3",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 81",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/yuwPIrOk",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 82",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/SA8HEqHR",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 83",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/DbRYOXK7",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 84",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/7db7gt0S",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 85",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/YPZKlzfc",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 86",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/CAWcs9DN",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 87",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/QEkhJlZI",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 88",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/kwONftd1",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 89",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/lHuTAZiy",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 90",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/GPjVkaib",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 91",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/HqSEj24f",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 92",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/hznWgfJT",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 93",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/oBC8kDRi",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 94",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/pwHi66s4",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 95",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/RdejpQR3",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 96",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/Bwu84mPQ",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 97",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/tva29FFK",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 98",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/mYsoEgQ5",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 99",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/cXXbtMyr",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 100",
+          "chapter_url": "https://lichess.org/study/KicQp8vU/Lebm7agc",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        }
+      ]
+    },
+    {
+      "id": "woodpecker_3",
+      "slug": "seedwoodpecker03-the-woodpecker-method-part-3",
+      "title": "The Woodpecker Method (Part 3)",
+      "color": "white",
+      "training_kind": "tactics",
+      "pgn_file": "lichess_woodpecker_part_3.pgn",
+      "sha256": "9567811178c9bd9cbbe77738bea6fcf27d67deee4b5d5f8dffd128fe7ac7b0a3",
+      "retrieved_on": "2026-10-24",
+      "description": "Tactics exercises from The Woodpecker Method, part 3. Source annotators: AarusH1311. Original study: https://lichess.org/study/fIfq3LZR",
+      "sources": [
+        "https://lichess.org/study/fIfq3LZR"
+      ],
+      "authors": [
+        {
+          "name": "AarusH1311",
+          "url": "https://lichess.org/@/AarusH1311"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "Puzzle no. 101",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/BJ6rEZ4t",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 102",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/O1ARi9UU",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 103",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/oZKclgu6",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 104",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/3TcUCe6h",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 105",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/vcosKvGe",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 106",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/C5qYUaDJ",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 107",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/xvcHSMEC",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 108",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/ZayxRiqe",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 109",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/thZNVHAH",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 110",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/q0D6NyZW",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 111",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/UDJILhIG",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 112",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/GaOe7e22",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 113",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/HGeDZUEv",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 114",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/BAmwfR2b",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 115",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/njZfbxs1",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 116",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/8V0DryRX",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 117",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/FoQUjLa3",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 118",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/vu5aWqib",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 119",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/zbsuv7yD",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 120",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/a7kLfpB6",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 121",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/d4mhJhzB",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 122",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/E4bL6kjo",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 123",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/idgbGM4l",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 124",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/jkC7A9sd",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 125",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/8KCjq3kI",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 126",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/xFcIfUQc",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 127",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/xqTZqBmm",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 128",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/gHSFx5p9",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 129",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/XwvoDdUu",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 130",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/K8aKIzyo",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 131",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/n46Dtx0n",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 132",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/yLSESWTu",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 133",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/l4Xq9dC4",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 134",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/J0plg4Ao",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 135",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/Zk7HA1lo",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 136",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/0IMDg4Li",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 137",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/Grjipc7q",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 138",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/MlGiepUv",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 139",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/eETI67qG",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 140",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/JPMO1vcE",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 141",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/DbcFCb5X",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 142",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/GPq47MPL",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 143",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/W4ZBfzur",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 144",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/BlczEstL",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 145",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/ArvyaNu5",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 146",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/4qiLYRMz",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 147",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/2Vng1gY5",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 148",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/4WozArb7",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 149",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/RKljCTdA",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 150",
+          "chapter_url": "https://lichess.org/study/fIfq3LZR/K7XzZK0g",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        }
+      ]
+    },
+    {
+      "id": "woodpecker_4",
+      "slug": "seedwoodpecker04-the-woodpecker-method-part-4",
+      "title": "The Woodpecker Method (Part 4)",
+      "color": "white",
+      "training_kind": "tactics",
+      "pgn_file": "lichess_woodpecker_part_4.pgn",
+      "sha256": "970f6f662b6358debf923e4c2062a50fcb041ae08f71b2ab3241f4f5c8e41f3a",
+      "retrieved_on": "2026-10-24",
+      "description": "Tactics exercises from The Woodpecker Method, part 4. Source annotators: AarusH1311. Original study: https://lichess.org/study/z5vB3TII",
+      "sources": [
+        "https://lichess.org/study/z5vB3TII"
+      ],
+      "authors": [
+        {
+          "name": "AarusH1311",
+          "url": "https://lichess.org/@/AarusH1311"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "Puzzle no. 151",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/Xyt0uEE0",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 152",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/ZEujGseb",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 153",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/P5vK2Lts",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 154",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/ofgZcyv0",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 155",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/Q1Sqyco3",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 156",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/2ReiLMCO",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 157",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/vhgtlvww",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 158",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/FSGk6QCC",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 159",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/7ggyu8m9",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 160",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/NlxOYpRQ",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 161",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/3Ym3sjkP",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 162",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/M3Y2xXYw",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 163",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/d1Ansr0Y",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 164",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/ByCRXYXQ",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 165",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/0D8CR4zV",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 166",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/4aRyocGp",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 167",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/cIMwXh1h",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 168",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/yX0DcR5v",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 169",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/4EOw1CHa",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 170",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/Rx7cT8ez",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 171",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/kHgC4TDh",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 172",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/xplMGr4g",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 173",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/fAYA7g2U",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 174",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/zDK8a3Pn",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 175",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/3N1A3BpC",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 176",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/DTJ5RaVB",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 177",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/kh7k76Qt",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 178",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/bwYGWMXH",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 179",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/BHwQ7Dmh",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 180",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/9j4pui0M",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 181",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/Gn8Ie9AG",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 182",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/AyT9zIOG",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 183",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/icQFwBKl",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 184",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/i2M8cv2u",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 185",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/y3jjudkH",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 186",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/N0Lmg5sQ",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 187",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/Tm4RCYUn",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 188",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/q0kIZrWu",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 189",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/amnfE6Ld",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 190",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/FNXBAOhi",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 191",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/gaQia08Z",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 192",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/BlTpR21M",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 193",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/suoE3FIE",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 194",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/JDGBRWxY",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 195",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/8km4YSkK",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 196",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/x06CdCAj",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 197",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/ufPXaTX6",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 198",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/EGKJn0X5",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 199",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/38GZxLCW",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 200",
+          "chapter_url": "https://lichess.org/study/z5vB3TII/IEXltdZB",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        }
+      ]
+    },
+    {
+      "id": "woodpecker_5",
+      "slug": "seedwoodpecker05-the-woodpecker-method-part-5",
+      "title": "The Woodpecker Method (Part 5)",
+      "color": "white",
+      "training_kind": "tactics",
+      "pgn_file": "lichess_woodpecker_part_5.pgn",
+      "sha256": "af7fe9669d28a983008708ba1dd6f76492de1125a2d2d09131bc488b19550b15",
+      "retrieved_on": "2026-10-24",
+      "description": "Tactics exercises from The Woodpecker Method, part 5. Source annotators: AarusH1311. Original study: https://lichess.org/study/k6kRDIK1",
+      "sources": [
+        "https://lichess.org/study/k6kRDIK1"
+      ],
+      "authors": [
+        {
+          "name": "AarusH1311",
+          "url": "https://lichess.org/@/AarusH1311"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "Puzzle no. 201",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/nsuNLgAl",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 202",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/tkSMmiWW",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 203",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/iDwVqJNX",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 204",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/drsvRTEj",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 205",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/rxtHQ7bL",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 206",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/rWQVPYg8",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 207",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/m6mtgO2e",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 208",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/X1469bb9",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 209",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/fKy2JrvB",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 210",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/rvnGQx08",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 211",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/ggkhE2iH",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 212",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/xh5CSKHW",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 213",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/gufU8nGa",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 214",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/mP1LRQCU",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 215",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/13sFQnKo",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 216",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/X47ZliK5",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 217",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/32P9C18R",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 218",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/UegSFtJZ",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 219",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/hAFTsEqz",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 220",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/uQ3AtJuZ",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 221",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/WY9MSaet",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 222",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/wKPuCI5E",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 223",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/i3ICWpEe",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 224",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/V0N4oAhn",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 225",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/ePg0R0uG",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 226",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/owp8Y7Bk",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 227",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/k74KGiZc",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 228",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/7hwDHABY",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 229",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/uWb0g0Es",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 230",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/42ozbp7p",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 231",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/6tDTyuZx",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 232",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/PXE0AfUF",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 233",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/ffPd4Att",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 234",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/jDCwYHAP",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 235",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/NTxuu9n2",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 236",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/AQbRPfXg",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 237",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/3dwR9oM2",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 238",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/G1UApIje",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 239",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/Ni0IWGtF",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 240",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/1lt4MRUN",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 241",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/YYU0i5ME",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 242",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/pyLwdHcl",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 243",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/hSwqymrs",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 244",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/t6U698cp",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 245",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/ieClyhhH",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 246",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/v4i7L89P",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 247",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/3zPCXc75",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 248",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/nOdy0lnj",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 249",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/g73g5rr4",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        },
+        {
+          "title": "Puzzle no. 250",
+          "chapter_url": "https://lichess.org/study/k6kRDIK1/xVv9McGf",
+          "annotator": "https://lichess.org/@/AarusH1311"
+        }
+      ]
     }
   ]
 }

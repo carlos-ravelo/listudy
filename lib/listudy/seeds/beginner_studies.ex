@@ -41,7 +41,11 @@ defmodule Listudy.Seeds.BeginnerStudies do
   end
 
   defp insert_study(entry, owner_id, directory) do
-    opening = Repo.get_by!(Opening, slug: entry["opening_slug"])
+    opening_id =
+      case entry["opening_slug"] do
+        nil -> 1
+        slug -> Repo.get_by!(Opening, slug: slug).id
+      end
 
     pgn =
       Application.app_dir(:listudy, "priv/repo/data/studies/" <> entry["pgn_file"])
@@ -73,10 +77,10 @@ defmodule Listudy.Seeds.BeginnerStudies do
             description: entry["description"],
             slug: entry["slug"],
             color: entry["color"],
-            training_kind: "repertoire",
+            training_kind: entry["training_kind"] || "repertoire",
             private: false,
             user_id: owner_id,
-            opening_id: opening.id
+            opening_id: opening_id
           })
 
         case result do
