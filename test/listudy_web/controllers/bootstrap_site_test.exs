@@ -104,6 +104,86 @@ defmodule ListudyWeb.BootstrapSiteTest do
     assert has_element?(view, "#study-search[value='Toggle discovery']")
   end
 
+  test "search stars save and remove tactics favorites across reloads", %{conn: conn} do
+    owner =
+      Repo.insert!(%Listudy.Users.User{username: "StarOwner", email: "star-owner@example.com"})
+
+    visitor =
+      Repo.insert!(%Listudy.Users.User{
+        username: "StarVisitor",
+        email: "star-visitor@example.com"
+      })
+
+    collection =
+      Repo.insert!(%Listudy.Studies.Study{
+        title: "Search star collection",
+        slug: "search-star-collection",
+        user_id: owner.id,
+        training_kind: "tactics",
+        color: "white",
+        private: false
+      })
+
+    private =
+      Repo.insert!(%Listudy.Studies.Study{
+        title: "Private star collection",
+        slug: "private-star-collection",
+        user_id: owner.id,
+        training_kind: "tactics",
+        private: true
+      })
+
+    conn = Pow.Plug.assign_current_user(conn, visitor, [])
+    {:ok, view, _html} = live(conn, "/en/studies/search")
+    view |> element("button[phx-click=toggle-kind]") |> render_click()
+    selector = "#study-result-#{collection.id} button[phx-click=toggle-favorite]"
+    assert has_element?(view, selector <> "[aria-pressed=false]")
+    view |> element(selector) |> render_click()
+    assert has_element?(view, selector <> "[aria-pressed=true]")
+    assert Listudy.StudyFavorites.user_favorites_study(visitor.id, collection.id)
+    refute Listudy.StudyFavorites.user_favorites_study(owner.id, collection.id)
+
+    {:ok, reloaded, _html} = live(conn, "/en/studies/search")
+    reloaded |> element("button[phx-click=toggle-kind]") |> render_click()
+    assert has_element?(reloaded, selector <> "[aria-pressed=true]")
+    reloaded |> element(selector) |> render_click()
+    assert has_element?(reloaded, selector <> "[aria-pressed=false]")
+    refute Listudy.StudyFavorites.user_favorites_study(visitor.id, collection.id)
+
+    render_hook(reloaded, "toggle-favorite", %{
+      "id" => to_string(private.id),
+      "favorite" => "true"
+    })
+
+    refute Listudy.StudyFavorites.user_favorites_study(visitor.id, private.id)
+    assert has_element?(reloaded, "[role=alert]", "Could not update favorites")
+  end
+
+  test "anonymous search stars lead to sign in", %{conn: conn} do
+    owner =
+      Repo.insert!(%Listudy.Users.User{
+        username: "AnonymousStarOwner",
+        email: "anonymous-star@example.com"
+      })
+
+    study =
+      Repo.insert!(%Listudy.Studies.Study{
+        title: "Anonymous star study",
+        slug: "anonymous-star-study",
+        user_id: owner.id,
+        private: false
+      })
+
+    {:ok, view, _html} = live(conn, "/en/studies/search")
+
+    assert has_element?(
+             view,
+             "#study-result-#{study.id} a.study-list-favorites[href='/session/new']"
+           )
+
+    refute has_element?(view, "button[phx-click=toggle-favorite]")
+  end
+
   test "representative site pages render their existing workflows", %{conn: conn} do
     for {name, route} <- [
           {"home", "/en"},

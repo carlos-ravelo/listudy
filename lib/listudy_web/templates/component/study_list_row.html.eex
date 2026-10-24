@@ -27,9 +27,15 @@
     </span>
   <% end %>
   <%= if discovery do %>
-    <span class="study-list-favorites" aria-label="<%= dngettext("study", "%{count} favorite", "%{count} favorites", length(study.study_favorites)) %>">
+    <%= if Map.get(assigns, :signed_in, false) do %>
+    <button type="button" class="btn study-library-favorite study-list-favorites" phx-click="toggle-favorite" phx-value-id="<%= study.id %>" phx-value-favorite="<%= !favorite %>" aria-pressed="<%= favorite %>" aria-label="<%= dgettext("study", "Favorite") %>: <%= study.title %>" title="<%= dngettext("study", "%{count} favorite", "%{count} favorites", length(study.study_favorites)) %>">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg><%= length(study.study_favorites) %>
-    </span>
+    </button>
+    <% else %>
+    <a class="btn study-list-favorites" href="<%= Routes.pow_session_path(@context, :new) %>" aria-label="<%= gettext("Sign in") %>: <%= dgettext("study", "Favorite") %>: <%= study.title %>" title="<%= dngettext("study", "%{count} favorite", "%{count} favorites", length(study.study_favorites)) %>">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg><%= length(study.study_favorites) %>
+    </a>
+    <% end %>
   <% else %>
     <button type="button" class="btn study-library-favorite" data-library-favorite aria-pressed="<%= favorite %>" aria-label="<%= dgettext("study", "Favorite") %>: <%= study.title %>" title="<%= dgettext("study", "Favorite") %>">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>

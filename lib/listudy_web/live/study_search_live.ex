@@ -32,6 +32,8 @@ defmodule ListudyWeb.StudySearchLive do
         </div>
       </form>
 
+      <%= if @favorite_error do %><p role="alert"><%= @favorite_error %></p><% end %>
+
       <%= if @matches == [] do %>
         <div class="study-discovery-empty study-library-empty" role="status">
           <%= if @kind == "tactics" do %>
@@ -45,7 +47,7 @@ defmodule ListudyWeb.StudySearchLive do
       <% else %>
         <ul class="study-library-list study_search_results" aria-label="<%= dgettext("study", "Studies") %>">
           <%= for match <- @matches do %>
-            <%= Phoenix.View.render(ListudyWeb.ComponentView, "study_list_row.html", study: match, context: @socket, locale: @locale, editable: false, discovery: true) %>
+            <%= Phoenix.View.render(ListudyWeb.ComponentView, "study_list_row.html", study: match, context: @socket, locale: @locale, editable: false, discovery: true, favorite_ids: @favorite_ids, signed_in: @user_id != nil) %>
           <% end %>
         </ul>
       <% end %>
@@ -53,8 +55,14 @@ defmodule ListudyWeb.StudySearchLive do
     """
   end
 
-  def mount(%{"locale" => locale}, _session, socket) do
+  def session(conn) do
+    user = Pow.Plug.current_user(conn)
+    %{"study_search_user_id" => if(user, do: user.id)}
+  end
+
+  def mount(%{"locale" => locale}, session, socket) do
     result = Studies.search_by_title("", "newest")
+    user_id = session["study_search_user_id"]
     Gettext.put_locale(ListudyWeb.Gettext, locale)
 
     {:ok,
@@ -64,8 +72,36 @@ defmodule ListudyWeb.StudySearchLive do
        color: "all",
        kind: "repertoire",
        matches: result,
+       user_id: user_id,
+       favorite_ids: favorite_ids(user_id),
+       favorite_error: nil,
        locale: locale
      )}
+  end
+
+  def handle_event("toggle-favorite", _, %{assigns: %{user_id: nil}} = socket) do
+    {:noreply, redirect(socket, to: Routes.pow_session_path(socket, :new))}
+  end
+
+  def handle_event("toggle-favorite", %{"id" => id, "favorite" => favorite}, socket)
+      when favorite in ["true", "false"] do
+    operation = %{"action" => "set_favorite", "study_id" => id, "favorite" => favorite == "true"}
+
+    case Listudy.StudyLibrary.update(socket.assigns.user_id, operation) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(favorite_ids: favorite_ids(socket.assigns.user_id), favorite_error: nil)
+         |> search()}
+
+      {:error, _} ->
+        {:noreply,
+         assign(
+           socket,
+           :favorite_error,
+           dgettext("study", "Could not update favorites. Try again.")
+         )}
+    end
   end
 
   def handle_event("toggle-kind", _, socket) do
@@ -108,5 +144,11 @@ defmodule ListudyWeb.StudySearchLive do
       )
 
     assign(socket, :matches, result)
+  end
+
+  defp favorite_ids(nil), do: MapSet.new()
+
+  defp favorite_ids(user_id) do
+    user_id |> Studies.get_studies_by_favorite!() |> MapSet.new(& &1.id)
   end
 end
