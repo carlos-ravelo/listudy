@@ -4,7 +4,13 @@ import { downloadPgn } from '../download_pgn.js';
 // downloaded intact so they can be imported from the analysis board.
 const inlineLimit = 5000;
 
+function analysisPgn(pgn) {
+    return pgn.replace(/"(?:\\.|[^"\\])*"|\{[^}]*\}|;[^\r\n]*/g,
+        token => token.startsWith('"') ? token : ' ').trim();
+}
+
 export function lichessAnalysisUrl(pgn, orientation, fen, path = []) {
+    pgn = analysisPgn(pgn);
     const base = `https://lichess.org/analysis`;
     if (encodeURIComponent(pgn).length > inlineLimit) return `${base}?color=${orientation}#menu`;
     const fields = fen.split(' ');
@@ -14,7 +20,7 @@ export function lichessAnalysisUrl(pgn, orientation, fen, path = []) {
 }
 
 export function prepareLichessAnalysis(pgn, importPrompt) {
-    if (encodeURIComponent(pgn).length <= inlineLimit) return;
+    if (encodeURIComponent(analysisPgn(pgn)).length <= inlineLimit) return;
     downloadPgn(pgn, 'chapter.pgn');
     window.alert(importPrompt);
 }
