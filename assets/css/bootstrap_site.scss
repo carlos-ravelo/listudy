@@ -7,6 +7,9 @@
 @import "./components/site_navigation.css";
 @import "./components/site_foundation.css";
 @import "./progress_bar.css";
+@import './features/promotion_picker.css';
+
+.stockfish-board-frame { position: relative; width: fit-content; }
 @import "./inputs.css";
 @import "./icons.css";
 @import "./features/study.css";

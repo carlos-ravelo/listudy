@@ -2,7 +2,10 @@
 
 <div class="with_sidebar">
   <div id="game_container" class="sidebar_main">
-    <%= render ListudyWeb.ComponentView, "chessground.html" %>
+    <div class="stockfish-board-frame">
+      <%= render ListudyWeb.ComponentView, "chessground.html" %>
+      <%= render ListudyWeb.ComponentView, "promotion_picker.html" %>
+    </div>
   </div>
   <div class="sidebar">
     <% black = "<a id=\"reset_black\">#{gettext("black")}</a>"%>

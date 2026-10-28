@@ -1,4 +1,5 @@
 import { createBoardGame } from '../../modules/board/board_game.js';
+import { createPromotionController } from '../../modules/board/promotion_controller.js';
 import { playMoveSound } from '../../modules/sounds.js';
 import { parseUciMove } from '../../modules/board/chess_moves.js';
 import { turn_color, setup_chess, initial_fen } from '../../modules/board/chess_utils.js';
@@ -9,15 +10,21 @@ import { onresize, resize_ground, setup_ground, setup_move_handler } from '../..
 import { set_text, clear_all_text, error_div } from '../../modules/info_boxes.js';
 require('regenerator-runtime/runtime');
 
-let engineStartFen, engine, thinking = false, progressTimer;
+let engineStartFen, engine, picker, thinking = false, progressTimer;
 const lifecycle = createTrainingLifecycle({ restore: () => { startRun(); ai_move(); } });
 const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
-    getOptions: () => ({ color, playable: !thinking && !chess.game_over() && turn_color(chess) === color }),
+    getOptions: () => ({ color, playable: !thinking && !picker?.pending && !chess.game_over() && turn_color(chess) === color }),
     onMove: playMoveSound });
 
 function handle_move(orig, dest) {
-    if (!lifecycle.run.active || thinking || turn_color(chess) !== color) return;
-    if (move(orig, dest)) ai_move();
+    if (!lifecycle.run.active || thinking || picker?.pending || turn_color(chess) !== color) return;
+    if (!picker.request({ from: orig, to: dest, legal: chess.moves({ verbose: true }), color, orientation: color })) {
+        playUserMove(orig, dest);
+    }
+}
+
+function playUserMove(orig, dest, promotion) {
+    if (move(orig, dest, promotion)) ai_move();
 }
 
 function move(orig, dest, promotion = 'q') {
@@ -77,6 +84,10 @@ function startRun() {
     setup_ground(chess.fen());
     const board = ground;
     scope.use(() => board.destroy());
+    picker = scope.use(createPromotionController({ element: document.querySelector('[data-promotion-picker]'),
+        onOpen: () => boardGame.restore(),
+        onChoose: (role, pending) => playUserMove(pending.from, pending.to, role),
+        onCancel: () => boardGame.restore() }));
     setup_move_handler(scope.guard(handle_move));
     boardGame.restore();
     resize_ground();
@@ -93,6 +104,7 @@ function reset(c) {
 }
 
 function takeback() {
+    picker.cancel();
     // During a search only the player's latest ply needs to be undone.
     const count = turn_color(chess) === color ? 2 : 1;
     if (boardGame.undo(count).length !== count) return;

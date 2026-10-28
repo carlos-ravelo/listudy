@@ -12,7 +12,7 @@
 | Board creation, movement, sizing, sound | `assets/js/modules/board/ground.js` | Study and native exercises; newer controllers also render Chessground directly |
 | Alternative solution analysis | `assets/js/modules/training/tactic_alternatives.js` | Native tactics, Blind, Pieceless through `tactic_attempts.js` |
 | Pending validation and stale response rejection | `assets/js/modules/training/tactic_attempts.js` | Native tactics, Blind, Pieceless |
-| Promotion interaction and pending move | `assets/js/modules/board/promotion_controller.js` | Editor, Sparring, native tactics, Pieceless, endgames |
+| Promotion interaction and pending move | `assets/js/modules/board/promotion_controller.js` | Editor, Sparring, native tactics, Pieceless, endgames and standalone Stockfish |
 | Page and exercise lifetimes | `assets/js/modules/training/training_lifecycle.js` | Native tactics, Blind, Pieceless, Chessclicker, endgames and standalone Stockfish |
 | Move hint shapes | `assets/js/modules/board/board_shapes.js` | Endgame review/hints, Sparring best moves and analysis game comparisons |
 | Engine continuation presentation | `assets/js/modules/engine/engine_line.js` | Chapter editor, Sparring review/downloads and endgame review/hints |
@@ -28,8 +28,9 @@
 
 `study.js` routes Sparring to its adapter but implements PGN Read and practice
 through `uci_to_san` and `possible_promotion`. The latter can substitute an authored
-underpromotion. The standalone Stockfish page also retains automatic queen promotion for user
-input. These paths do not use the shared promotion controller. Blind selects
+underpromotion. Standalone Stockfish now uses the shared promotion controller for player input,
+including cancel, reset/takeback and page-suspension cleanup. Study PGN input does
+not yet use that controller. Blind selects
 queen promotions when matching destinations. Shared move parsing now preserves
 all five characters of engine promotion moves, including underpromotion.
 

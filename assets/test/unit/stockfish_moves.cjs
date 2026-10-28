@@ -15,9 +15,10 @@ function mount(hash = '') {
         return nodes.get(id);
     }
     const context = vm.createContext({
-        require, document: { location: { hash }, getElementById: node },
+        require, document: { location: { hash }, getElementById: node, querySelector: () => node('promotion') },
         addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events),
         setTimeout(callback) { tasks.set(++timer, callback); return timer; }, clearTimeout(id) { tasks.delete(id); },
+        createPromotionPicker({ element }) { return { open() { element.hidden = false; }, close() { element.hidden = true; }, destroy() { element.hidden = true; } }; },
         console: { error: (...args) => errors.push(args) },
         turn_color: chess => chess.turn() === 'w' ? 'white' : 'black',
         setup_chess(fen) { context.chess = new Chess(fen); },
@@ -40,12 +41,12 @@ function mount(hash = '') {
     });
     context.window = context;
     require('./board_game_helper.cjs')(context);
-    for (const name of ['page_scope', 'training/training_lifecycle']) {
+    for (const name of ['page_scope', 'training/training_lifecycle', 'board/promotion_controller']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', name + '.js'), 'utf8')
             .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
     }
     vm.runInContext(source, context);
-    return { context, engines, boards, tasks, errors, node,
+    return { context, engines, boards, tasks, errors, node, picker: () => vm.runInContext('picker', context),
         click(id) { node(id).dispatchEvent(new Event('click')); },
         transition(name, persisted) { const event = new Event(name); event.persisted = persisted; events.dispatchEvent(event); }
     };
@@ -65,6 +66,51 @@ function mount(hash = '') {
         assert.equal(page.boards[0].fen, page.context.chess.fen());
         page.transition('pagehide', false);
     }
+    for (const [fen, from, to] of [
+        ['4k2r/P7/8/8/8/8/8/4K3 w - - 0 1', 'a7', 'a8'],
+        ['4k3/8/8/8/8/8/p7/4K2R b - - 0 1', 'a2', 'a1']
+    ]) for (const role of ['q', 'r', 'b', 'n']) {
+        const page = mount(`#${fen};p`), picker = page.picker();
+        page.boards[0].input(from, to);
+        assert.equal(page.context.chess.fen(), fen, 'Promotion waits for a choice without changing history');
+        assert(picker.pending);
+        assert.equal(page.boards[0].movable.dests.size, 0, 'Pending promotion blocks other input');
+        assert.equal(page.engines[0].searches.length, 0);
+        page.boards[0].input('e1', 'e2');
+        picker.choose(role);
+        assert.equal(page.context.chess.get(to).type, role);
+        assert.equal(page.engines[0].searches.length, 1, 'Only a confirmed choice starts the reply search');
+        assert.equal(picker.pending, null);
+        page.transition('pagehide', false);
+    }
+    const promotionFen = '4k2r/P7/8/8/8/8/8/4K3 w - - 0 1';
+    const cancel = mount(`#${promotionFen};p`);
+    cancel.boards[0].input('a7', 'a8');
+    cancel.picker().cancel();
+    assert.equal(cancel.context.chess.fen(), promotionFen);
+    assert.equal(cancel.boards[0].movable.color, 'white');
+    assert.equal(cancel.engines[0].searches.length, 0);
+    cancel.boards[0].input('a7', 'a8');
+    cancel.click('takeback');
+    assert.equal(cancel.picker().pending, null, 'Takeback also cancels a pending choice with no history');
+    assert.equal(cancel.context.chess.fen(), promotionFen);
+    cancel.boards[0].input('a7', 'a8');
+    const stalePicker = cancel.picker();
+    cancel.click('reset_white');
+    const resetFen = cancel.context.chess.fen();
+    stalePicker.choose('n');
+    assert.equal(cancel.context.chess.fen(), resetFen, 'Reset discards stale promotion input');
+    cancel.transition('pagehide', false);
+    const suspend = mount(`#${promotionFen};p`);
+    suspend.boards[0].input('a7', 'a8');
+    const hiddenPicker = suspend.picker();
+    suspend.transition('pagehide', true);
+    hiddenPicker.choose('q');
+    assert.equal(suspend.context.chess.fen(), promotionFen);
+    suspend.transition('pageshow', true);
+    assert.equal(suspend.picker().pending, null);
+    assert.equal(suspend.boards.at(-1).movable.color, 'white');
+    suspend.transition('pagehide', false);
     for (const uci of ['(none)', '0000', 'invalid', undefined]) {
         const invalid = mount();
         invalid.boards[0].input('e2', 'e4');
