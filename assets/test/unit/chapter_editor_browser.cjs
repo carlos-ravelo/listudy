@@ -206,7 +206,9 @@ ${editorControls}${annotationControl}${analysisControl}
         await page.fill('#editor_comment', 'New Sicilian comment');
         const analysisUrl = new URL(await page.locator('#editor_analysis').getAttribute('href'));
         const analysisPgn = decodeURIComponent(analysisUrl.pathname.slice('/analysis/pgn/'.length));
-        assert.ok(analysisPgn.includes('(1... c5 { New Sicilian comment })'), 'Include unsaved variations and comments in analysis');
+        assert.match(analysisPgn, /\(1\.\.\. c5\s*\)/, 'Include unsaved variations in analysis');
+        assert.ok(!analysisPgn.includes('New Sicilian comment'), 'Inline analysis URLs omit comments');
+        assert.ok((await state()).pgn.includes('{ New Sicilian comment }'), 'Keep comments in the editable PGN');
         page.once('dialog', dialog => dialog.dismiss());
         await page.click('#editor_chapter');
         await page.locator('#editor_chapter_list .chapter-choice').nth(1).click();

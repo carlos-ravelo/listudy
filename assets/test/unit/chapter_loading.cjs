@@ -18,7 +18,7 @@ const context = vm.createContext({
     require, URL, URLSearchParams, AbortController, Map, console,
     createChapterEditor: model.createChapterEditor,
     lichessAnalysisUrl: model.lichessAnalysisUrl, prepareLichessAnalysis: model.prepareLichessAnalysis,
-    createPromotionPicker: () => ({destroy() {}}),
+    createPromotionPicker: () => ({open() {}, close() {}, destroy() {}}),
     Chessground: () => ground,
     setupStudyMoveTree: () => ({update() {}}), ground_legal_moves: () => new Map(),
     Alpine: {data(_, value) { factory = value; }, start() {}},
@@ -28,6 +28,8 @@ const context = vm.createContext({
 });
 vm.runInContext(read('modules/request_json.js').replace(/^export /gm, ''), context);
 vm.runInContext(read('modules/editable_target.js').replace(/^export /gm, ''), context);
+vm.runInContext(read('modules/board_interaction.js').replace(/^export /gm, ''), context);
+vm.runInContext(read('modules/promotion_controller.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 vm.runInContext(read('study_editor.js').replace(/^import .*;\n/gm, ''), context);
 const controller = factory();
 controller.$el = {dataset: {

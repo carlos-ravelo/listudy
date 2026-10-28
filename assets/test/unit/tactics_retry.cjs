@@ -24,15 +24,17 @@ const handler = source.slice(source.indexOf('async function play_move('), source
             ground_set_moves() {state.movable.dests = chess.moves();},
             ground_move(move, board) {state.turnColor = board.turn() === 'w' ? 'white' : 'black';}
         });
+        vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), context);
         vm.runInContext('let busy = false, finished = false, generation = 0, progress;\n' + handler, context);
         await context.play_move('d2', 'd4', 'q');
         assert.equal(chess.history().length, 0);
         assert.equal(state.turnColor, 'white', `${status}: restore the player's turn`);
         assert.equal(state.movable.color, 'white');
-        assert(state.movable.dests.length > 0);
+        assert(state.movable.dests.size > 0);
         await context.play_move('e2', 'e4', 'q');
         assert.equal(chess.history().join(' '), 'e4 e5', `${status}: allow a correct retry and opponent reply`);
         assert.equal(state.turnColor, 'white');
+        assert.equal(state.movable.color, 'white', 'Unlock the board after the opponent reply');
     }
     console.log('Incorrect and unconfirmed puzzle moves restore the player turn and allow a correct retry');
 })().catch(error => {console.error(error); process.exitCode = 1;});

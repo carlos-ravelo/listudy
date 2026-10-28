@@ -1,7 +1,8 @@
+import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 import { onresize, resize_ground, setup_ground, ground_set_moves,
-         ground_undo_last_move, setup_move_handler, ground_move } from './modules/ground.js';
+         setup_move_handler, ground_move } from './modules/ground.js';
 import { setup_chess } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { sleep } from './modules/sleep.js';
@@ -51,7 +52,7 @@ async function play_move(orig, dest, promotion) {
         if (!expected) return;
         board.undo();
         busy = true;
-        ground.set({movable: {dests: new Map()}});
+        blockBoardMoves(ground);
         set_text(info_div, i18n.checking);
         const attempted = board.move(played);
         board.undo();
@@ -69,7 +70,7 @@ async function play_move(orig, dest, promotion) {
         }
     }
     busy = true;
-    ground.set({movable: {dests: new Map()}});
+    blockBoardMoves(ground);
     if (accepted) {
         to_play.shift();
         let m = chess.move(played);
@@ -97,15 +98,14 @@ async function play_move(orig, dest, promotion) {
         // player failed the puzzle
         await sleep(300); // instant play by the ai feels weird
         if (ticket !== generation) return;
-        ground_undo_last_move();
-        ground.set({turnColor: color, movable: {color}});
-        ground_set_moves();
+        restoreBoardPosition(ground, chess, { color });
         set_text(uncertain ? info_div : error_div, uncertain ? i18n.unconfirmed : i18n.keep_trying, uncertain ? {} : {bold: i18n.wrong_move});
         show_div("next");
         progress?.assist();
         if (!uncertain) progress?.mistake();
         show_div("solution");
     }
+    if (accepted) restoreBoardPosition(ground, chess, { playable: !finished, color });
     busy = false;
 }
 
@@ -152,14 +152,13 @@ function main() {
     generation++; busy = false; finished = false; attempts.reset();
     picker?.destroy();
     picker = createPromotionController({element: document.querySelector('[data-promotion-picker]'),
-        onOpen() { ground.set({fen: chess.fen(), movable: {color: undefined, dests: new Map()}}); },
+        onOpen() { restoreBoardPosition(ground, chess, { playable: false }); },
         onChoose(promotion, move) {
-            ground.set({movable: {color}});
+            restoreBoardPosition(ground, chess, { color });
             play_move(move.from, move.to, promotion);
         },
         onCancel() {
-            ground.set({fen: chess.fen(), turnColor: color, movable: {color}});
-            ground_set_moves();
+            restoreBoardPosition(ground, chess, { color });
         }
     });
     load_data();

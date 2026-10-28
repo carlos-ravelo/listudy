@@ -1,3 +1,4 @@
+import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 const Chessground = require('chessground').Chessground;
@@ -36,7 +37,7 @@ function finish(reveal = false, solved = false) {
         for (const move of solution) chess.move({from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4]});
         document.querySelector('.pieceless-workspace').classList.add('training-revealed');
     }
-    ground.set({fen: chess.fen(), check: reveal && chess.in_check(), movable: {color: undefined, dests: new Map()}});
+    restoreBoardPosition(ground, chess, { playable: false, check: reveal && chess.in_check() });
     show_history(chess);
 }
 async function play_move(orig, dest, promotion) {
@@ -44,7 +45,7 @@ async function play_move(orig, dest, promotion) {
     const expected = solution[0];
     const played = orig + dest + (promotion || '');
     if (played !== expected) {
-        ground.set({movable: {dests: new Map()}});
+        blockBoardMoves(ground);
         set_text(info_div, i18n.checking);
         const result = await attempts.validate(enginePosition(fen, chess), expected, played, solution.length);
         if (!result) return;
@@ -52,7 +53,7 @@ async function play_move(orig, dest, promotion) {
         if (result.status === 'accepted') solution = result.line;
         else {
             if (result.status === 'rejected') visualization.tracker.decision(false);
-            ground.set({fen: chess.fen()}); ground_set_moves();
+            restoreBoardPosition(ground, chess, { check: false });
             set_text(result.status === 'unknown' ? info_div : error_div, result.status === 'unknown' ? i18n.unconfirmed : i18n.wrong_move);
             return;
         }
@@ -67,7 +68,7 @@ async function play_move(orig, dest, promotion) {
         const move = chess.move({from: reply.slice(0, 2), to: reply.slice(2, 4), promotion: reply[4]});
         pieceMask.move(move);
         ground_move(move, chess);
-        ground.set({fen: chess.fen(), check: false}); ground_set_moves();
+        restoreBoardPosition(ground, chess, { check: false });
         set_text(success_div, i18n.right_move);
     } else {
         set_text(success_div, i18n.solved);
@@ -193,9 +194,9 @@ function main() {
         if (!finished && visualization.destinations.checked && ground_legal_moves(chess).has(square)) visualization.help();
     });
     picker = createPromotionController({element: document.querySelector('[data-promotion-picker]'),
-        onOpen() { ground.set({fen: chess.fen(), movable: {color: undefined, dests: new Map()}}); },
+        onOpen() { restoreBoardPosition(ground, chess, { playable: false, check: false }); },
         onChoose(promotion, move) { play_move(move.from, move.to, promotion); },
-        onCancel() { ground.set({fen: chess.fen()}); ground_set_moves(); }});
+        onCancel() { restoreBoardPosition(ground, chess, { check: false }); }});
     resize_ground();
     document.getElementById('give-up').onclick = () => { if (!finished) finish(true); };
     document.getElementById('training_restart').onclick = main;

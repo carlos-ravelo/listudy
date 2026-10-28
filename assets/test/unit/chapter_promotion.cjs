@@ -16,6 +16,7 @@ const context = vm.createContext({ hasBlockingUi: () => false, require, URLSearc
     Chessground(_, options) { ground.state.orientation = options.orientation; return ground; },
     setupStudyMoveTree() { return { update() {} }; }, ground_legal_moves() { return new Map(); }
 });
+vm.runInContext(fs.readFileSync('assets/js/modules/board_interaction.js', 'utf8').replace(/^export /gm, ''), context);
 vm.runInContext(fs.readFileSync('assets/js/modules/promotion_controller.js', 'utf8').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 vm.runInContext(fs.readFileSync('assets/js/study_editor.js', 'utf8').replace(/^import .*;\n/gm, ''), context);
 function editor(fen, color = 'white') {

@@ -1,3 +1,4 @@
+import { restoreBoardPosition } from '../board_interaction.js';
 import { createPageScope } from '../page_scope.js';
 import { downloadPgn } from '../download_pgn.js';
 import { createSparringSession, sparringReviewEvery } from './session.js';
@@ -138,16 +139,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         workspace?.classList.toggle('study-sparring-paused', review);
         const game = readIndex === null ? ports.position.game() : ports.position.at(readIndex);
         onPosition(game, ports.repertoire.routes(), state.phase);
-        const dests = new Map();
-        if (playable) for (const move of state.legal) {
-            const from = move.slice(0, 2);
-            if (!dests.has(from)) dests.set(from, []);
-            if (!dests.get(from).includes(move.slice(2, 4))) dests.get(from).push(move.slice(2, 4));
-        }
-        const last = game.history({ verbose: true }).slice(-1)[0];
-        board.set({ fen: game.fen(), turnColor: game.turn() === 'w' ? 'white' : 'black', check: game.in_check(),
-            lastMove: last ? [last.from, last.to] : undefined,
-            movable: { color: playable ? getPlayer() : undefined, free: false, dests } });
+        restoreBoardPosition(board, game, { playable, color: getPlayer() });
         board.setShapes([]);
         if (state.moves.length > soundCount && state.lastMove) playMoveSound(state.lastMove);
         soundCount = state.moves.length;

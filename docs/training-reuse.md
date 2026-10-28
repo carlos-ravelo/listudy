@@ -5,6 +5,7 @@
 | Responsibility | Shared implementation | Consumers |
 | --- | --- | --- |
 | Legal destinations, SAN/UCI conversion | `assets/js/modules/chess_utils.js` | Legacy board modes |
+| Board interaction, authoritative position restoration and legal destinations | `assets/js/modules/board_interaction.js` | Editor, Sparring, native tactics, Pieceless, endgames; `chess_utils.js` delegates destination mapping for legacy board modes |
 | Board creation, movement, sizing, sound | `assets/js/modules/ground.js` | Study and native exercises; newer controllers also render Chessground directly |
 | Alternative solution analysis | `assets/js/modules/tactic_alternatives.js` | Native tactics, Blind, Pieceless through `tactic_attempts.js` |
 | Pending validation and stale response rejection | `assets/js/modules/tactic_attempts.js` | Native tactics, Blind, Pieceless |
@@ -29,15 +30,18 @@ PGN authored underpromotion must be preserved or deliberately changed.
 
 ### Board interaction state
 
-`tactics.js`, `pieceless_tactics.js`, `blind_tactics.js`, `endgames.js`, `study.js`
-and `sparring/study_adapter.js` update Chessground's `movable`, turn, destinations
-and FEN themselves. Sharing `ground.js` does not guarantee they restore all those
-fields consistently. `assets/test/unit/tactics_retry.cjs` already covers restoration
-of the player's turn after rejected or unconfirmed moves.
+Editor, Sparring, native tactics, Pieceless and endgames share
+`board_interaction.js` for turn/check state, legal destinations and blocking.
+Native retries restore FEN, turn, movable color and destinations together.
+Pieceless suppresses check while pieces are hidden; review can change interaction
+without replacing the visible board. Mode-specific input handlers and user
+preferences stay attached to Chessground.
 
-Next, extract a board interaction adapter with explicit playable, waiting and
-review states. Exercise it with each mode's real entry point. Preserve Blind's
-separate visible and logical positions and Pieceless's hidden-piece tracking.
+`study.js` and Blind still render their own positions. Their destination mapping
+now uses the shared implementation through `chess_utils.js`. Next, migrate Study's
+replay/trap states and Blind's visible/logical position split after adding tests
+for those policies. Keep turn eligibility in each mode; a position's legal moves
+alone do not authorize the player to move.
 
 ### Async work and resource lifetime
 

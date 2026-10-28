@@ -1,3 +1,4 @@
+import { restoreBoardPosition, setBoardInteraction } from './modules/board_interaction.js';
 require('regenerator-runtime/runtime');
 const Chess = require('chess.js');
 import { turn_color, setup_chess } from './modules/chess_utils.js';
@@ -7,7 +8,7 @@ import { renderEvaluationBar } from './modules/evaluation_bar.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { createPromotionController } from './modules/promotion_controller.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
-import { onresize, resize_ground, setup_ground, ground_init_state, ground_set_moves, setup_move_handler, ground_move } from './modules/ground.js';
+import { onresize, resize_ground, setup_ground, ground_init_state, setup_move_handler, ground_move } from './modules/ground.js';
 import { set_text, clear_all_text, error_div, info_div } from './modules/info_boxes.js';
 
 const workspace = document.querySelector('.endgame-workspace');
@@ -28,11 +29,9 @@ function updateFen(value = chess.fen()) {
 function boardReady() {
     document.getElementById('endgame_undo').disabled = !feedback?.rows.length;
     document.getElementById('endgame_hint').disabled = ended || reviewing || busy || !!picker?.pending;
-    ground_set_moves();
-    ground.set({ turnColor: turn_color(chess), check: chess.in_check(), movable: {
-        color: !ended && !reviewing && !busy && chess.turn() === (color === 'white' ? 'w' : 'b') ? color : undefined,
-        dests: ended || reviewing || busy ? new Map() : ground.state.movable.dests
-    }});
+    setBoardInteraction(ground, chess, {
+        playable: !ended && !reviewing && !busy && !picker?.pending && chess.turn() === (color === 'white' ? 'w' : 'b'), color
+    });
 }
 function finish(success) {
     if (ended) return;
@@ -101,7 +100,7 @@ function playUserMove(from, to, promotion) {
     if (ended || reviewing || busy || chess.turn() !== (color === 'white' ? 'w' : 'b')) return;
     const before = state();
     const played = playMove({ from, to, promotion });
-    if (!played) { ground.set({ fen: chess.fen() }); return; }
+    if (!played) { restoreBoardPosition(ground, chess, { playable: false }); boardReady(); return; }
     const after = state();
     const terminal = chess.game_over() ? { turn: chess.turn(), depth: 99, score: { type: chess.in_checkmate() ? 'mate' : 'cp', value: 0 }, pv: [] } : null;
     feedback.record({ before, after, terminal, goalReached: Boolean(goalReached(played)), ply: moves.length, san: played.san, uci: uci(played) });
@@ -130,7 +129,7 @@ function selectReview(path) {
     const position = new Chess(startFen);
     for (const move of moves.slice(0, selectedRow ? ply - 1 : ply)) position.move(move);
     const suggestion = selectedRow?.beforeAnalysis?.uci;
-    ground.set({ fen: position.fen(), turnColor: turn_color(position), check: position.in_check(), lastMove: undefined, movable: { color: undefined, dests: new Map() } });
+    restoreBoardPosition(ground, position, { playable: false, lastMove: null });
     ground.setAutoShapes(suggestion && /^[a-h][1-8][a-h][1-8]/.test(suggestion) ? [{ orig: suggestion.slice(0, 2), dest: suggestion.slice(2, 4), brush: 'pgn_green' }] : []);
     updateFen(position.fen());
     reviewState = { initialFen: startFen, moves: moves.slice(0, selectedRow ? ply - 1 : ply).map(uci), fen: position.fen(), turn: position.turn() };
@@ -230,7 +229,7 @@ function openReview({ keepFinalPosition = false } = {}) {
     if (keepFinalPosition) {
         selectedRow = null;
         reviewState = state(); reviewAnalysis = feedback.currentAnalysis;
-        ground.set({ fen: chess.fen(), check: chess.in_check(), movable: { color: undefined, dests: new Map() } });
+        restoreBoardPosition(ground, chess, { playable: false });
         ground.setAutoShapes([]);
         moveTree.update({ root: reviewRoot, fen: startFen, chapter: generation, path: Array(moves.length).fill(0), reading: true });
         updateFen(); renderComment();
@@ -270,9 +269,9 @@ function main(position = fen, restored = null) {
     const evaluationChange = evaluationToggle.onchange;
     evaluationToggle.onchange = () => { evaluationChange(); refreshReviewEvaluation(); };
     picker = createPromotionController({ element: document.querySelector('[data-promotion-picker]'),
-        onOpen: () => { ground.set({ fen: chess.fen(), movable: { dests: new Map() } }); },
+        onOpen: () => { restoreBoardPosition(ground, chess, { playable: false }); },
         onChoose: (promotion, move) => { boardReady(); playUserMove(move.from, move.to, promotion); },
-        onCancel: () => { ground.set({ fen: chess.fen() }); boardReady(); } });
+        onCancel: () => { restoreBoardPosition(ground, chess, { playable: false }); boardReady(); } });
     document.getElementById('todo').hidden = false;
     delete document.getElementById('todo').dataset.result;
     document.getElementById('todo').textContent = labels[color === 'white' ? 'white' : 'black'] + ' · ' + labels[target_result === 'w' ? 'win' : target_result === 'd' ? 'draw' : 'promote'];

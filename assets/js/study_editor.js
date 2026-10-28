@@ -5,7 +5,7 @@ import { Chessground } from 'chessground';
 import { createChapterEditor } from './modules/study/chapter_editor.js';
 import { lichessAnalysisUrl, prepareLichessAnalysis } from './modules/study/lichess_analysis.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
-import { ground_legal_moves } from './modules/chess_utils.js';
+import { restoreBoardPosition } from './modules/board_interaction.js';
 import { createPromotionController } from './modules/promotion_controller.js';
 import { setupPositionFen } from './modules/study/position_setup.js';
 import { createSparringEngine } from './modules/sparring/uci_engine.js';
@@ -158,19 +158,13 @@ Alpine.data('chapterEditor', () => {
         refresh() {
             this.syncPgn();
             const position = editor.position();
-            const color = position.turn() === 'w' ? 'white' : 'black';
-            const move = position.history({ verbose: true }).slice(-1)[0];
             this.comment = editor.node().comment;
             this.title = editor.tree.title;
             this.dirty = editor.dirty;
             this.hasPrevious = editor.path.length > 0;
             this.annotation = this.hasPrevious ? (editor.node().nags || []).find(nag => nag >= 1 && nag <= 6) || 0 : 0;
             this.hasNext = (this.hasPrevious ? editor.node().children : editor.tree.root).length > 0;
-            ground.set({
-                fen: position.fen(), turnColor: color, check: position.in_check(),
-                lastMove: move ? [move.from, move.to] : undefined,
-                movable: { color: (this.saving || this.loading || this.pendingPromotion) ? undefined : color, dests: (this.saving || this.loading || this.pendingPromotion) ? new Map() : ground_legal_moves(position) }
-            });
+            restoreBoardPosition(ground, position, { playable: !this.saving && !this.loading && !this.pendingPromotion });
             moveTree.update({ reading: true, chapter: this.chapter, root: editor.tree.root,
                 fen: currentChapter.fen, path: editor.path,
                 editingDisabled: this.setupMode || this.saving || this.loading || !!this.pendingPromotion });
