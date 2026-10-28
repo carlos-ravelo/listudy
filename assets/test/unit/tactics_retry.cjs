@@ -12,7 +12,7 @@ const handler = source.slice(source.indexOf('async function play_move('), source
         const state = {turnColor: 'black', movable: {color: 'white'}};
         const context = vm.createContext({
             chess, fen: chess.fen(), color: 'white', to_play: ['e4', 'e5', 'Nf3'],
-            alternatives: {validate: async () => ({status})},
+            attempts: {validate: async () => ({status})},
             enginePosition: () => ({}), sleep: async () => {},
             clear_all_text() {}, set_text() {}, show_div() {},
             i18n: {}, info_div: 'info', error_div: 'error',

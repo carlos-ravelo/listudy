@@ -16,11 +16,12 @@ const context = vm.createContext({ hasBlockingUi: () => false, require, URLSearc
     Chessground(_, options) { ground.state.orientation = options.orientation; return ground; },
     setupStudyMoveTree() { return { update() {} }; }, ground_legal_moves() { return new Map(); }
 });
+vm.runInContext(fs.readFileSync('assets/js/modules/promotion_controller.js', 'utf8').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 vm.runInContext(fs.readFileSync('assets/js/study_editor.js', 'utf8').replace(/^import .*;\n/gm, ''), context);
 function editor(fen, color = 'white') {
     const controller = factory();
     controller.$el = { dataset: { color, editor: JSON.stringify({ chapters: [{ title: 'Promotion', fen, comment: '', root: [] }] }) } };
-    controller.$refs = { board: { focus() {} }, moves: {}, promotionChoices: { querySelector() { return { focus() {} }; } } };
+    controller.$refs = { promotionPicker: {}, board: { focus() {} }, moves: {}, promotionChoices: { querySelector() { return { focus() {} }; } } };
     controller.$nextTick = callback => callback();
     controller.init();
     return controller;

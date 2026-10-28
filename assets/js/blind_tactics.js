@@ -7,10 +7,9 @@ import { resize_ground, onresize, setup_ground, ground_set_moves_from_instance,
 import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { sleep } from './modules/sleep.js';
-import { createTacticAlternatives } from './modules/tactic_alternatives.js';
+import { createTacticAttempts } from './modules/tactic_attempts.js';
 import { enginePosition } from './modules/engine_position.js';
-const alternatives = createTacticAlternatives();
-let validating = false, generation = 0;
+const attempts = createTacticAttempts();
 import { setupNativeVisualization } from './modules/native_visualization.js';
 
 let finished = false;
@@ -69,7 +68,7 @@ function set_div_text(id, text) {
 
 function reveal_solution(help = true) {
     if (finished) return;
-    alternatives.reset();
+    attempts.reset();
     visualization.tracker.end(!help, help);
     finished = true;
     document.getElementById("next").classList.remove("hidden");
@@ -82,18 +81,15 @@ function reveal_solution(help = true) {
 
 
 async function handle_click(square) {
-    if (finished || validating) return;
+    if (finished || attempts.pending) return;
     ground.selectSquare(null);
     if ((square !== target() || clicked_piece !== piece_pos()) && (legal_moves.get(clicked_piece) || []).includes(square)) {
-        const ticket = generation;
         const expected = chess.history({verbose: true})[current_move];
         const candidate = current_chess.moves({verbose: true}).find(move => move.from === clicked_piece && move.to === square && (!move.promotion || move.promotion === 'q'));
         if (!candidate) return;
-        validating = true;
         set_div_text(info_div, i18n.checking);
-        const result = await alternatives.validate(enginePosition(window.initial_fen, current_chess), expected.from + expected.to + (expected.promotion || ''), candidate.from + candidate.to + (candidate.promotion || ''), chess.history().length - current_move);
-        if (ticket !== generation || finished) return;
-        validating = false;
+        const result = await attempts.validate(enginePosition(window.initial_fen, current_chess), expected.from + expected.to + (expected.promotion || ''), candidate.from + candidate.to + (candidate.promotion || ''), chess.history().length - current_move);
+        if (!result) return;
         if (result.status !== 'accepted') {
             if (result.status === 'rejected') visualization.tracker.decision(false);
             set_div_text(result.status === 'unknown' ? info_div : error_div, result.status === 'unknown' ? i18n.unconfirmed : i18n.wrong_move);
@@ -232,7 +228,7 @@ function main(force = false) {
         return;
     }
     loadedKey = key;
-    generation++; validating = false; alternatives.reset();
+    attempts.reset();
     finished = false;
     clear_all_text();
     document.getElementById('next').classList.add('hidden');

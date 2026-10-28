@@ -6,7 +6,7 @@ import { createChapterEditor } from './modules/study/chapter_editor.js';
 import { lichessAnalysisUrl, prepareLichessAnalysis } from './modules/study/lichess_analysis.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
 import { ground_legal_moves } from './modules/chess_utils.js';
-import { createPromotionPicker } from './modules/promotion_picker.js';
+import { createPromotionController } from './modules/promotion_controller.js';
 import { setupPositionFen } from './modules/study/position_setup.js';
 import { createSparringEngine } from './modules/sparring/uci_engine.js';
 import { enginePosition } from './modules/engine_position.js';
@@ -45,8 +45,11 @@ Alpine.data('chapterEditor', () => {
                 ? Number(requested) : 0);
             currentChapter = initial.chapter || initial.chapters[this.chapter];
             editor = createChapterEditor(currentChapter);
-            promotionPicker = createPromotionPicker({ element: this.$refs.promotionPicker,
-                onChoose: role => this.choosePromotion(role), onCancel: () => this.cancelPromotion() });
+            promotionPicker = createPromotionController({ element: this.$refs.promotionPicker,
+                onPendingChange: move => { this.pendingPromotion = move; },
+                onOpen: () => this.refresh(),
+                onChoose: (role, move) => { this.play(move.from, move.to, role); this.$refs.board.focus(); },
+                onCancel: () => { this.refresh(); this.$refs.board.focus(); } });
             ground = Chessground(this.$refs.board, {
                 orientation: config.color === 'black' ? 'black' : 'white',
                 drawable: { enabled: false },
@@ -180,13 +183,8 @@ Alpine.data('chapterEditor', () => {
         play(from, to, promotion) {
             if (this.setupMode || this.saving || this.loading || this.pendingPromotion) return;
             const position = editor.position();
-            const choices = position.moves({ verbose: true }).filter(move => move.from === from && move.to === to && move.promotion);
-            if (choices.length && !promotion) {
-                this.pendingPromotion = { from, to };
-                this.refresh();
-                promotionPicker.open({ to, color: position.turn() === 'w' ? 'white' : 'black', orientation: ground.state.orientation });
-                return;
-            }
+            if (promotionPicker.request({ from, to, promotion, legal: position.moves({ verbose: true }),
+                color: position.turn() === 'w' ? 'white' : 'black', orientation: ground.state.orientation })) return;
             try {
                 if (!editor.play(from, to, promotion || 'q')) throw new Error('Invalid move');
                 this.status = editor.dirty ? config.unsaved : '';
@@ -196,22 +194,9 @@ Alpine.data('chapterEditor', () => {
             this.refresh();
         },
 
-        choosePromotion(role) {
-            const move = this.pendingPromotion;
-            if (!move || !['q', 'n', 'r', 'b'].includes(role)) return;
-            promotionPicker.close();
-            this.pendingPromotion = null;
-            this.play(move.from, move.to, role);
-            this.$refs.board.focus();
-        },
+        choosePromotion(role) { promotionPicker.choose(role); },
 
-        cancelPromotion() {
-            if (!this.pendingPromotion) return;
-            promotionPicker.close();
-            this.pendingPromotion = null;
-            this.refresh();
-            this.$refs.board.focus();
-        },
+        cancelPromotion() { promotionPicker.cancel(); },
 
         selectPosition(path) {
             if (this.setupMode || this.saving || this.loading || this.pendingPromotion) return;

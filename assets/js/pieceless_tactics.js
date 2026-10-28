@@ -6,17 +6,15 @@ import { onresize, resize_ground, setup_ground, ground_set_moves,
          ground_undo_last_move, setup_move_handler, setup_click_handler, ground_move } from './modules/ground.js';
 import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
-import { createTacticAlternatives } from './modules/tactic_alternatives.js';
+import { createTacticAttempts } from './modules/tactic_attempts.js';
 import { enginePosition } from './modules/engine_position.js';
-const alternatives = createTacticAlternatives();
-let validating = false, generation = 0;
-import { createPromotionPicker } from './modules/promotion_picker.js';
+const attempts = createTacticAttempts();
+import { createPromotionController } from './modules/promotion_controller.js';
 import { setupNativeVisualization, createPieceMask } from './modules/native_visualization.js';
 let finished = false, picker;
 const visualization = setupNativeVisualization('pieceless');
 let pieceMask;
 const sourceSolution = solution;
-let pendingPromotion;
 
 function show_history(chess) {
     // unhide the container
@@ -30,7 +28,7 @@ function show_history(chess) {
 
 function finish(reveal = false, solved = false) {
     if (finished) return;
-    alternatives.reset();
+    attempts.reset();
     visualization.tracker.end(solved, !solved);
     finished = true;
     document.getElementById('next').classList.remove('hidden');
@@ -42,24 +40,21 @@ function finish(reveal = false, solved = false) {
     show_history(chess);
 }
 async function play_move(orig, dest, promotion) {
-    if (validating || finished) return;
-    const ticket = generation;
+    if (attempts.pending || finished) return;
     const expected = solution[0];
     const played = orig + dest + (promotion || '');
     if (played !== expected) {
-        validating = true;
         ground.set({movable: {dests: new Map()}});
         set_text(info_div, i18n.checking);
-        const result = await alternatives.validate(enginePosition(fen, chess), expected, played, solution.length);
-        if (ticket !== generation || finished) return;
-        validating = false;
+        const result = await attempts.validate(enginePosition(fen, chess), expected, played, solution.length);
+        if (!result) return;
         clear_all_text();
         if (result.status === 'accepted') solution = result.line;
         else {
-        if (result.status === 'rejected') visualization.tracker.decision(false);
-        ground.set({fen: chess.fen()}); ground_set_moves();
-        set_text(result.status === 'unknown' ? info_div : error_div, result.status === 'unknown' ? i18n.unconfirmed : i18n.wrong_move);
-        return;
+            if (result.status === 'rejected') visualization.tracker.decision(false);
+            ground.set({fen: chess.fen()}); ground_set_moves();
+            set_text(result.status === 'unknown' ? info_div : error_div, result.status === 'unknown' ? i18n.unconfirmed : i18n.wrong_move);
+            return;
         }
     }
     const move = chess.move({from: orig, to: dest, promotion});
@@ -81,14 +76,11 @@ async function play_move(orig, dest, promotion) {
     show_history(chess);
 }
 function handle_move(orig, dest) {
-    if (finished || validating || pendingPromotion) return;
+    if (finished || attempts.pending || picker?.pending) return;
     clear_all_text();
-    const promotions = chess.moves({verbose: true}).filter(move => move.from === orig && move.to === dest && move.promotion);
-    if (promotions.length) {
-        pendingPromotion = {orig, dest};
-        ground.set({fen: chess.fen(), movable: {color: undefined, dests: new Map()}});
-        picker.open({color: window.color, to: dest, orientation: ground.state.orientation});
-    } else play_move(orig, dest);
+    if (!picker.request({from: orig, to: dest, legal: chess.moves({verbose: true}), color: window.color, orientation: ground.state.orientation})) {
+        play_move(orig, dest);
+    }
 }
 
 function num_to_file(num) {
@@ -168,8 +160,8 @@ function setup_to_play(chess) {
 }
 
 function main() {
-    generation++; validating = false; alternatives.reset();
-    finished = false; pendingPromotion = null;
+    attempts.reset();
+    finished = false;
     picker?.destroy();
     pieceMask?.destroy();
     clear_all_text();
@@ -200,9 +192,10 @@ function main() {
     setup_click_handler(square => {
         if (!finished && visualization.destinations.checked && ground_legal_moves(chess).has(square)) visualization.help();
     });
-    picker = createPromotionPicker({element: document.querySelector('[data-promotion-picker]'),
-        onChoose(promotion) { const move = pendingPromotion; pendingPromotion = null; if (move) play_move(move.orig, move.dest, promotion); },
-        onCancel() { pendingPromotion = null; ground.set({fen: chess.fen()}); ground_set_moves(); }});
+    picker = createPromotionController({element: document.querySelector('[data-promotion-picker]'),
+        onOpen() { ground.set({fen: chess.fen(), movable: {color: undefined, dests: new Map()}}); },
+        onChoose(promotion, move) { play_move(move.from, move.to, promotion); },
+        onCancel() { ground.set({fen: chess.fen()}); ground_set_moves(); }});
     resize_ground();
     document.getElementById('give-up').onclick = () => { if (!finished) finish(true); };
     document.getElementById('training_restart').onclick = main;

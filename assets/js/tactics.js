@@ -5,16 +5,16 @@ import { onresize, resize_ground, setup_ground, ground_set_moves,
 import { setup_chess } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { sleep } from './modules/sleep.js';
-import { createTacticAlternatives } from './modules/tactic_alternatives.js';
+import { createTacticAttempts } from './modules/tactic_attempts.js';
 import { createEndgameEngine } from './modules/endgame_engine.js';
-import { createPromotionPicker } from './modules/promotion_picker.js';
+import { createPromotionController } from './modules/promotion_controller.js';
 import { createPuzzleProgress } from './modules/puzzle_progress.js';
 import { createPuzzleAutoplay } from './modules/puzzle_autoplay.js';
 import { enginePosition } from './modules/engine_position.js';
-const alternatives = createTacticAlternatives({
+const attempts = createTacticAttempts({
     createEngine: () => createEndgameEngine({tables: {lookup: async () => null}})
 });
-let progress, picker, pendingPromotion;
+let progress, picker;
 let busy = false, generation = 0, finished = false;
 const autoplay = createPuzzleAutoplay({isFinished: () => finished, next: () => document.getElementById('next')?.click()});
 
@@ -27,13 +27,10 @@ function show_div(id) {
 }
 
 function handle_move(orig, dest) {
-    if (busy || finished || pendingPromotion) return;
-    const promotions = chess.moves({verbose: true}).filter(move => move.from === orig && move.to === dest && move.promotion);
-    if (promotions.length && document.querySelector('[data-promotion-picker]')) {
-        pendingPromotion = {orig, dest};
-        ground.set({fen: chess.fen(), movable: {color: undefined, dests: new Map()}});
-        picker.open({color, to: dest, orientation: ground.state.orientation});
-    } else play_move(orig, dest, 'q');
+    if (busy || finished || picker?.pending) return;
+    if (!picker.request({from: orig, to: dest, legal: chess.moves({verbose: true}), color, orientation: ground.state.orientation})) {
+        play_move(orig, dest, 'q');
+    }
 }
 
 async function play_move(orig, dest, promotion) {
@@ -58,8 +55,8 @@ async function play_move(orig, dest, promotion) {
         set_text(info_div, i18n.checking);
         const attempted = board.move(played);
         board.undo();
-        const result = await alternatives.validate(enginePosition(fen, board), expected.from + expected.to + (expected.promotion || ''), attempted.from + attempted.to + (attempted.promotion || ''), to_play.length);
-        if (ticket !== generation) return;
+        const result = await attempts.validate(enginePosition(fen, board), expected.from + expected.to + (expected.promotion || ''), attempted.from + attempted.to + (attempted.promotion || ''), to_play.length);
+        if (!result) return;
         busy = false;
         clear_all_text();
         accepted = result.status === 'accepted';
@@ -88,7 +85,7 @@ async function play_move(orig, dest, promotion) {
             ground_move(m, chess);
         } else {
             // player got the puzzle correct
-            finished = true; alternatives.reset();
+            finished = true; attempts.reset();
             progress?.finish();
             let solves = localStorage.getItem("achievements_tactics_solved") || 0;
             localStorage.setItem("achievements_tactics_solved", Number(solves) + 1);
@@ -152,17 +149,15 @@ function main() {
     const solution = document.getElementById('solution');
     solution?.classList.add('hidden');
     solution?.removeAttribute('open');
-    generation++; busy = false; finished = false; alternatives.reset();
-    pendingPromotion = null;
+    generation++; busy = false; finished = false; attempts.reset();
     picker?.destroy();
-    picker = createPromotionPicker({element: document.querySelector('[data-promotion-picker]'),
-        onChoose(promotion) {
-            const move = pendingPromotion; pendingPromotion = null;
+    picker = createPromotionController({element: document.querySelector('[data-promotion-picker]'),
+        onOpen() { ground.set({fen: chess.fen(), movable: {color: undefined, dests: new Map()}}); },
+        onChoose(promotion, move) {
             ground.set({movable: {color}});
-            if (move) play_move(move.orig, move.dest, promotion);
+            play_move(move.from, move.to, promotion);
         },
         onCancel() {
-            pendingPromotion = null;
             ground.set({fen: chess.fen(), turnColor: color, movable: {color}});
             ground_set_moves();
         }

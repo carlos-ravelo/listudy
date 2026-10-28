@@ -3,7 +3,7 @@ import { downloadPgn } from '../download_pgn.js';
 import { createSparringSession, sparringReviewEvery } from './session.js';
 import { createStudySparring, sparringStartPositions, createSparringChapterRotation } from './chess_adapter.js';
 import { createSparringEngine, sparringStrength, sparringRating } from './uci_engine.js';
-import { createPromotionPicker } from '../promotion_picker.js';
+import { createPromotionController } from '../promotion_controller.js';
 import { setupStudyMoveTree } from '../study/study_move_tree.js';
 import { sounds, playMoveSound } from '../sounds.js';
 import { set_text, clear_all_text, info_div, error_div, success_div } from '../info_boxes.js';
@@ -23,7 +23,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     const labels = find('status').dataset;
     const resetButton = document.getElementById('reset_line');
     const resetLineLabel = resetButton.textContent;
-    let session, ports, picker, pendingPromotion, currentState, sessionId, startedAt;
+    let session, ports, picker, currentState, sessionId, startedAt;
     let generation = 0, soundCount = 0, heardReviews = 0, readIndex = null, lineRoot = [], lineLength = -1, previousPhase;
     let savedSignature = '';
     let inspectedRow = null;
@@ -109,7 +109,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         if (session && currentState) save(currentState);
         generation++;
         session?.dispose(); picker?.destroy();
-        session = null; engine = null; picker = null; pendingPromotion = null;
+        session = null; engine = null; picker = null;
         workspace?.classList.remove('study-sparring-active', 'study-sparring-paused');
         panel.hidden = true; opener.setAttribute('aria-pressed', 'false');
         resetButton.textContent = resetLineLabel;
@@ -121,7 +121,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         document.getElementById('hints').disabled = false;
     }
     function seek(ply, row = null, selected = false) {
-        if (!session || pendingPromotion) return;
+        if (!session || picker?.pending) return;
         inspectedRow = row;
         const target = Math.max(0, Math.min(currentState.moves.length, ply));
         readIndex = target === currentState.moves.length && !selected ? null : target;
@@ -134,7 +134,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         const board = getBoard();
         const review = paused(state);
         const browsing = readIndex !== null;
-        const playable = state.canPlay && !pendingPromotion && !browsing;
+        const playable = state.canPlay && !picker?.pending && !browsing;
         workspace?.classList.toggle('study-sparring-paused', review);
         const game = readIndex === null ? ports.position.game() : ports.position.at(readIndex);
         onPosition(game, ports.repertoire.routes(), state.phase);
@@ -172,7 +172,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
                 gradeLabel(latest.grade), { symbol: gradeSymbol(latest.grade), transient: !isError(latest.grade) && !review });
         }
         document.getElementById('hints').disabled = !playable || state.phase !== 'theory';
-        find('strength').disabled = state.thinking || !!pendingPromotion || state.phase === 'finished';
+        find('strength').disabled = state.thinking || !!picker?.pending || state.phase === 'finished';
         find('analyze').disabled = state.thinking || review;
         find('analyze').hidden = review;
         find('continue').hidden = state.phase === 'free' && !state.error || state.phase === 'finished';
@@ -255,7 +255,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         find('show-best').hidden = !showGrades || !row?.best;
         find('show-best').disabled = state.thinking;
         find('retry-selected').hidden = !Number.isInteger(retryPly) || retryPly < 0 || retryPly >= state.moves.length;
-        find('retry-selected').disabled = state.thinking || !!pendingPromotion;
+        find('retry-selected').disabled = state.thinking || !!picker?.pending;
         find('move-grade').textContent = showGrades && row
             ? `${row.san} ${gradeSymbol(row.grade)} · ${gradeLabel(row.grade)}${row.assisted ? ' · ' + labels.assisted : ''}`
             : theory.has(selectedPly - 1) ? labels.correct : labels.notAnalysed;
@@ -272,13 +272,10 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     }
     async function move(from, to, promotion) {
         if (readIndex !== null) return;
-        if (!session || pendingPromotion || !session.snapshot().canPlay) return;
-        const choices = session.snapshot().legal.filter(uci => uci.startsWith(from + to) && uci.length === 5);
-        if (choices.length && !promotion) {
-            pendingPromotion = { from, to }; render(session.snapshot());
-            picker.open({ to, color: session.snapshot().turn === 'w' ? 'white' : 'black', orientation: getBoard().state.orientation });
-            return;
-        }
+        if (!session || picker?.pending || !session.snapshot().canPlay) return;
+        const state = session.snapshot();
+        if (picker.request({ from, to, promotion, legal: state.legal,
+            color: state.turn === 'w' ? 'white' : 'black', orientation: getBoard().state.orientation })) return;
         const current = generation;
         try {
             const success = await session.move(from + to + (promotion || ''));
@@ -314,12 +311,12 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
                         (group.fen.split(' ')[1] === 'w' ? find('start').dataset.white : find('start').dataset.black);
                 find('start').add(new Option(title, group.fen, false, group.fen === selectedStartFen));
             }
-            picker = createPromotionPicker({ element: document.querySelector('.study-board-frame [data-promotion-picker]'),
-                onChoose(role) {
-                    const pending = pendingPromotion; pendingPromotion = null;
+            picker = createPromotionController({ element: document.querySelector('.study-board-frame [data-promotion-picker]'),
+                onOpen() { render(session.snapshot()); },
+                onChoose(role, pending) {
                     move(pending.from, pending.to, role); document.getElementById('chessground').focus();
                 },
-                onCancel() { pendingPromotion = null; render(session.snapshot()); document.getElementById('chessground').focus(); } });
+                onCancel() { render(session.snapshot()); document.getElementById('chessground').focus(); } });
             engine = createEngine({ strength });
             session = createSparringSession({ ...ports, engine, ...reviewOptions(), player: getPlayer() === 'white' ? 'w' : 'b',
                 onDecision, onChange: state => { if (current === generation) {
@@ -346,7 +343,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         if (session) render(session.snapshot());
     });
     scope.listen(find('continue'), 'click', () => {
-        pendingPromotion = null; picker?.close(); readIndex = null;
+        picker?.close(); readIndex = null;
         const current = generation;
         session?.continueWithEngine().then(() => {
             if (current === generation && session) document.getElementById('chessground').focus();
@@ -355,7 +352,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     scope.listen(find('analyze'), 'click', () => session?.analyzeHere());
     scope.listen(find('resign'), 'click', () => {
         if (!window.confirm(find('resign').dataset.confirm)) return;
-        pendingPromotion = null; picker?.close(); session?.resign();
+        picker?.close(); session?.resign();
     });
     for (const name of ['review-every', 'pause-blunder', 'live']) scope.listen(find(name), 'change', persistPreferences);
     scope.listen(find('download'), 'click', () => { if (session) download(result(session.snapshot())); });
@@ -364,8 +361,8 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     scope.listen(window, 'pagehide', stop);
     return { destroy() { scope.destroy(); stop(); moveTree.destroy?.(); find('show-best').onclick = null; find('retry-selected').onclick = null; }, get active() { return !panel.hidden; }, start, stop, move, render: () => session && render(session.snapshot()),
         hint() { if (readIndex === null && session?.hint().length) showHints(ports.repertoire.routes()); },
-        navigation() { return { canGoBack: !!session && !pendingPromotion && (readIndex ?? currentState.moves.length) > 0,
-            canGoForward: !!session && !pendingPromotion && readIndex !== null && readIndex < currentState.moves.length }; },
+        navigation() { return { canGoBack: !!session && !picker?.pending && (readIndex ?? currentState.moves.length) > 0,
+            canGoForward: !!session && !picker?.pending && readIndex !== null && readIndex < currentState.moves.length }; },
         back() { if (session) seek((readIndex ?? currentState.moves.length) - 1); },
         forward() { if (session) seek((readIndex ?? currentState.moves.length) + 1); } };
 }
