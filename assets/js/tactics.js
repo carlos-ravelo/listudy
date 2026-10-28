@@ -1,3 +1,4 @@
+import { createTrainingLifecycle } from './modules/training_lifecycle.js';
 import { createLineExercise } from './modules/line_exercise.js';
 import { createBoardGame } from './modules/board_game.js';
 import { playMoveSound } from './modules/sounds.js';
@@ -8,7 +9,6 @@ import { onresize, resize_ground, setup_ground, ground_set_moves,
          setup_move_handler } from './modules/ground.js';
 import { setup_chess } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
-import { sleep } from './modules/sleep.js';
 import { createTacticAttempts } from './modules/tactic_attempts.js';
 import { createEndgameEngine } from './modules/endgame_engine.js';
 import { createPromotionController } from './modules/promotion_controller.js';
@@ -22,6 +22,8 @@ const exercise = createLineExercise({ getPosition: () => chess,
     applyMove: uci => boardGame.play(uci, { playable: false }),
     validator: createTacticAttempts({ createEngine: () => createEndgameEngine({tables: {lookup: async () => null}}) }) });
 const autoplay = createPuzzleAutoplay({isFinished: () => finished, next: () => document.getElementById('next')?.click()});
+const lifecycle = createTrainingLifecycle({ restore: () => main(true) });
+lifecycle.page.use(autoplay);
 
 function show_div(id) {
     let div = document.getElementById(id);
@@ -51,7 +53,7 @@ async function play_move(orig, dest, promotion) {
         },
         onPlayerMove() { clear_all_text(); },
         async beforeReply() {
-            await sleep(100);
+            await lifecycle.run.sleep(100);
             if (exercise.isCurrent(ticket)) set_text(info_div, i18n.keep_going, {symbol: "★", bold: i18n.best_move});
         }
     });
@@ -70,7 +72,7 @@ async function play_move(orig, dest, promotion) {
         }
     } else {
         clear_all_text();
-        await sleep(300);
+        await lifecycle.run.sleep(300);
         if (!exercise.isCurrent(ticket)) return;
         boardGame.restore();
         const uncertain = result.status === 'unknown';
@@ -112,12 +114,16 @@ function show_which_side() {
     set_text(info_div, turn, {bold: i18n.your_turn, symbol: "♔"});
 }
 
-function main() {
+function main(force = false) {
+    if (!lifecycle.page.active) return;
     autoplay.refresh();
-    if (!document.getElementById('fen')) return;
+    if (!document.getElementById('fen')) { lifecycle.reset(); return; }
     const key = ['fen', 'moves', 'last_move', 'puzzle_identity', 'puzzle_attempt'].map(id => document.getElementById(id)?.value).join('|');
-    if (main.loadedKey === key && window.ground?.state.dom.elements.board.isConnected) return;
+    if (force !== true && main.loadedKey === key && window.ground?.state.dom.elements.board.isConnected) return;
     main.loadedKey = key;
+    const scope = lifecycle.reset();
+    scope.use(() => exercise.stop());
+    scope.use(autoplay.cancel);
     autoplay.reset();
     clear_all_text();
     document.getElementById('next')?.classList.add('hidden');
@@ -125,8 +131,7 @@ function main() {
     solution?.classList.add('hidden');
     solution?.removeAttribute('open');
     busy = false; finished = false; exercise.reset();
-    picker?.destroy();
-    picker = createPromotionController({element: document.querySelector('[data-promotion-picker]'),
+    picker = scope.use(createPromotionController({element: document.querySelector('[data-promotion-picker]'),
         onOpen() { restoreBoardPosition(ground, chess, { playable: false }); },
         onChoose(promotion, move) {
             restoreBoardPosition(ground, chess, { color });
@@ -135,43 +140,34 @@ function main() {
         onCancel() {
             restoreBoardPosition(ground, chess, { color });
         }
-    });
+    }));
     load_data();
     let storage;
     try { storage = window.localStorage; } catch (_) {}
     progress = createPuzzleProgress(document.getElementById('puzzle_identity')?.value, {storage});
     if (!fen) {
         clear_all_text();
-        window.ground?.destroy();
         setup_ground();
+        scope.use(ground);
         ground.set({viewOnly: true, movable: {color: undefined, dests: new Map()}});
         resize_ground();
         return;
     }
     show_which_side();
-    if (fen != old_fen) {
-        // This is done to prevent flickering on the initial load of the
-        // tactic. Without this setup_ground is called again after the
-        // liveview has connected with the server since its changing the 
-        // parent containing div of the chessground. With this check we
-        // notice that the fen hasnt changed so we can continue using 
-        // this ground
-        setup_ground(fen);    
-        old_fen = fen;
-    }
+    setup_ground(fen);
+    scope.use(ground);
     ground.set({fen, turnColor: color, movable: {color}});
     setup_last_move(); 
     setup_chess(fen);
     exercise.reset({ initialFen: fen, moves, format: 'san' });
     ground_set_moves();
     resize_ground();
-    setup_move_handler(handle_move);
+    setup_move_handler(scope.guard(handle_move));
 }
 
-document.addEventListener("phx:update", main);
-document.addEventListener("click", event => {
+lifecycle.page.listen(document, "phx:update", main);
+lifecycle.page.listen(document, "click", event => {
     if (event.target.closest('#next')) autoplay.cancel();
 }, true);
-window.onresize = onresize;
-window.old_fen = "abc";
+lifecycle.page.assign(window, 'onresize', onresize);
 main();

@@ -1,3 +1,4 @@
+import { createTrainingLifecycle } from './modules/training_lifecycle.js';
 import { createLineExercise } from './modules/line_exercise.js';
 import { createBoardGame } from './modules/board_game.js';
 import { playMoveSound } from './modules/sounds.js';
@@ -36,7 +37,7 @@ function flash_info(text, type) {
     let d = document.getElementById(type);
     d.classList.remove("hidden");
     d.innerText = text;
-    window.setTimeout(remove_info, 2000, type);
+    lifecycle.run.timeout(() => remove_info(type), 2000);
 }
 
 function digits(n) {
@@ -78,6 +79,7 @@ function next_puzzle() {
 const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
     getOptions: () => ({ color: 'both' }), onMove: playMoveSound });
 const exercise = createLineExercise({ getPosition: () => chess, applyMove: uci => boardGame.play(uci) });
+const lifecycle = createTrainingLifecycle({ restore: () => main() });
 
 async function handle_move(orig, dest, extraInfo) {
     const ticket = exercise.revision;
@@ -119,20 +121,21 @@ function load_data() {
 }
 
 function main() {
+    if (!lifecycle.page.active) return;
+    const scope = lifecycle.reset();
+    scope.use(() => exercise.stop());
     update_teachers();
     display_rating();
     teacher_benefits();
     load_data();
-    if (fen != old_fen) {
-        setup_ground(fen);    
-        old_fen = fen;
-    }
+    setup_ground(fen);
+    scope.use(ground);
     setup_last_move(); 
     setup_chess(fen);
     exercise.reset({ initialFen: fen, moves, format: 'san' });
     ground_set_moves();
     resize_ground();
-    setup_move_handler(handle_move);
+    setup_move_handler(scope.guard(handle_move));
 }
 
 window.teachers = [
@@ -246,9 +249,9 @@ function save() {
     localStorage.setItem("chessclicker", JSON.stringify(chessclicker));
 }
 
-document.addEventListener("phx:update", main);
-window.onresize = onresize;
-window.old_fen = "abc";
+lifecycle.page.listen(document, "phx:update", main);
+lifecycle.page.assign(window, 'onresize', onresize);
 setup();
-window.setInterval(tick, 1000);
-window.setInterval(save, 60000);
+lifecycle.page.interval(tick, 1000);
+lifecycle.page.interval(save, 60000);
+lifecycle.page.use(save);

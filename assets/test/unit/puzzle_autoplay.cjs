@@ -9,7 +9,8 @@ const context = vm.createContext({
     window: {addEventListener: (name, callback) => events[name] = callback},
     setTimeout: callback => {timers.set(++clock, callback); return clock;}, clearTimeout: id => timers.delete(id)
 });
-vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/puzzle_autoplay.js'), 'utf8').replace('export ', ''), context);
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/page_scope.js'), 'utf8').replace(/^export /gm, ''), context);
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/puzzle_autoplay.js'), 'utf8').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 const autoplay = context.createPuzzleAutoplay({isFinished: () => finished, next: () => advances++});
 autoplay.refresh(); assert.equal(input.checked, false);
 input.checked = true; input.onchange();
@@ -27,4 +28,11 @@ autoplay.reset(); autoplay.completed(); context.document.hidden = true; events.v
 context.document.hidden = false; finished = false; events.visibilitychange(); assert.equal(timers.size, 0);
 const restored = context.createPuzzleAutoplay({isFinished: () => false, next() {}});
 restored.refresh(); assert.equal(input.checked, true, 'Preference persists across puzzles and reloads');
+autoplay.destroy(); restored.destroy();
+const afterDestroy = advances;
+if (events.visibilitychange) events.visibilitychange();
+if (events.pagehide) events.pagehide();
+autoplay.refresh(); autoplay.completed();
+assert.equal(timers.size, 0, 'Disposed autoplay cannot schedule more navigation');
+assert.equal(advances, afterDestroy);
 console.log('Puzzle autoplay: opt-in, solved-only, cancellation, hidden tabs and persistence passed');

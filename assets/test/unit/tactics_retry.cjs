@@ -13,7 +13,7 @@ const handler = source.slice(source.indexOf('async function play_move('), source
         const context = vm.createContext({
             chess, fen: chess.fen(), color: 'white', to_play: ['e4', 'e5', 'Nf3'],
             attempts: {validate: async () => ({status})},
-            enginePosition: () => ({}), sleep: async () => {},
+            enginePosition: () => ({}), lifecycle: {run: {sleep: async () => true}},
             clear_all_text() {}, set_text() {}, show_div() {},
             i18n: {}, info_div: 'info', error_div: 'error',
             ground: {set(update) {

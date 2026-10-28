@@ -1,3 +1,4 @@
+import { createPageScope } from './page_scope.js';
 import { visualizationLevel } from './study/visualization.js';
 
 export function createNativeVisualization({ mode, storage, now = Date.now, changed = () => {} }) {
@@ -53,6 +54,7 @@ export function createNativeVisualization({ mode, storage, now = Date.now, chang
 }
 
 export function setupNativeVisualization(mode) {
+    const scope = createPageScope();
     const panel = document.querySelector('[data-native-visualization]');
     const summary = panel.querySelector('[data-visualization-summary]');
     const result = panel.querySelector('[data-visualization-result]');
@@ -75,17 +77,18 @@ export function setupNativeVisualization(mode) {
     }});
     destinations.checked = tracker.setting('destinations', false);
     difficulty.value = tracker.setting('difficulty', mode === 'blind' && storage.getItem('blind_tactics_hidden') !== null ? 'manual' : 'auto');
-    difficulty.onchange = () => tracker.configure('difficulty', difficulty.value);
-    destinations.onchange = () => {
+    scope.assign(difficulty, 'onchange', () => tracker.configure('difficulty', difficulty.value));
+    scope.assign(destinations, 'onchange', () => {
         tracker.configure('destinations', destinations.checked);
         if (destinations.checked) tracker.help();
         window.dispatchEvent(new CustomEvent('native-visualization-destinations', {detail: {enabled: destinations.checked}}));
-    };
-    window.addEventListener('pagehide', () => tracker.abandon());
+    });
+    scope.listen(window, 'pagehide', () => tracker.abandon());
     return { tracker, difficulty, destinations,
         get target() { return difficulty.value === 'auto' ? tracker.level : difficulty.value === 'all' ? 32 : Number(difficulty.value) || null; },
         help() { tracker.help(); },
-        begin(exercise, requested, available) { tracker.begin(exercise, requested, available); }
+        begin(exercise, requested, available) { tracker.begin(exercise, requested, available); },
+        destroy() { tracker.abandon(); scope.destroy(); }
     };
 }
 

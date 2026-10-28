@@ -13,6 +13,7 @@
 | Alternative solution analysis | `assets/js/modules/tactic_alternatives.js` | Native tactics, Blind, Pieceless through `tactic_attempts.js` |
 | Pending validation and stale response rejection | `assets/js/modules/tactic_attempts.js` | Native tactics, Blind, Pieceless |
 | Promotion interaction and pending move | `assets/js/modules/promotion_controller.js` | Editor, Sparring, native tactics, Pieceless, endgames |
+| Page and exercise lifetimes | `assets/js/modules/training_lifecycle.js` | Native tactics, Blind, Pieceless, Chessclicker and endgames |
 | Page resource cleanup | `assets/js/modules/page_scope.js` | Consumers that explicitly register resources |
 | Visualization progression | `assets/js/modules/native_visualization.js`, `study/visualization.js` | Native visualization exercises and PGN visualization |
 
@@ -70,16 +71,27 @@ move operations but do not use a controller that renders every committed move.
 
 ### Async work and resource lifetime
 
-Native alternative validations now share pending state and reset cancellation.
-Study replay uses `study/run_lifecycle.js`; Sparring has a session lifecycle;
-endgames and the editor still own revision counters for engine or network work.
-Native tactics retains its revision counter for animation delays. The standalone
-Stockfish page uses a raw worker listener and its own reset/takeback handling.
+`training_lifecycle.js` now owns a page scope and a replaceable exercise scope
+for native tactics, Blind, Pieceless, Chessclicker and endgames. Restart destroys
+the old exercise's board, promotion picker, masks, engine/feedback resources and
+queued handlers. A cached page departure suspends the exercise while keeping page
+listeners; cached restoration explicitly initializes a fresh exercise. Permanent
+navigation releases both scopes, including intervals, observers and DOM handlers.
+Native tactics preserves same-puzzle LiveView updates and forces initialization
+on cached return even when a destroyed board's DOM is still connected.
 
-Next, cover restart, navigation and teardown during pending work, including a new
-request starting before an old response completes. Reuse `page_scope.js` for page
-resource cleanup where appropriate. Do not combine page lifetime, attempt lifetime
-and analysis lifetime into one counter: they invalidate different work.
+Exercise input handlers are guarded by their owning scope. Pending native delays
+use scoped sleeps, which resolve on disposal while session revisions prevent old
+replies from committing. Autoplay and visualization settings now expose cleanup
+and release their listeners/control bindings. Chessclicker's page intervals are
+released on permanent navigation; its exercise feedback timeout is reset per run.
+
+Study replay retains `study/run_lifecycle.js` and the Study page owns its resources
+through `mountStudyPage`. Sparring has its session lifecycle; editor network reads
+and analysis still have distinct counters. Endgames retains generation guards for
+analysis/hints alongside owned engine resources. Standalone Stockfish still uses
+a raw worker listener and reset/takeback handling; migrating that engine ownership
+is separate from the line-exercise lifecycle.
 
 ### Solution representation and exercise rules
 
@@ -117,7 +129,7 @@ Do not encode these policies as flags in a universal controller.
 | --- | --- | --- |
 | Exercise turn progression | Native tactics, Blind, Pieceless and Chessclicker now use `line_exercise.js` | Shared continuation/validation/completion; adapters retain visibility, timing and rewards |
 | Attempt state and cancellation | Native validation wrapper, Study replay revisions, endgame/editor counters, raw Stockfish listener | Reusable attempt/task lifetimes with separate scopes for analysis, network reads and page resources |
-| Startup/reset/teardown | Entry-specific `main` functions, LiveView update listeners, pagehide/pageshow handling and observers | Shared resource lifecycle using existing `page_scope.js`; adapters load their own exercise data |
+| Startup/reset/teardown | Native modes and endgames now use `training_lifecycle.js`; Study uses its existing page owner | Shared page/run ownership; adapters retain loading and exercise identity checks |
 | Navigation and rewind | Study PGN cursor, endgame feedback reconstruction, Sparring browsing/retry and Stockfish takeback | Shared position reconstruction and rendering; keep edit, browse and practice-retry policies distinct |
 | Hints and solution reveal | Board arrows/piece markers in Study, game practice and Blind; engine hints in endgames/Sparring | Shared hint presentation and assistance events; retain authored versus engine hint selection |
 | Grading and completion records | Puzzle progress, visualization tracker, Study reviews, game practice, endgame achievements and Chessclicker rewards | Shared attempt outcome events and once-only recording; retain existing storage identities and scheduling semantics |

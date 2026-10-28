@@ -1,3 +1,4 @@
+import { createTrainingLifecycle } from './modules/training_lifecycle.js';
 import { createBoardGame } from './modules/board_game.js';
 import { playMoveSound } from './modules/sounds.js';
 import { moveToUci, playUciMove } from './modules/chess_moves.js';
@@ -11,7 +12,7 @@ import { renderEvaluationBar } from './modules/evaluation_bar.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { createPromotionController } from './modules/promotion_controller.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
-import { onresize, resize_ground, setup_ground, ground_init_state, setup_move_handler } from './modules/ground.js';
+import { onresize, resize_ground, setup_ground, setup_move_handler } from './modules/ground.js';
 import { set_text, clear_all_text, error_div, info_div } from './modules/info_boxes.js';
 
 const workspace = document.querySelector('.endgame-workspace');
@@ -25,6 +26,7 @@ let startFen, moves = [], pendingReply, selectedRow, reviewRoot, reviewState, re
 const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
     getOptions: () => ({ color, playable: false }), onMove: playMoveSound });
 const state = () => ({ initialFen: startFen, moves: moves.map(moveToUci), fen: chess.fen(), turn: chess.turn() });
+const lifecycle = createTrainingLifecycle({ restore: () => main() });
 
 function updateFen(value = chess.fen()) {
     document.getElementById('display_fen').value = value;
@@ -161,7 +163,7 @@ function renderEvaluation() {
     let analysis = reviewing ? reviewAnalysis || selectedRow?.beforeAnalysis : feedback?.currentAnalysis;
     if ((!reviewing || reviewState?.fen === chess.fen()) && chess.game_over()) analysis = { turn: chess.turn(), score: { type: chess.in_checkmate() ? 'mate' : 'cp', value: 0 } };
     renderEvaluationBar(bar, analysis, color, labels);
-    requestAnimationFrame(sizeEvaluationBar);
+    lifecycle.page.frame(sizeEvaluationBar);
 }
 function sizeEvaluationBar() {
     const board = document.querySelector('#chessground cg-board');
@@ -218,6 +220,7 @@ function renderReview() {
     renderComment();
 }
 const moveTree = setupStudyMoveTree({ element: document.getElementById('endgame_review_moves'), onSelect: selectReview, startLabel: labels.start, variationLabel: '' });
+lifecycle.page.use(moveTree);
 function openReview({ keepFinalPosition = false } = {}) {
     if (!moves.length) return;
     reviewing = true; clear_all_text(); picker.close(); boardReady();
@@ -255,7 +258,10 @@ function resume() {
     else opponentMove();
 }
 function main(position = fen, restored = null) {
-    generation++; engine?.dispose(); feedback?.destroy(); picker?.destroy();
+    if (!lifecycle.page.active) return;
+    const scope = lifecycle.reset();
+    generation++;
+    scope.use(() => { generation++; });
     startFen = position; moves = restored?.moves || []; pendingReply = null; selectedRow = null; reviewState = null; reviewAnalysis = null;
     ended = false; reviewing = false; busy = false; panel.hidden = true;
     document.getElementById('endgame_live_assessment').hidden = true;
@@ -264,17 +270,20 @@ function main(position = fen, restored = null) {
     document.getElementById('endgame_eval_bar').dataset.hasEvaluation = 'false';
     setup_chess(startFen); window.color = turn_color(chess);
     for (const move of moves) chess.move(move);
-    if (!window.ground) setup_ground(chess.fen()); else ground_init_state(chess.fen(), color);
+    setup_ground(chess.fen());
+    scope.use(ground);
     ground.setAutoShapes([]);
-    resize_ground(); setup_move_handler(handleMove);
+    resize_ground(); setup_move_handler(scope.guard(handleMove));
     engine = createEndgameEngine();
+    scope.use(engine.dispose.bind(engine));
     feedback = createEndgameFeedback({ engine, player: chess.turn(), target: target_result, toggle, evaluationToggle, panel, labels, onUpdate: updateFeedback, saved: restored?.feedback });
+    scope.use(feedback);
     const evaluationChange = evaluationToggle.onchange;
     evaluationToggle.onchange = () => { evaluationChange(); refreshReviewEvaluation(); };
-    picker = createPromotionController({ element: document.querySelector('[data-promotion-picker]'),
+    picker = scope.use(createPromotionController({ element: document.querySelector('[data-promotion-picker]'),
         onOpen: () => { restoreBoardPosition(ground, chess, { playable: false }); },
         onChoose: (promotion, move) => { boardReady(); playUserMove(move.from, move.to, promotion); },
-        onCancel: () => { restoreBoardPosition(ground, chess, { playable: false }); boardReady(); } });
+        onCancel: () => { restoreBoardPosition(ground, chess, { playable: false }); boardReady(); } }));
     document.getElementById('todo').hidden = false;
     delete document.getElementById('todo').dataset.result;
     document.getElementById('todo').textContent = labels[color === 'white' ? 'white' : 'black'] + ' · ' + labels[target_result === 'w' ? 'win' : target_result === 'd' ? 'draw' : 'promote'];
@@ -285,9 +294,9 @@ function main(position = fen, restored = null) {
     boardReady(); updateFen();
     feedback.observe(state());
 }
-setupStudyFeedback();
-document.getElementById('reset').onclick = () => main();
-document.getElementById('endgame_undo').onclick = () => {
+lifecycle.page.use(setupStudyFeedback());
+lifecycle.page.assign(document.getElementById('reset'), 'onclick', () => main());
+lifecycle.page.assign(document.getElementById('endgame_undo'), 'onclick', () => {
     const lastDecision = feedback.rows[feedback.rows.length - 1];
     if (!lastDecision) return;
     const retained = moves.slice(0, lastDecision.ply - 1);
@@ -297,9 +306,9 @@ document.getElementById('endgame_undo').onclick = () => {
     ground.set({ fen: chess.fen(), lastMove: last ? [last.from, last.to] : undefined });
     finishButton.disabled = !moves.length;
     updateFen(); boardReady(); feedback.observe(state());
-};
-finishButton.onclick = openReview;
-document.getElementById('endgame_hint').onclick = async () => {
+});
+lifecycle.page.assign(finishButton, 'onclick', openReview);
+lifecycle.page.assign(document.getElementById('endgame_hint'), 'onclick', async () => {
     const ticket = generation, before = state();
     try {
         const result = await feedback.hint(before);
@@ -308,15 +317,14 @@ document.getElementById('endgame_hint').onclick = async () => {
         ground.setAutoShapes(result.uci && /^[a-h][1-8][a-h][1-8]/.test(result.uci) ? [{ orig: result.uci.slice(0, 2), dest: result.uci.slice(2, 4), brush: 'pgn_green' }] : []);
         set_text(info_div, labels.suggestion + ' ' + suggestion, { transient: true });
     } catch (_) { if (ticket === generation) set_text(error_div, labels.unavailable, { transient: true }); }
-};
-document.getElementById('endgame_resume').onclick = resume;
-document.getElementById('endgame_retry').onclick = () => { if (selectedRow) main(selectedRow.before.fen); };
-document.getElementById('display_fen').onclick = event => event.target.select();
-document.getElementById('copy_fen').onclick = async () => { const input = document.getElementById('display_fen'); input.select(); try { await navigator.clipboard.writeText(input.value); } catch (_) { document.execCommand('copy'); } };
-window.addEventListener('resize', onresize);
-const evaluationResize = new ResizeObserver(() => requestAnimationFrame(sizeEvaluationBar));
+});
+lifecycle.page.assign(document.getElementById('endgame_resume'), 'onclick', resume);
+lifecycle.page.assign(document.getElementById('endgame_retry'), 'onclick', () => { if (selectedRow) main(selectedRow.before.fen); });
+lifecycle.page.assign(document.getElementById('display_fen'), 'onclick', event => event.target.select());
+lifecycle.page.assign(document.getElementById('copy_fen'), 'onclick', async () => { const input = document.getElementById('display_fen'); input.select(); try { await navigator.clipboard.writeText(input.value); } catch (_) { document.execCommand('copy'); } });
+lifecycle.page.listen(window, 'resize', onresize);
+const evaluationResize = new ResizeObserver(() => lifecycle.page.frame(sizeEvaluationBar));
 evaluationResize.observe(document.querySelector('.study-board-frame'));
-window.addEventListener('pagehide', () => { engine?.dispose(); feedback?.destroy(); });
-window.addEventListener('pageshow', event => { if (event.persisted) main(); });
-window.main = main;
+lifecycle.page.use(() => evaluationResize.disconnect());
+lifecycle.page.assign(window, 'main', main);
 main();

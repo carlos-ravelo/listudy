@@ -1,6 +1,6 @@
 export function createPageScope({ timers = globalThis, onError = error => console.error('Page cleanup failed:', error) } = {}) {
     let active = true;
-    const cleanups = [], timeouts = new Set(), frames = new Set(), sleeps = new Map();
+    const cleanups = [], timeouts = new Set(), intervals = new Set(), frames = new Set(), sleeps = new Map();
     function use(resource) {
         const cleanup = typeof resource === 'function' ? resource : resource?.destroy?.bind(resource);
         if (cleanup) {
@@ -32,6 +32,12 @@ export function createPageScope({ timers = globalThis, onError = error => consol
             timeouts.add(id);
             return id;
         },
+        interval(callback, delay) {
+            if (!active) return;
+            const id = timers.setInterval(scope.guard(callback), delay);
+            intervals.add(id);
+            return id;
+        },
         sleep(delay) {
             if (!active) return Promise.resolve(false);
             return new Promise(resolve => {
@@ -51,6 +57,7 @@ export function createPageScope({ timers = globalThis, onError = error => consol
             if (!active) return;
             active = false;
             timeouts.forEach(id => timers.clearTimeout(id)); timeouts.clear();
+            intervals.forEach(id => timers.clearInterval(id)); intervals.clear();
             frames.forEach(id => timers.cancelAnimationFrame(id)); frames.clear();
             sleeps.forEach(resolve => resolve(false)); sleeps.clear();
             for (const cleanup of cleanups.splice(0).reverse()) {

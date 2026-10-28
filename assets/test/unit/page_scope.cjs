@@ -7,8 +7,9 @@ const source = fs.readFileSync(path.join(__dirname, '../../js/modules/study/page
 const mountStudyPage = new Function('createPageScope', source + '\nreturn mountStudyPage;')(createPageScope);
 (async () => {
     let id = 0, calls = 0;
-    const pending = new Map(), frames = new Map(), order = [], errors = [];
+    const pending = new Map(), intervals = new Map(), frames = new Map(), order = [], errors = [];
     const timers = { setTimeout(fn) { pending.set(++id, fn); return id; }, clearTimeout: key => pending.delete(key),
+        setInterval(fn) { intervals.set(++id, fn); return id; }, clearInterval: key => intervals.delete(key),
         requestAnimationFrame(fn) { frames.set(++id, fn); return id; }, cancelAnimationFrame: key => frames.delete(key) };
     const scope = createPageScope({ timers, onError: error => errors.push(error.message) });
     const target = new EventTarget(), original = () => {}, other = () => {};
@@ -18,6 +19,8 @@ const mountStudyPage = new Function('createPageScope', source + '\nreturn mountS
     target.dispatchEvent(new Event('change')); target.onclick();
     assert.equal(calls, 2);
     const oldHandler = target.onclick;
+    scope.interval(() => calls++, 1000);
+    const oldInterval = [...intervals.values()][0];
     scope.timeout(() => calls++, 1); scope.frame(() => calls++);
     const oldTimer = [...pending.values()][0], oldFrame = [...frames.values()][0];
     const sleeping = scope.sleep(3000);
@@ -29,9 +32,9 @@ const mountStudyPage = new Function('createPageScope', source + '\nreturn mountS
     assert.equal(await scope.sleep(1), false);
     assert.deepEqual(order, ['last', 'first']);
     assert.deepEqual(errors, ['cleanup']);
-    assert.equal(pending.size, 0); assert.equal(frames.size, 0);
+    assert.equal(pending.size, 0); assert.equal(frames.size, 0); assert.equal(intervals.size, 0);
     assert.equal(target.onclick, original);
-    target.dispatchEvent(new Event('change')); oldHandler(); oldTimer(); oldFrame();
+    target.dispatchEvent(new Event('change')); oldHandler(); oldTimer(); oldFrame(); oldInterval();
     assert.equal(calls, 2, 'Removed or already-queued callbacks cannot act after disposal');
     scope.use(() => order.push('late'));
     assert.equal(order.at(-1), 'late', 'Late resources are released immediately');

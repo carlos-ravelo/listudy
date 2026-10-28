@@ -1,3 +1,4 @@
+import { createTrainingLifecycle } from './modules/training_lifecycle.js';
 import { createLineExercise } from './modules/line_exercise.js';
 import { moveToUci, playUciMove } from './modules/chess_moves.js';
 import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
@@ -18,6 +19,8 @@ import { setupNativeVisualization } from './modules/native_visualization.js';
 let finished = false;
 let loadedKey;
 const visualization = setupNativeVisualization('blind');
+const lifecycle = createTrainingLifecycle({ restore: () => main(true) });
+lifecycle.page.use(visualization);
 let requestedHidden = 0;
 const originalInstruction = document.querySelector('.training-instruction').textContent;
 
@@ -197,20 +200,21 @@ function setup_move_text() {
     document.querySelector('.training-instruction').textContent = hidden_moves === 0 ? i18n.direct : originalInstruction;
 }
 
-function setup_give_up() {
+function setup_give_up(scope) {
     let e = document.getElementById("give-up");
-    e.onclick = () => reveal_solution(true);
+    scope.assign(e, 'onclick', () => reveal_solution(true));
 }
 
-function setup_flip_board() {
+function setup_flip_board(scope) {
     let e = document.getElementById("toggle-orientation");
-    e.onclick = ground.toggleOrientation;
+    scope.assign(e, 'onclick', ground.toggleOrientation);
 }
 
 
 function main(force = false) {
+    if (!lifecycle.page.active) return;
     const input = document.getElementById('pgn');
-    if (!input) return;
+    if (!input) { lifecycle.reset(); return; }
     const key = document.getElementById('puzzle_key').value;
     if (force !== true && key === loadedKey && window.ground?.state.dom.elements.board.isConnected) {
         setup_move_text();
@@ -218,6 +222,8 @@ function main(force = false) {
         return;
     }
     loadedKey = key;
+    const scope = lifecycle.reset();
+    scope.use(() => exercise.stop());
     exercise.reset();
     finished = false;
     clear_all_text();
@@ -230,8 +236,8 @@ function main(force = false) {
 
     window.base_fen = undefined; 
     generate_base_fen();
-    window.ground?.destroy();
     setup_ground(base_fen);
+    scope.use(ground);
     ground.set({animation: {enabled: false}});
     blockBoardMoves(ground);
     window.current_move = Number(ply);
@@ -249,28 +255,27 @@ function main(force = false) {
     window.highlighted_squares = [];
     window.clicked_piece = null;
 
-    setup_click_handler(handle_click);
+    setup_click_handler(scope.guard(handle_click));
 
     // fixes a bug of pieces getting stuck in the left corner of the board after
     // clicking on continue
     // https://www.reddit.com/r/chess/comments/in00we/introducing_blind_tactics/g44lpcz
     resize_ground();
-    window.setTimeout(ground.redrawAll, 10);
-    window.setTimeout(ground.redrawAll, 100);
-    setup_give_up();
-    setup_flip_board();
+    scope.timeout(ground.redrawAll, 10);
+    scope.timeout(ground.redrawAll, 100);
+    setup_give_up(scope);
+    setup_flip_board(scope);
     const help = document.querySelector('[data-training-help]');
-    if (help) { help.ontoggle = () => { if (help.open) visualization.help(); }; if (help.open) visualization.help(); }
-    document.getElementById("training_restart").onclick = () => main(true);
+    if (help) { scope.assign(help, 'ontoggle', () => { if (help.open) visualization.help(); }); if (help.open) visualization.help(); }
+    scope.assign(document.getElementById('training_restart'), 'onclick', () => main(true));
 }
 
-document.addEventListener("phx:update", main);
-window.addEventListener('pageshow', event => { if (event.persisted) main(true); });
-window.addEventListener('native-visualization-destinations', () => {
+lifecycle.page.listen(document, "phx:update", main);
+lifecycle.page.listen(window, 'native-visualization-destinations', () => {
     ground.setShapes([]);
     window.clicked_piece = null;
     window.highlighted_squares = [];
 });
-window.onresize = onresize;
+lifecycle.page.assign(window, 'onresize', onresize);
 window.old_pgn = "abc";
 main();

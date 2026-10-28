@@ -10,6 +10,7 @@ const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'listudy-board-game-'));
 const entry = path.join(temp, 'entry.cjs');
 fs.writeFileSync(entry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/board_game.js'))}),
 ...require(${JSON.stringify(path.join(root, 'assets/js/modules/line_exercise.js'))}),
+...require(${JSON.stringify(path.join(root, 'assets/js/modules/training_lifecycle.js'))}),
 Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground,
 Chess:require(${JSON.stringify(path.join(root, 'assets/node_modules/chess.js'))})};`);
 const html = `<!doctype html><link rel="stylesheet" href="/board.css"><style>#board{width:320px;height:320px}</style>
@@ -113,8 +114,41 @@ const html = `<!doctype html><link rel="stylesheet" href="/board.css"><style>#bo
         assert.equal(await page.evaluate(() => waitingReply), null);
         assert.equal(await page.evaluate(() => position.history().length), 0);
         assert.equal(await page.evaluate(() => ground.state.pieces.has('e5')), false);
+        await page.evaluate(() => {
+            ground.destroy();
+            window.mounts = 0; window.staleInputs = 0; window.pageCleanups = 0;
+            window.lifecycle = Fixture.createTrainingLifecycle({restore: () => mount()});
+            lifecycle.page.use(() => pageCleanups++);
+            window.mount = () => {
+                mounts++;
+                const scope = lifecycle.reset();
+                position = new Fixture.Chess();
+                ground = scope.use(Fixture.Chessground(document.getElementById('board'), {
+                    movable: {events: {after: scope.guard(() => { staleInputs++; })}}
+                }));
+                scope.use(() => exercise.stop());
+                exercise.reset({initialFen: position.fen(), moves: ['e4', 'e5', 'Nf3'], format: 'san'});
+                game.restore();
+            };
+            mount();
+            window.oldInput = ground.state.movable.events.after;
+            window.cancelledReply = exercise.play('e4', {beforeReply: () => lifecycle.run.sleep(10000)});
+            window.dispatchEvent(new PageTransitionEvent('pagehide', {persisted: true}));
+            oldInput('e2', 'e4');
+            window.dispatchEvent(new PageTransitionEvent('pageshow', {persisted: true}));
+        });
+        assert.equal(await page.evaluate(() => cancelledReply), null);
+        assert.equal(await page.evaluate(() => position.history().length), 0);
+        assert.equal(await page.evaluate(() => mounts), 2);
+        assert.equal(await page.evaluate(() => staleInputs), 0);
+        await page.evaluate(() => {
+            lifecycle.destroy();
+            window.dispatchEvent(new PageTransitionEvent('pageshow', {persisted: true}));
+        });
+        assert.equal(await page.evaluate(() => mounts), 2);
+        assert.equal(await page.evaluate(() => pageCleanups), 1);
         assert.deepEqual(errors, []);
-        console.log('Shared board/session browser: optimistic input, special moves, undo, alternative continuations and restart passed');
+        console.log('Shared board/session browser: optimistic input, special moves, undo, alternatives, restart and cached-page lifecycle passed');
     } finally {
         if (browser) await browser.close();
         if (server?.listening) await new Promise(resolve => server.close(resolve));

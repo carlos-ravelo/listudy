@@ -1,3 +1,4 @@
+import { createTrainingLifecycle } from './modules/training_lifecycle.js';
 import { createLineExercise } from './modules/line_exercise.js';
 import { createBoardGame } from './modules/board_game.js';
 import { playMoveSound } from './modules/sounds.js';
@@ -22,6 +23,8 @@ const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => gr
 const exercise = createLineExercise({ getPosition: () => chess, applyMove: uci => boardGame.play(uci),
     validator: createTacticAttempts() });
 const sourceSolution = solution;
+const lifecycle = createTrainingLifecycle({ restore: () => main() });
+lifecycle.page.use(visualization);
 
 function show_history(chess) {
     // unhide the container
@@ -155,10 +158,11 @@ function setup_to_play(chess) {
 }
 
 function main() {
+    if (!lifecycle.page.active) return;
+    const scope = lifecycle.reset();
+    scope.use(() => exercise.stop());
     exercise.reset();
     finished = false;
-    picker?.destroy();
-    pieceMask?.destroy();
     clear_all_text();
     document.getElementById('next').classList.add('hidden');
     document.getElementById('history_container').classList.add('hidden');
@@ -169,29 +173,28 @@ function main() {
         format: document.querySelector('.pieceless-workspace').dataset.solutionFormat });
     setup_pieces(chess); setup_to_play(chess);
     window.color = chess.turn() === 'w' ? 'white' : 'black';
-    window.ground?.destroy(); setup_ground(fen); ground_set_moves();
+    setup_ground(fen); scope.use(ground); ground_set_moves();
     ground.set({animation: {enabled: false}, check: false, movable: {showDests: visualization.destinations.checked}, draggable: {enabled: false}});
     const pieces = [...ground.state.pieces].sort(([a, pieceA], [b, pieceB]) =>
         (pieceA.role === 'king') - (pieceB.role === 'king') || a.localeCompare(b));
     const requested = visualization.target;
     const count = Math.min(requested, pieces.length);
     document.querySelector('.pieceless-workspace').classList.toggle('training-partial', count < pieces.length);
-    pieceMask = createPieceMask(document.getElementById('chessground'), pieces.slice(0, count).map(([square]) => square));
+    pieceMask = scope.use(createPieceMask(document.getElementById('chessground'), pieces.slice(0, count).map(([square]) => square)));
     visualization.begin(fen + '|' + sourceSolution, requested, count);
-    setup_move_handler(handle_move);
-    setup_click_handler(square => {
+    setup_move_handler(scope.guard(handle_move));
+    setup_click_handler(scope.guard(square => {
         if (!finished && visualization.destinations.checked && ground_legal_moves(chess).has(square)) visualization.help();
-    });
-    picker = createPromotionController({element: document.querySelector('[data-promotion-picker]'),
+    }));
+    picker = scope.use(createPromotionController({element: document.querySelector('[data-promotion-picker]'),
         onOpen() { restoreBoardPosition(ground, chess, { playable: false, check: false }); },
         onChoose(promotion, move) { play_move(move.from, move.to, promotion); },
-        onCancel() { restoreBoardPosition(ground, chess, { check: false }); }});
+        onCancel() { restoreBoardPosition(ground, chess, { check: false }); }}));
     resize_ground();
-    document.getElementById('give-up').onclick = () => { if (!finished) finish(true); };
-    document.getElementById('training_restart').onclick = main;
+    scope.assign(document.getElementById('give-up'), 'onclick', () => { if (!finished) finish(true); });
+    scope.assign(document.getElementById('training_restart'), 'onclick', main);
 }
 
-window.onresize = onresize;
-window.addEventListener('pageshow', event => { if (event.persisted) main(); });
-window.addEventListener('native-visualization-destinations', event => ground.set({movable: {showDests: event.detail.enabled}}));
+lifecycle.page.assign(window, 'onresize', onresize);
+lifecycle.page.listen(window, 'native-visualization-destinations', event => ground.set({movable: {showDests: event.detail.enabled}}));
 main();
