@@ -14,7 +14,6 @@ const infoBoxes = read('lib/listudy_web/templates/component/infoboxes.html.eex')
 const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="/priv/static/css/bootstrap_study.css">
 <link rel="stylesheet" href="/assets/static/css/chessground.css">
-<link rel="stylesheet" href="/assets/css/features/chapter_editor.css">
 <link rel="stylesheet" href="/assets/css/features/study_presentation.css">
 <link rel="stylesheet" href="/assets/css/features/sparring.css">
 <style>:root{--study-divider:#bbb}.study-board-frame{width:min(500px,90vw)}#chessground{width:100%;height:auto;aspect-ratio:1}#study_sparring{max-width:360px}.success{background:var(--success-bg);color:var(--success-color)}.error{background:var(--error-bg);color:var(--error-color)}.info{background:var(--info-bg);color:var(--info-color)}.hidden{display:none}</style></head><body class="bootstrap-ui">
@@ -360,6 +359,16 @@ fs.writeFileSync(fixtureEntry, `module.exports={...require('/home/cravelo/selfIn
         await page.click('#practice_sparring');
         await move('h7', 'h8');
         await page.waitForSelector('[data-promotion-picker]', { state: 'visible' });
+        const pickerBounds = await page.locator('[data-promotion-picker]').boundingBox();
+        const boardBounds = await page.locator('#chessground').boundingBox();
+        assert.deepEqual(pickerBounds, boardBounds);
+        for (const role of ['q', 'r', 'b', 'n']) {
+            const bounds = await page.locator(`[data-promotion="${role}"]`).boundingBox();
+            assert(bounds.width >= 44 && bounds.height >= 44);
+            assert(bounds.x >= boardBounds.x && bounds.y >= boardBounds.y);
+            assert(bounds.x + bounds.width <= boardBounds.x + boardBounds.width + 1);
+            assert(bounds.y + bounds.height <= boardBounds.y + boardBounds.height + 1);
+        }
         await auditButtons();
         await page.locator('[data-promotion-cancel]').click();
         assert.equal(await page.locator('[data-promotion-picker]').isHidden(), true);
