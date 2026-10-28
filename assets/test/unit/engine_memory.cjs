@@ -33,8 +33,9 @@ function setup(memory, hash = 'option name Hash type spin default 16 min 1 max 2
         assert(log.includes('setoption name Hash value 4'));
         assert(log.indexOf('setoption name Hash value 4') < log.indexOf('isready'), 'Memory configuration finishes before the first search');
     }
-    small.engine.cancel(); await small.engine.analyze(state);
-    assert(small.logs[2].includes('setoption name Hash value 4'), 'Restarted workers renegotiate their budget');
+    small.engine.cancel(); await small.engine.bestMove(state);
+    assert.equal(small.logs.length, 2, 'Cancelling an idle search keeps initialized workers');
+    assert.equal(small.logs[1].filter(command => command.startsWith('go ')).length, 2, 'The configured opponent accepts another search');
     small.engine.dispose();
     for (const hint of [undefined, 8]) {
         const normal = setup(hint); await normal.engine.bestMove(state);

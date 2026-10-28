@@ -22,7 +22,7 @@ function deviceMemoryHint() {
     catch (_) { return undefined; }
 }
 
-function createUciEngine({ createWorker = createStockfishWorker,
+export function createUciEngine({ createWorker = createStockfishWorker,
     timeoutMs = 20000, movetime = 700, deviceMemory = deviceMemoryHint() } = {}) {
     let worker;
     let pending;

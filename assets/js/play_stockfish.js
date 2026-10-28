@@ -1,130 +1,119 @@
 import { createBoardGame } from './modules/board_game.js';
 import { playMoveSound } from './modules/sounds.js';
 import { parseUciMove } from './modules/chess_moves.js';
-require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
-
-const Chessground = require('chessground').Chessground;
-const Chess = require('chess.js')
-
-import { turn_color, setup_chess, san_to_uci, initial_fen } from './modules/chess_utils.js';
-import { load_stockfish } from './modules/stockfish.js';
+import { turn_color, setup_chess, initial_fen } from './modules/chess_utils.js';
+import { createUciEngine } from './modules/sparring/uci_engine.js';
 import { enginePosition } from './modules/engine_position.js';
-let engineStartFen;
+import { createTrainingLifecycle } from './modules/training_lifecycle.js';
+import { onresize, resize_ground, setup_ground, setup_move_handler } from './modules/ground.js';
+import { set_text, clear_all_text, error_div } from './modules/info_boxes.js';
+require('regenerator-runtime/runtime');
+
+let engineStartFen, engine, thinking = false, progressTimer;
+const lifecycle = createTrainingLifecycle({ restore: () => { startRun(); ai_move(); } });
 const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
-    getOptions: () => ({ color, playable: !chess.game_over() }), onMove: playMoveSound });
-import { tree_move_index, tree_children, tree_possible_moves, has_children, 
-         need_hint, update_value, date_sort, tree_get_node, tree_children_filter_sort } from './modules/tree_utils.js';
-import { generate_move_trees } from './modules/tree_from_pgn.js';
-import { sleep } from './modules/sleep.js';
-import { unescape_string } from './modules/security_related.js';
-import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_moves,
-         setup_move_handler } from './modules/ground.js';
-import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
+    getOptions: () => ({ color, playable: !thinking && !chess.game_over() && turn_color(chess) === color }),
+    onMove: playMoveSound });
 
-async function handle_move(orig, dest) {
+function handle_move(orig, dest) {
+    if (!lifecycle.run.active || thinking || turn_color(chess) !== color) return;
     if (move(orig, dest)) ai_move();
-
 }
 
 function move(orig, dest, promotion = 'q') {
-    return !!boardGame.play({from: orig, to: dest, promotion});
+    return !!boardGame.play({ from: orig, to: dest, promotion });
 }
 
-function animate_progress_bar(movetime, reason="") {
-    document.getElementById("progress_reason").innerText = reason;
-    let bar = document.getElementById("progress");
-    bar.style.transitionDuration = `${movetime/1000}s`;
-    bar.style.width = "100%";
-    window.setTimeout(function() {
-        let bar = document.getElementById("progress");
-        bar.style.transitionDuration = "";
-        bar.style.width = "0%";
-        document.getElementById("progress_reason").innerText = "";
-    }, movetime);
+function clear_progress() {
+    lifecycle.run.clearTimeout(progressTimer);
+    const bar = document.getElementById('progress');
+    bar.style.transitionDuration = '';
+    bar.style.width = '0%';
+    document.getElementById('progress_reason').innerText = '';
 }
 
-function ai_move() {
-    let movetime = 1000
-    animate_progress_bar(movetime, "Calculating Move...");
-    const position = enginePosition(engineStartFen, chess);
-    sf.postMessage(`position fen ${position.initialFen}${position.moves.length ? ' moves ' + position.moves.join(' ') : ''}`);
-    sf.postMessage(`go movetime ${movetime}`);
+function animate_progress_bar(movetime, reason = '') {
+    clear_progress();
+    document.getElementById('progress_reason').innerText = reason;
+    const bar = document.getElementById('progress');
+    bar.style.transitionDuration = `${movetime / 1000}s`;
+    bar.style.width = '100%';
+    progressTimer = lifecycle.run.timeout(clear_progress, movetime);
 }
 
-function stockfish_listener(line) {
-    if(line.startsWith("bestmove")) {
-        const candidate = parseUciMove(line.trim().split(/\s+/)[1]);
-        if (candidate) move(candidate.from, candidate.to, candidate.promotion);
+async function ai_move() {
+    const scope = lifecycle.run;
+    if (!scope.active || thinking || chess.game_over() || turn_color(chess) === color) return;
+    const position = chess, fen = position.fen(), currentEngine = engine;
+    thinking = true;
+    boardGame.restore();
+    animate_progress_bar(1000, 'Calculating Move...');
+    try {
+        const result = await currentEngine.search(enginePosition(engineStartFen, position), { movetime: 1000, elo: null });
+        if (!scope.active || chess !== position || chess.fen() !== fen) return;
+        const candidate = parseUciMove(result.uci);
+        if (!candidate || !move(candidate.from, candidate.to, candidate.promotion)) throw new Error('Invalid engine move');
+    } catch (error) {
+        if (scope.active) {
+            console.error('Stockfish search failed:', error);
+            set_text(error_div, 'Stockfish could not move. Reset or take back to retry.');
+        }
+    } finally {
+        if (scope.active) {
+            thinking = false;
+            clear_progress();
+            boardGame.restore();
+        }
     }
 }
 
-function setup_options() {
-    document.getElementById("reset_white").addEventListener('click', function (event) {
-        reset("white");
-    });
-    document.getElementById("reset_black").addEventListener('click', function (event) {
-        reset("black");
-    });
-    document.getElementById("takeback").addEventListener('click', function (event) {
-        takeback();
-    });
+function startRun() {
+    const scope = lifecycle.reset();
+    thinking = false;
+    clear_progress();
+    engine = createUciEngine();
+    const currentEngine = engine;
+    scope.use(() => currentEngine.dispose());
+    setup_ground(chess.fen());
+    const board = ground;
+    scope.use(() => board.destroy());
+    setup_move_handler(scope.guard(handle_move));
+    boardGame.restore();
+    resize_ground();
 }
+
 function reset(c) {
-    let fen = initial_fen(chess);
+    const fen = initial_fen(chess);
     setup_chess(fen);
     engineStartFen = chess.fen();
-    window.sf?.postMessage('ucinewgame');
-    color = c;
-    setup_ground(fen); //uses global color for orientation
-    ground_set_moves();
-    setup_move_handler(handle_move);
-    if (c == "black") {
-        ai_move();
-    }
+    window.color = c;
+    clear_all_text();
+    startRun();
+    ai_move();
 }
 
 function takeback() {
-    if (boardGame.undo(2).length !== 2) return;
-    setup_move_handler(handle_move);
+    // During a search only the player's latest ply needs to be undone.
+    const count = turn_color(chess) === color ? 2 : 1;
+    if (boardGame.undo(count).length !== count) return;
+    clear_all_text();
+    startRun();
 }
 
 function main(hash) {
-    if (document.location.hash != "") {
-        let regex = /%20/g
-        hash = document.location.hash.split("#")[1].replace(regex, " ");
-    }
-    let hash_splits = hash.split(";")
-    let fen = hash_splits[0];
-    if (fen.endsWith("-")) {
-        // Add 0 1 to fens like 
-        // rnbqk2r/ppp1ppbp/3p1np1/8/3P4/3BPN2/PPP2PPP/RNBQK2R w KQkq -
-        // Otherwise chess.js wont parse the fen correctly
-        fen = `${fen} 0 1`;
-    }
-    let first_move = hash_splits[1] || "p";
-
+    if (document.location.hash !== '') hash = document.location.hash.slice(1).replace(/%20/g, ' ');
+    let [fen, first_move = 'p'] = hash.split(';');
+    if (fen.endsWith('-')) fen = `${fen} 0 1`;
     setup_chess(fen);
     engineStartFen = chess.fen();
     window.color = turn_color(chess);
-    if (first_move == "sf") {
-        // switch the board rotation for the player to be bottom
-        color = color == "white" ? "black" : "white";
-    }
-    setup_ground(fen); //uses global color for orientation
-    resize_ground();
-    setup_move_handler(handle_move);
-    ground_set_moves();
-
-    animate_progress_bar(2000, "Loading Stockfish...");
-
-    load_stockfish(stockfish_listener, function() {
-        sf.postMessage('ucinewgame');
-        if (first_move == "sf") {
-            ai_move();
-        }
-    }).catch(() => set_text(error_div, 'Stockfish could not load. Reload the page to retry.'));
-    setup_options();
+    if (first_move === 'sf') color = color === 'white' ? 'black' : 'white';
+    startRun();
+    ai_move();
 }
 
-window.onresize = onresize;
-main("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1;p");
+lifecycle.page.listen(document.getElementById('reset_white'), 'click', () => reset('white'));
+lifecycle.page.listen(document.getElementById('reset_black'), 'click', () => reset('black'));
+lifecycle.page.listen(document.getElementById('takeback'), 'click', takeback);
+lifecycle.page.listen(window, 'resize', onresize);
+main('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1;p');

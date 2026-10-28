@@ -29,7 +29,7 @@ const initial = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     assert.equal(searches, 1, 'Returning to the exact analysed position does not restart the engine search');
     await engine.analyze({...state, moves: ['g1f3', 'g8f6', 'f3g1', 'f6g8']});
     assert.equal(searches, 2, 'Transpositions with different repetition history do not share definitive results');
-    await engine.analyze(state, {movetime: 900});
+    await engine.analyze(state, {maxTimeMs: 900});
     assert.equal(searches, 3, 'A short analysis cannot satisfy a different search budget');
     engine.dispose();
     await assert.rejects(engine.analyze(state), /disposed/);

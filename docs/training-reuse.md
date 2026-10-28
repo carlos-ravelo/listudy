@@ -13,7 +13,8 @@
 | Alternative solution analysis | `assets/js/modules/tactic_alternatives.js` | Native tactics, Blind, Pieceless through `tactic_attempts.js` |
 | Pending validation and stale response rejection | `assets/js/modules/tactic_attempts.js` | Native tactics, Blind, Pieceless |
 | Promotion interaction and pending move | `assets/js/modules/promotion_controller.js` | Editor, Sparring, native tactics, Pieceless, endgames |
-| Page and exercise lifetimes | `assets/js/modules/training_lifecycle.js` | Native tactics, Blind, Pieceless, Chessclicker and endgames |
+| Page and exercise lifetimes | `assets/js/modules/training_lifecycle.js` | Native tactics, Blind, Pieceless, Chessclicker, endgames and standalone Stockfish |
+| UCI worker protocol, search cancellation and full-strength/limited-strength options | `assets/js/modules/sparring/uci_engine.js` | Sparring, alternative validation, endgame analysis and standalone Stockfish |
 | Page resource cleanup | `assets/js/modules/page_scope.js` | Consumers that explicitly register resources |
 | Visualization progression | `assets/js/modules/native_visualization.js`, `study/visualization.js` | Native visualization exercises and PGN visualization |
 
@@ -89,9 +90,14 @@ released on permanent navigation; its exercise feedback timeout is reset per run
 Study replay retains `study/run_lifecycle.js` and the Study page owns its resources
 through `mountStudyPage`. Sparring has its session lifecycle; editor network reads
 and analysis still have distinct counters. Endgames retains generation guards for
-analysis/hints alongside owned engine resources. Standalone Stockfish still uses
-a raw worker listener and reset/takeback handling; migrating that engine ownership
-is separate from the line-exercise lifecycle.
+analysis/hints alongside owned engine resources. Standalone Stockfish now uses
+`createUciEngine` for lazy worker initialization, full-strength searches and
+protocol errors, and `training_lifecycle.js` for board/worker disposal and guarded
+input. Search completion must belong to the active run and unchanged position.
+Reset and takeback dispose the old worker; cached-page suspension disposes resources
+and return resumes the existing history with a fresh worker. Progress timers are
+scoped to the run. Takeback removes two plies after a completed turn, or the single
+player ply while waiting for a reply. Errors allow recovery through reset/takeback.
 
 ### Solution representation and exercise rules
 
@@ -100,8 +106,8 @@ history. `chess_moves.js` shares temporary move inspection, UCI parsing/formatti
 and UCI execution across these adapters, engine history, alternative analysis and
 Sparring. An invalid inspection never undoes an existing move. SAN inspection
 retains chess.js's accepted notation rules rather than implementing a second SAN
-parser. The standalone Stockfish listener preserves engine promotion choices and
-ignores absent or malformed best moves.
+parser. The standalone Stockfish adapter preserves engine promotion choices and
+reports absent or malformed best moves without changing history.
 
 `line_exercise.js` now normalizes authored SAN/UCI to one legal continuation,
 inspects player attempts, delegates alternative analysis, commits the player/reply
@@ -128,7 +134,7 @@ Do not encode these policies as flags in a universal controller.
 | Responsibility | Observed implementations | Intended boundary |
 | --- | --- | --- |
 | Exercise turn progression | Native tactics, Blind, Pieceless and Chessclicker now use `line_exercise.js` | Shared continuation/validation/completion; adapters retain visibility, timing and rewards |
-| Attempt state and cancellation | Native validation wrapper, Study replay revisions, endgame/editor counters, raw Stockfish listener | Reusable attempt/task lifetimes with separate scopes for analysis, network reads and page resources |
+| Attempt state and cancellation | Native validation wrapper, Study replay revisions, endgame/editor counters, scoped Stockfish searches | Reusable attempt/task lifetimes with separate scopes for analysis, network reads and page resources |
 | Startup/reset/teardown | Native modes and endgames now use `training_lifecycle.js`; Study uses its existing page owner | Shared page/run ownership; adapters retain loading and exercise identity checks |
 | Navigation and rewind | Study PGN cursor, endgame feedback reconstruction, Sparring browsing/retry and Stockfish takeback | Shared position reconstruction and rendering; keep edit, browse and practice-retry policies distinct |
 | Hints and solution reveal | Board arrows/piece markers in Study, game practice and Blind; engine hints in endgames/Sparring | Shared hint presentation and assistance events; retain authored versus engine hint selection |
