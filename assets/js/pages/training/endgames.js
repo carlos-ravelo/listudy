@@ -1,3 +1,4 @@
+import { incrementAchievementCounter } from '../../modules/achievement_progress.js';
 import { createTrainingLifecycle } from '../../modules/training/training_lifecycle.js';
 import { createLatestTask } from '../../modules/latest_task.js';
 import { createBoardGame } from '../../modules/board/board_game.js';
@@ -58,7 +59,7 @@ function finish(success) {
             const solved = new Set(Array.isArray(stored) ? stored : []);
             solved.add(id);
             localStorage.setItem('solved_endgames', JSON.stringify([...solved]));
-            localStorage.setItem('achievements_endgames_solved', String(Number(localStorage.getItem('achievements_endgames_solved') || 0) + 1));
+            incrementAchievementCounter('achievements_endgames_solved');
         } catch (_) {}
     }
     openReview({ keepFinalPosition: true });

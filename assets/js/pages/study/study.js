@@ -1,3 +1,4 @@
+import { incrementAchievementCounter } from '../../modules/achievement_progress.js';
 import { createBoardGame } from '../../modules/board/board_game.js';
 import { playMoveSound } from '../../modules/sounds.js';
 import { blockBoardMoves, restoreBoardPosition } from '../../modules/board/board_interaction.js';
@@ -306,15 +307,7 @@ function right_move_text() {
 }
 
 function achievement_end_of_line() {
-    let t = StorageAdapter.getItem("achievements_lines_learned") || 0;
-    StorageAdapter.setItem("achievements_lines_learned", Number(t) + 1);
-    if (typeof achievement_student_test != "undefined") {
-        document.dispatchEvent(achievement_student_test);
-    }
-    if (typeof achievement_student2_test != "undefined") {
-        document.dispatchEvent(achievement_student2_test);
-    }
-
+    incrementAchievementCounter('achievements_lines_learned', { storage: StorageAdapter });
 }
 
 // "cxb8=Q" => "cxb8="

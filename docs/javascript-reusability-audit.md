@@ -5,6 +5,10 @@ Documentation translated to English on 2026-10-22.
 
 ## Already shared
 
+- Follow-up on 2026-10-28: achievement counter thresholds/events, PGN annotation
+  normalization, engine score interpretation, and native puzzle input loading are
+  shared. See the [duplication review](javascript-duplication-audit-2026-10-28.md)
+  for the source evidence, preserved boundaries, and implementation follow-up.
 - `assets/js/modules/site_common.js`: navigation, preferences, theme, and library startup.
   It also preserves catalogue filters and rating preferences on regular pages
   and after LiveView updates.

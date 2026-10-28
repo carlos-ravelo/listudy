@@ -1,10 +1,10 @@
 const assert = require('assert').strict;
 const fs = require('fs');
 const vm = require('vm');
-const model = vm.createContext({require});
+const model = vm.createContext({require, annotationGlyphs: require('./pgn_annotations_helper.cjs')});
 vm.runInContext(fs.readFileSync('assets/js/modules/pgn/download_pgn.js', 'utf8').replace(/^export /gm, ''), model);
 vm.runInContext(fs.readFileSync('assets/js/modules/study/lichess_analysis.js', 'utf8').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), model);
-vm.runInContext(fs.readFileSync('assets/js/modules/study/chapter_editor.js', 'utf8').replace('export function', 'function'), model);
+vm.runInContext(fs.readFileSync('assets/js/modules/study/chapter_editor.js', 'utf8').replace(/^import .*\n/gm, '').replace('export function', 'function'), model);
 let factory;
 const ground = { state: { orientation: 'white' }, set() {}, destroy() {} };
 const context = vm.createContext({ hasBlockingUi: () => false, require, URLSearchParams, Map,

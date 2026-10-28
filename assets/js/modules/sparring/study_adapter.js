@@ -4,6 +4,7 @@ import { engineLine } from '../engine/engine_line.js';
 import { moveArrows } from '../board/board_shapes.js';
 import { downloadPgn } from '../pgn/download_pgn.js';
 import { createSparringSession, sparringReviewEvery } from './session.js';
+import { scoreForPlayer } from './evaluation.js';
 import { createStudySparring, sparringStartPositions, createSparringChapterRotation } from './chess_adapter.js';
 import { createSparringEngine, sparringStrength, sparringRating } from '../engine/uci_engine.js';
 import { createPromotionController } from '../board/promotion_controller.js';
@@ -314,9 +315,10 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
         } catch (_) { if (current === generation) set_text(error_div, labels.error); }
     }
     function evaluation(score) {
-        const value = score.value * (score.turn === 'w' ? 1 : -1);
+        const interpreted = scoreForPlayer(score, score.turn, 'w');
+        const value = interpreted.value;
         if (score.type === 'mate') return value === 0
-            ? (score.turn === 'w' ? '−#0' : '+#0') : `${value > 0 ? '+' : '−'}#${Math.abs(value)}`;
+            ? (interpreted.winningMate ? '+#0' : '−#0') : `${value > 0 ? '+' : '−'}#${Math.abs(value)}`;
         return `${value > 0 ? '+' : ''}${format(value / 100)}`;
     }
     scope.listen(find('latest'), 'click', () => seek(currentState.moves.length));

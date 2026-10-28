@@ -1,11 +1,12 @@
-import { winningChances } from '../modules/sparring/evaluation.js';
+import { scoreForPlayer, winningChances } from '../modules/sparring/evaluation.js';
 
 export function evaluationBarValue(analysis) {
     const score = analysis?.score;
     if (!score || !Number.isFinite(score.value)) return null;
+    const interpreted = scoreForPlayer(score, analysis.turn, 'w');
     const white = winningChances(score, analysis.turn, 'w');
     if (score.type === 'mate') return { white, text: score.value === 0 ? '#' : 'M' + Math.abs(score.value) };
-    const pawns = score.value * (analysis.turn === 'w' ? 1 : -1) / 100;
+    const pawns = interpreted.value / 100;
     return { white, text: (pawns > 0 ? '+' : '') + pawns.toFixed(1) };
 }
 

@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const pgnParser = require('pgn-parser');
 const context = vm.createContext({ require, ...require('ts-fsrs'), ChessModule: require('chess.js'), console: { log() {} } });
-for (const file of ['pgn/tree.js', 'pgn/tree_from_pgn.js', 'study/tactics_mainline.js', 'study/chapter_stats.js',
+for (const file of ['pgn/tree.js', 'pgn/annotations.js', 'pgn/tree_from_pgn.js', 'study/tactics_mainline.js', 'study/chapter_stats.js',
     'study/review_history.js', 'study/position_review.js', 'study/position_catalog_cache.js', 'study/progress_preservation.js']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', file), 'utf8')
         .replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/g, '').replace(/^export /gm, ''), context);

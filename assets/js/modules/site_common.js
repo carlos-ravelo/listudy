@@ -1,4 +1,5 @@
 import 'phoenix_html';
+import '../components/achievements.js';
 import '../components/puzzle_filters.js';
 import '../components/bootstrap_modals.js';
 import '../components/site_navigation.js';

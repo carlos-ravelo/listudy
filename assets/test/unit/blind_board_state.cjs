@@ -34,11 +34,13 @@ const handlers = source.slice(source.indexOf('function get_current_chess()'), so
                 Object.assign(state, fields);
                 if (movable) Object.assign(state.movable, movable);
             } },
-            document: { getElementById: () => ({ classList: { remove() {} } }) },
+            CustomEvent,
+            document: Object.assign(new EventTarget(), { getElementById: () => ({ classList: { remove() {} } }) }),
             localStorage: { getItem: () => '0', setItem() {} },
             i18n: {}, success_div: 'success', info_div: 'info', clear_all_text() {}, set_text() {}, setup_move_text() {}
         });
         context.window = context;
+        vm.runInContext(read('modules/achievement_progress.js').replace(/^export /gm, ''), context);
         require('./chess_moves_helper.cjs')(context);
         vm.runInContext(read('modules/board/board_interaction.js').replace(/^export /gm, ''), context);
         context.ground_legal_moves = position => context.legalDestinations(position.moves({ verbose: true }));

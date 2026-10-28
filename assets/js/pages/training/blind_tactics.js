@@ -1,3 +1,4 @@
+import { incrementAchievementCounter } from '../../modules/achievement_progress.js';
 import { createTrainingLifecycle } from '../../modules/training/training_lifecycle.js';
 import { createLineExercise } from '../../modules/training/line_exercise.js';
 import { moveToUci, playUciMove } from '../../modules/board/chess_moves.js';
@@ -108,8 +109,7 @@ async function handle_click(square) {
         current_move += result.reply ? 2 : 1;
         if (result.complete) {
             if (!visualization.tracker.current.assisted && !visualization.tracker.current.errors) {
-                let total = localStorage.getItem("achievements_blind_tactics_solved");
-                localStorage.setItem("achievements_blind_tactics_solved", Number(total) + 1);
+                incrementAchievementCounter('achievements_blind_tactics_solved');
             }
             set_div_text(success_div, i18n.success);
             reveal_solution(false);

@@ -8,7 +8,8 @@ const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'ut
 const helpers = vm.createContext({ require });
 require('./chess_moves_helper.cjs')(helpers);
 vm.runInContext(read('modules/engine/engine_line.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), helpers);
-const { engineLine } = helpers;
+vm.runInContext(read('modules/sparring/evaluation.js').replace(/^export /gm, ''), helpers);
+const { engineLine, scoreForPlayer } = helpers;
 const pv = ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5', 'a7a6', 'b5a4'];
 const start = new Chess().fen();
 assert.equal(engineLine(start, pv), 'e4 e5 Nf3 Nc6 Bb5 a6');
@@ -45,7 +46,7 @@ const editorAnalysis = editor.slice(editor.indexOf('        async analyzePositio
         vm.runInContext(endgameContinuation, endgameContext);
         assert.equal(endgameContext.continuation({ before: { fen }, beforeAnalysis: { pv: moves } }), engineLine(fen, moves, 5));
         assert.equal(endgameContext.continuation(null), '');
-        const editorContext = vm.createContext({ engineLine, analysisTasks: require('./latest_task_helper.cjs')(),
+        const editorContext = vm.createContext({ engineLine, scoreForPlayer, analysisTasks: require('./latest_task_helper.cjs')(),
             editor: { position: () => board }, currentChapter: { fen }, config: { analysing: 'Thinking', engineError: 'Failed' },
             enginePosition: () => ({}), engine: { cancel() {}, async analyze() { return { score: { type: 'cp', value: 125 }, pv: moves }; } }
         });

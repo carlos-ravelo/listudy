@@ -1,3 +1,5 @@
+import { annotationGlyphs } from '../pgn/annotations.js';
+
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 
@@ -78,8 +80,7 @@ export function createChapterEditor(chapter) {
                 if (!move) throw new Error('invalidPgn');
                 const main = { move: move.san, comment: comments(first.comments),
                     starting_comment: startingComment,
-                    nags: [...new Set([...(first.nags || []).map(nag => Number(nag.replace('$', ''))),
-                        ...({'!': [1], '?': [2], '!!': [3], '??': [4], '!?': [5], '?!': [6]}[first.move.match(/[!?]+$/)?.[0]] || [])])],
+                    nags: annotationGlyphs(first),
                     children: line(rest, board.fen()) };
                 return [main, ...(first.ravs || []).flatMap(variation =>
                     line(variation.moves, fen, comments(variation.comments)))];

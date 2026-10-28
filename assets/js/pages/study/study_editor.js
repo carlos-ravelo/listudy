@@ -11,6 +11,7 @@ import { setupPositionFen } from '../../modules/study/position_setup.js';
 import { createSparringEngine } from '../../modules/engine/uci_engine.js';
 import { enginePosition } from '../../modules/engine/engine_position.js';
 import { engineLine } from '../../modules/engine/engine_line.js';
+import { scoreForPlayer } from '../../modules/sparring/evaluation.js';
 import { createLatestTask } from '../../modules/latest_task.js';
 import { setupChapterPicker } from '../../components/chapter_picker.js';
 const ChessModule = require('chess.js');
@@ -133,8 +134,8 @@ Alpine.data('chapterEditor', () => {
                 engine ||= createSparringEngine();
                 const result = await engine.analyze(enginePosition(currentChapter.fen, position), {movetime: 800});
                 if (!task.isCurrent() || !this.analysisEnabled) return;
-                const score = result.score;
-                const white = score?.value * (position.turn() === 'w' ? 1 : -1);
+                const score = scoreForPlayer(result.score, position.turn(), 'w');
+                const white = score?.value;
                 const value = score?.type === 'mate' ? `M${white}` : Number.isFinite(white) ? `${white >= 0 ? '+' : ''}${(white / 100).toFixed(1)}` : '';
                 this.analysisText = [value, engineLine(position.fen(), result.pv)].filter(Boolean).join(' · ');
             } catch (_) { if (task.isCurrent()) this.analysisText = config.engineError; }

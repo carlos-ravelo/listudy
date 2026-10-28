@@ -3,8 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_editor.js'), 'utf8');
-const context = vm.createContext({ require });
-vm.runInContext(source.replace('export function', 'function'), context);
+const context = vm.createContext({ require, annotationGlyphs: require('./pgn_annotations_helper.cjs') });
+vm.runInContext(source.replace(/^import .*\n/gm, '').replace('export function', 'function'), context);
 
 const chapter = {
     fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',

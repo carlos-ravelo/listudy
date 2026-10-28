@@ -1,3 +1,4 @@
+import { readPuzzleData, puzzleLastMove } from '../../modules/training/puzzle_data.js';
 import { createTrainingLifecycle } from '../../modules/training/training_lifecycle.js';
 import { createLineExercise } from '../../modules/training/line_exercise.js';
 import { createBoardGame } from '../../modules/board/board_game.js';
@@ -102,9 +103,7 @@ async function handle_move(orig, dest, extraInfo) {
 }
 
 function setup_last_move() {
-    let orig = last_move.substring(0,2);
-    let dest = last_move.substring(2,4);
-    ground.state.lastMove = [orig, dest];
+    ground.state.lastMove = puzzleLastMove(last_move);
 }
 
 /*
@@ -114,10 +113,7 @@ function setup_last_move() {
  * re-evaluated by the browser resulting in old values being used.
  */
 function load_data() {
-    fen = document.getElementById("fen").value;
-    color = document.getElementById("color").value;
-    moves = document.getElementById("moves").value;
-    last_move = document.getElementById("last_move").value;
+    ({ fen, color, moves, last_move } = readPuzzleData());
 }
 
 function main() {

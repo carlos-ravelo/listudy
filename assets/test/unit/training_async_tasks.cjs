@@ -6,6 +6,8 @@ const createLatestTask = require('./latest_task_helper.cjs');
 const createPageScope = require('./page_scope_helper.cjs');
 const { moveArrows } = require('./board_shapes_helper.cjs');
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
+const evaluation = vm.createContext({});
+vm.runInContext(read('modules/sparring/evaluation.js').replace(/^export /gm, ''), evaluation);
 const editor = read('pages/study/study_editor.js'), endgame = read('pages/training/endgames.js');
 const between = (source, start, end) => source.slice(source.indexOf(start), source.indexOf(end));
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
@@ -21,7 +23,7 @@ function editorFixture() {
     let cancels = 0, disposals = 0;
     const engine = { cancel() { cancels++; }, dispose() { disposals++; }, analyze() { const task = deferred(); analyses.push(task); return task.promise; } };
     const analysisTasks = createLatestTask({ onCancel: () => engine.cancel() }), chapterTasks = createLatestTask();
-    const context = vm.createContext({ URL, engine, analysisTasks, chapterTasks,
+    const context = vm.createContext({ URL, engine, analysisTasks, chapterTasks, scoreForPlayer: evaluation.scoreForPlayer,
         currentChapter: { fen: 'original' }, editor: { position: () => ({ fen: () => 'original', turn: () => 'w' }) },
         config: { analysing: 'Thinking', engineError: 'Engine failed', revision: 'v1', loadUrl: '/chapter', loadError: 'Load failed', loading: 'Loading' },
         window: { location: { href: 'http://localhost/' }, confirm: () => true },

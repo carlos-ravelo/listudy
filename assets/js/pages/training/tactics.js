@@ -1,3 +1,5 @@
+import { incrementAchievementCounter } from '../../modules/achievement_progress.js';
+import { readPuzzleData, puzzleLastMove } from '../../modules/training/puzzle_data.js';
 import { createTrainingLifecycle } from '../../modules/training/training_lifecycle.js';
 import { createLineExercise } from '../../modules/training/line_exercise.js';
 import { createBoardGame } from '../../modules/board/board_game.js';
@@ -64,8 +66,7 @@ async function play_move(orig, dest, promotion) {
         if (result.complete) {
             finished = true; exercise.stop();
             progress?.finish();
-            let solves = localStorage.getItem("achievements_tactics_solved") || 0;
-            localStorage.setItem("achievements_tactics_solved", Number(solves) + 1);
+            incrementAchievementCounter('achievements_tactics_solved');
             set_text(success_div, " ", {bold: i18n.success});
             show_div("next");
             autoplay.completed();
@@ -87,13 +88,7 @@ async function play_move(orig, dest, promotion) {
 }
 
 function setup_last_move() {
-    if (last_move.length < 4) {
-        // this can happen in custom tactics where no last_move is provided
-        return;    
-    }
-    let orig = last_move.substring(0,2);
-    let dest = last_move.substring(2,4);
-    ground.state.lastMove = [orig, dest];
+    ground.state.lastMove = puzzleLastMove(last_move);
 }
 
 /*
@@ -103,10 +98,7 @@ function setup_last_move() {
  * re-evaluated by the browser resulting in old values being used.
  */
 function load_data() {
-    fen = document.getElementById("fen").value;
-    color = document.getElementById("color").value;
-    moves = document.getElementById("moves").value;
-    last_move = document.getElementById("last_move").value;
+    ({ fen, color, moves, last_move } = readPuzzleData());
 }
 
 function show_which_side() {

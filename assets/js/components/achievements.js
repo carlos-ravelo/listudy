@@ -1,14 +1,22 @@
+import { incrementAchievementCounter } from '../modules/achievement_progress.js';
+
 class Achievement {
-    constructor(name, description, key, hide) {
+    constructor(name, description, key, hide, counter, threshold) {
         this.name = name;
         this.description = description;
         this.key = key;
         this.hide = hide;
+        this.counter = counter;
+        this.threshold = threshold;
         this.solved = !!localStorage.getItem("achievement_" + key);
 
         if (!this.solved) {
             this.test();
         }
+    }
+
+    test(value = localStorage.getItem(this.counter)) {
+        if (Number(value) >= this.threshold) this.unlock();
     }
 
     unlock() {
@@ -92,180 +100,30 @@ class Konami extends Achievement {
     }
 }
 
-class Newcomer extends Achievement {
-    constructor() {
-        super("Newcomer", "Visit multiple pages.", "newcomer", false);
-    }
-
-    test() {
-        let visits = localStorage.getItem("achievements_total_visits");
-        if (Number(visits) >= 3) {
-            this.unlock();
-        }
-    }
-}
-
-class Endgames extends Achievement {
-    constructor() {
-        super("Endgame Winner", "Win 3 endgames against Stockfish", "endgames", false);
-    }
-
-    test() {
-        let t = localStorage.getItem("achievements_endgames_solved");
-        if (Number(t) >= 3) {
-            this.unlock();
-        }
-    }
-}
-
-class Endgames2 extends Achievement {
-    constructor() {
-        super("Endgame Champion", "Win 27 endgames against Stockfish", "endgames2", true);
-    }
-
-    test() {
-        let t = localStorage.getItem("achievements_endgames_solved");
-        if (Number(t) >= 27) {
-            this.unlock();
-        }
-    }
-}
-
-class Endgames3 extends Achievement {
-    constructor() {
-        super("Endgame Winner", "Win 81 endgames against Stockfish", "endgames3", true);
-    }
-
-    test() {
-        let t = localStorage.getItem("achievements_endgames_solved");
-        if (Number(t) >= 81) {
-            this.unlock();
-        }
-    }
-}
-
-class BlindTactics extends Achievement {
-    constructor() {
-        super("Blind Tactics", "Solve 5 blind tactics", "blindtactics", false);
-    }
-
-    test() {
-        let t = localStorage.getItem("achievements_blind_tactics_solved");
-        if (Number(t) >= 5) {
-            this.unlock();
-        }
-    }
-}
-
-class TacticsSolver extends Achievement {
-    constructor() {
-        super("Tactics Solver", "Solve 5 tactics", "tacticsolver", false);
-    }
-
-    test() {
-        let t = localStorage.getItem("achievements_tactics_solved");
-        if (Number(t) >= 5) {
-            this.unlock();
-        }
-    }
-}
-
-class TacticsSolver2 extends Achievement {
-    constructor() {
-        super("Advanced Tactics Solver", "Solve 32 tactics", "tacticsolver2", true);
-    }
-
-    test() {
-        let t = localStorage.getItem("achievements_tactics_solved");
-        if (Number(t) >= 32) {
-            this.unlock();
-        }
-    }
-}
-
-class TacticsSolver3 extends Achievement {
-    constructor() {
-        super("Great Tactic Solver", "Solve 256 tactics", "tacticsolver3", true);
-    }
-
-    test() {
-        let t = localStorage.getItem("achievements_tactics_solved");
-        if (Number(t) >= 256) {
-            this.unlock();
-        }
-    }
-}
-
-
-class Student extends Achievement {
-    constructor() {
-        super("Student", "Learn 3 opening lines.", "student", false);
-    }
-
-    test() {
-        window.achievement_student_test = new Event('achievement_student_test');
-
-        document.addEventListener('achievement_student_test', () => {
-            let t = localStorage.getItem("achievements_lines_learned");
-            if (Number(t) >= 3) {
-                this.unlock();
-            }
-        });
-    }
-}
-
-class Student2 extends Achievement {
-    constructor() {
-        super("Good Student", "Learn 25 opening lines.", "student2", true);
-    }
-
-    test() {
-        window.achievement_student2_test = new Event('achievement_student2_test');
-
-        document.addEventListener('achievement_student2_test', () => {
-            let t = localStorage.getItem("achievements_lines_learned");
-            if (Number(t) >= 25) {
-                this.unlock();
-            }
-        });
-    }
-}
-
-class Student3 extends Achievement {
-    constructor() {
-        super("Great Student", "Learn 100 opening lines.", "student3", true);
-    }
-
-    test() {
-        window.achievement_student3_test = new Event('achievement_student3_test');
-
-        document.addEventListener('achievement_student3_test', () => {
-            let t = localStorage.getItem("achievements_lines_learned");
-            if (Number(t) >= 100) {
-                this.unlock();
-            }
-        });
-    }
-}
-
-class Student4 extends Achievement {
-    constructor() {
-        super("Honor Student", "Learn 500 opening lines.", "student4", true);
-    }
-
-    test() {
-        window.achievement_student4_test = new Event('achievement_student4_test');
-
-        document.addEventListener('achievement_student4_test', () => {
-            let t = localStorage.getItem("achievements_lines_learned");
-            if (Number(t) >= 500) {
-                this.unlock();
-            }
-        });
-    }
-}
-
-
+const counterAchievements = [
+    { counter: 'achievements_total_visits', levels: [
+        ['Newcomer', 'Visit multiple pages.', 'newcomer', false, 3]
+    ] },
+    { counter: 'achievements_tactics_solved', levels: [
+        ['Tactics Solver', 'Solve 5 tactics', 'tacticsolver', false, 5],
+        ['Advanced Tactics Solver', 'Solve 32 tactics', 'tacticsolver2', true, 32],
+        ['Great Tactic Solver', 'Solve 256 tactics', 'tacticsolver3', true, 256]
+    ] },
+    { counter: 'achievements_lines_learned', levels: [
+        ['Student', 'Learn 3 opening lines.', 'student', false, 3],
+        ['Good Student', 'Learn 25 opening lines.', 'student2', true, 25],
+        ['Great Student', 'Learn 100 opening lines.', 'student3', true, 100],
+        ['Honor Student', 'Learn 500 opening lines.', 'student4', true, 500]
+    ] },
+    { counter: 'achievements_endgames_solved', levels: [
+        ['Endgame Winner', 'Win 3 endgames against Stockfish', 'endgames', false, 3],
+        ['Endgame Champion', 'Win 27 endgames against Stockfish', 'endgames2', true, 27],
+        ['Endgame Winner', 'Win 81 endgames against Stockfish', 'endgames3', true, 81]
+    ] },
+    { counter: 'achievements_blind_tactics_solved', levels: [
+        ['Blind Tactics', 'Solve 5 blind tactics', 'blindtactics', false, 5]
+    ] }
+];
 
 class NewsReader extends Achievement {
     constructor() {
@@ -294,35 +152,31 @@ class NightOwl extends Achievement {
 }
 
 
-class Empty extends Achievement {
-    constructor() {
-        super("name", "description", "key", false);
-    }
+let achievements;
 
-    test() {
-    }
+function renderAchievements() {
+    const container = document.getElementById('achievement_container');
+    if (container && achievements) container.replaceChildren(...achievements.map(achievement => achievement.div()));
 }
 
 function main() {
-    let tv = localStorage.getItem("achievements_total_visits") || 0;
-    localStorage.setItem("achievements_total_visits", Number(tv) + 1);
-
-    let achievements = [Newcomer, TacticsSolver, TacticsSolver2, TacticsSolver3, 
-                        Student, Student2, Student3, Student4, 
-                        Endgames, Endgames2, Endgames3,
-                        BlindTactics, NewsReader, Konami, NightOwl];
-
-    let ac = document.getElementById("achievement_container");
-    for (let a of achievements) {
-        let instance = new a();
-        if (ac != null) {
-            ac.appendChild(instance.div());
-        }
+    if (!achievements) {
+        incrementAchievementCounter('achievements_total_visits');
+        achievements = counterAchievements.flatMap(({ counter, levels }) => levels.map(
+            ([name, description, key, hide, threshold]) => new Achievement(name, description, key, hide, counter, threshold)
+        ));
+        achievements.push(new NewsReader(), new Konami(), new NightOwl());
     }
+    renderAchievements();
 }
 
-window.addEventListener("load", main);
-//TODO FIX, this causes initial loads on liveview pages to count as two page visits
-//it is required however to give the achievement of solving tactics while still playing tactics
-//and not when a new page is loaded after solving tactics
-document.addEventListener("phx:update", main); 
+document.addEventListener('achievement-counter-changed', event => {
+    for (const achievement of achievements || []) {
+        if (achievement.counter === event.detail.key) achievement.test(event.detail.value);
+    }
+    renderAchievements();
+});
+
+if (document.readyState === 'complete') main();
+else window.addEventListener('load', main, { once: true });
+document.addEventListener('phx:update', main);

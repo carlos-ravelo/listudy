@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const context = vm.createContext({require});
+const context = vm.createContext({require, annotationGlyphs: require('./pgn_annotations_helper.cjs')});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_editor.js'), 'utf8')
-    .replace('export function', 'function'), context);
+    .replace(/^import .*\n/gm, '').replace('export function', 'function'), context);
 const initial = {
     title: 'Study', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     comment: 'Introduction', root: [{move: 'e4', comment: 'First', nags: [1, 14], children: [
