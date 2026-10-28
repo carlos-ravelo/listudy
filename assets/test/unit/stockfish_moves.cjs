@@ -15,8 +15,8 @@ const listener = source.slice(source.indexOf('function stockfish_listener('), so
     ]) for (const role of ['q', 'r', 'b', 'n']) {
         const board = new Chess(fen);
         const rendered = [];
-        const context = vm.createContext({ chess: board, ground_set_moves() {}, ground_move(move) { rendered.push(move); } });
-        require('./chess_moves_helper.cjs')(context);
+        const context = vm.createContext({ chess: board, ground: { set() {} }, ground_set_moves() {}, ground_move(move) { rendered.push(move); } });
+        require('./board_game_helper.cjs')(context);
         vm.runInContext(input + '\n' + listener, context);
         context.stockfish_listener(`bestmove ${from}${to}${role} ponder e8d7`);
         assert.equal(board.get(to).type, role, 'Keep the engine promotion choice');
@@ -30,8 +30,8 @@ const listener = source.slice(source.indexOf('function stockfish_listener('), so
     const board = new Chess();
     board.move('e4');
     let searches = 0;
-    const context = vm.createContext({ chess: board, ground_set_moves() {}, ground_move() {}, ai_move() { searches++; } });
-    require('./chess_moves_helper.cjs')(context);
+    const context = vm.createContext({ chess: board, ground: { set() {} }, ground_set_moves() {}, ground_move() {}, ai_move() { searches++; } });
+    require('./board_game_helper.cjs')(context);
     vm.runInContext(input, context);
     await context.handle_move('e2', 'e5');
     assert.equal(board.history().join(' '), 'e4');
@@ -39,5 +39,20 @@ const listener = source.slice(source.indexOf('function stockfish_listener('), so
     await context.handle_move('e7', 'e5');
     assert.equal(board.history().join(' '), 'e4 e5');
     assert.equal(searches, 1);
+    const castling = new Chess('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+    const initial = castling.fen();
+    castling.move('O-O'); castling.move('O-O-O');
+    const state = { fen: castling.fen() };
+    const rollback = vm.createContext({ chess: castling, ground: { set(update) { Object.assign(state, update); } },
+        setup_move_handler() {}, handle_move() {} });
+    require('./board_game_helper.cjs')(rollback, { options: {} });
+    const takeback = source.slice(source.indexOf('function takeback()'), source.indexOf('function main('));
+    vm.runInContext(takeback, rollback);
+    rollback.takeback();
+    assert.equal(castling.fen(), initial);
+    assert.equal(state.fen, initial, 'Takeback restores both castling rooks and kings');
+    assert.equal(state.turnColor, 'white');
+    rollback.takeback();
+    assert.equal(castling.fen(), initial, 'Takeback at the start is harmless');
     console.log('Stockfish move input: both colors, all engine promotions, invalid bestmoves and illegal user input passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

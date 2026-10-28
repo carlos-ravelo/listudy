@@ -1,7 +1,9 @@
+import { createBoardGame } from './modules/board_game.js';
+import { playMoveSound } from './modules/sounds.js';
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js')
 import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_moves,
-         ground_undo_last_move, setup_move_handler, ground_move } from './modules/ground.js';
+         setup_move_handler } from './modules/ground.js';
 import { turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
 
 function nFormatter(num, digits) {
@@ -72,19 +74,20 @@ function next_puzzle() {
     a.click();
 }
 
+const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
+    getOptions: () => ({ color: 'both' }), onMove: playMoveSound });
+
 function handle_move(orig, dest, extraInfo) {
     let played = uci_to_san(chess, orig, dest);
+    if (!played) { boardGame.restore(); return; }
     let target = to_play.shift();
 
     if (played == target) {
-        let m = chess.move(played);
-        ground_move(m);
+        boardGame.play(played);
         if (to_play.length >= 2) {
             // theres another move the player has to get correct
             let ai_move = to_play.shift();
-            let m = chess.move(ai_move);
-            ground_set_moves();
-            ground_move(m);
+            boardGame.play(ai_move);
         } else {
             // player got the puzzle correct
             tactic_solved();
@@ -94,8 +97,7 @@ function handle_move(orig, dest, extraInfo) {
     } else {
         // player failed the puzzle
         to_play.unshift(target);
-        ground_undo_last_move(); 
-        ground_set_moves();
+        boardGame.restore();
         flash_info("Wrong move", "error");
         next_puzzle();
     }

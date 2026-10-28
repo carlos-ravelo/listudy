@@ -1,3 +1,5 @@
+import { createBoardGame } from './modules/board_game.js';
+import { playMoveSound } from './modules/sounds.js';
 import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 import { mountStudyPage } from './modules/study/page_lifecycle.js';
 import { createStudyRun } from './modules/study/run_lifecycle.js';
@@ -39,7 +41,7 @@ import { generate_move_trees, annotate_pgn } from './modules/tree_from_pgn.js';
 import { getRandomIntFromRange } from './modules/random.js';
 import { unescape_string } from './modules/security_related.js';
 import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_moves,
-         ground_undo_last_move, setup_move_handler, setup_click_handler, ground_move,
+         setup_move_handler, setup_click_handler,
          create_arrow_from_move, create_pgn_arrow, create_pgn_circle, create_playable_arrow, get_doubled_playable_move_objects } from './modules/ground.js';
 import { TextOverlayId, TextOverlayManager } from './modules/overlays.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
@@ -54,6 +56,9 @@ import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterMast
 import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus } from './modules/study/chapter_review.js';
 import { setupStudyMoveTree, readChapterPosition } from './modules/study/study_move_tree.js';
 import Alpine from 'alpinejs';
+const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
+    getOptions: () => ({ color: 'both' }), onMove: playMoveSound });
+
 
 registerStudyPreferences(Alpine);
 registerStudyDepth(Alpine);
@@ -362,7 +367,7 @@ function updateTacticsTrapUi() {
 
 function renderTacticsTrap(board, move) {
     ground.set({ animation: { enabled: true } });
-    ground_move(move, board);
+    playMoveSound(move);
     restoreBoardPosition(ground, board, { playable: false, lastMove: [move.from, move.to] });
 }
 
@@ -423,7 +428,7 @@ async function handle_practice_move(orig, dest) {
 
     const result = tacticsCollection ? classifyTacticsMove(candidates, san) : null;
     if (result?.kind === 'alternative') {
-        ground_undo_last_move();
+        boardGame.restore();
         setup_move();
         set_text(info_div, i18n.tactics_commented_variation);
         return;
@@ -453,7 +458,7 @@ async function handle_practice_move(orig, dest) {
         const nextIndex = smartTarget.route?.[curr_move.length - 1];
         const intended = smartTarget.expectedMove || tree_children(curr_move)[nextIndex]?.move;
         if (intended && san !== intended) {
-            ground_undo_last_move();
+            boardGame.restore();
             set_text(info_div, i18n.smart_other_continuation);
             setup_move();
             return;
@@ -466,7 +471,7 @@ async function handle_practice_move(orig, dest) {
     if (introduction) {
         lineEligibleForReview = false;
         if (!wasCorrect) {
-            ground_undo_last_move();
+            boardGame.restore();
             setup_move();
             set_text(info_div, i18n.smart_introduction_retry);
             return;
@@ -514,7 +519,7 @@ async function handle_practice_move(orig, dest) {
                 await pageScope.sleep(500);
                 if (studyRun.isCurrent(sessionId)) selectNextSmartPosition();
             } else {
-                ground_undo_last_move();
+                boardGame.restore();
                 set_text(error_div, i18n.error_wrong_move);
                 setup_move();
             }
@@ -533,7 +538,7 @@ async function handle_practice_move(orig, dest) {
                 if (!studyRun.isCurrent(sessionId)) return;
                 showFailedPosition();
             } else {
-                ground_undo_last_move();
+                boardGame.restore();
                 set_text(error_div, i18n.error_wrong_move);
                 setup_move();
             }
@@ -620,10 +625,8 @@ async function handle_practice_move(orig, dest) {
         // wrong move at the current position
         update_value(curr_move, 0); //retrain all the possible replies
         combo_count = 0; //reset the combo
-        // it is important that chess is set to the right position before
-        // calling ground_undo_last_move(); since it used chess.fen() to
-        // reset the position to the previous position
-        ground_undo_last_move();
+        // The game still holds the position before the attempted move.
+        boardGame.restore();
         set_text(error_div, i18n.error_wrong_move);
     }
     setup_move();
@@ -975,8 +978,8 @@ function ai_move(access) {
  * Update chess, ground, access
  */
 function play_move(san) {
-    let m = chess.move(san);
-    ground_move(m);
+    const move = boardGame.play(san);
+    if (!move) return;
     curr_move.push(tree_move_index(curr_move, san));
     change_play_stockfish();
     change_analysis_board();
@@ -1027,7 +1030,7 @@ function start_training() {
             if (tree_children(curr_move)[0]?.value != 5) { break; }
             // Multiple moves are played without delay, causes distorted sound
             // sound_enabled controls if sound is played in sound.js
-            // the sounds are initiated by ground.move which is used by play_move
+            // Move effects honor the shared sound setting.
             let stored_sound = sound_enabled;
             sound_enabled = false;
             play_move(ai_move(curr_move));
@@ -1677,7 +1680,7 @@ function refresh_manual_navigation() {
 function go_back() {
     if (sparring?.active) { sparring.back(); return; }
     if (currentTacticsTrap() || studyRun.replaying || failedPositionRun || spacedReviewRunActive || smartSession || curr_move.length <= 1) return;
-    chess.undo();
+    if (!boardGame.undo().length) return;
     curr_move.pop();
     refresh_manual_navigation();
 }

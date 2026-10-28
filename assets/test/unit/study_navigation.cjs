@@ -11,6 +11,7 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/run
 
 function createContext(values) {
     const context = vm.createContext(values);
+    require('./board_game_helper.cjs')(context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), context);
     const keys = { arrows: 'show_arrows', arrowType: 'arrow_type', comments: 'show_comments',
         review: 'board_review', keyMoves: 'key_moves_mode', moveDelay: 'move_delay_time' };

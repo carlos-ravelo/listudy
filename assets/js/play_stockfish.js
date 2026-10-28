@@ -1,4 +1,6 @@
-import { inspectMove, parseUciMove } from './modules/chess_moves.js';
+import { createBoardGame } from './modules/board_game.js';
+import { playMoveSound } from './modules/sounds.js';
+import { parseUciMove } from './modules/chess_moves.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 const Chessground = require('chessground').Chessground;
@@ -8,13 +10,15 @@ import { turn_color, setup_chess, san_to_uci, initial_fen } from './modules/ches
 import { load_stockfish } from './modules/stockfish.js';
 import { enginePosition } from './modules/engine_position.js';
 let engineStartFen;
+const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
+    getOptions: () => ({ color, playable: !chess.game_over() }), onMove: playMoveSound });
 import { tree_move_index, tree_children, tree_possible_moves, has_children, 
          need_hint, update_value, date_sort, tree_get_node, tree_children_filter_sort } from './modules/tree_utils.js';
 import { generate_move_trees } from './modules/tree_from_pgn.js';
 import { sleep } from './modules/sleep.js';
 import { unescape_string } from './modules/security_related.js';
 import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_moves,
-         ground_undo_last_move, setup_move_handler, ground_move } from './modules/ground.js';
+         setup_move_handler } from './modules/ground.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 
 async function handle_move(orig, dest) {
@@ -23,12 +27,7 @@ async function handle_move(orig, dest) {
 }
 
 function move(orig, dest, promotion = 'q') {
-    const candidate = inspectMove(chess, {from: orig, to: dest, promotion});
-    if (!candidate) return false;
-    const m = chess.move(candidate.san);
-    ground_set_moves();
-    ground_move(m,chess);
-    return true;
+    return !!boardGame.play({from: orig, to: dest, promotion});
 }
 
 function animate_progress_bar(movetime, reason="") {
@@ -85,14 +84,7 @@ function reset(c) {
 }
 
 function takeback() {
-    if(chess.history().length < 2) {
-        return;
-    }
-    chess.undo();
-    chess.undo();
-    ground_undo_last_move()
-    ground_undo_last_move()
-    ground_set_moves();
+    if (boardGame.undo(2).length !== 2) return;
     setup_move_handler(handle_move);
 }
 

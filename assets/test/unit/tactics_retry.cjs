@@ -24,7 +24,7 @@ const handler = source.slice(source.indexOf('async function play_move('), source
             ground_set_moves() {state.movable.dests = chess.moves();},
             ground_move(move, board) {state.turnColor = board.turn() === 'w' ? 'white' : 'black';}
         });
-        require('./chess_moves_helper.cjs')(context);
+        require('./board_game_helper.cjs')(context);
         vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), context);
         vm.runInContext('let busy = false, finished = false, generation = 0, progress;\n' + handler, context);
         await context.play_move('d2', 'd4', 'q');

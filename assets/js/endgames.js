@@ -1,3 +1,5 @@
+import { createBoardGame } from './modules/board_game.js';
+import { playMoveSound } from './modules/sounds.js';
 import { moveToUci, playUciMove } from './modules/chess_moves.js';
 import { restoreBoardPosition, setBoardInteraction } from './modules/board_interaction.js';
 require('regenerator-runtime/runtime');
@@ -9,7 +11,7 @@ import { renderEvaluationBar } from './modules/evaluation_bar.js';
 import { setupStudyFeedback } from './modules/study_feedback.js';
 import { createPromotionController } from './modules/promotion_controller.js';
 import { setupStudyMoveTree } from './modules/study/study_move_tree.js';
-import { onresize, resize_ground, setup_ground, ground_init_state, setup_move_handler, ground_move } from './modules/ground.js';
+import { onresize, resize_ground, setup_ground, ground_init_state, setup_move_handler } from './modules/ground.js';
 import { set_text, clear_all_text, error_div, info_div } from './modules/info_boxes.js';
 
 const workspace = document.querySelector('.endgame-workspace');
@@ -20,6 +22,8 @@ const evaluationToggle = document.getElementById('endgame_eval_toggle');
 const finishButton = document.getElementById('endgame_finish');
 let engine, feedback, picker, generation = 0, ended = false, reviewing = false, busy = false;
 let startFen, moves = [], pendingReply, selectedRow, reviewRoot, reviewState, reviewAnalysis;
+const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
+    getOptions: () => ({ color, playable: false }), onMove: playMoveSound });
 const state = () => ({ initialFen: startFen, moves: moves.map(moveToUci), fen: chess.fen(), turn: chess.turn() });
 
 function updateFen(value = chess.fen()) {
@@ -62,11 +66,10 @@ function checkEnd(move) {
 }
 function playMove(move) {
     let played;
-    try { played = typeof move === 'string' ? playUciMove(chess, move) : chess.move(move); } catch (_) { return null; }
+    try { played = boardGame.play(move); } catch (_) { return null; }
     if (!played) return null;
     moves.push(played);
     finishButton.disabled = false;
-    ground_move(played, chess);
     ground.setAutoShapes([]);
     updateFen();
     feedback?.observe(state());

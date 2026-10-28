@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | Coordinate notation, move inspection and UCI execution | `assets/js/modules/chess_moves.js` | Native tactics, Blind, Pieceless, endgames, Sparring, standalone Stockfish and legacy SAN/UCI wrappers |
 | Legacy board/color helpers | `assets/js/modules/chess_utils.js` | Legacy board modes |
+| Applying moves, undo and board synchronization | `assets/js/modules/board_game.js` | Study, native tactics, Pieceless, endgames, standalone Stockfish, Chessclicker and game-mistake practice |
 | Board interaction, authoritative position restoration and legal destinations | `assets/js/modules/board_interaction.js` | Study, editor, Sparring, native tactics, Pieceless, endgames and Blind; `chess_utils.js` delegates destination mapping for legacy board modes |
 | Board creation, movement, sizing, sound | `assets/js/modules/ground.js` | Study and native exercises; newer controllers also render Chessground directly |
 | Alternative solution analysis | `assets/js/modules/tactic_alternatives.js` | Native tactics, Blind, Pieceless through `tactic_attempts.js` |
@@ -46,6 +47,26 @@ mode policies. Tests cover replay/trap recovery and hidden progress for both
 orientations. Keep turn eligibility in each mode; a position's legal moves alone
 do not authorize the player to move.
 
+### Applying moves and rollback
+
+`board_game.js` now applies SAN/UCI/coordinate input to the current chess position,
+invokes move effects once, and renders the authoritative FEN, turn, check, last
+move and legal input state. It also owns undo plus rendering; callers choose the
+number of plies. A request to undo more history than exists changes nothing.
+A rejected optimistic move restores the board without undoing game history.
+
+Study retains PGN cursor updates; native tactics retains authored continuation
+and delayed feedback; Pieceless updates its piece mask through the move callback;
+endgames retains feedback records and objective checks; Chessclicker retains its
+rewards; game practice retains grading and retry timing. Stockfish takeback uses
+the same undo instead of reversing board coordinates twice. The legacy renderer's
+manual en passant/promotion handling and visual reverse-move rollback are removed.
+
+Blind intentionally advances a hidden logical position without rendering each
+move. Sparring separates its model/session from browsing an older position; the
+editor edits a variation tree. These consumers share position rendering and chess
+move operations but do not use a controller that renders every committed move.
+
 ### Async work and resource lifetime
 
 Native alternative validations now share pending state and reset cancellation.
@@ -80,6 +101,25 @@ PGN practice follows a variation tree, Sparring plays beyond the authored line,
 and endgames evaluates an objective. They can use the same chess position/input
 layer, but their move acceptance, reply selection and completion policies differ.
 Do not encode these policies as flags in a universal controller.
+
+## Other identified duplication to address
+
+| Responsibility | Observed implementations | Intended boundary |
+| --- | --- | --- |
+| Exercise turn progression | Native tactics, Blind, Pieceless and Chessclicker each select authored moves/replies and detect completion | A shared line-exercise session; mode adapters retain visibility, timing and rewards |
+| Attempt state and cancellation | Native validation wrapper, Study replay revisions, endgame/editor counters, raw Stockfish listener | Reusable attempt/task lifetimes with separate scopes for analysis, network reads and page resources |
+| Startup/reset/teardown | Entry-specific `main` functions, LiveView update listeners, pagehide/pageshow handling and observers | Shared resource lifecycle using existing `page_scope.js`; adapters load their own exercise data |
+| Navigation and rewind | Study PGN cursor, endgame feedback reconstruction, Sparring browsing/retry and Stockfish takeback | Shared position reconstruction and rendering; keep edit, browse and practice-retry policies distinct |
+| Hints and solution reveal | Board arrows/piece markers in Study, game practice and Blind; engine hints in endgames/Sparring | Shared hint presentation and assistance events; retain authored versus engine hint selection |
+| Grading and completion records | Puzzle progress, visualization tracker, Study reviews, game practice, endgame achievements and Chessclicker rewards | Shared attempt outcome events and once-only recording; retain existing storage identities and scheduling semantics |
+| Analysis presentation | Endgame continuation/evaluation rendering, editor analysis text, Sparring evaluation details | Shared score/PV formatting with explicit perspective; adapters choose when analysis is allowed |
+| Preferences and feedback | Study preferences, native visualization settings, autoplay state, generic info boxes and page-specific feedback | Reuse existing settings/feedback primitives; preserve per-mode defaults and localized text |
+
+This is a source-level inventory of training entry points and their directly used
+modules, not a claim that all repeated-looking code has equivalent behavior.
+Shared chess/board primitives now have multiple consumers. The remaining high-value
+work is to share exercise orchestration and resource ownership, with integration
+tests for every migrated adapter.
 
 ## Verification strategy
 

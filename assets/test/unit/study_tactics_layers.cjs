@@ -30,7 +30,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
         overlay_manager: { mark_current_overlays_seen: () => events.push(['overlays']), clear_overlays: noop },
         studyMoveNavigation: { update: noop },
         ground: { set(update) { Object.assign(state, update); }, setShapes: noop },
-        ground_move: (move, board) => events.push(['render', move.san, board.fen()]),
+        playMoveSound: move => events.push(['render', move.san]),
         ground_undo_last_move: () => events.push(['undo']),
         ground_set_moves: () => { state.movable = { dests: new Map([['e2', ['e4']]]) }; },
         turn_color: board => board.turn() === 'w' ? 'white' : 'black',
@@ -51,6 +51,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
         practiceDepth: { limit: Infinity }, get_move_delay: () => 0, sleep: wait, smartIntroductionMove: () => null,
         ai_move: () => undefined
     });
+    require('./board_game_helper.cjs')(context);
     context.pageScope.sleep = wait;
     context.preferences = { get: () => undefined };
     context.window = context;

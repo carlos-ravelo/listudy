@@ -1,3 +1,5 @@
+import { createBoardGame } from './modules/board_game.js';
+import { inspectMove } from './modules/chess_moves.js';
 import { hasBlockingUi, setupBlockingUi } from './modules/blocking_ui.js';
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js');
@@ -79,6 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let results = new Map(), attempts = new Map(), solved = new Set();
     let assisted = false, ground, resetTimer;
     const chess = new Chess();
+    const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground });
     const tracker = createPracticeTracker({ save(record) {
         stats.studySessions = { ...stats.studySessions, [record.id]: record };
         persist();
@@ -169,14 +172,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             chaptersEl.appendChild(details);
         }
     }
-    function legalMoves() {
-        const dests = new Map();
-        chess.SQUARES.forEach(square => {
-            const moves = chess.moves({ square, verbose: true });
-            if (moves.length) dests.set(square, moves.map(move => move.to));
-        });
-        return dests;
-    }
     function loadMistake(index, focus = false) {
         finishCurrentPractice();
         clearBoard();
@@ -190,7 +185,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         chess.load(mistake.fen);
         const color = chess.turn() === 'w' ? 'white' : 'black';
         ground = Chessground(boardContainer, { fen: mistake.fen, turnColor: color, orientation: color,
-            movable: { color: solved.has(id) ? undefined : color, free: false, dests: legalMoves(), events: { after: onMove } } });
+            movable: { color: solved.has(id) ? undefined : color, free: false, events: { after: onMove } } });
+        boardGame.restore({ playable: !solved.has(id) });
         counter.textContent = `Position ${index + 1} of ${queue.length}`;
         const explanation = `Outside your repertoire in ${mistake.times_repeated} ${mistake.times_repeated === 1 ? 'game' : 'games'}, for example ${mistake.played}.`;
         feedback('neutral', solved.has(id) ? 'Already practiced' : 'Your move', explanation);
@@ -214,14 +210,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     function onMove(orig, dest) {
         if (!sessionOpen || resetTimer || solved.has(positionKey(queue[currentIndex]))) return;
         const mistake = queue[currentIndex];
-        const move = chess.move({ from: orig, to: dest, promotion: 'q' });
+        const move = boardGame.play({ from: orig, to: dest, promotion: 'q' }, { playable: false });
         if (!move) return;
         const item = references.get(mistake);
         const id = positionKey(mistake);
         const clean = !assisted && !attempts.get(id)?.has(item.id);
         const correct = expectedMoves(mistake).includes(move.san);
         grade(move.san, correct);
-        ground.set({ movable: { color: undefined } });
         if (correct) {
             solved.add(id);
             feedback(clean ? 'success' : 'assisted', clean ? 'Correct!' : 'Correct — another review is scheduled', `${move.san} is in your repertoire.`);
@@ -231,9 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             feedback('error', 'Try again', `You tried ${move.san}. Find a move from your repertoire.`);
             resetTimer = setTimeout(() => {
                 resetTimer = undefined;
-                chess.undo();
-                ground.set({ fen: chess.fen(), turnColor: chess.turn() === 'w' ? 'white' : 'black',
-                    movable: { color: chess.turn() === 'w' ? 'white' : 'black', free: false, dests: legalMoves(), events: { after: onMove } } });
+                boardGame.undo();
                 updateButtons();
             }, 500);
             updateButtons();
@@ -284,9 +277,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     finishBtn.onclick = endSession;
     hintBtn.onclick = () => {
         assisted = true;
-        const move = chess.move(expectedMoves(queue[currentIndex])[0]);
+        const move = inspectMove(chess, expectedMoves(queue[currentIndex])[0]);
         if (!move) return;
-        chess.undo();
         ground.set({ drawable: { autoShapes: [{ orig: move.from, brush: 'blue' }] } });
         feedback('assisted', 'Hint shown', 'The marked piece can play a move from your repertoire.');
     };
@@ -294,11 +286,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         assisted = true;
         const san = expectedMoves(queue[currentIndex])[0];
         grade(san, false);
-        const move = chess.move(san);
+        const move = boardGame.play(san, { playable: false });
         if (!move) return;
         solved.add(positionKey(queue[currentIndex]));
-        ground.move(move.from, move.to);
-        ground.set({ movable: { color: undefined } });
         feedback('assisted', 'Solution shown', `${move.san} is one move from your repertoire.`);
         updateButtons(); nextBtn.focus();
     };

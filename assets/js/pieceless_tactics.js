@@ -1,3 +1,5 @@
+import { createBoardGame } from './modules/board_game.js';
+import { playMoveSound } from './modules/sounds.js';
 import { moveToUci, playUciMove } from './modules/chess_moves.js';
 import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
@@ -5,7 +7,7 @@ require("regenerator-runtime/runtime"); // required for sleep (https://github.co
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js')
 import { onresize, resize_ground, setup_ground, ground_set_moves,
-         ground_undo_last_move, setup_move_handler, setup_click_handler, ground_move } from './modules/ground.js';
+         setup_move_handler, setup_click_handler } from './modules/ground.js';
 import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { createTacticAttempts } from './modules/tactic_attempts.js';
@@ -16,6 +18,9 @@ import { setupNativeVisualization, createPieceMask } from './modules/native_visu
 let finished = false, picker;
 const visualization = setupNativeVisualization('pieceless');
 let pieceMask;
+const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
+    getOptions: () => ({ check: false }),
+    onMove(move) { pieceMask.move(move); playMoveSound(move); } });
 const sourceSolution = solution;
 
 function show_history(chess) {
@@ -59,17 +64,13 @@ async function play_move(orig, dest, promotion) {
             return;
         }
     }
-    const move = chess.move({from: orig, to: dest, promotion});
+    const move = boardGame.play({from: orig, to: dest, promotion});
+    if (!move) return;
     visualization.tracker.decision(true);
-    pieceMask.move(move);
-    ground_move(move, chess);
     solution.shift();
     if (solution.length > 1) {
         const reply = solution.shift();
-        const move = playUciMove(chess, reply);
-        pieceMask.move(move);
-        ground_move(move, chess);
-        restoreBoardPosition(ground, chess, { check: false });
+        boardGame.play(reply);
         set_text(success_div, i18n.right_move);
     } else {
         set_text(success_div, i18n.solved);

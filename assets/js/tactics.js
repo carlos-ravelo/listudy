@@ -1,9 +1,11 @@
+import { createBoardGame } from './modules/board_game.js';
+import { playMoveSound } from './modules/sounds.js';
 import { inspectMove, moveToUci, playUciMove } from './modules/chess_moves.js';
 import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 import { onresize, resize_ground, setup_ground, ground_set_moves,
-         setup_move_handler, ground_move } from './modules/ground.js';
+         setup_move_handler } from './modules/ground.js';
 import { setup_chess } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { sleep } from './modules/sleep.js';
@@ -18,6 +20,8 @@ const attempts = createTacticAttempts({
 });
 let progress, picker;
 let busy = false, generation = 0, finished = false;
+const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
+    getOptions: () => ({ color }), onMove: playMoveSound });
 const autoplay = createPuzzleAutoplay({isFinished: () => finished, next: () => document.getElementById('next')?.click()});
 
 function show_div(id) {
@@ -70,17 +74,14 @@ async function play_move(orig, dest, promotion) {
     blockBoardMoves(ground);
     if (accepted) {
         to_play.shift();
-        let m = chess.move(played);
-        ground_move(m, chess);
+        boardGame.play(played, { playable: false });
         if (to_play.length >= 2) {
             // theres another move the player has to get correct
             await sleep(100); // instant play by the ai feels weird
             if (ticket !== generation) return;
             set_text(info_div, i18n.keep_going, {symbol:"★", bold: i18n.best_move} );
             let ai_move = to_play.shift();
-            let m = chess.move(ai_move);
-            ground_set_moves();
-            ground_move(m, chess);
+            boardGame.play(ai_move, { playable: false });
         } else {
             // player got the puzzle correct
             finished = true; attempts.reset();
