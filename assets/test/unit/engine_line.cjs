@@ -45,7 +45,7 @@ const editorAnalysis = editor.slice(editor.indexOf('        async analyzePositio
         vm.runInContext(endgameContinuation, endgameContext);
         assert.equal(endgameContext.continuation({ before: { fen }, beforeAnalysis: { pv: moves } }), engineLine(fen, moves, 5));
         assert.equal(endgameContext.continuation(null), '');
-        const editorContext = vm.createContext({ engineLine, analysisId: 0,
+        const editorContext = vm.createContext({ engineLine, analysisTasks: require('./latest_task_helper.cjs')(),
             editor: { position: () => board }, currentChapter: { fen }, config: { analysing: 'Thinking', engineError: 'Failed' },
             enginePosition: () => ({}), engine: { cancel() {}, async analyze() { return { score: { type: 'cp', value: 125 }, pv: moves }; } }
         });

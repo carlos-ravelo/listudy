@@ -16,6 +16,7 @@
 | Page and exercise lifetimes | `assets/js/modules/training_lifecycle.js` | Native tactics, Blind, Pieceless, Chessclicker, endgames and standalone Stockfish |
 | Engine continuation presentation | `assets/js/modules/engine_line.js` | Chapter editor, Sparring review/downloads and endgame review/hints |
 | UCI worker protocol, search cancellation and full-strength/limited-strength options | `assets/js/modules/sparring/uci_engine.js` | Sparring, alternative validation, endgame analysis and standalone Stockfish |
+| Latest async task ownership | `assets/js/modules/latest_task.js` | Editor analysis/chapter loads and endgame opponent/review/hint requests |
 | Page resource cleanup | `assets/js/modules/page_scope.js` | Consumers that explicitly register resources |
 | Visualization progression | `assets/js/modules/native_visualization.js`, `study/visualization.js` | Native visualization exercises and PGN visualization |
 
@@ -89,9 +90,21 @@ and release their listeners/control bindings. Chessclicker's page intervals are
 released on permanent navigation; its exercise feedback timeout is reset per run.
 
 Study replay retains `study/run_lifecycle.js` and the Study page owns its resources
-through `mountStudyPage`. Sparring has its session lifecycle; editor network reads
-and analysis still have distinct counters. Endgames retains generation guards for
-analysis/hints alongside owned engine resources. Standalone Stockfish now uses
+through `mountStudyPage`. Sparring has its session lifecycle. `latest_task.js`
+replaces editor analysis/chapter request counters and endgame async generation
+checks with independent task owners. Starting a task invalidates its predecessor;
+cancellation aborts its signal and optionally stops the underlying engine. A stale
+success, error or finally cannot update the current task. Completed tasks release
+their cancellation resources, and destroyed owners cannot start work.
+
+Editor chapter loads pass the task signal to `requestJson`; analysis cancellation
+stops its engine search. Endgame opponent replies, review evaluation and hints
+have independent owners registered with the exercise scope. Entering review,
+resuming play or committing a move invalidates outdated hint/display tasks without
+interrupting unrelated grading. Opponent replies arriving during review remain
+queued for resume. Endgames retains its game identifier for the move tree and
+its position/review checks; task ownership does not replace these mode policies.
+Standalone Stockfish now uses
 `createUciEngine` for lazy worker initialization, full-strength searches and
 protocol errors, and `training_lifecycle.js` for board/worker disposal and guarded
 input. Search completion must belong to the active run and unchanged position.
@@ -146,7 +159,7 @@ Do not encode these policies as flags in a universal controller.
 | Responsibility | Observed implementations | Intended boundary |
 | --- | --- | --- |
 | Exercise turn progression | Native tactics, Blind, Pieceless and Chessclicker now use `line_exercise.js` | Shared continuation/validation/completion; adapters retain visibility, timing and rewards |
-| Attempt state and cancellation | Native validation wrapper, Study replay revisions, endgame/editor counters, scoped Stockfish searches | Reusable attempt/task lifetimes with separate scopes for analysis, network reads and page resources |
+| Attempt state and cancellation | Editor/endgame requests now use `latest_task.js`; native validation, Study replay and Sparring retain their session lifetimes | Reuse task ownership for independent async work; retain revision checks that belong to exercise progression |
 | Startup/reset/teardown | Native modes and endgames now use `training_lifecycle.js`; Study uses its existing page owner | Shared page/run ownership; adapters retain loading and exercise identity checks |
 | Navigation and rewind | Study PGN cursor, endgame feedback reconstruction, Sparring browsing/retry and Stockfish takeback | Shared position reconstruction and rendering; keep edit, browse and practice-retry policies distinct |
 | Hints and solution reveal | Board arrows/piece markers in Study, game practice and Blind; engine hints in endgames/Sparring | Shared hint presentation and assistance events; retain authored versus engine hint selection |

@@ -11,6 +11,7 @@ import { setupPositionFen } from './modules/study/position_setup.js';
 import { createSparringEngine } from './modules/sparring/uci_engine.js';
 import { enginePosition } from './modules/engine_position.js';
 import { engineLine } from './modules/engine_line.js';
+import { createLatestTask } from './modules/latest_task.js';
 import { setupChapterPicker } from './modules/chapter_picker.js';
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
@@ -18,9 +19,11 @@ const Chess = ChessModule.Chess || ChessModule;
 import Alpine from 'alpinejs';
 
 Alpine.data('chapterEditor', () => {
-    let currentChapter, editor, ground, moveTree, config, pgnSnapshot, analysisPgn, promotionPicker, engine, analysisId = 0;
+    let currentChapter, editor, ground, moveTree, config, pgnSnapshot, analysisPgn, promotionPicker, engine;
 
-    let chapterRequest = 0, chapterAbort, chapterPicker;
+    let chapterPicker;
+    const analysisTasks = createLatestTask({ onCancel: () => engine?.cancel() });
+    const chapterTasks = createLatestTask();
 
     return {
         exportPgn: '', pgnEdited: false, options: [], chapter: 0, title: '', comment: '', pendingPromotion: null, analysisUrl: '',
@@ -76,11 +79,11 @@ Alpine.data('chapterEditor', () => {
             this.refresh();
         },
 
-        destroy() { ++chapterRequest; chapterAbort?.abort(); ++analysisId; chapterPicker?.destroy(); engine?.dispose(); promotionPicker?.destroy(); ground?.destroy(); },
+        destroy() { chapterTasks.destroy(); analysisTasks.destroy(); chapterPicker?.destroy(); engine?.dispose(); promotionPicker?.destroy(); ground?.destroy(); },
 
         beginSetup() {
             if ((this.dirty || this.pgnEdited) && !window.confirm(config.discardPrompt)) return;
-            ++analysisId; engine?.cancel();
+            analysisTasks.cancel();
             this.analysisEnabled = false;
             this.setupMode = true;
             chapterPicker?.update();
@@ -116,24 +119,26 @@ Alpine.data('chapterEditor', () => {
         },
         toggleAnalysis() {
             this.analysisEnabled = !this.analysisEnabled;
-            if (!this.analysisEnabled) { ++analysisId; engine?.cancel(); }
+            if (!this.analysisEnabled) analysisTasks.cancel();
             else this.analyzePosition();
         },
         async analyzePosition() {
-            const id = ++analysisId;
-            engine?.cancel();
+            analysisTasks.cancel();
             if (!this.analysisEnabled || this.setupMode || this.loading) return;
+            const task = analysisTasks.start();
+            if (!task) return;
             const position = editor.position();
             this.analysisText = config.analysing;
             try {
                 engine ||= createSparringEngine();
                 const result = await engine.analyze(enginePosition(currentChapter.fen, position), {movetime: 800});
-                if (id !== analysisId || !this.analysisEnabled) return;
+                if (!task.isCurrent() || !this.analysisEnabled) return;
                 const score = result.score;
                 const white = score?.value * (position.turn() === 'w' ? 1 : -1);
                 const value = score?.type === 'mate' ? `M${white}` : Number.isFinite(white) ? `${white >= 0 ? '+' : ''}${(white / 100).toFixed(1)}` : '';
                 this.analysisText = [value, engineLine(position.fen(), result.pv)].filter(Boolean).join(' · ');
-            } catch (_) { if (id === analysisId) this.analysisText = config.engineError; }
+            } catch (_) { if (task.isCurrent()) this.analysisText = config.engineError; }
+            finally { task.finish(); }
         },
 
         syncPgn(force = false) {
@@ -318,25 +323,25 @@ Alpine.data('chapterEditor', () => {
                 event.target.value = String(this.chapter);
                 return;
             }
-            chapterAbort?.abort();
-            const request = ++chapterRequest;
+            chapterTasks.cancel();
             if (index === this.chapter) {
                 this.loading = false;
                 this.status = '';
                 this.refresh();
                 return;
             }
-            chapterAbort = new AbortController();
+            const task = chapterTasks.start();
+            if (!task) return;
             this.loading = true;
-            ++analysisId; engine?.cancel();
+            analysisTasks.cancel();
             this.status = config.loading;
             this.refresh();
             try {
                 const url = new URL(config.loadUrl, window.location.href);
                 url.searchParams.set('chapter_index', String(index));
                 url.searchParams.set('revision', config.revision);
-                const result = await requestJson(url, { signal: chapterAbort.signal, errorMessage: config.loadError });
-                if (request !== chapterRequest) return;
+                const result = await requestJson(url, { signal: task.signal, errorMessage: config.loadError });
+                if (!task.isCurrent()) return;
                 if (result.revision !== config.revision || result.editor?.chapter_index !== index) throw new Error(config.loadError);
                 const next = createChapterEditor(result.editor.chapter);
                 currentChapter = result.editor.chapter;
@@ -347,14 +352,15 @@ Alpine.data('chapterEditor', () => {
                 this.syncPgn(true);
                 this.status = '';
             } catch (error) {
-                if (request !== chapterRequest) return;
+                if (!task.isCurrent()) return;
                 this.status = error.message || config.loadError;
                 event.target.value = String(this.chapter);
             } finally {
-                if (request === chapterRequest) {
+                if (task.isCurrent()) {
                     this.loading = false;
                     this.refresh();
                 }
+                task.finish();
             }
         },
 
