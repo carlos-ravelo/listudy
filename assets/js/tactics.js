@@ -1,3 +1,4 @@
+import { inspectMove, moveToUci, playUciMove } from './modules/chess_moves.js';
 import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
@@ -37,9 +38,8 @@ function handle_move(orig, dest) {
 async function play_move(orig, dest, promotion) {
     if (busy || finished) return;
     const ticket = generation, board = chess;
-    const candidate = board.move({from: orig, to: dest, promotion});
+    const candidate = inspectMove(board, {from: orig, to: dest, promotion});
     if (!candidate) return;
-    board.undo();
     let played = candidate.san;
     const target = to_play[0];
     clear_all_text();
@@ -48,15 +48,12 @@ async function play_move(orig, dest, promotion) {
     let accepted = played === target;
     let uncertain = false;
     if (!accepted) {
-        const expected = board.move(target);
+        const expected = inspectMove(board, target);
         if (!expected) return;
-        board.undo();
         busy = true;
         blockBoardMoves(ground);
         set_text(info_div, i18n.checking);
-        const attempted = board.move(played);
-        board.undo();
-        const result = await attempts.validate(enginePosition(fen, board), expected.from + expected.to + (expected.promotion || ''), attempted.from + attempted.to + (attempted.promotion || ''), to_play.length);
+        const result = await attempts.validate(enginePosition(fen, board), moveToUci(expected), moveToUci(candidate), to_play.length);
         if (!result) return;
         busy = false;
         clear_all_text();
@@ -65,7 +62,7 @@ async function play_move(orig, dest, promotion) {
         if (accepted) {
             const ChessModule = require('chess.js');
             const parser = new (ChessModule.Chess || ChessModule)(board.fen());
-            window.to_play = result.line.map(uci => parser.move({from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4]}).san);
+            window.to_play = result.line.map(uci => playUciMove(parser, uci).san);
             played = to_play[0];
         }
     }

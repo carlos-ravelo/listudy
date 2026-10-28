@@ -34,6 +34,7 @@ const handlers = source.slice(source.indexOf('function get_current_chess()'), so
             i18n: {}, success_div: 'success', info_div: 'info', clear_all_text() {}, set_text() {}, setup_move_text() {}
         });
         context.window = context;
+        require('./chess_moves_helper.cjs')(context);
         vm.runInContext(read('modules/board_interaction.js').replace(/^export /gm, ''), context);
         context.ground_legal_moves = position => context.legalDestinations(position.moves({ verbose: true }));
         vm.runInContext(handlers, context);

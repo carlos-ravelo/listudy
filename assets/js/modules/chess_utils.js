@@ -1,3 +1,4 @@
+import { inspectMove } from './chess_moves.js';
 import { legalDestinations } from './board_interaction.js';
 const Chess = require('chess.js')
 
@@ -21,16 +22,14 @@ function ground_legal_moves(c) {
  * iff the move is legal in the chess position 
  */
 function uci_to_san(chess, from, to) {
-    let move = chess.move({from:from, to:to, promotion: 'q'});
-    chess.undo();
-    return move.san;
+    return inspectMove(chess, {from, to, promotion: 'q'})?.san || null;
 }
 
 /*
  * Reverse of uci_to_san
  */
 function san_to_uci(chess, san) {
-    let move = chess.move(san);
+    let move = inspectMove(chess, san);
     
     if (move === null) {
         console.error("🚨 ERROR: Illegal move or corrupted text detected.");
@@ -40,7 +39,6 @@ function san_to_uci(chess, san) {
         return {from: "a1", to: "a1"}; 
     }
     
-    chess.undo();
     return {from: move.from, to: move.to};
 }
 

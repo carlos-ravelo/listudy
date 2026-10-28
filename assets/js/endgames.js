@@ -1,3 +1,4 @@
+import { moveToUci, playUciMove } from './modules/chess_moves.js';
 import { restoreBoardPosition, setBoardInteraction } from './modules/board_interaction.js';
 require('regenerator-runtime/runtime');
 const Chess = require('chess.js');
@@ -19,8 +20,7 @@ const evaluationToggle = document.getElementById('endgame_eval_toggle');
 const finishButton = document.getElementById('endgame_finish');
 let engine, feedback, picker, generation = 0, ended = false, reviewing = false, busy = false;
 let startFen, moves = [], pendingReply, selectedRow, reviewRoot, reviewState, reviewAnalysis;
-const uci = move => move.from + move.to + (move.promotion || '');
-const state = () => ({ initialFen: startFen, moves: moves.map(uci), fen: chess.fen(), turn: chess.turn() });
+const state = () => ({ initialFen: startFen, moves: moves.map(moveToUci), fen: chess.fen(), turn: chess.turn() });
 
 function updateFen(value = chess.fen()) {
     document.getElementById('display_fen').value = value;
@@ -62,7 +62,7 @@ function checkEnd(move) {
 }
 function playMove(move) {
     let played;
-    try { played = chess.move(move); } catch (_) { return null; }
+    try { played = typeof move === 'string' ? playUciMove(chess, move) : chess.move(move); } catch (_) { return null; }
     if (!played) return null;
     moves.push(played);
     finishButton.disabled = false;
@@ -74,7 +74,7 @@ function playMove(move) {
 }
 function applyReply(reply) {
     pendingReply = null;
-    const played = playMove({ from: reply.slice(0, 2), to: reply.slice(2, 4), promotion: reply[4] });
+    const played = playMove(reply);
     if (!played) { set_text(error_div, labels.engineError); boardReady(); return; }
     checkEnd(played); boardReady();
 }
@@ -103,7 +103,7 @@ function playUserMove(from, to, promotion) {
     if (!played) { restoreBoardPosition(ground, chess, { playable: false }); boardReady(); return; }
     const after = state();
     const terminal = chess.game_over() ? { turn: chess.turn(), depth: 99, score: { type: chess.in_checkmate() ? 'mate' : 'cp', value: 0 }, pv: [] } : null;
-    feedback.record({ before, after, terminal, goalReached: Boolean(goalReached(played)), ply: moves.length, san: played.san, uci: uci(played) });
+    feedback.record({ before, after, terminal, goalReached: Boolean(goalReached(played)), ply: moves.length, san: played.san, uci: moveToUci(played) });
     checkEnd(played); boardReady();
     if (!ended) opponentMove();
 }
@@ -117,7 +117,7 @@ function continuation(row) {
     const position = new Chess(row.before.fen);
     const line = [];
     for (const move of row.beforeAnalysis.pv.slice(0, 5)) {
-        const played = position.move({ from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4] });
+        const played = playUciMove(position, move);
         if (!played) break;
         line.push(played.san);
     }
@@ -132,7 +132,7 @@ function selectReview(path) {
     restoreBoardPosition(ground, position, { playable: false, lastMove: null });
     ground.setAutoShapes(suggestion && /^[a-h][1-8][a-h][1-8]/.test(suggestion) ? [{ orig: suggestion.slice(0, 2), dest: suggestion.slice(2, 4), brush: 'pgn_green' }] : []);
     updateFen(position.fen());
-    reviewState = { initialFen: startFen, moves: moves.slice(0, selectedRow ? ply - 1 : ply).map(uci), fen: position.fen(), turn: position.turn() };
+    reviewState = { initialFen: startFen, moves: moves.slice(0, selectedRow ? ply - 1 : ply).map(moveToUci), fen: position.fen(), turn: position.turn() };
     reviewAnalysis = selectedRow?.beforeAnalysis || null;
     refreshReviewEvaluation();
     moveTree.update({ root: reviewRoot, fen: startFen, chapter: generation, path, reading: true });

@@ -5,6 +5,7 @@ const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const context = vm.createContext({require, setTimeout, clearTimeout, AbortController});
+require('./chess_moves_helper.cjs')(context);
 for (const name of ['tablebase', 'endgame_engine', 'engine_position']) {
     const source = fs.readFileSync(path.join(__dirname, '../../js/modules', name + '.js'), 'utf8');
     vm.runInContext(source.replace(/^import .*\n/gm, '').replace(/^export /gm, ''), context);

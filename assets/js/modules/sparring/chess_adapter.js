@@ -1,7 +1,7 @@
+import { moveToUci, playUciMove } from '../chess_moves.js';
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 
-const uci = move => move.from + move.to + (move.promotion || '');
 
 export function createSparringChapterRotation({ random = Math.random } = {}) {
     const groups = new Map();
@@ -72,11 +72,10 @@ export function createStudySparring(chapters, { startFen, starts = sparringStart
             return { initialFen, fen: chess.fen(), turn: chess.turn(), over: chess.game_over(),
                 result: chess.in_checkmate() ? (chess.turn() === 'w' ? '0-1' : '1-0') : chess.in_draw() ? '1/2-1/2' : '*',
                 lastMove: chess.history({ verbose: true }).slice(-1)[0],
-                check: chess.in_check(), legal: chess.moves({ verbose: true }).map(uci) };
+                check: chess.in_check(), legal: chess.moves({ verbose: true }).map(moveToUci) };
         },
         play(move) {
-            if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(move || '')) return false;
-            return !!chess.move({ from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4] });
+            return !!playUciMove(chess, move);
         }
     };
     function continuations() {
@@ -86,7 +85,7 @@ export function createStudySparring(chapters, { startFen, starts = sparringStart
         for (const route of frontier) route.children.forEach((node, index) => {
             const move = legal.get(node.move);
             if (!move) throw new Error('Illegal repertoire continuation');
-            const key = uci(move);
+            const key = moveToUci(move);
             if (!next.has(key)) next.set(key, { uci: key, san: move.san, matches: [] });
             next.get(key).matches.push({ route, node, index });
         });

@@ -4,7 +4,8 @@
 
 | Responsibility | Shared implementation | Consumers |
 | --- | --- | --- |
-| Legal destinations, SAN/UCI conversion | `assets/js/modules/chess_utils.js` | Legacy board modes |
+| Coordinate notation, move inspection and UCI execution | `assets/js/modules/chess_moves.js` | Native tactics, Blind, Pieceless, endgames, Sparring, standalone Stockfish and legacy SAN/UCI wrappers |
+| Legacy board/color helpers | `assets/js/modules/chess_utils.js` | Legacy board modes |
 | Board interaction, authoritative position restoration and legal destinations | `assets/js/modules/board_interaction.js` | Study, editor, Sparring, native tactics, Pieceless, endgames and Blind; `chess_utils.js` delegates destination mapping for legacy board modes |
 | Board creation, movement, sizing, sound | `assets/js/modules/ground.js` | Study and native exercises; newer controllers also render Chessground directly |
 | Alternative solution analysis | `assets/js/modules/tactic_alternatives.js` | Native tactics, Blind, Pieceless through `tactic_attempts.js` |
@@ -19,10 +20,10 @@
 
 `study.js` routes Sparring to its adapter but implements PGN Read and practice
 through `uci_to_san` and `possible_promotion`. The latter can substitute an authored
-underpromotion. `play_stockfish.js` also converts coordinates to SAN and extracts
-only four characters from an engine best move. These paths do not use the shared
-promotion controller. Blind selects queen promotions when matching destinations.
-These are observed implementation differences, not proof that every path fails.
+underpromotion. The standalone Stockfish page also retains automatic queen promotion for user
+input. These paths do not use the shared promotion controller. Blind selects
+queen promotions when matching destinations. Shared move parsing now preserves
+all five characters of engine promotion moves, including underpromotion.
 
 Next, define and test the intended promotion behavior per exercise before moving
 these callers onto shared input handling. Blind's destination-only interaction and
@@ -61,10 +62,24 @@ and analysis lifetime into one counter: they invalidate different work.
 ### Solution representation and exercise rules
 
 Native tactics consumes SAN, Pieceless consumes UCI and Blind reconstructs a
-history. PGN practice follows a variation tree; Sparring plays beyond the authored
-line; endgames evaluates an objective. SAN/UCI conversion and temporary position
-inspection are candidates for reuse. Accepting a move, selecting an opponent reply,
-completing an exercise and awarding progress remain domain policies.
+history. `chess_moves.js` shares temporary move inspection, UCI parsing/formatting
+and UCI execution across these adapters, engine history, alternative analysis and
+Sparring. An invalid inspection never undoes an existing move. SAN inspection
+retains chess.js's accepted notation rules rather than implementing a second SAN
+parser. The standalone Stockfish listener preserves engine promotion choices and
+ignores absent or malformed best moves.
+
+The next larger boundary is a line-exercise session for native tactics, Blind and
+Pieceless: normalize the authored continuation to UCI, inspect an attempt, validate
+alternatives, advance the player/reply pair, and report completion. Visibility,
+feedback timing and progress recording remain adapters. Preserve authored replies
+and the existing alternative-validation confidence policy with shared contract
+tests before replacing these flows.
+
+PGN practice follows a variation tree, Sparring plays beyond the authored line,
+and endgames evaluates an objective. They can use the same chess position/input
+layer, but their move acceptance, reply selection and completion policies differ.
+Do not encode these policies as flags in a universal controller.
 
 ## Verification strategy
 

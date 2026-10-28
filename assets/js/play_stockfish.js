@@ -1,9 +1,10 @@
+import { inspectMove, parseUciMove } from './modules/chess_moves.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js')
 
-import { turn_color, setup_chess, uci_to_san, san_to_uci, initial_fen } from './modules/chess_utils.js';
+import { turn_color, setup_chess, san_to_uci, initial_fen } from './modules/chess_utils.js';
 import { load_stockfish } from './modules/stockfish.js';
 import { enginePosition } from './modules/engine_position.js';
 let engineStartFen;
@@ -17,16 +18,17 @@ import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_mo
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 
 async function handle_move(orig, dest) {
-    move(orig, dest);
-    ai_move();
+    if (move(orig, dest)) ai_move();
 
 }
 
-function move(orig,dest) {
-    let san = uci_to_san(chess, orig, dest);
-    let m = chess.move(san);
+function move(orig, dest, promotion = 'q') {
+    const candidate = inspectMove(chess, {from: orig, to: dest, promotion});
+    if (!candidate) return false;
+    const m = chess.move(candidate.san);
     ground_set_moves();
     ground_move(m,chess);
+    return true;
 }
 
 function animate_progress_bar(movetime, reason="") {
@@ -52,9 +54,8 @@ function ai_move() {
 
 function stockfish_listener(line) {
     if(line.startsWith("bestmove")) {
-        let orig = line.substring(9,11);
-        let dest = line.substring(11,13);
-        move(orig, dest);
+        const candidate = parseUciMove(line.trim().split(/\s+/)[1]);
+        if (candidate) move(candidate.from, candidate.to, candidate.promotion);
     }
 }
 

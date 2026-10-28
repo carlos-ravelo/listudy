@@ -1,3 +1,4 @@
+import { moveToUci, playUciMove } from './modules/chess_moves.js';
 import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
@@ -34,7 +35,7 @@ function finish(reveal = false, solved = false) {
     finished = true;
     document.getElementById('next').classList.remove('hidden');
     if (reveal) {
-        for (const move of solution) chess.move({from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4]});
+        for (const move of solution) playUciMove(chess, move);
         document.querySelector('.pieceless-workspace').classList.add('training-revealed');
     }
     restoreBoardPosition(ground, chess, { playable: false, check: reveal && chess.in_check() });
@@ -65,7 +66,7 @@ async function play_move(orig, dest, promotion) {
     solution.shift();
     if (solution.length > 1) {
         const reply = solution.shift();
-        const move = chess.move({from: reply.slice(0, 2), to: reply.slice(2, 4), promotion: reply[4]});
+        const move = playUciMove(chess, reply);
         pieceMask.move(move);
         ground_move(move, chess);
         restoreBoardPosition(ground, chess, { check: false });
@@ -174,9 +175,9 @@ function main() {
     const parser = new Chess(fen);
     const format = document.querySelector('.pieceless-workspace').dataset.solutionFormat;
     solution = sourceSolution.trim().split(/\s+/).filter(Boolean).map(token => {
-        const move = format === 'san' ? parser.move(token) : parser.move({from: token.slice(0, 2), to: token.slice(2, 4), promotion: token[4]});
+        const move = format === 'san' ? parser.move(token) : playUciMove(parser, token);
         if (!move) throw new Error('Invalid puzzle move');
-        return move.from + move.to + (move.promotion || '');
+        return moveToUci(move);
     });
     setup_pieces(chess); setup_to_play(chess);
     window.color = chess.turn() === 'w' ? 'white' : 'black';

@@ -1,3 +1,4 @@
+import { inspectMove, moveToUci, playUciMove } from './modules/chess_moves.js';
 import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
@@ -86,10 +87,10 @@ async function handle_click(square) {
     ground.selectSquare(null);
     if ((square !== target() || clicked_piece !== piece_pos()) && (legal_moves.get(clicked_piece) || []).includes(square)) {
         const expected = chess.history({verbose: true})[current_move];
-        const candidate = current_chess.moves({verbose: true}).find(move => move.from === clicked_piece && move.to === square && (!move.promotion || move.promotion === 'q'));
+        const candidate = inspectMove(current_chess, {from: clicked_piece, to: square, promotion: 'q'});
         if (!candidate) return;
         set_div_text(info_div, i18n.checking);
-        const result = await attempts.validate(enginePosition(window.initial_fen, current_chess), expected.from + expected.to + (expected.promotion || ''), candidate.from + candidate.to + (candidate.promotion || ''), chess.history().length - current_move);
+        const result = await attempts.validate(enginePosition(window.initial_fen, current_chess), moveToUci(expected), moveToUci(candidate), chess.history().length - current_move);
         if (!result) return;
         if (result.status !== 'accepted') {
             if (result.status === 'rejected') visualization.tracker.decision(false);
@@ -99,7 +100,7 @@ async function handle_click(square) {
         }
         const replacement = new Chess(window.initial_fen);
         for (const san of current_chess.history()) replacement.move(san);
-        for (const uci of result.line) replacement.move({from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4]});
+        for (const uci of result.line) playUciMove(replacement, uci);
         window.chess = replacement;
     }
     if (square == target() && clicked_piece == piece_pos()) {

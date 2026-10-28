@@ -34,6 +34,7 @@ const handler = source.slice(source.indexOf('async function play_move('), source
             pieceMask: { move() {} },
             ground_move(move, board) { state.turnColor = board.turn() === 'w' ? 'white' : 'black'; }
         });
+        require('./chess_moves_helper.cjs')(context);
         vm.runInContext(read('modules/board_interaction.js').replace(/^export /gm, ''), context);
         vm.runInContext('let finished = false;\n' + handler, context);
         await context.play_move(from, to);

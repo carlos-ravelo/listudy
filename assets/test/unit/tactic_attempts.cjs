@@ -68,6 +68,7 @@ const deferred = () => {
             pieceMask: { move() { mutations.push('mask'); } },
             ground_move() { mutations.push('move'); }
         });
+        require('./chess_moves_helper.cjs')(sandbox);
         vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), sandbox);
         vm.runInContext(moduleSource, sandbox);
         vm.runInContext('const attempts = createTacticAttempts(); let finished = false, busy = false, generation = 0;', sandbox);

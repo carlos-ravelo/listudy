@@ -1,8 +1,8 @@
+import { playUciMove } from './chess_moves.js';
 import { createEndgameEngine } from './endgame_engine.js';
 import { enginePosition } from './engine_position.js';
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
-const move = (board, uci) => board.move({from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4]});
 
 // Only departures from the authored line load an engine. Keep the complete history.
 export function createTacticAlternatives({ createEngine = createEndgameEngine } = {}) {
@@ -14,12 +14,12 @@ export function createTacticAlternatives({ createEngine = createEndgameEngine } 
         engine ||= createEngine();
         const current = engine;
         const board = new Chess(state.initialFen);
-        for (const uci of state.moves) if (!move(board, uci)) return {status: 'unknown'};
+        for (const uci of state.moves) if (!playUciMove(board, uci)) return {status: 'unknown'};
         if (board.fen() !== state.fen || board.game_over()) return {status: 'unknown'};
-        const reference = move(board, expected);
+        const reference = playUciMove(board, expected);
         if (!reference) return {status: 'unknown'};
         board.undo();
-        if (!move(board, played)) return {status: 'rejected'};
+        if (!playUciMove(board, played)) return {status: 'rejected'};
         if (board.in_checkmate()) return {status: 'accepted', line: [played]};
         if (board.in_draw()) return {status: 'rejected'};
         const candidateState = enginePosition(state.initialFen, board);
@@ -36,8 +36,8 @@ export function createTacticAlternatives({ createEngine = createEndgameEngine } 
             } else {
                 const options = {movetime: 1200, depth: 20};
                 const expectedBoard = new Chess(state.initialFen);
-                for (const uci of state.moves) move(expectedBoard, uci);
-                move(expectedBoard, expected);
+                for (const uci of state.moves) playUciMove(expectedBoard, uci);
+                playUciMove(expectedBoard, expected);
                 const baseline = expectedBoard.in_checkmate() ? {score: {type: 'mate', value: 0}, depth: 99} : await current.analyze(enginePosition(state.initialFen, expectedBoard), options);
                 analysis = await current.analyze(candidateState, options);
                 if (ticket !== version) return {status: 'unknown'};
@@ -60,7 +60,7 @@ export function createTacticAlternatives({ createEngine = createEndgameEngine } 
                 if (ticket !== version) return {status: 'unknown'};
                 for (const uci of pv) {
                     if (line.length >= limit || board.game_over()) break;
-                    if (!move(board, uci)) return {status: 'unknown'};
+                    if (!playUciMove(board, uci)) return {status: 'unknown'};
                     line.push(uci);
                 }
                 analysis = null;

@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const context = vm.createContext({require, setTimeout, clearTimeout, stockfishVersion: '19.0.1'});
+require('./chess_moves_helper.cjs')(context);
 for (const name of ['evaluation', 'session', 'chess_adapter', 'uci_engine']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, `../../js/modules/sparring/${name}.js`), 'utf8')
         .replace(/^import .*\n/gm, '').replace(/^export /gm, ''), context);

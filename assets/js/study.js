@@ -392,6 +392,7 @@ async function handle_move(orig, dest) {
 
 function handle_read_move(orig, dest) {
     let san = uci_to_san(chess, orig, dest);
+    if (!san) { setup_move(); return; }
     const moves = tree_children(curr_move).map(node => node.move);
     san = possible_promotion(moves, san) || san;
     if (!play_read_move(san)) {
@@ -408,6 +409,7 @@ async function handle_practice_move(orig, dest) {
     clear_all_text();
 
     let san = uci_to_san(chess, orig, dest);
+    if (!san) { setup_move(); return; }
 
     let possible_moves = tree_possible_moves(curr_move).map(m => m.move);
 
