@@ -14,6 +14,7 @@
 | Pending validation and stale response rejection | `assets/js/modules/tactic_attempts.js` | Native tactics, Blind, Pieceless |
 | Promotion interaction and pending move | `assets/js/modules/promotion_controller.js` | Editor, Sparring, native tactics, Pieceless, endgames |
 | Page and exercise lifetimes | `assets/js/modules/training_lifecycle.js` | Native tactics, Blind, Pieceless, Chessclicker, endgames and standalone Stockfish |
+| Move hint shapes | `assets/js/modules/board_shapes.js` | Endgame review/hints, Sparring best moves and analysis game comparisons |
 | Engine continuation presentation | `assets/js/modules/engine_line.js` | Chapter editor, Sparring review/downloads and endgame review/hints |
 | UCI worker protocol, search cancellation and full-strength/limited-strength options | `assets/js/modules/sparring/uci_engine.js` | Sparring, alternative validation, endgame analysis and standalone Stockfish |
 | Latest async task ownership | `assets/js/modules/latest_task.js` | Editor analysis/chapter loads and endgame opponent/review/hint requests |
@@ -113,6 +114,22 @@ and return resumes the existing history with a fresh worker. Progress timers are
 scoped to the run. Takeback removes two plies after a completed turn, or the single
 player ply while waiting for a reply. Errors allow recovery through reset/takeback.
 
+### Hint shapes
+
+`board_shapes.js` converts UCI moves or chess move objects to board arrows using
+the shared strict coordinate parser. Endgame review/hints, Sparring best-move
+presentation and analysis game comparisons share this conversion. Missing,
+malformed and same-square moves produce no arrow; selecting an unanalysed endgame
+review clears an earlier suggestion. Promotion suffixes are accepted intact and
+map to the same source/destination squares as their base move.
+
+Adapters retain their brushes and drawable channels: endgames uses automatic
+shapes, while Sparring/comparison arrows use regular shapes. Game comparisons
+still resolve SAN against the relevant FEN before creating their arrows. Shape
+conversion validates coordinates, not legality in a position. Study's weighted
+repertoire arrows/PGN annotations and Blind's destination circles retain their
+own presentation rules. Assistance tracking remains mode-specific.
+
 ### Engine continuation presentation
 
 `engine_line.js` converts a legal UCI principal variation to SAN on an isolated
@@ -162,7 +179,7 @@ Do not encode these policies as flags in a universal controller.
 | Attempt state and cancellation | Editor/endgame requests now use `latest_task.js`; native validation, Study replay and Sparring retain their session lifetimes | Reuse task ownership for independent async work; retain revision checks that belong to exercise progression |
 | Startup/reset/teardown | Native modes and endgames now use `training_lifecycle.js`; Study uses its existing page owner | Shared page/run ownership; adapters retain loading and exercise identity checks |
 | Navigation and rewind | Study PGN cursor, endgame feedback reconstruction, Sparring browsing/retry and Stockfish takeback | Shared position reconstruction and rendering; keep edit, browse and practice-retry policies distinct |
-| Hints and solution reveal | Board arrows/piece markers in Study, game practice and Blind; engine hints in endgames/Sparring | Shared hint presentation and assistance events; retain authored versus engine hint selection |
+| Hints and solution reveal | Endgames, Sparring and game comparisons now share `board_shapes.js`; Study weighted/PGN arrows and Blind markers retain their policies | Shared validated move arrows; assistance events and authored/engine hint selection remain separate |
 | Grading and completion records | Puzzle progress, visualization tracker, Study reviews, game practice, endgame achievements and Chessclicker rewards | Shared attempt outcome events and once-only recording; retain existing storage identities and scheduling semantics |
 | Analysis presentation | Editor, Sparring and endgame continuations now share `engine_line.js`; score labels/evaluation details remain separate | Shared legal PV conversion; retain localized number formatting and score perspective/display policies |
 | Preferences and feedback | Study preferences, native visualization settings, autoplay state, generic info boxes and page-specific feedback | Reuse existing settings/feedback primitives; preserve per-mode defaults and localized text |

@@ -4,6 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const createLatestTask = require('./latest_task_helper.cjs');
 const createPageScope = require('./page_scope_helper.cjs');
+const { moveArrows } = require('./board_shapes_helper.cjs');
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
 const editor = read('study_editor.js'), endgame = read('endgames.js');
 const between = (source, start, end) => source.slice(source.indexOf(start), source.indexOf(end));
@@ -41,7 +42,7 @@ function endgameFixture() {
     const replies = [], hints = [], nodes = {}, messages = [], applied = [], renders = [];
     const scope = createPageScope();
     const context = vm.createContext({
-        lifecycle: { run: scope }, opponentTasks: scope.use(createLatestTask()), reviewTasks: scope.use(createLatestTask()), hintTasks: scope.use(createLatestTask()),
+        moveArrows, lifecycle: { run: scope }, opponentTasks: scope.use(createLatestTask()), reviewTasks: scope.use(createLatestTask()), hintTasks: scope.use(createLatestTask()),
         ended: false, reviewing: false, busy: false, color: 'white', chess: { turn: () => 'b', fen: () => 'current' },
         reviewState: null, reviewAnalysis: null, evaluationToggle: { checked: true }, picker: null,
         state: () => ({ fen: 'current' }), labels: { thinking: 'Thinking', engineError: 'Engine failed', unavailable: 'Unavailable', suggestion: 'Suggestion' },

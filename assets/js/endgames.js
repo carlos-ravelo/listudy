@@ -4,6 +4,7 @@ import { createBoardGame } from './modules/board_game.js';
 import { playMoveSound } from './modules/sounds.js';
 import { moveToUci } from './modules/chess_moves.js';
 import { engineLine } from './modules/engine_line.js';
+import { moveArrows } from './modules/board_shapes.js';
 import { restoreBoardPosition, setBoardInteraction } from './modules/board_interaction.js';
 require('regenerator-runtime/runtime');
 const Chess = require('chess.js');
@@ -135,7 +136,7 @@ function selectReview(path) {
     for (const move of moves.slice(0, selectedRow ? ply - 1 : ply)) position.move(move);
     const suggestion = selectedRow?.beforeAnalysis?.uci;
     restoreBoardPosition(ground, position, { playable: false, lastMove: null });
-    ground.setAutoShapes(suggestion && /^[a-h][1-8][a-h][1-8]/.test(suggestion) ? [{ orig: suggestion.slice(0, 2), dest: suggestion.slice(2, 4), brush: 'pgn_green' }] : []);
+    ground.setAutoShapes(moveArrows([suggestion], 'pgn_green'));
     updateFen(position.fen());
     reviewState = { initialFen: startFen, moves: moves.slice(0, selectedRow ? ply - 1 : ply).map(moveToUci), fen: position.fen(), turn: position.turn() };
     reviewAnalysis = selectedRow?.beforeAnalysis || null;
@@ -147,7 +148,7 @@ function renderComment() {
     const row = selectedRow;
     document.getElementById('endgame_review_comment').textContent = row ? labels.before.replace('{move}', row.san) + (row.status === 'done' ? row.moment ? ' ' + labels[row.moment] : !endgameAssessmentCertain(row) ? ' ' + labels.uncertain : '' : ' ' + labels[row.status === 'error' ? 'unavailable' : 'analysing']) : labels.select;
     const suggestion = row?.beforeAnalysis?.uci;
-    if (reviewing && suggestion && /^[a-h][1-8][a-h][1-8]/.test(suggestion)) ground.setAutoShapes([{ orig: suggestion.slice(0, 2), dest: suggestion.slice(2, 4), brush: 'pgn_green' }]);
+    if (reviewing) ground.setAutoShapes(moveArrows([suggestion], 'pgn_green'));
     const line = continuation(row);
     document.getElementById('endgame_review_line').textContent = line ? labels.suggestion + ' ' + line : '';
     document.getElementById('endgame_retry').disabled = !row;
@@ -324,7 +325,7 @@ async function showHint() {
         const result = await feedback.hint(before);
         if (!task.isCurrent() || reviewing || ended || chess.fen() !== before.fen) return;
         const suggestion = continuation({ before, beforeAnalysis: result });
-        ground.setAutoShapes(result.uci && /^[a-h][1-8][a-h][1-8]/.test(result.uci) ? [{ orig: result.uci.slice(0, 2), dest: result.uci.slice(2, 4), brush: 'pgn_green' }] : []);
+        ground.setAutoShapes(moveArrows([result.uci], 'pgn_green'));
         set_text(info_div, labels.suggestion + ' ' + suggestion, { transient: true });
     } catch (_) { if (task.isCurrent()) set_text(error_div, labels.unavailable, { transient: true }); }
     finally { task.finish(); }

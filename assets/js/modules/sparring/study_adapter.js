@@ -1,6 +1,7 @@
 import { restoreBoardPosition } from '../board_interaction.js';
 import { createPageScope } from '../page_scope.js';
 import { engineLine } from '../engine_line.js';
+import { moveArrows } from '../board_shapes.js';
 import { downloadPgn } from '../download_pgn.js';
 import { createSparringSession, sparringReviewEvery } from './session.js';
 import { createStudySparring, sparringStartPositions, createSparringChapterRotation } from './chess_adapter.js';
@@ -251,7 +252,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
             ? `${labels.recommendation}: ${continuation(row.ply, row.pv)}` : '';
         find('show-best').onclick = () => {
             seek(row.ply, row);
-            if (row.best?.length >= 4) board.setShapes([{ orig: row.best.slice(0, 2), dest: row.best.slice(2, 4), brush: 'normal' }]);
+            board.setShapes(moveArrows([row.best]));
         };
         find('retry-selected').onclick = async () => { readIndex = null; inspectedRow = null; await session.retry(retryPly); if (!scope.active) return; document.getElementById('chessground').focus(); };
         find('latest').hidden = !browsing;

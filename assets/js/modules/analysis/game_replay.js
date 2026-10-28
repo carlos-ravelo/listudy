@@ -1,5 +1,7 @@
-const Chess = require('chess.js');
+const ChessModule = require('chess.js');
+const Chess = ChessModule.Chess || ChessModule;
 const Chessground = require('chessground').Chessground;
+import { moveArrow } from '../board_shapes.js';
 
 function movePrefix(fen) {
     const fields = fen.split(' ');
@@ -37,7 +39,7 @@ export function createGameReplay(element, pgn) {
     function arrow(fen, san, brush) {
         if (!san) return null;
         const move = new Chess(fen).move(san, { sloppy: true });
-        return move ? { orig: move.from, dest: move.to, brush } : null;
+        return moveArrow(move, brush);
     }
 
     function seek(ply) {
