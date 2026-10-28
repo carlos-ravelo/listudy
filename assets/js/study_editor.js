@@ -10,6 +10,7 @@ import { createPromotionController } from './modules/promotion_controller.js';
 import { setupPositionFen } from './modules/study/position_setup.js';
 import { createSparringEngine } from './modules/sparring/uci_engine.js';
 import { enginePosition } from './modules/engine_position.js';
+import { engineLine } from './modules/engine_line.js';
 import { setupChapterPicker } from './modules/chapter_picker.js';
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
@@ -131,13 +132,7 @@ Alpine.data('chapterEditor', () => {
                 const score = result.score;
                 const white = score?.value * (position.turn() === 'w' ? 1 : -1);
                 const value = score?.type === 'mate' ? `M${white}` : Number.isFinite(white) ? `${white >= 0 ? '+' : ''}${(white / 100).toFixed(1)}` : '';
-                const line = [];
-                for (const uci of (result.pv || []).slice(0, 6)) {
-                    const move = position.move({from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4]});
-                    if (!move) break;
-                    line.push(move.san);
-                }
-                this.analysisText = [value, line.join(' ')].filter(Boolean).join(' · ');
+                this.analysisText = [value, engineLine(position.fen(), result.pv)].filter(Boolean).join(' · ');
             } catch (_) { if (id === analysisId) this.analysisText = config.engineError; }
         },
 

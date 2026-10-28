@@ -1,5 +1,6 @@
 import { restoreBoardPosition } from '../board_interaction.js';
 import { createPageScope } from '../page_scope.js';
+import { engineLine } from '../engine_line.js';
 import { downloadPgn } from '../download_pgn.js';
 import { createSparringSession, sparringReviewEvery } from './session.js';
 import { createStudySparring, sparringStartPositions, createSparringChapterRotation } from './chess_adapter.js';
@@ -53,14 +54,7 @@ export function setupStudySparring({ getChapters, getTitle = () => 'Listudy spar
     const numbers = new Intl.NumberFormat(document.documentElement.lang || undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const format = number => numbers.format(number);
     function continuation(ply, pv) {
-        const game = ports.position.at(ply);
-        const san = [];
-        for (const uci of pv.slice(0, 6)) {
-            const move = game.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] });
-            if (!move) break;
-            san.push(move.san);
-        }
-        return san.join(' ');
+        return engineLine(ports.position.at(ply).fen(), pv);
     }
     function result(state) {
         const game = ports.position.at(state.moves.length);

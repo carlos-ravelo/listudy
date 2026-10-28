@@ -1,7 +1,8 @@
 import { createTrainingLifecycle } from './modules/training_lifecycle.js';
 import { createBoardGame } from './modules/board_game.js';
 import { playMoveSound } from './modules/sounds.js';
-import { moveToUci, playUciMove } from './modules/chess_moves.js';
+import { moveToUci } from './modules/chess_moves.js';
+import { engineLine } from './modules/engine_line.js';
 import { restoreBoardPosition, setBoardInteraction } from './modules/board_interaction.js';
 require('regenerator-runtime/runtime');
 const Chess = require('chess.js');
@@ -119,14 +120,7 @@ function handleMove(from, to) {
 }
 function continuation(row) {
     if (!row?.beforeAnalysis?.pv?.length) return '';
-    const position = new Chess(row.before.fen);
-    const line = [];
-    for (const move of row.beforeAnalysis.pv.slice(0, 5)) {
-        const played = playUciMove(position, move);
-        if (!played) break;
-        line.push(played.san);
-    }
-    return line.join(' ');
+    return engineLine(row.before.fen, row.beforeAnalysis.pv, 5);
 }
 function selectReview(path) {
     const ply = path.length;

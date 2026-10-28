@@ -14,6 +14,7 @@
 | Pending validation and stale response rejection | `assets/js/modules/tactic_attempts.js` | Native tactics, Blind, Pieceless |
 | Promotion interaction and pending move | `assets/js/modules/promotion_controller.js` | Editor, Sparring, native tactics, Pieceless, endgames |
 | Page and exercise lifetimes | `assets/js/modules/training_lifecycle.js` | Native tactics, Blind, Pieceless, Chessclicker, endgames and standalone Stockfish |
+| Engine continuation presentation | `assets/js/modules/engine_line.js` | Chapter editor, Sparring review/downloads and endgame review/hints |
 | UCI worker protocol, search cancellation and full-strength/limited-strength options | `assets/js/modules/sparring/uci_engine.js` | Sparring, alternative validation, endgame analysis and standalone Stockfish |
 | Page resource cleanup | `assets/js/modules/page_scope.js` | Consumers that explicitly register resources |
 | Visualization progression | `assets/js/modules/native_visualization.js`, `study/visualization.js` | Native visualization exercises and PGN visualization |
@@ -99,6 +100,17 @@ and return resumes the existing history with a fresh worker. Progress timers are
 scoped to the run. Takeback removes two plies after a completed turn, or the single
 player ply while waiting for a reply. Errors allow recovery through reset/takeback.
 
+### Engine continuation presentation
+
+`engine_line.js` converts a legal UCI principal variation to SAN on an isolated
+position. The editor, Sparring review/downloads and endgame review/hints share this
+conversion. It preserves promotion roles, castling, en passant and check/mate
+notation, and stops at the first malformed or illegal move. Missing lines render
+empty. Callers retain their current limits (six plies in editor/Sparring, five in
+endgames), score labels and when analysis is visible. Rendering never changes the
+caller's board or history. Alternative-solution validation still executes moves
+on its own working board because it must construct a playable replacement line.
+
 ### Solution representation and exercise rules
 
 Native tactics consumes SAN, Pieceless consumes UCI and Blind reconstructs a
@@ -139,7 +151,7 @@ Do not encode these policies as flags in a universal controller.
 | Navigation and rewind | Study PGN cursor, endgame feedback reconstruction, Sparring browsing/retry and Stockfish takeback | Shared position reconstruction and rendering; keep edit, browse and practice-retry policies distinct |
 | Hints and solution reveal | Board arrows/piece markers in Study, game practice and Blind; engine hints in endgames/Sparring | Shared hint presentation and assistance events; retain authored versus engine hint selection |
 | Grading and completion records | Puzzle progress, visualization tracker, Study reviews, game practice, endgame achievements and Chessclicker rewards | Shared attempt outcome events and once-only recording; retain existing storage identities and scheduling semantics |
-| Analysis presentation | Endgame continuation/evaluation rendering, editor analysis text, Sparring evaluation details | Shared score/PV formatting with explicit perspective; adapters choose when analysis is allowed |
+| Analysis presentation | Editor, Sparring and endgame continuations now share `engine_line.js`; score labels/evaluation details remain separate | Shared legal PV conversion; retain localized number formatting and score perspective/display policies |
 | Preferences and feedback | Study preferences, native visualization settings, autoplay state, generic info boxes and page-specific feedback | Reuse existing settings/feedback primitives; preserve per-mode defaults and localized text |
 
 This is a source-level inventory of training entry points and their directly used
