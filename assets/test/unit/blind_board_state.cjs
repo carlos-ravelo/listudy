@@ -9,15 +9,20 @@ const source = read('blind_tactics.js');
 const handlers = source.slice(source.indexOf('function get_current_chess()'), source.indexOf('\n/*', source.indexOf('async function handle_click(')));
 
 (async () => {
-    for (const color of ['white', 'black']) {
-        const initial = new Chess();
-        const authored = new Chess();
-        for (const san of ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', ...(color === 'black' ? ['a6'] : [])]) authored.move(san);
+    for (const { color, fen, moves, start } of [
+        { color: 'white', moves: ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5'], start: 2 },
+        { color: 'black', moves: ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6'], start: 1 },
+        { color: 'white', fen: '4k3/P7/8/8/8/8/8/4K3 w - - 0 1', moves: ['a8=N'], start: 0 },
+        { color: 'black', fen: '4k3/8/8/8/8/8/p7/4K3 b - - 0 1', moves: ['a1=N'], start: 0 }
+    ]) {
+        const initial = fen ? new Chess(fen) : new Chess();
+        const authored = new Chess(initial.fen());
+        for (const san of moves) authored.move(san);
         const visibleFen = initial.fen();
         const state = { fen: visibleFen, orientation: color, movable: {} };
         const progress = [];
         const context = vm.createContext({
-            Chess, Map, chess: authored, current_chess: new Chess(), current_move: color === 'white' ? 2 : 1,
+            Chess, Map, chess: authored, current_chess: new Chess(initial.fen()), current_move: start,
             initial_fen: visibleFen, clicked_piece: null, highlighted_squares: [], finished: false,
             attempts: { pending: false, reset() {} },
             visualization: { destinations: { checked: false }, help() {}, tracker: {
@@ -40,8 +45,13 @@ const handlers = source.slice(source.indexOf('function get_current_chess()'), so
         vm.runInContext(handlers, context);
         context.current_chess = context.get_current_chess();
         context.legal_moves = context.ground_legal_moves(context.current_chess);
+        require('./line_exercise_helper.cjs')(context, {
+            moves: authored.history({verbose: true}).slice(context.current_move).map(context.moveToUci), format: 'uci',
+            validator: { validate() { assert.fail('Authored moves, including underpromotion, need no engine'); } },
+            getPosition: () => context.current_chess, applyMove: uci => context.playUciMove(context.current_chess, uci)
+        });
         context.blockBoardMoves(context.ground);
-        while (!context.finished) {
+        for (let step = 0; !context.finished && step <= moves.length; step++) {
             const expected = authored.history({ verbose: true })[context.current_move];
             await context.handle_click(expected.from);
             await context.handle_click(expected.to);
@@ -53,11 +63,12 @@ const handlers = source.slice(source.indexOf('function get_current_chess()'), so
                 assert.notEqual(context.current_chess.fen(), visibleFen);
             }
         }
+        assert.equal(context.finished, true, 'Complete the authored exercise');
         assert.equal(state.fen, authored.fen(), 'Reveal the final logical position on completion');
         assert.equal(state.turnColor, authored.turn() === 'w' ? 'white' : 'black');
         assert.equal(state.check, authored.in_check());
         assert(progress.slice(0, -1).every(value => value === true));
         assert.deepEqual(progress.at(-1), { solved: true, assisted: false });
     }
-    console.log('Blind board state: both orientations, hidden logical progress, click input and final reveal passed');
+    console.log('Blind board state: both orientations, hidden logical progress, authored underpromotion, click input and final reveal passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

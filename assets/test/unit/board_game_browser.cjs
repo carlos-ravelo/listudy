@@ -9,6 +9,7 @@ const root = path.resolve(__dirname, '../../..');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'listudy-board-game-'));
 const entry = path.join(temp, 'entry.cjs');
 fs.writeFileSync(entry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/board_game.js'))}),
+...require(${JSON.stringify(path.join(root, 'assets/js/modules/line_exercise.js'))}),
 Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground,
 Chess:require(${JSON.stringify(path.join(root, 'assets/node_modules/chess.js'))})};`);
 const html = `<!doctype html><link rel="stylesheet" href="/board.css"><style>#board{width:320px;height:320px}</style>
@@ -78,8 +79,42 @@ const html = `<!doctype html><link rel="stylesheet" href="/board.css"><style>#bo
         await page.waitForFunction(() => position.history().join(' ') === 'e4');
         assert.equal(await page.evaluate(() => ground.state.pieces.get('e4')?.role), 'pawn');
         assert.equal(await page.evaluate(() => ground.state.pieces.has('e2')), false);
+        await page.evaluate(() => {
+            position = new Fixture.Chess();
+            window.lineDecisions = [];
+            window.exercise = Fixture.createLineExercise({ getPosition: () => position,
+                applyMove: uci => game.play(uci, { playable: false }),
+                validator: { validate: async () => ({status: 'accepted', line: ['d2d4', 'd7d5', 'c2c4']}) }
+            });
+            exercise.reset({initialFen: position.fen(), moves: ['e4', 'e5', 'Nf3'], format: 'san'});
+            game.restore();
+            ground.set({movable: {events: {after: async (from, to) => {
+                const result = await exercise.play({from, to}, {onPlayerMove: move => lineDecisions.push(move.san)});
+                if (result) game.restore({playable: !result.complete});
+            }}}});
+            ground.selectSquare('d2'); ground.selectSquare('d4');
+        });
+        await page.waitForFunction(() => position.history().join(' ') === 'd4 d5');
+        assert.equal(await page.evaluate(() => exercise.remaining.join(' ')), 'c2c4');
+        await page.evaluate(() => { ground.selectSquare('c2'); ground.selectSquare('c4'); });
+        await page.waitForFunction(() => exercise.complete);
+        assert.deepEqual(await page.evaluate(() => lineDecisions), ['d4', 'c4']);
+        assert.equal(await page.evaluate(() => ground.state.pieces.get('c4')?.role), 'pawn');
+        await page.evaluate(() => {
+            position = new Fixture.Chess();
+            exercise.reset({initialFen: position.fen(), moves: ['e4', 'e5', 'Nf3'], format: 'san'});
+            game.restore();
+            window.waitingReply = exercise.play('e4', {beforeReply: () => new Promise(resolve => { window.releaseReply = resolve; })});
+            position = new Fixture.Chess();
+            exercise.reset({initialFen: position.fen(), moves: ['d4'], format: 'san'});
+            game.restore();
+            releaseReply();
+        });
+        assert.equal(await page.evaluate(() => waitingReply), null);
+        assert.equal(await page.evaluate(() => position.history().length), 0);
+        assert.equal(await page.evaluate(() => ground.state.pieces.has('e5')), false);
         assert.deepEqual(errors, []);
-        console.log('Shared board game browser: optimistic input, castling, captures, en passant, promotions and undo passed');
+        console.log('Shared board/session browser: optimistic input, special moves, undo, alternative continuations and restart passed');
     } finally {
         if (browser) await browser.close();
         if (server?.listening) await new Promise(resolve => server.close(resolve));

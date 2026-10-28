@@ -1,4 +1,5 @@
-import { inspectMove, moveToUci, playUciMove } from './modules/chess_moves.js';
+import { createLineExercise } from './modules/line_exercise.js';
+import { moveToUci, playUciMove } from './modules/chess_moves.js';
 import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
@@ -10,8 +11,8 @@ import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } f
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { sleep } from './modules/sleep.js';
 import { createTacticAttempts } from './modules/tactic_attempts.js';
-import { enginePosition } from './modules/engine_position.js';
-const attempts = createTacticAttempts();
+const exercise = createLineExercise({ getPosition: () => current_chess,
+    applyMove: uci => playUciMove(current_chess, uci), validator: createTacticAttempts() });
 import { setupNativeVisualization } from './modules/native_visualization.js';
 
 let finished = false;
@@ -55,14 +56,6 @@ function highlight_moves(square) {
     ground.redrawAll(); 
 }
 
-function target() {
-    return chess.history({verbose: true})[current_move].to;
-}
-
-function piece_pos() {
-    return chess.history({verbose: true})[current_move].from;
-}
-
 function set_div_text(id, text) {
     clear_all_text();
     set_text(id, text);
@@ -70,7 +63,7 @@ function set_div_text(id, text) {
 
 function reveal_solution(help = true) {
     if (finished) return;
-    attempts.reset();
+    exercise.stop();
     visualization.tracker.end(!help, help);
     finished = true;
     document.getElementById("next").classList.remove("hidden");
@@ -83,54 +76,49 @@ function reveal_solution(help = true) {
 
 
 async function handle_click(square) {
-    if (finished || attempts.pending) return;
+    if (finished || exercise.pending) return;
     ground.selectSquare(null);
-    if ((square !== target() || clicked_piece !== piece_pos()) && (legal_moves.get(clicked_piece) || []).includes(square)) {
+    if ((legal_moves.get(clicked_piece) || []).includes(square)) {
         const expected = chess.history({verbose: true})[current_move];
-        const candidate = inspectMove(current_chess, {from: clicked_piece, to: square, promotion: 'q'});
-        if (!candidate) return;
-        set_div_text(info_div, i18n.checking);
-        const result = await attempts.validate(enginePosition(window.initial_fen, current_chess), moveToUci(expected), moveToUci(candidate), chess.history().length - current_move);
-        if (!result) return;
+        if (!expected) return;
+        const ticket = exercise.revision;
+        const prefix = current_chess.history({verbose: true}).map(moveToUci);
+        const promotion = expected.from === clicked_piece && expected.to === square ? expected.promotion : 'q';
+        const result = await exercise.play({from: clicked_piece, to: square, promotion}, {
+            onChecking() { set_div_text(info_div, i18n.checking); },
+            onPlayerMove() { visualization.tracker.decision(true); }
+        });
+        if (!result || !exercise.isCurrent(ticket)) return;
         if (result.status !== 'accepted') {
             if (result.status === 'rejected') visualization.tracker.decision(false);
             set_div_text(result.status === 'unknown' ? info_div : error_div, result.status === 'unknown' ? i18n.unconfirmed : i18n.wrong_move);
             window.clicked_piece = null; ground.setShapes([]);
             return;
         }
-        const replacement = new Chess(window.initial_fen);
-        for (const san of current_chess.history()) replacement.move(san);
-        for (const uci of result.line) playUciMove(replacement, uci);
-        window.chess = replacement;
-    }
-    if (square == target() && clicked_piece == piece_pos()) {
-        visualization.tracker.decision(true);
-        // has to be manually reset because highlight_moves is not called in this branch
-        highlighted_squares = []; 
+        if (result.continuation) {
+            const replacement = new Chess(window.initial_fen);
+            for (const uci of [...prefix, ...result.continuation]) playUciMove(replacement, uci);
+            window.chess = replacement;
+        }
+        highlighted_squares = [];
         window.clicked_piece = null;
-        current_move = Math.min(current_move + 2, chess.history().length);
-        current_chess = get_current_chess();
-        if (current_move >= chess.history().length) {
+        current_move += result.reply ? 2 : 1;
+        if (result.complete) {
             if (!visualization.tracker.current.assisted && !visualization.tracker.current.errors) {
                 let total = localStorage.getItem("achievements_blind_tactics_solved");
                 localStorage.setItem("achievements_blind_tactics_solved", Number(total) + 1);
             }
-
-            set_div_text(success_div, i18n.success)
+            set_div_text(success_div, i18n.success);
             reveal_solution(false);
-        } else {
-            let last_move = current_chess.history().pop();
-            set_div_text(info_div, i18n.right_move + last_move)
-        }
+        } else set_div_text(info_div, i18n.right_move + result.reply.san);
         legal_moves = ground_legal_moves(current_chess);
     } else {
         if (legal_moves.has(clicked_piece) && square !== clicked_piece && !legal_moves.has(square)) {
             visualization.tracker.decision(false);
-            set_div_text(error_div, i18n.wrong_move)
+            set_div_text(error_div, i18n.wrong_move);
         }
         highlight_moves(square);
     }
-
     setup_move_text();
 }
 
@@ -230,7 +218,7 @@ function main(force = false) {
         return;
     }
     loadedKey = key;
-    attempts.reset();
+    exercise.reset();
     finished = false;
     clear_all_text();
     document.getElementById('next').classList.add('hidden');
@@ -252,6 +240,8 @@ function main(force = false) {
     // defined from the previous puzzles, causing errors
     window.current_chess = undefined; 
     window.current_chess = get_current_chess();
+    exercise.reset({ initialFen: window.initial_fen,
+        moves: chess.history({verbose: true}).slice(current_move).map(moveToUci) });
     window.legal_moves = ground_legal_moves(current_chess);
 
     setup_move_text(); // display the hidden moves in text form

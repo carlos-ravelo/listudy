@@ -1,18 +1,16 @@
+import { createLineExercise } from './modules/line_exercise.js';
 import { createBoardGame } from './modules/board_game.js';
 import { playMoveSound } from './modules/sounds.js';
-import { moveToUci, playUciMove } from './modules/chess_moves.js';
+import { playUciMove } from './modules/chess_moves.js';
 import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 const Chessground = require('chessground').Chessground;
-const Chess = require('chess.js')
 import { onresize, resize_ground, setup_ground, ground_set_moves,
          setup_move_handler, setup_click_handler } from './modules/ground.js';
 import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
 import { createTacticAttempts } from './modules/tactic_attempts.js';
-import { enginePosition } from './modules/engine_position.js';
-const attempts = createTacticAttempts();
 import { createPromotionController } from './modules/promotion_controller.js';
 import { setupNativeVisualization, createPieceMask } from './modules/native_visualization.js';
 let finished = false, picker;
@@ -21,6 +19,8 @@ let pieceMask;
 const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
     getOptions: () => ({ check: false }),
     onMove(move) { pieceMask.move(move); playMoveSound(move); } });
+const exercise = createLineExercise({ getPosition: () => chess, applyMove: uci => boardGame.play(uci),
+    validator: createTacticAttempts() });
 const sourceSolution = solution;
 
 function show_history(chess) {
@@ -35,51 +35,43 @@ function show_history(chess) {
 
 function finish(reveal = false, solved = false) {
     if (finished) return;
-    attempts.reset();
+    exercise.stop();
     visualization.tracker.end(solved, !solved);
     finished = true;
     document.getElementById('next').classList.remove('hidden');
     if (reveal) {
-        for (const move of solution) playUciMove(chess, move);
+        for (const move of exercise.remaining) playUciMove(chess, move);
         document.querySelector('.pieceless-workspace').classList.add('training-revealed');
     }
     restoreBoardPosition(ground, chess, { playable: false, check: reveal && chess.in_check() });
     show_history(chess);
 }
 async function play_move(orig, dest, promotion) {
-    if (attempts.pending || finished) return;
-    const expected = solution[0];
-    const played = orig + dest + (promotion || '');
-    if (played !== expected) {
-        blockBoardMoves(ground);
-        set_text(info_div, i18n.checking);
-        const result = await attempts.validate(enginePosition(fen, chess), expected, played, solution.length);
-        if (!result) return;
-        clear_all_text();
-        if (result.status === 'accepted') solution = result.line;
-        else {
-            if (result.status === 'rejected') visualization.tracker.decision(false);
-            restoreBoardPosition(ground, chess, { check: false });
-            set_text(result.status === 'unknown' ? info_div : error_div, result.status === 'unknown' ? i18n.unconfirmed : i18n.wrong_move);
-            return;
-        }
+    if (exercise.pending || finished) return;
+    const ticket = exercise.revision;
+    const result = await exercise.play({from: orig, to: dest, promotion}, {
+        onChecking() {
+            blockBoardMoves(ground);
+            set_text(info_div, i18n.checking);
+        },
+        onPlayerMove() { visualization.tracker.decision(true); }
+    });
+    if (!result || !exercise.isCurrent(ticket)) return;
+    clear_all_text();
+    if (result.status !== 'accepted') {
+        if (result.status === 'rejected') visualization.tracker.decision(false);
+        boardGame.restore();
+        if (result.status !== 'illegal') set_text(result.status === 'unknown' ? info_div : error_div, result.status === 'unknown' ? i18n.unconfirmed : i18n.wrong_move);
+        return;
     }
-    const move = boardGame.play({from: orig, to: dest, promotion});
-    if (!move) return;
-    visualization.tracker.decision(true);
-    solution.shift();
-    if (solution.length > 1) {
-        const reply = solution.shift();
-        boardGame.play(reply);
-        set_text(success_div, i18n.right_move);
-    } else {
+    if (result.complete) {
         set_text(success_div, i18n.solved);
         finish(true, true);
-    }
+    } else set_text(success_div, i18n.right_move);
     show_history(chess);
 }
 function handle_move(orig, dest) {
-    if (finished || attempts.pending || picker?.pending) return;
+    if (finished || exercise.pending || picker?.pending) return;
     clear_all_text();
     if (!picker.request({from: orig, to: dest, legal: chess.moves({verbose: true}), color: window.color, orientation: ground.state.orientation})) {
         play_move(orig, dest);
@@ -163,7 +155,7 @@ function setup_to_play(chess) {
 }
 
 function main() {
-    attempts.reset();
+    exercise.reset();
     finished = false;
     picker?.destroy();
     pieceMask?.destroy();
@@ -173,13 +165,8 @@ function main() {
     document.getElementById('pieceless_pieces').replaceChildren();
     document.querySelector('.pieceless-workspace').classList.remove('training-revealed');
     setup_chess(fen);
-    const parser = new Chess(fen);
-    const format = document.querySelector('.pieceless-workspace').dataset.solutionFormat;
-    solution = sourceSolution.trim().split(/\s+/).filter(Boolean).map(token => {
-        const move = format === 'san' ? parser.move(token) : playUciMove(parser, token);
-        if (!move) throw new Error('Invalid puzzle move');
-        return moveToUci(move);
-    });
+    exercise.reset({ initialFen: fen, moves: sourceSolution,
+        format: document.querySelector('.pieceless-workspace').dataset.solutionFormat });
     setup_pieces(chess); setup_to_play(chess);
     window.color = chess.turn() === 'w' ? 'white' : 'black';
     window.ground?.destroy(); setup_ground(fen); ground_set_moves();

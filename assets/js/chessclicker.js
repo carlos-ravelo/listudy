@@ -1,3 +1,4 @@
+import { createLineExercise } from './modules/line_exercise.js';
 import { createBoardGame } from './modules/board_game.js';
 import { playMoveSound } from './modules/sounds.js';
 const Chessground = require('chessground').Chessground;
@@ -76,30 +77,25 @@ function next_puzzle() {
 
 const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,
     getOptions: () => ({ color: 'both' }), onMove: playMoveSound });
+const exercise = createLineExercise({ getPosition: () => chess, applyMove: uci => boardGame.play(uci) });
 
-function handle_move(orig, dest, extraInfo) {
-    let played = uci_to_san(chess, orig, dest);
-    if (!played) { boardGame.restore(); return; }
-    let target = to_play.shift();
-
-    if (played == target) {
-        boardGame.play(played);
-        if (to_play.length >= 2) {
-            // theres another move the player has to get correct
-            let ai_move = to_play.shift();
-            boardGame.play(ai_move);
-        } else {
-            // player got the puzzle correct
+async function handle_move(orig, dest, extraInfo) {
+    const ticket = exercise.revision;
+    const result = await exercise.play({from: orig, to: dest, promotion: 'q'});
+    if (!result || !exercise.isCurrent(ticket)) return;
+    if (result.status === 'accepted') {
+        if (result.complete) {
+            exercise.stop();
             tactic_solved();
             flash_info("Tactic Solved", "success");
             next_puzzle();
         }
     } else {
-        // player failed the puzzle
-        to_play.unshift(target);
         boardGame.restore();
-        flash_info("Wrong move", "error");
-        next_puzzle();
+        if (result.status !== 'illegal') {
+            flash_info("Wrong move", "error");
+            next_puzzle();
+        }
     }
 }
 
@@ -127,13 +123,13 @@ function main() {
     display_rating();
     teacher_benefits();
     load_data();
-    window.to_play = moves.split(" ");
     if (fen != old_fen) {
         setup_ground(fen);    
         old_fen = fen;
     }
     setup_last_move(); 
     setup_chess(fen);
+    exercise.reset({ initialFen: fen, moves, format: 'san' });
     ground_set_moves();
     resize_ground();
     setup_move_handler(handle_move);

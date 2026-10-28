@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | Coordinate notation, move inspection and UCI execution | `assets/js/modules/chess_moves.js` | Native tactics, Blind, Pieceless, endgames, Sparring, standalone Stockfish and legacy SAN/UCI wrappers |
 | Legacy board/color helpers | `assets/js/modules/chess_utils.js` | Legacy board modes |
+| Line exercise progression | `assets/js/modules/line_exercise.js` | Native tactics, Pieceless, Blind and Chessclicker; adapters retain presentation and rewards |
 | Applying moves, undo and board synchronization | `assets/js/modules/board_game.js` | Study, native tactics, Pieceless, endgames, standalone Stockfish, Chessclicker and game-mistake practice |
 | Board interaction, authoritative position restoration and legal destinations | `assets/js/modules/board_interaction.js` | Study, editor, Sparring, native tactics, Pieceless, endgames and Blind; `chess_utils.js` delegates destination mapping for legacy board modes |
 | Board creation, movement, sizing, sound | `assets/js/modules/ground.js` | Study and native exercises; newer controllers also render Chessground directly |
@@ -90,12 +91,20 @@ retains chess.js's accepted notation rules rather than implementing a second SAN
 parser. The standalone Stockfish listener preserves engine promotion choices and
 ignores absent or malformed best moves.
 
-The next larger boundary is a line-exercise session for native tactics, Blind and
-Pieceless: normalize the authored continuation to UCI, inspect an attempt, validate
-alternatives, advance the player/reply pair, and report completion. Visibility,
-feedback timing and progress recording remain adapters. Preserve authored replies
-and the existing alternative-validation confidence policy with shared contract
-tests before replacing these flows.
+`line_exercise.js` now normalizes authored SAN/UCI to one legal continuation,
+inspects player attempts, delegates alternative analysis, commits the player/reply
+pair and detects completion for native tactics, Pieceless, Blind and Chessclicker.
+The session owns pending state, reset/stop invalidation and delayed-reply guards;
+accepted alternatives replace the remaining line after validation. Malformed or
+unavailable analysis remains inconclusive. A stored final opponent ply is retained
+for reveal when no further player decision follows, preserving exercise semantics.
+
+Adapters retain feedback, retry timing, visualization and scoring. Native tactics
+keeps its short opponent delay and unconfirmed-move feedback. Pieceless moves its
+piece mask through the board callback. Blind commits the logical position without
+rendering it, reconstructs its authored history only for an accepted alternative,
+and preserves authored underpromotion for destination-only answers. Chessclicker
+keeps exact-line acceptance and its reward/next-puzzle behavior without an engine.
 
 PGN practice follows a variation tree, Sparring plays beyond the authored line,
 and endgames evaluates an objective. They can use the same chess position/input
@@ -106,7 +115,7 @@ Do not encode these policies as flags in a universal controller.
 
 | Responsibility | Observed implementations | Intended boundary |
 | --- | --- | --- |
-| Exercise turn progression | Native tactics, Blind, Pieceless and Chessclicker each select authored moves/replies and detect completion | A shared line-exercise session; mode adapters retain visibility, timing and rewards |
+| Exercise turn progression | Native tactics, Blind, Pieceless and Chessclicker now use `line_exercise.js` | Shared continuation/validation/completion; adapters retain visibility, timing and rewards |
 | Attempt state and cancellation | Native validation wrapper, Study replay revisions, endgame/editor counters, raw Stockfish listener | Reusable attempt/task lifetimes with separate scopes for analysis, network reads and page resources |
 | Startup/reset/teardown | Entry-specific `main` functions, LiveView update listeners, pagehide/pageshow handling and observers | Shared resource lifecycle using existing `page_scope.js`; adapters load their own exercise data |
 | Navigation and rewind | Study PGN cursor, endgame feedback reconstruction, Sparring browsing/retry and Stockfish takeback | Shared position reconstruction and rendering; keep edit, browse and practice-retry policies distinct |
