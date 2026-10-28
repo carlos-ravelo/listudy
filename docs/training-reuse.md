@@ -17,6 +17,7 @@
 | Move hint shapes | `assets/js/modules/board_shapes.js` | Endgame review/hints, Sparring best moves and analysis game comparisons |
 | Engine continuation presentation | `assets/js/modules/engine_line.js` | Chapter editor, Sparring review/downloads and endgame review/hints |
 | UCI worker protocol, search cancellation and full-strength/limited-strength options | `assets/js/modules/sparring/uci_engine.js` | Sparring, alternative validation, endgame analysis and standalone Stockfish |
+| Attempt errors, assistance and terminal outcome | `assets/js/modules/attempt_state.js` | Native catalogue progress and Blind/Pieceless visualization records |
 | Latest async task ownership | `assets/js/modules/latest_task.js` | Editor analysis/chapter loads and endgame opponent/review/hint requests |
 | Page resource cleanup | `assets/js/modules/page_scope.js` | Consumers that explicitly register resources |
 | Visualization progression | `assets/js/modules/native_visualization.js`, `study/visualization.js` | Native visualization exercises and PGN visualization |
@@ -114,6 +115,22 @@ and return resumes the existing history with a fresh worker. Progress timers are
 scoped to the run. Takeback removes two plies after a completed turn, or the single
 player ply while waiting for a reply. Errors allow recovery through reset/takeback.
 
+### Attempt recording
+
+`attempt_state.js` shares decision/error counters, assistance flags and an explicit
+active/finished state between `puzzle_progress.js` and native visualization
+records. Finishing marks the attempt inactive before persistence or notifications,
+so duplicate/reentrant completion, help and decision callbacks cannot rewrite an
+outcome. The state is independent of timestamp truthiness, including a clock
+returning zero. Each retry creates a fresh attempt owner.
+
+The adapters retain their stored schemas, storage keys, completion metadata and
+policies: native catalogue mistakes also mark assistance; visualization tracks
+errors separately, remembers rehearsed exercises and records reveal/abandonment.
+Puzzle solve totals and visualization difficulty progression remain unchanged.
+Other modes already guard completion through their exercise/session state;
+sharing scoring or their storage identities is not implied by this extraction.
+
 ### Hint shapes
 
 `board_shapes.js` converts UCI moves or chess move objects to board arrows using
@@ -180,7 +197,7 @@ Do not encode these policies as flags in a universal controller.
 | Startup/reset/teardown | Native modes and endgames now use `training_lifecycle.js`; Study uses its existing page owner | Shared page/run ownership; adapters retain loading and exercise identity checks |
 | Navigation and rewind | Study PGN cursor, endgame feedback reconstruction, Sparring browsing/retry and Stockfish takeback | Shared position reconstruction and rendering; keep edit, browse and practice-retry policies distinct |
 | Hints and solution reveal | Endgames, Sparring and game comparisons now share `board_shapes.js`; Study weighted/PGN arrows and Blind markers retain their policies | Shared validated move arrows; assistance events and authored/engine hint selection remain separate |
-| Grading and completion records | Puzzle progress, visualization tracker, Study reviews, game practice, endgame achievements and Chessclicker rewards | Shared attempt outcome events and once-only recording; retain existing storage identities and scheduling semantics |
+| Grading and completion records | Catalogue progress and native visualization share `attempt_state.js`; Study reviews, game practice, endgame achievements and Chessclicker rewards keep their scoring policies | Shared attempt state and once-only terminal outcomes; retain existing storage identities and scheduling semantics |
 | Analysis presentation | Editor, Sparring and endgame continuations now share `engine_line.js`; score labels/evaluation details remain separate | Shared legal PV conversion; retain localized number formatting and score perspective/display policies |
 | Preferences and feedback | Study preferences, native visualization settings, autoplay state, generic info boxes and page-specific feedback | Reuse existing settings/feedback primitives; preserve per-mode defaults and localized text |
 

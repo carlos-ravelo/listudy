@@ -1,3 +1,5 @@
+import { createAttemptState } from './attempt_state.js';
+
 // Native catalogue progress is device-local and independent of immutable source data.
 export function createPuzzleProgress(identity, {storage, now = Date.now} = {}) {
     if (!identity) return null;
@@ -5,14 +7,15 @@ export function createPuzzleProgress(identity, {storage, now = Date.now} = {}) {
     const read = () => {
         try { return JSON.parse(storage.getItem(key)) || {}; } catch (_) { return {}; }
     };
-    let errors = 0, assisted = false, ended = false;
+    const record = { attempts: 0, errors: 0, assisted: false };
+    const attempt = createAttemptState(record);
     const started = now();
     return {
-        mistake() { errors++; assisted = true; },
-        assist() { assisted = true; },
+        mistake() { attempt.decision(false); attempt.assist(); },
+        assist() { attempt.assist(); },
         finish() {
-            if (ended) return;
-            ended = true;
+            if (!attempt.finish()) return;
+            const { errors, assisted } = record;
             const previous = read();
             const value = {
                 version: 1, solves: (Number(previous.solves) || 0) + 1,

@@ -4,10 +4,12 @@ const path = require('node:path');
 const uri = source => 'data:text/javascript;base64,' + Buffer.from(source).toString('base64');
 (async () => {
     const root = path.resolve(__dirname, '../../js/modules');
+    const attempt = uri(fs.readFileSync(path.join(root, 'attempt_state.js'), 'utf8'));
     const scope = uri(fs.readFileSync(path.join(root, 'page_scope.js'), 'utf8'));
     const progression = uri(fs.readFileSync(path.join(root, 'study/visualization.js'), 'utf8').replace("'../page_scope.js'", JSON.stringify(scope)));
     const source = fs.readFileSync(path.join(root, 'native_visualization.js'), 'utf8').replace("'./study/visualization.js'", JSON.stringify(progression))
-        .replace("'./page_scope.js'", JSON.stringify(scope));
+        .replace("'./page_scope.js'", JSON.stringify(scope))
+        .replace("'./attempt_state.js'", JSON.stringify(attempt));
     const {createNativeVisualization, createPieceMask} = await import(uri(source));
     const saved = new Map();
     const storage = {getItem: key => saved.get(key) || null, setItem: (key, value) => saved.set(key, value)};
@@ -56,6 +58,29 @@ const uri = source => 'data:text/javascript;base64,' + Buffer.from(source).toStr
     const unavailable = createNativeVisualization({mode: 'blind', storage: {getItem() {throw Error();}, setItem() {throw Error();}}});
     unavailable.begin('offline', 1, 1); unavailable.decision(true); unavailable.end(true);
     assert(unavailable.current.completed);
+    let changes = 0, zeroClock;
+    zeroClock = createNativeVisualization({ mode: 'blind', storage, now: () => 0, changed(_data, run) {
+        changes++;
+        if (run?.completed) { zeroClock.end(false, true); zeroClock.help(); zeroClock.decision(false); }
+    } });
+    zeroClock.begin('zero-clock', 1, 1);
+    zeroClock.decision(true);
+    zeroClock.end(true);
+    assert.equal(changes, 3, 'Completion is final before reentrant persistence callbacks, even at timestamp zero');
+    assert.equal(zeroClock.current.endedAt, 0);
+    assert.equal(zeroClock.current.completed, true);
+    assert.equal(zeroClock.current.assisted, false);
+    assert.equal(zeroClock.current.errors, 0);
+    zeroClock.abandon();
+    assert.equal(zeroClock.current.abandoned, undefined, 'Abandon cannot overwrite completion');
+    zeroClock.begin('abandoned', 1, 1);
+    zeroClock.abandon();
+    zeroClock.end(true);
+    assert.equal(zeroClock.current.completed, false, 'Completion cannot overwrite abandonment');
+    const abandoned = zeroClock.current;
+    zeroClock.begin('replacement', 1, 1);
+    assert.equal(abandoned.abandoned, true);
+    assert.equal(zeroClock.current.abandoned, undefined);
     global.MutationObserver = class { observe() {} disconnect() {} };
     const node = square => ({cgKey: square, hidden: false, classList: {toggle(_name, value) {this.owner.hidden = value;}}});
     const rook = node('a1'); rook.classList.owner = rook;

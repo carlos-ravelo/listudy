@@ -1,4 +1,5 @@
 import { createPageScope } from './page_scope.js';
+import { createAttemptState } from './attempt_state.js';
 import { visualizationLevel } from './study/visualization.js';
 
 export function createNativeVisualization({ mode, storage, now = Date.now, changed = () => {} }) {
@@ -7,7 +8,7 @@ export function createNativeVisualization({ mode, storage, now = Date.now, chang
     try { data = JSON.parse(storage.getItem(key)); } catch (_) {}
     if (!data || data.version !== 1 || !data.runs || typeof data.runs !== 'object') data = { version: 1, runs: {}, settings: {} };
     data.settings ||= {};
-    let current = null;
+    let current = null, attempt = null;
     const steps = mode === 'blind' ? [1, 2, 4, 8, 16, 20] : [1, 2, 4, 8, 16, 32];
     function persist() {
         try { storage.setItem(key, JSON.stringify(data)); } catch (_) {}
@@ -20,35 +21,30 @@ export function createNativeVisualization({ mode, storage, now = Date.now, chang
         setting(name, fallback) { return data.settings[name] ?? fallback; },
         configure(name, value) { data.settings[name] = value; persist(); },
         begin(exercise, target, available) {
-            if (current && !current.endedAt) { current.abandoned = true; current.endedAt = now(); }
+            if (attempt?.active) attempt.finish({ abandoned: true, endedAt: now() });
             const rehearsed = Object.values(data.runs).some(run => run.exercise === exercise &&
                 (run.attempts || run.revealed || run.assisted) && now() - run.at < 30 * 60 * 1000);
             const id = `${now()}-${Math.random().toString(36).slice(2)}`;
             current = { id, exercise, at: now(), target, available, moves: 0, attempts: 0, errors: 0,
                 hiddenMoves: mode === 'blind' ? available : 0, hiddenPieces: mode === 'pieceless' ? available : 0,
                 assisted: rehearsed, rehearsed, completed: false, revealed: false };
+            attempt = createAttemptState(current);
             data.runs[id] = current;
             persist();
         },
         decision(correct) {
-            if (!current || current.endedAt) return;
-            current.attempts += 1;
-            if (!correct) current.errors += 1;
-            persist();
+            if (attempt?.decision(correct)) persist();
         },
-        help() { if (current && !current.endedAt) { current.assisted = true; persist(); } },
+        help() { if (attempt?.assist()) persist(); },
         end(completed, revealed = false) {
-            if (!current || current.endedAt) return;
-            current.completed = completed;
-            current.revealed = revealed;
-            if (revealed) current.assisted = true;
+            if (!attempt?.active) return;
             // The challenge is the amount held in memory, not the solution length.
-            current.moves = completed ? current.available : 0;
-            current.endedAt = now();
+            attempt.finish({ completed, revealed, assisted: current.assisted || revealed,
+                moves: completed ? current.available : 0, endedAt: now() });
             persist();
         },
         abandon() {
-            if (current && !current.endedAt) { current.abandoned = true; current.endedAt = now(); persist(); }
+            if (attempt?.active) { attempt.finish({ abandoned: true, endedAt: now() }); persist(); }
         }
     };
 }
