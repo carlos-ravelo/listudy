@@ -90,6 +90,7 @@ const smartContext = vm.createContext({ createPageScope, ...state,
     ground: { set() {} }, i18n: { smart_learning: 'new', smart_complete: 'done', spaced_review_next: 'next' }
 });
 smartContext.window = smartContext;
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), smartContext);
 vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/study/run_lifecycle.js'), 'utf8').replace(/^export /gm, ''), smartContext);
 smartContext.studyRun = smartContext.createStudyRun({ getChapter: () => smartContext.chapter });
 smartContext.studyRun.invalidate();

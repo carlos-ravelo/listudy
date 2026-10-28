@@ -1,3 +1,4 @@
+import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 const Chessground = require('chessground').Chessground;
@@ -74,7 +75,7 @@ function reveal_solution(help = true) {
     document.getElementById("next").classList.remove("hidden");
     current_move = chess.history().length;
     current_chess = get_current_chess();
-    ground.set({fen: chess.fen(), turnColor: turn_color(current_chess), check: current_chess.in_check(), movable: {color: undefined, dests: new Map()}});
+    restoreBoardPosition(ground, current_chess, { playable: false });
     ground.setShapes([]);
     setup_move_text();
 }
@@ -242,7 +243,8 @@ function main(force = false) {
     generate_base_fen();
     window.ground?.destroy();
     setup_ground(base_fen);
-    ground.set({animation: {enabled: false}, movable: {color: undefined, dests: new Map()}});
+    ground.set({animation: {enabled: false}});
+    blockBoardMoves(ground);
     window.current_move = Number(ply);
     // get_current_chess() assumes that current_chess is undefined on first load
     // since the page can get reloaded by live_view the current_chess could still be

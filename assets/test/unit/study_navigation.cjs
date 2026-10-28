@@ -11,6 +11,7 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/run
 
 function createContext(values) {
     const context = vm.createContext(values);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), context);
     const keys = { arrows: 'show_arrows', arrowType: 'arrow_type', comments: 'show_comments',
         review: 'board_review', keyMoves: 'key_moves_mode', moveDelay: 'move_delay_time' };
     context.selectStudyComments = commentContext.selectStudyComments;
@@ -157,7 +158,10 @@ function assertSynchronized({ context, board, links }) {
     assert.equal(board.fen, chess.fen());
     assert.equal(board.turnColor, context.turn_color(chess));
     assert.equal(board.check, chess.in_check());
-    assert.deepEqual(board.legalMoves, chess.moves());
+    const actual = [...board.movable.dests].flatMap(([from, targets]) => targets.map(to => from + to));
+    const expected = chess.moves({verbose: true}).map(move => move.from + move.to);
+    assert.deepEqual(new Set(actual), new Set(expected));
+    assert.equal(board.movable.color, 'both');
     const last = chess.history({ verbose: true }).slice(-1)[0];
     assert.equal(JSON.stringify(board.lastMove), JSON.stringify(last ? [last.from, last.to] : undefined));
     assert.equal(links.play_stockfish.href, `/play-stockfish#${chess.fen()}`);
@@ -194,7 +198,8 @@ function assertSynchronized({ context, board, links }) {
     trainer.chapterPgns[1] = '[Event "Tactics"]\n\n1. e4 e5 (1... c5 {Defense}) 2. Nf3 (2. Nc3) *';
     trainer.change_analysis_board();
     assert.equal(decodeURIComponent(new URL(tactics.links.analysis_board.href).pathname.slice('/analysis/pgn/'.length)),
-        trainer.chapterPgns[1], 'Export the source chapter with every defense and alternative');
+        '[Event "Tactics"]\n\n1. e4 e5 (1... c5  ) 2. Nf3 (2. Nc3) *', 'Include every defense and alternative in the comment-free analysis URL');
+    assert.ok(trainer.chapterPgns[1].includes('{Defense}'), 'Keep comments in the source chapter');
     trainer.tacticsCollection = true;
     trainer.trees[0].first_variation = null;
     trainer.trees[0].root.push({ move: 'd4', children: [], move_index: 0 });

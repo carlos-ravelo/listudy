@@ -1,3 +1,4 @@
+import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
 import { mountStudyPage } from './modules/study/page_lifecycle.js';
 import { createStudyRun } from './modules/study/run_lifecycle.js';
 import { gradeStudyMove } from './modules/study/move_grading.js';
@@ -159,7 +160,7 @@ function selectNextSmartPosition() {
         updateContextReplayUi();
         studyRun.invalidate();
         finish_chapter_practice(false);
-        ground.set({ movable: { dests: new Map() } });
+        blockBoardMoves(ground);
         publishStudyRunStatus('smart', i18n.smart_complete, true);
         return;
     }
@@ -171,7 +172,7 @@ function selectNextSmartPosition() {
     if (!target) {
         studyRun.invalidate();
         finish_chapter_practice(false);
-        ground.set({ movable: { dests: new Map() } });
+        blockBoardMoves(ground);
         publishStudyRunStatus('smart', i18n.smart_complete + (nextDue ? ' · ' + i18n.spaced_review_next + ': ' + new Date(nextDue).toLocaleString() : ''), true);
         studySessions.boundary('no-work');
         return;
@@ -244,7 +245,7 @@ function showFailedPosition() {
         return;
     }
     if (weakChapterRunActive) stopWeakChapterRun();
-    ground.set({ movable: { dests: new Map() } });
+    blockBoardMoves(ground);
     set_text(success_div, i18n.failed_positions_complete);
     updateFailedPositionsUi();
 }
@@ -362,8 +363,7 @@ function updateTacticsTrapUi() {
 function renderTacticsTrap(board, move) {
     ground.set({ animation: { enabled: true } });
     ground_move(move, board);
-    ground.set({ fen: board.fen(), turnColor: turn_color(board), check: board.in_check(),
-        lastMove: [move.from, move.to], movable: { dests: new Map() } });
+    restoreBoardPosition(ground, board, { playable: false, lastMove: [move.from, move.to] });
 }
 
 function retryTacticsTrap() {
@@ -431,7 +431,7 @@ async function handle_practice_move(orig, dest) {
         trap = { sessionId, failed: false, board: new Chess(chess.fen()) };
         tacticsTrap = trap;
         updateTacticsTrapUi();
-        ground.set({ movable: { dests: new Map() } });
+        blockBoardMoves(ground);
         ground.setShapes([]);
         overlay_manager.clear_overlays();
         publishStudyComments();
@@ -507,7 +507,7 @@ async function handle_practice_move(orig, dest) {
             record_chapter_attempt(wasCorrect, wasCorrect && !assisted ? moveId : null, positionId, assisted);
             if (wasCorrect) {
                 play_move(san);
-                ground.set({ movable: { dests: new Map() } });
+                blockBoardMoves(ground);
                 smartTarget = null;
                 await pageScope.sleep(500);
                 if (studyRun.isCurrent(sessionId)) selectNextSmartPosition();
@@ -524,7 +524,7 @@ async function handle_practice_move(orig, dest) {
             StorageAdapter.setItem(chapter_stats_key(), JSON.stringify(chapterStats));
             if (wasCorrect) {
                 play_move(san);
-                ground.set({ movable: { dests: new Map() } });
+                blockBoardMoves(ground);
                 failedPositionRun.index += 1;
                 failedPositionRun.transitioning = true;
                 await pageScope.sleep(500);
@@ -564,7 +564,7 @@ async function handle_practice_move(orig, dest) {
             }
             // console.log('CURR_DEPTH', end_of_line, curr_node.move, curr_node.move_index, curr_depth);
         }
-        if (visualization?.active) ground.set({ movable: { dests: new Map() } });
+        if (visualization?.active) blockBoardMoves(ground);
         await pageScope.sleep(get_move_delay()); // instant play by the ai feels weird
         if (!studyRun.isCurrent(sessionId)) return;
         if (end_of_line) {
@@ -898,8 +898,7 @@ function change_analysis_board() {
 function setup_move() {
     const trap = currentTacticsTrap();
     if (trap) {
-        ground.set({ fen: trap.board.fen(), turnColor: turn_color(trap.board),
-            check: trap.board.in_check(), movable: { dests: new Map() } });
+        restoreBoardPosition(ground, trap.board, { playable: false });
         ground.setShapes([]);
         overlay_manager.clear_overlays();
         studyMoveNavigation.update();
@@ -909,10 +908,7 @@ function setup_move() {
     visualization?.block(studyRun.replaying || !!failedPositionRun || spacedReviewRunActive || weakChapterRunActive || !!smartSession);
     updateContextReplayUi();
     if (studyRun.replaying) {
-        const last = chess.history({ verbose: true }).slice(-1)[0];
-        ground.set({ fen: chess.fen(), turnColor: turn_color(chess),
-            lastMove: last ? [last.from, last.to] : undefined,
-            check: chess.in_check(), movable: { dests: new Map() } });
+        restoreBoardPosition(ground, chess, { playable: false });
         ground.setShapes([]);
         overlay_manager.clear_overlays();
         publishStudyComments();
@@ -921,16 +917,9 @@ function setup_move() {
         studyMoveNavigation.update();
         return;
     }
-    const lastMove = chess.history({ verbose: true }).slice(-1)[0];
-    ground.set({
-        fen: chess.fen(),
-        turnColor: turn_color(chess),
-        check: chess.in_check(),
-        lastMove: lastMove ? [lastMove.from, lastMove.to] : undefined
-    });
+    restoreBoardPosition(ground, chess, { color: 'both' });
     change_play_stockfish();
     change_analysis_board();
-    ground_set_moves(); // the legal moves of the position
     if (readMode) {
         ground.setShapes([]);
     } else {
@@ -1056,7 +1045,7 @@ function start_training() {
     setup_move();
 
     if (!readMode && tacticsCollection && !chapterMoveCatalogs[chapter].size) {
-        ground.set({ movable: { dests: new Map() } });
+        blockBoardMoves(ground);
         set_text(info_div, i18n.tactics_no_mainline_moves || i18n.no_playable_chapters);
     }
 

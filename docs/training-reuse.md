@@ -5,7 +5,7 @@
 | Responsibility | Shared implementation | Consumers |
 | --- | --- | --- |
 | Legal destinations, SAN/UCI conversion | `assets/js/modules/chess_utils.js` | Legacy board modes |
-| Board interaction, authoritative position restoration and legal destinations | `assets/js/modules/board_interaction.js` | Editor, Sparring, native tactics, Pieceless, endgames; `chess_utils.js` delegates destination mapping for legacy board modes |
+| Board interaction, authoritative position restoration and legal destinations | `assets/js/modules/board_interaction.js` | Study, editor, Sparring, native tactics, Pieceless, endgames and Blind; `chess_utils.js` delegates destination mapping for legacy board modes |
 | Board creation, movement, sizing, sound | `assets/js/modules/ground.js` | Study and native exercises; newer controllers also render Chessground directly |
 | Alternative solution analysis | `assets/js/modules/tactic_alternatives.js` | Native tactics, Blind, Pieceless through `tactic_attempts.js` |
 | Pending validation and stale response rejection | `assets/js/modules/tactic_attempts.js` | Native tactics, Blind, Pieceless |
@@ -30,18 +30,20 @@ PGN authored underpromotion must be preserved or deliberately changed.
 
 ### Board interaction state
 
-Editor, Sparring, native tactics, Pieceless and endgames share
+Study, editor, Sparring, native tactics, Pieceless and endgames share
 `board_interaction.js` for turn/check state, legal destinations and blocking.
 Native retries restore FEN, turn, movable color and destinations together.
 Pieceless suppresses check while pieces are hidden; review can change interaction
 without replacing the visible board. Mode-specific input handlers and user
 preferences stay attached to Chessground.
 
-`study.js` and Blind still render their own positions. Their destination mapping
-now uses the shared implementation through `chess_utils.js`. Next, migrate Study's
-replay/trap states and Blind's visible/logical position split after adding tests
-for those policies. Keep turn eligibility in each mode; a position's legal moves
-alone do not authorize the player to move.
+Study uses shared restoration for practice, Read, replay and traps. Read and
+practice retain input for both sides, while replay, traps and transitions lock
+piece movement. Blind uses shared blocking while solving and shared restoration
+only on reveal; its square-selection input and separate logical position remain
+mode policies. Tests cover replay/trap recovery and hidden progress for both
+orientations. Keep turn eligibility in each mode; a position's legal moves alone
+do not authorize the player to move.
 
 ### Async work and resource lifetime
 
