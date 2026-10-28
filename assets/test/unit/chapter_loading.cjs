@@ -14,6 +14,7 @@ let factory, confirm = true;
 const requests = [];
 const ground = {state: {orientation: 'white'}, set() {}, destroy() {}};
 const context = vm.createContext({
+    createLatestTask: require('./latest_task_helper.cjs'),
     hasBlockingUi: () => false,
     require, URL, URLSearchParams, AbortController, Map, console,
     createChapterEditor: model.createChapterEditor,

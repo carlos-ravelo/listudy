@@ -8,6 +8,7 @@ vm.runInContext(fs.readFileSync('assets/js/modules/study/chapter_editor.js', 'ut
 let factory;
 const ground = { state: { orientation: 'white' }, set() {}, destroy() {} };
 const context = vm.createContext({ hasBlockingUi: () => false, require, URLSearchParams, Map,
+    createLatestTask: require('./latest_task_helper.cjs'),
     createChapterEditor: model.createChapterEditor,
     lichessAnalysisUrl: model.lichessAnalysisUrl, prepareLichessAnalysis: model.prepareLichessAnalysis,
     createPromotionPicker: () => ({open() {}, close() {}, destroy() {}}),
