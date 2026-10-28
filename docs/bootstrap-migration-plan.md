@@ -170,7 +170,7 @@ verify contextual tab selection.
 ## Third delivery: training
 
 Study playback, including tactics studies, enabled its dedicated layout with
-`bootstrap_study.js` and `bootstrap_study.css`. It shares `bootstrap_common.js`
+`bootstrap_study.js` and `bootstrap_study.css`. It shares `assets/js/modules/site_common.js`
 with analysis/library, loads one instance of plugins, and excludes Skeleton,
 `app.scss`, `app.js`, and the old modal manager. Necessary study/collection styles
 are included separately. Board, sidebar, and navigation composition is preserved.
@@ -309,7 +309,7 @@ status-visibility expectation was corrected in the follow-up review.
 ## Simplified tactics library
 
 The tactics hub uses `bootstrap_tactics.js` / `bootstrap_tactics.css` and the
-Bootstrap layout. It reuses `bootstrap_common.js`, the library template, simplified
+Bootstrap layout. It reuses `assets/js/modules/site_common.js`, the library template, simplified
 search, and shared preference dialogs, without `app.js` or Skeleton. Included
 puzzles, owned/saved collections, and visualization links retain their layout.
 Personal-library organization features are not added to this hub.

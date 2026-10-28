@@ -5,7 +5,7 @@ Documentation translated to English on 2026-10-22.
 
 ## Already shared
 
-- `bootstrap_common.js`: navigation, preferences, theme, and library startup.
+- `assets/js/modules/site_common.js`: navigation, preferences, theme, and library startup.
   It also preserves catalogue filters and rating preferences on regular pages
   and after LiveView updates.
 - `dialog_lifecycle.js` and `blocking_ui.js`: dialog opening/closing and detection
