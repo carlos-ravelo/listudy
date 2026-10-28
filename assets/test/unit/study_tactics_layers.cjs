@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const createPageScope = require('./page_scope_helper.cjs');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
-const study = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
+const study = fs.readFileSync(path.join(__dirname, '../../js/pages/study/study.js'), 'utf8');
 const noop = () => {};
 const pgn = '1. e4 (1. d4 d5 2. c4) (1. f3 $2 e5 2. g4 Qh4#) e5 2. Nf3 *';
 function harness({ source = pgn, tactics = true, wait = async () => {}, actualReplies = false } = {}) {

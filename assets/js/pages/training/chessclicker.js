@@ -1,12 +1,12 @@
-import { createTrainingLifecycle } from './modules/training_lifecycle.js';
-import { createLineExercise } from './modules/line_exercise.js';
-import { createBoardGame } from './modules/board_game.js';
-import { playMoveSound } from './modules/sounds.js';
+import { createTrainingLifecycle } from '../../modules/training_lifecycle.js';
+import { createLineExercise } from '../../modules/line_exercise.js';
+import { createBoardGame } from '../../modules/board_game.js';
+import { playMoveSound } from '../../modules/sounds.js';
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js')
 import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_moves,
-         setup_move_handler } from './modules/ground.js';
-import { turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
+         setup_move_handler } from '../../modules/ground.js';
+import { turn_color, setup_chess, uci_to_san, san_to_uci } from '../../modules/chess_utils.js';
 
 function nFormatter(num, digits) {
   var si = [

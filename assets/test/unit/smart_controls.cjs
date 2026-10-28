@@ -62,7 +62,7 @@ assert.equal(changes, previousChanges, 'A targeted line must not start an unrela
 context.setupPuzzleRun({});
 assert.equal(context.window.studyPuzzleRunMode, 'smart', 'Ordinary study visits restore the saved preference');
 
-const study = fs.readFileSync(require('node:path').join(__dirname, '../../js/study.js'), 'utf8');
+const study = fs.readFileSync(require('node:path').join(__dirname, '../../js/pages/study/study.js'), 'utf8');
 const state = { smartSession: { newCount: 2 }, smartTarget: null, chapterStats: {}, chapterReviewSignatures: [],
     smartCatalog: [], gameLineQueue: null, chapter: 0, trees: [{ root: [], headers: {} }], color: 'white',
     lineEligibleForReview: true, selected: null, completed: 0 };

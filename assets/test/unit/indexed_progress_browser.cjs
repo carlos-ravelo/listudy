@@ -8,7 +8,7 @@ const {chromium} = require('playwright');
 const root = path.resolve(__dirname, '../../..');
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'listudy-indexed-progress-'));
 const entry = path.join(directory, 'entry.js');
-fs.writeFileSync(entry, `import {createStorageAdapter} from ${JSON.stringify(path.join(root, 'assets/js/storageAdapter.js'))};\nimport {createProgressDatabase} from ${JSON.stringify(path.join(root, 'assets/js/modules/study/progress_database.js'))};\nwindow.createAdapter=createStorageAdapter; window.createDatabase=createProgressDatabase;`);
+fs.writeFileSync(entry, `import {createStorageAdapter} from ${JSON.stringify(path.join(root, 'assets/js/modules/study/storage_adapter.js'))};\nimport {createProgressDatabase} from ${JSON.stringify(path.join(root, 'assets/js/modules/study/progress_database.js'))};\nwindow.createAdapter=createStorageAdapter; window.createDatabase=createProgressDatabase;`);
 const state = (attempts, extra = {}) => JSON.stringify({version: 1, chapters: {a: {attempts, errors: 0}}, ...extra});
 let remote = new Map(), offline = false;
 const revision = key => remote.get(key)?.revision || '';

@@ -1,18 +1,18 @@
-import { createBoardGame } from './modules/board_game.js';
-import { inspectMove } from './modules/chess_moves.js';
-import { hasBlockingUi, setupBlockingUi } from './modules/blocking_ui.js';
+import { createBoardGame } from '../../modules/board_game.js';
+import { inspectMove } from '../../modules/chess_moves.js';
+import { hasBlockingUi, setupBlockingUi } from '../../modules/blocking_ui.js';
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js');
-const { expectedMoves } = require('./modules/analysis/training_moves');
-import { StorageAdapter } from './storageAdapter.js';
-import { generate_move_trees, annotate_pgn } from './modules/tree_from_pgn.js';
-import { readChapterStats, bindChapterIdentities, beginChapterPractice, finishChapterPractice } from './modules/study/chapter_stats.js';
-import { chapterReviewSignature } from './modules/study/chapter_review.js';
-import { positionCatalog } from './modules/study/position_review.js';
-import { reconcileStudyProgress } from './modules/study/progress_preservation.js';
-import { createPracticeTracker } from './modules/study/practice_sessions.js';
-import { setupPracticeActivity } from './modules/practice_activity.js';
-import { applyGameEvidence, gamePositionPending, recordGamePractice } from './modules/analysis/game_progress.js';
+const { expectedMoves } = require('../../modules/analysis/training_moves');
+import { StorageAdapter } from '../../modules/study/storage_adapter.js';
+import { generate_move_trees, annotate_pgn } from '../../modules/tree_from_pgn.js';
+import { readChapterStats, bindChapterIdentities, beginChapterPractice, finishChapterPractice } from '../../modules/study/chapter_stats.js';
+import { chapterReviewSignature } from '../../modules/study/chapter_review.js';
+import { positionCatalog } from '../../modules/study/position_review.js';
+import { reconcileStudyProgress } from '../../modules/study/progress_preservation.js';
+import { createPracticeTracker } from '../../modules/study/practice_sessions.js';
+import { setupPracticeActivity } from '../../modules/practice_activity.js';
+import { applyGameEvidence, gamePositionPending, recordGamePractice } from '../../modules/analysis/game_progress.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const boardContainer = document.getElementById('chess-training-board');

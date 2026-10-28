@@ -42,7 +42,7 @@ function client(localStorage = storage(), user = '1') {
         fetch: fetchMock, setTimeout: () => 1, clearTimeout() {}, console });
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/progress_merge.js'), 'utf8').replace(/^import .*\n/gm, '').replace(/export \{[^}]+\};/, ''), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/progress_database.js'), 'utf8').replace(/^export /gm, ''), context);
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/storageAdapter.js'), 'utf8').replace(/^import .*\n/gm, '').replace('export const StorageAdapter', 'globalThis.StorageAdapter').replace(/^export /gm, ''), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/storage_adapter.js'), 'utf8').replace(/^import .*\n/gm, '').replace('export const StorageAdapter', 'globalThis.StorageAdapter').replace(/^export /gm, ''), context);
     return { adapter: context.StorageAdapter, storage: localStorage };
 }
 const key = 'study_chapter_stats';

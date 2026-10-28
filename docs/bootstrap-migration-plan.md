@@ -514,7 +514,7 @@ layout on a real page.
 
 ## Phase 1: analysis pilot
 
-Main files: `templates/analysis/index.html.eex`, `assets/js/analysis_overview.js`,
+Main files: `templates/analysis/index.html.eex`, `assets/js/pages/analysis/analysis_overview.js`,
 and `analysis_presentation.css`.
 
 Adapt the existing analysis template, including buttons, forms, and structure

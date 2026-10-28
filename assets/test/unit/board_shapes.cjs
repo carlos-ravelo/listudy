@@ -23,7 +23,7 @@ assert.deepEqual(plain(moveArrows(['e1g1', null, 'e8c8'], 'green')), [
 ]);
 
 // Exercise the real review handlers: empty/invalid hints must clear an older arrow.
-const endgame = read('endgames.js');
+const endgame = read('pages/training/endgames.js');
 const select = between(endgame, 'function selectReview(', 'function renderEvaluation()');
 const startFen = new Chess().fen();
 for (const uci of ['e2e4', 'a7a8n', ...invalid]) {

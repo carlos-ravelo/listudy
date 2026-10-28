@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
-const source = fs.readFileSync(require('node:path').join(__dirname, '../../js/tactics.js'), 'utf8');
+const source = fs.readFileSync(require('node:path').join(__dirname, '../../js/pages/training/tactics.js'), 'utf8');
 const handler = source.slice(source.indexOf('async function play_move('), source.indexOf('function setup_last_move('));
 (async () => {
     for (const status of ['rejected', 'unknown']) {

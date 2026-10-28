@@ -6,7 +6,7 @@ const createLatestTask = require('./latest_task_helper.cjs');
 const createPageScope = require('./page_scope_helper.cjs');
 const { moveArrows } = require('./board_shapes_helper.cjs');
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
-const editor = read('study_editor.js'), endgame = read('endgames.js');
+const editor = read('pages/study/study_editor.js'), endgame = read('pages/training/endgames.js');
 const between = (source, start, end) => source.slice(source.indexOf(start), source.indexOf(end));
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 const methods = [

@@ -29,8 +29,8 @@ const samples = [
 for (const [fen, moves, san] of samples) assert.equal(engineLine(fen, moves), san);
 
 const sparring = read('modules/sparring/study_adapter.js');
-const endgame = read('endgames.js');
-const editor = read('study_editor.js');
+const endgame = read('pages/training/endgames.js');
+const editor = read('pages/study/study_editor.js');
 const sparringContinuation = sparring.slice(sparring.indexOf('    function continuation('), sparring.indexOf('    function result('));
 const endgameContinuation = endgame.slice(endgame.indexOf('function continuation('), endgame.indexOf('function selectReview('));
 const editorAnalysis = editor.slice(editor.indexOf('        async analyzePosition()'), editor.indexOf('        syncPgn('));

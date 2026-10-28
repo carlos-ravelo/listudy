@@ -24,7 +24,7 @@ async function test() {
         studySessions: { refresh() { refreshed++; } },
         update_progress() { refreshed++; }
     });
-    const source = fs.readFileSync(path.join(__dirname, '../../js/study.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '../../js/pages/study/study.js'), 'utf8');
     vm.runInContext(source.slice(source.indexOf('async function loadGamePositions('), source.indexOf('async function initializeStudyProgress()')), context);
     const positions = context.loadGamePositions();
     const refresh = context.refreshGameEvidence(positions);

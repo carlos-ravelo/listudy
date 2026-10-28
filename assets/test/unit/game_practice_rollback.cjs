@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
-const source = fs.readFileSync(path.join(__dirname, '../../js/train_mistakes.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../../js/pages/analysis/train_mistakes.js'), 'utf8');
 const handler = source.slice(source.indexOf('    function onMove('), source.indexOf('    function updateUrl('));
 
 for (const [fen, from, to, expected] of [

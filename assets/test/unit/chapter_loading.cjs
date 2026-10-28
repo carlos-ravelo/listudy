@@ -30,7 +30,7 @@ vm.runInContext(read('modules/request_json.js').replace(/^export /gm, ''), conte
 vm.runInContext(read('modules/editable_target.js').replace(/^export /gm, ''), context);
 vm.runInContext(read('modules/board_interaction.js').replace(/^export /gm, ''), context);
 vm.runInContext(read('modules/promotion_controller.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
-vm.runInContext(read('study_editor.js').replace(/^import .*;\n/gm, ''), context);
+vm.runInContext(read('pages/study/study_editor.js').replace(/^import .*;\n/gm, ''), context);
 const controller = factory();
 controller.$el = {dataset: {
     editor: JSON.stringify({chapters: metadata, chapter_index: 0, chapter: chapters[0]}),

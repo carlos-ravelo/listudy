@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
-const source = read('blind_tactics.js');
+const source = read('pages/training/blind_tactics.js');
 const handlers = source.slice(source.indexOf('function get_current_chess()'), source.indexOf('\n/*', source.indexOf('async function handle_click(')));
 
 (async () => {

@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
-const source = fs.readFileSync(path.join(__dirname, '../../js/play_stockfish.js'), 'utf8').replace(/^import .*;\n/gm, '');
+const source = fs.readFileSync(path.join(__dirname, '../../js/pages/training/play_stockfish.js'), 'utf8').replace(/^import .*;\n/gm, '');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
 function mount(hash = '') {

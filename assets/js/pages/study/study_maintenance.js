@@ -1,6 +1,6 @@
-import { normalizeSearchText } from './modules/search_text.js';
-import { requestJson } from './modules/request_json.js';
-import { openDialog, closeDialog } from './modules/dialog_lifecycle.js';
+import { normalizeSearchText } from '../../modules/search_text.js';
+import { requestJson } from '../../modules/request_json.js';
+import { openDialog, closeDialog } from '../../modules/dialog_lifecycle.js';
 import Alpine from 'alpinejs';
 
 Alpine.data('studyOpeningPicker', () => ({

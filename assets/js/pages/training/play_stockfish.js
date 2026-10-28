@@ -1,12 +1,12 @@
-import { createBoardGame } from './modules/board_game.js';
-import { playMoveSound } from './modules/sounds.js';
-import { parseUciMove } from './modules/chess_moves.js';
-import { turn_color, setup_chess, initial_fen } from './modules/chess_utils.js';
-import { createUciEngine } from './modules/sparring/uci_engine.js';
-import { enginePosition } from './modules/engine_position.js';
-import { createTrainingLifecycle } from './modules/training_lifecycle.js';
-import { onresize, resize_ground, setup_ground, setup_move_handler } from './modules/ground.js';
-import { set_text, clear_all_text, error_div } from './modules/info_boxes.js';
+import { createBoardGame } from '../../modules/board_game.js';
+import { playMoveSound } from '../../modules/sounds.js';
+import { parseUciMove } from '../../modules/chess_moves.js';
+import { turn_color, setup_chess, initial_fen } from '../../modules/chess_utils.js';
+import { createUciEngine } from '../../modules/sparring/uci_engine.js';
+import { enginePosition } from '../../modules/engine_position.js';
+import { createTrainingLifecycle } from '../../modules/training_lifecycle.js';
+import { onresize, resize_ground, setup_ground, setup_move_handler } from '../../modules/ground.js';
+import { set_text, clear_all_text, error_div } from '../../modules/info_boxes.js';
 require('regenerator-runtime/runtime');
 
 let engineStartFen, engine, thinking = false, progressTimer;

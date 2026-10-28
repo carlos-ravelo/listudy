@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
-const source = read('study.js');
+const source = read('pages/study/study.js');
 const start = source.indexOf('function setup_move()');
 const setup = source.slice(start, source.indexOf('\n/*', start));
 const noop = () => {};

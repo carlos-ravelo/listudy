@@ -1,6 +1,6 @@
-import { hasBlockingUi } from './modules/blocking_ui.js';
-import { isEditableTarget } from './modules/editable_target.js';
-import { createGameReplay } from './modules/analysis/game_replay.js';
+import { hasBlockingUi } from '../../modules/blocking_ui.js';
+import { isEditableTarget } from '../../modules/editable_target.js';
+import { createGameReplay } from '../../modules/analysis/game_replay.js';
 
 function setupComparison() {
     const root = document.getElementById('analysis-comparison');

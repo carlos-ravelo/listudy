@@ -18,7 +18,7 @@ const context = vm.createContext({ hasBlockingUi: () => false, require, URLSearc
 });
 vm.runInContext(fs.readFileSync('assets/js/modules/board_interaction.js', 'utf8').replace(/^export /gm, ''), context);
 vm.runInContext(fs.readFileSync('assets/js/modules/promotion_controller.js', 'utf8').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
-vm.runInContext(fs.readFileSync('assets/js/study_editor.js', 'utf8').replace(/^import .*;\n/gm, ''), context);
+vm.runInContext(fs.readFileSync('assets/js/pages/study/study_editor.js', 'utf8').replace(/^import .*;\n/gm, ''), context);
 function editor(fen, color = 'white') {
     const controller = factory();
     controller.$el = { dataset: { color, editor: JSON.stringify({ chapters: [{ title: 'Promotion', fen, comment: '', root: [] }] }) } };

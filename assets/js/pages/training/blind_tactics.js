@@ -1,20 +1,20 @@
-import { createTrainingLifecycle } from './modules/training_lifecycle.js';
-import { createLineExercise } from './modules/line_exercise.js';
-import { moveToUci, playUciMove } from './modules/chess_moves.js';
-import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
+import { createTrainingLifecycle } from '../../modules/training_lifecycle.js';
+import { createLineExercise } from '../../modules/line_exercise.js';
+import { moveToUci, playUciMove } from '../../modules/chess_moves.js';
+import { blockBoardMoves, restoreBoardPosition } from '../../modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js')
 import { resize_ground, onresize, setup_ground, ground_set_moves_from_instance,
-         setup_click_handler } from './modules/ground.js';
-import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
-import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
-import { sleep } from './modules/sleep.js';
-import { createTacticAttempts } from './modules/tactic_attempts.js';
+         setup_click_handler } from '../../modules/ground.js';
+import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from '../../modules/chess_utils.js';
+import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from '../../modules/info_boxes.js';
+import { sleep } from '../../modules/sleep.js';
+import { createTacticAttempts } from '../../modules/tactic_attempts.js';
 const exercise = createLineExercise({ getPosition: () => current_chess,
     applyMove: uci => playUciMove(current_chess, uci), validator: createTacticAttempts() });
-import { setupNativeVisualization } from './modules/native_visualization.js';
+import { setupNativeVisualization } from '../../modules/native_visualization.js';
 
 let finished = false;
 let loadedKey;

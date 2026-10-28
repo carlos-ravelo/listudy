@@ -76,7 +76,7 @@ const deferred = () => {
             getPosition: () => mode === 'blind_tactics' ? sandbox.current_chess : sandbox.chess,
             applyMove: uci => mode === 'blind_tactics' ? sandbox.playUciMove(sandbox.current_chess, uci) : sandbox.boardGame.play(uci)
         });
-        const source = fs.readFileSync(path.join(__dirname, '../../js', mode + '.js'), 'utf8');
+        const source = fs.readFileSync(path.join(__dirname, '../../js/pages/training', mode + '.js'), 'utf8');
         const start = mode === 'blind_tactics' ? 'async function handle_click(' : 'async function play_move(';
         const end = mode === 'blind_tactics' ? '\n/*' : mode === 'tactics' ? 'function setup_last_move(' : 'function handle_move(';
         vm.runInContext(source.slice(source.indexOf(start), source.indexOf(end, source.indexOf(start))), sandbox);

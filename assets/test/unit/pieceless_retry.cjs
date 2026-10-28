@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
-const source = read('pieceless_tactics.js');
+const source = read('pages/training/pieceless_tactics.js');
 const handler = source.slice(source.indexOf('async function play_move('), source.indexOf('function handle_move('));
 
 (async () => {

@@ -171,7 +171,7 @@ production build passes with the existing 180 warnings.
 
 ## Responsibility map
 
-| Current responsibility | Evidence in `assets/js/study.js` | Suggested boundary |
+| Current responsibility | Evidence in `assets/js/pages/study/study.js` | Suggested boundary |
 | --- | --- | --- |
 | Startup and composition | `main`, 1801–2012; initializes storage, board, trees, sessions, Sparring, controls, and modes | Keep a small composition entry point connecting modules and providing dependencies |
 | PGN and chapter loading | `setup_trees`, 1204; `setup_chapter_select`, 1246; separate reading and practice trees | Document/chapter model; changing chapters remains a domain operation with a selection adapter |

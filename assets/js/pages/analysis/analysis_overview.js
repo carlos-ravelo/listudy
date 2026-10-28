@@ -1,8 +1,8 @@
-import "./components/analysis_repertoires.js";
-import { setGameAvailability } from './components/game_availability.js';
-import { StorageAdapter } from './storageAdapter.js';
-import { readChapterStats } from './modules/study/chapter_stats.js';
-import { gamePositionPending } from './modules/analysis/game_progress.js';
+import "../../components/analysis_repertoires.js";
+import { setGameAvailability } from '../../components/game_availability.js';
+import { StorageAdapter } from '../../modules/study/storage_adapter.js';
+import { readChapterStats } from '../../modules/study/chapter_stats.js';
+import { gamePositionPending } from '../../modules/analysis/game_progress.js';
 const Chess = require('chess.js');
 
 document.addEventListener('DOMContentLoaded', async () => {

@@ -59,7 +59,7 @@ The template also rewrites the entire input before parsing.
 Relevant source:
 
 - [study template](../lib/listudy_web/templates/study/show.html.eex): `clean_pgn()`.
-- [study.js](../assets/js/study.js): `setup_trees()` and `splitChapterPgn()` usage.
+- [study.js](../assets/js/pages/study/study.js): `setup_trees()` and `splitChapterPgn()` usage.
 - [tree_from_pgn.js](../assets/js/modules/tree_from_pgn.js): `annotate_pgn()` and `generate_move_trees()`.
 - [chapter_pgn.js](../assets/js/modules/study/chapter_pgn.js): lexical chapter splitting and URL resolution.
 - [chess_utils.js](../assets/js/modules/chess_utils.js): annotation conversion and move notation adapters.
@@ -138,8 +138,8 @@ deviation overlays and training state. [Viewer documentation](https://github.com
 ## 4. Stockfish: upgrade the distribution, keep a small integration
 
 [stockfish.js integration](../assets/js/modules/stockfish.js) selects threaded
-WASM or a fallback worker. [play_stockfish.js](../assets/js/play_stockfish.js)
-and [endgames.js](../assets/js/endgames.js) send UCI commands through global `sf`.
+WASM or a fallback worker. [play_stockfish.js](../assets/js/pages/training/play_stockfish.js)
+and [endgames.js](../assets/js/pages/training/endgames.js) send UCI commands through global `sf`.
 [The copy script](../scripts/update_stockfish_wasm.sh) installs engine assets.
 
 Upstream describes `stockfish.wasm` as an older compatibility port. The current
@@ -180,7 +180,7 @@ replacing Phoenix/Ecto or moving the Python boundary into a new network service.
 
 ## 6. Storage and tooling need clearer contracts
 
-[StorageAdapter](../assets/js/storageAdapter.js) updates local storage and debounces
+[StorageAdapter](../assets/js/modules/study/storage_adapter.js) updates local storage and debounces
 cloud writes. It does not check `response.ok`, removes regular pending writes
 before confirming success, and does not synchronize deletion. The
 [progress controller](../lib/listudy_web/controllers/progress_controller.ex)

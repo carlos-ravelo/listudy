@@ -6,7 +6,7 @@ const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const createPageScope = require('./page_scope_helper.cjs');
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
-const source = read('tactics.js');
+const source = read('pages/training/tactics.js');
 const main = source.slice(source.indexOf('function main('), source.indexOf('lifecycle.page.listen(document, "phx:update"'));
 const events = new EventTarget();
 const counts = { boards: 0, pickers: 0, stops: 0, inputs: 0, starts: 0 };

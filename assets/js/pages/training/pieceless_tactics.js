@@ -1,19 +1,19 @@
-import { createTrainingLifecycle } from './modules/training_lifecycle.js';
-import { createLineExercise } from './modules/line_exercise.js';
-import { createBoardGame } from './modules/board_game.js';
-import { playMoveSound } from './modules/sounds.js';
-import { playUciMove } from './modules/chess_moves.js';
-import { blockBoardMoves, restoreBoardPosition } from './modules/board_interaction.js';
+import { createTrainingLifecycle } from '../../modules/training_lifecycle.js';
+import { createLineExercise } from '../../modules/line_exercise.js';
+import { createBoardGame } from '../../modules/board_game.js';
+import { playMoveSound } from '../../modules/sounds.js';
+import { playUciMove } from '../../modules/chess_moves.js';
+import { blockBoardMoves, restoreBoardPosition } from '../../modules/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 const Chessground = require('chessground').Chessground;
 import { onresize, resize_ground, setup_ground, ground_set_moves,
-         setup_move_handler, setup_click_handler } from './modules/ground.js';
-import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from './modules/chess_utils.js';
-import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from './modules/info_boxes.js';
-import { createTacticAttempts } from './modules/tactic_attempts.js';
-import { createPromotionController } from './modules/promotion_controller.js';
-import { setupNativeVisualization, createPieceMask } from './modules/native_visualization.js';
+         setup_move_handler, setup_click_handler } from '../../modules/ground.js';
+import { ground_legal_moves, turn_color, setup_chess, uci_to_san, san_to_uci } from '../../modules/chess_utils.js';
+import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from '../../modules/info_boxes.js';
+import { createTacticAttempts } from '../../modules/tactic_attempts.js';
+import { createPromotionController } from '../../modules/promotion_controller.js';
+import { setupNativeVisualization, createPieceMask } from '../../modules/native_visualization.js';
 let finished = false, picker;
 const visualization = setupNativeVisualization('pieceless');
 let pieceMask;

@@ -9,12 +9,12 @@ Fecha: 17 de octubre de 2026.
 ## Hallazgos corregidos en esta iteración
 
 - `lib/listudy_web/controllers/pieceless_tactic_controller.ex`: una tabla dedicada vacía producía un error 500. Se reutilizan puzzles nativos existentes con una ruta explícita; la solución SAN se convierte y valida antes de jugar. No se crean ejercicios ficticios ni registros nuevos. Una tabla dedicada con un solo ejercicio tampoco rompe Siguiente.
-- `assets/js/pieceless_tactics.js`: solución visible, reintento, promociones con el selector compartido, bloqueo al finalizar y limpieza al reiniciar. El HTML ya no duplica `id=info`; ocultar piezas deja de afectar a otros tableros.
+- `assets/js/pages/training/pieceless_tactics.js`: solución visible, reintento, promociones con el selector compartido, bloqueo al finalizar y limpieza al reiniciar. El HTML ya no duplica `id=info`; ocultar piezas deja de afectar a otros tableros.
 - `lib/listudy_web/templates/tactic/daily.html.eex`: enlaces de regreso a las colecciones de tácticas, sin empujar al catálogo aleatorio antiguo después del puzzle.
 - `lib/listudy_web/templates/live/blind_tactics.html.leex`: cabecera compacta compartida, instrucciones, botones semánticos, dificultad en configuración y ayuda desplegable. Se conserva el tablero durante actualizaciones LiveView.
-- `assets/js/blind_tactics.js`: dificultad acotada a la historia disponible, cambiar configuración no modifica el ejercicio en curso, posiciones iniciales FEN respetadas, reintento, ausencia de reinicio al conectar LiveView y bloqueo después de mostrar la solución.
+- `assets/js/pages/training/blind_tactics.js`: dificultad acotada a la historia disponible, cambiar configuración no modifica el ejercicio en curso, posiciones iniciales FEN respetadas, reintento, ausencia de reinicio al conectar LiveView y bloqueo después de mostrar la solución.
 - `lib/listudy_web/templates/component/infoboxes.html.eex`: cerrar avisos utiliza un botón real accesible por teclado, sin IDs duplicados ni símbolos que dependan de una fuente ausente.
-- `assets/js/tactics.js` y `templates/tactic/custom.html.eex`: abrir el editor sin posición o con base64 inválido deja de provocar excepciones de carga.
+- `assets/js/pages/training/tactics.js` y `templates/tactic/custom.html.eex`: abrir el editor sin posición o con base64 inválido deja de provocar excepciones de carga.
 - `assets/js/components/chessboard_settings.js`: un iframe sin controles de configuración no intenta modificar elementos inexistentes.
 - `lib/listudy_web/live/chessclicker_live.ex`: una colección de puzzles fáciles vacía muestra una salida útil en vez de un error 500. No se inventan ejercicios fáciles ni ratings.
 

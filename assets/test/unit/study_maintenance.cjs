@@ -12,7 +12,7 @@ const context = vm.createContext({
         return new Promise(resolve => requests.push({ url, options, resolve }));
     }
 });
-for (const file of ['modules/request_json.js', 'study_maintenance.js']) {
+for (const file of ['modules/request_json.js', 'pages/study/study_maintenance.js']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8')
         .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 }

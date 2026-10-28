@@ -77,7 +77,7 @@ indexes support filtering. Daily selection uses a deterministic date ordinal ove
 real rows and returns nil for an empty catalog.
 
 Catalog source metadata is separate from player records. Native attempts reuse
-`assets/js/tactics.js`; device-local `puzzle_progress_v1:<source>:<source_id>` keys
+`assets/js/pages/training/tactics.js`; device-local `puzzle_progress_v1:<source>:<source_id>` keys
 record solves, clean solves, duration, errors and assistance independently of PGN
 chapter statistics. These values are not account-synced. Original Lichess ratings
 are not treated as a player rating. The existing `played` field remains a global

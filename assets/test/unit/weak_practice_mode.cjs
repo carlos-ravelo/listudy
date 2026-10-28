@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const source = fs.readFileSync(require('node:path').join(__dirname, '../../js/study.js'), 'utf8');
+const source = fs.readFileSync(require('node:path').join(__dirname, '../../js/pages/study/study.js'), 'utf8');
 const functions = source.slice(source.indexOf('function selectNextWeakChapter()'), source.indexOf('function stopSpacedReviewRun()'));
 for (const mode of ['chapters', 'positions']) {
     const selected = [];

@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
-const source = read('endgames.js');
+const source = read('pages/training/endgames.js');
 const ready = source.slice(source.indexOf('function boardReady()'), source.indexOf('function finish('));
 
 for (const color of ['white', 'black']) {

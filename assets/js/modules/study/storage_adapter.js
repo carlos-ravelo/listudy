@@ -1,5 +1,5 @@
-import { mergeProgress } from './modules/study/progress_merge.js';
-import { createProgressDatabase } from './modules/study/progress_database.js';
+import { mergeProgress } from './progress_merge.js';
+import { createProgressDatabase } from './progress_database.js';
 
 const managed = key => /_chapter_(stats|reviews)$/.test(key);
 const tree = key => /^[\w-]+_tree$/.test(key);
