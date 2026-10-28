@@ -1,7 +1,7 @@
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const Chessground = require('chessground').Chessground;
-import { moveArrow } from '../board_shapes.js';
+import { moveArrow } from '../board/board_shapes.js';
 
 function movePrefix(fen) {
     const fields = fen.split(' ');

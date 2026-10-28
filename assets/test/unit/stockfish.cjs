@@ -12,8 +12,9 @@ class FakeWorker {
     terminate() { this.stopped = true; }
     postMessage(message) { queueMicrotask(() => this.fail ? this.send('error') : this.send('message', message === 'isready' ? 'readyok' : 'uciok')); }
 }
-const context = vm.createContext({require, Worker:FakeWorker, window:{}, WebAssembly, BigInt, setTimeout, clearTimeout});
-vm.runInContext(fs.readFileSync(path.join(__dirname,'../../js/modules/stockfish.js'),'utf8').replace(/^export /gm,''), context);
+const moduleRequire = require('node:module').createRequire(path.resolve(__dirname, '../../js/modules/engine/stockfish.js'));
+const context = vm.createContext({require: moduleRequire, Worker:FakeWorker, window:{}, WebAssembly, BigInt, setTimeout, clearTimeout});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../../js/modules/engine/stockfish.js'),'utf8').replace(/^export /gm,''), context);
 (async()=>{
     assert(context.createStockfishWorker().url.endsWith('stockfish-19-lite-single.js'));
     assert(context.createStockfishWorker({forceFallback:true}).url.endsWith('stockfish-19-asm.js'));

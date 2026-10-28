@@ -1,4 +1,4 @@
-import { moveToUci, playUciMove } from '../chess_moves.js';
+import { moveToUci, playUciMove } from '../board/chess_moves.js';
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 

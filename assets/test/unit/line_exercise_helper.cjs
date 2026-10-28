@@ -8,7 +8,7 @@ module.exports = (context, { moves = context.to_play || context.solution || [],
     applyMove = uci => context.boardGame.play(uci, applyOptions) } = {}) => {
     context.require = require;
     if (!context.boardGame) require('./board_game_helper.cjs')(context);
-    for (const name of ['engine_position', 'line_exercise']) {
+    for (const name of ['engine/engine_position', 'training/line_exercise']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', name + '.js'), 'utf8')
             .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
     }

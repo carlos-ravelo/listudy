@@ -1,4 +1,4 @@
-import { createPageScope } from './page_scope.js';
+import { createPageScope } from '../page_scope.js';
 
 export function createPuzzleAutoplay({isFinished, next, delay = 1200}) {
     const scope = createPageScope();

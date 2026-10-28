@@ -24,7 +24,7 @@ const context = vm.createContext({
     setInterval(callback, delay) { const id = ++sequence; timers.set(id, { callback, delay }); return id; },
     clearInterval(id) { timers.delete(id); }
 });
-for (const file of ['study/practice_sessions.js', 'practice_activity.js']) {
+for (const file of ['study/practice_sessions.js', 'training/practice_activity.js']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', file), 'utf8')
         .replace(/^export /gm, '').replace(/^\{ DEFAULT_SESSION_GOAL.*\};$/gm, ''), context);
 }
@@ -117,7 +117,7 @@ document.querySelector = () => null;
 document.createElement = () => ({ textContent: '' });
 context.setupBlockingUi = () => {};
 context.hasBlockingUi = () => false;
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study_sessions.js'), 'utf8')
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/components/study_sessions.js'), 'utf8')
     .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 const stats = {};
 let studySaves = 0;

@@ -15,7 +15,7 @@ const html = `<html lang="en"><head><meta name="viewport" content="width=device-
 <style>:root{--font-color:#222;--bg-color:#fff;--bg-highlight-color:#ddd}body{margin:16px}.study-workspace{--study-divider:#bbb}</style>
 </head><body><main class="study-workspace">${controls}</main>
 <script type="module">
-import { setupPuzzleRun } from '/assets/js/modules/study_page_controls.js';
+import { setupPuzzleRun } from '/assets/js/components/study_page_controls.js';
 setupPuzzleRun({}, {initialMode:'off'});
 const reading = value => window.dispatchEvent(new CustomEvent('study-reading-updated',{detail:{reading:value}}));
 const sparring = value => {

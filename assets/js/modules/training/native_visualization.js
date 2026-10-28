@@ -1,6 +1,6 @@
-import { createPageScope } from './page_scope.js';
+import { createPageScope } from '../page_scope.js';
 import { createAttemptState } from './attempt_state.js';
-import { visualizationLevel } from './study/visualization.js';
+import { visualizationLevel } from '../study/visualization.js';
 
 export function createNativeVisualization({ mode, storage, now = Date.now, changed = () => {} }) {
     const key = `native_visualization_v1:${mode}`;

@@ -4,11 +4,11 @@ const path = require('node:path');
 const uri = source => 'data:text/javascript;base64,' + Buffer.from(source).toString('base64');
 (async () => {
     const root = path.resolve(__dirname, '../../js/modules');
-    const attempt = uri(fs.readFileSync(path.join(root, 'attempt_state.js'), 'utf8'));
+    const attempt = uri(fs.readFileSync(path.join(root, 'training/attempt_state.js'), 'utf8'));
     const scope = uri(fs.readFileSync(path.join(root, 'page_scope.js'), 'utf8'));
     const progression = uri(fs.readFileSync(path.join(root, 'study/visualization.js'), 'utf8').replace("'../page_scope.js'", JSON.stringify(scope)));
-    const source = fs.readFileSync(path.join(root, 'native_visualization.js'), 'utf8').replace("'./study/visualization.js'", JSON.stringify(progression))
-        .replace("'./page_scope.js'", JSON.stringify(scope))
+    const source = fs.readFileSync(path.join(root, 'training/native_visualization.js'), 'utf8').replace("'../study/visualization.js'", JSON.stringify(progression))
+        .replace("'../page_scope.js'", JSON.stringify(scope))
         .replace("'./attempt_state.js'", JSON.stringify(attempt));
     const {createNativeVisualization, createPieceMask} = await import(uri(source));
     const saved = new Map();

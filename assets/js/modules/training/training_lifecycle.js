@@ -1,4 +1,4 @@
-import { createPageScope } from './page_scope.js';
+import { createPageScope } from '../page_scope.js';
 
 export function createTrainingLifecycle({ restore, events = window, timers = globalThis } = {}) {
     const page = createPageScope({ timers });

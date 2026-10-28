@@ -1,4 +1,4 @@
-import { assessMove } from './sparring/evaluation.js';
+import { assessMove } from '../sparring/evaluation.js';
 
 export function endgameMateCue(analysis, player) {
     const score = analysis?.score;

@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
-const moduleSource = fs.readFileSync(path.join(__dirname, '../../js/modules/tactic_attempts.js'), 'utf8')
+const moduleSource = fs.readFileSync(path.join(__dirname, '../../js/modules/training/tactic_attempts.js'), 'utf8')
     .replace(/^import .*;\n/gm, '').replace(/^export /gm, '');
 const deferred = () => {
     let resolve, reject;
@@ -69,7 +69,7 @@ const deferred = () => {
             ground_move() { mutations.push('move'); }
         });
         require('./chess_moves_helper.cjs')(sandbox);
-        vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), sandbox);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board/board_interaction.js'), 'utf8').replace(/^export /gm, ''), sandbox);
         vm.runInContext(moduleSource, sandbox);
         vm.runInContext('const attempts = createTacticAttempts(); let finished = false, busy = false, generation = 0;', sandbox);
         require('./line_exercise_helper.cjs')(sandbox, { validator: vm.runInContext('attempts', sandbox),

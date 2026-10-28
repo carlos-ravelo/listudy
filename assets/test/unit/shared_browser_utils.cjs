@@ -30,7 +30,7 @@ const context = vm.createContext({
     },
     setTimeout(callback, delay) { assert.equal(delay, 1000); cleanups.push(callback); }
 });
-for (const file of ['search_text.js', 'download_pgn.js']) {
+for (const file of ['search_text.js', 'pgn/download_pgn.js']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', file), 'utf8')
         .replace(/^export /gm, ''), context);
 }

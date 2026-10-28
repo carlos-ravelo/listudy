@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
 const model = vm.createContext({require});
-vm.runInContext(read('modules/download_pgn.js').replace(/^export /gm, ''), model);
+vm.runInContext(read('modules/pgn/download_pgn.js').replace(/^export /gm, ''), model);
 vm.runInContext(read('modules/study/lichess_analysis.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), model);
 vm.runInContext(read('modules/study/chapter_editor.js').replace('export function', 'function'), model);
 const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -28,8 +28,8 @@ const context = vm.createContext({
 });
 vm.runInContext(read('modules/request_json.js').replace(/^export /gm, ''), context);
 vm.runInContext(read('modules/editable_target.js').replace(/^export /gm, ''), context);
-vm.runInContext(read('modules/board_interaction.js').replace(/^export /gm, ''), context);
-vm.runInContext(read('modules/promotion_controller.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
+vm.runInContext(read('modules/board/board_interaction.js').replace(/^export /gm, ''), context);
+vm.runInContext(read('modules/board/promotion_controller.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 vm.runInContext(read('pages/study/study_editor.js').replace(/^import .*;\n/gm, ''), context);
 const controller = factory();
 controller.$el = {dataset: {

@@ -60,9 +60,9 @@ Relevant source:
 
 - [study template](../lib/listudy_web/templates/study/show.html.eex): `clean_pgn()`.
 - [study.js](../assets/js/pages/study/study.js): `setup_trees()` and `splitChapterPgn()` usage.
-- [tree_from_pgn.js](../assets/js/modules/tree_from_pgn.js): `annotate_pgn()` and `generate_move_trees()`.
+- [tree_from_pgn.js](../assets/js/modules/pgn/tree_from_pgn.js): `annotate_pgn()` and `generate_move_trees()`.
 - [chapter_pgn.js](../assets/js/modules/study/chapter_pgn.js): lexical chapter splitting and URL resolution.
-- [chess_utils.js](../assets/js/modules/chess_utils.js): annotation conversion and move notation adapters.
+- [chess_utils.js](../assets/js/modules/board/chess_utils.js): annotation conversion and move notation adapters.
 
 A direct execution of the existing cleaner confirmed this transformation:
 
@@ -137,7 +137,7 @@ deviation overlays and training state. [Viewer documentation](https://github.com
 
 ## 4. Stockfish: upgrade the distribution, keep a small integration
 
-[stockfish.js integration](../assets/js/modules/stockfish.js) selects threaded
+[stockfish.js integration](../assets/js/modules/engine/stockfish.js) selects threaded
 WASM or a fallback worker. [play_stockfish.js](../assets/js/pages/training/play_stockfish.js)
 and [endgames.js](../assets/js/pages/training/endgames.js) send UCI commands through global `sf`.
 [The copy script](../scripts/update_stockfish_wasm.sh) installs engine assets.

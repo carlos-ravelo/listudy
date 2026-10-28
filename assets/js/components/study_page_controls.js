@@ -1,7 +1,7 @@
-import { createPageScope } from './page_scope.js';
+import { createPageScope } from '../modules/page_scope.js';
 import { setupChapterPicker } from './chapter_picker.js';
-import { hasBlockingUi } from './blocking_ui.js';
-import { isEditableTarget } from './editable_target.js';
+import { hasBlockingUi } from '../modules/blocking_ui.js';
+import { isEditableTarget } from '../modules/editable_target.js';
 
 export function setupStudyNavigation({ getCurrentChapter, goBack, goForward, progressLabels = { unpracticed: 'Not practiced', practiced: 'Moves practiced', needsPractice: 'Needs practice', reviewDue: 'Review due' } }) {
     const scope = createPageScope();

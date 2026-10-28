@@ -1,4 +1,4 @@
-import { createStockfishWorker, stockfishVersion } from '../stockfish.js';
+import { createStockfishWorker, stockfishVersion } from './stockfish.js';
 
 // Native engine Elo targets. These are not human or website ratings.
 const practiceLevels = [1320, 1500, 1700, 1900, 2100, 2400, 2700, null];

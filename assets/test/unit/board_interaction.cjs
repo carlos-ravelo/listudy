@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const context = vm.createContext({ Map });
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board_interaction.js'), 'utf8')
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board/board_interaction.js'), 'utf8')
     .replace(/^export /gm, ''), context);
 const { blockBoardMoves, restoreBoardPosition, setBoardInteraction } = context;
 const serialize = value => JSON.parse(JSON.stringify(value));

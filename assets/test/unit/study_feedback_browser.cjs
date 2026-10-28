@@ -8,7 +8,7 @@ const css = fs.readFileSync(path.join(root, 'assets/css/features/study_presentat
 const html = `<style>${css}
 .hidden{display:none}body{margin:0}.infoBox{background:#def}#chessground{position:fixed;left:12px;top:50px;width:296px;height:350px}#study_board_actions{position:fixed;top:440px;left:12px;width:296px;height:80px}
 </style><div class="study-workspace"><div id="chessground"></div><div id="study_board_actions"></div><div class="study-feedback"><div class="info"><p id="info" class="infoBox hidden"><button class="close_button">×</button><span id="info_text"></span></p></div></div></div>
-<script type="module">import {setupStudyFeedback} from '/assets/js/modules/study_feedback.js';import {set_text} from '/assets/js/modules/info_boxes.js';setupStudyFeedback();window.showFeedback=text=>set_text('info',text);</script>`;
+<script type="module">import {setupStudyFeedback} from '/assets/js/components/study_feedback.js';import {set_text} from '/assets/js/modules/info_boxes.js';setupStudyFeedback();window.showFeedback=text=>set_text('info',text);</script>`;
 (async () => {
     const server = http.createServer((req, res) => {
         if (req.url === '/') { res.setHeader('Content-Type', 'text/html'); return res.end(html); }

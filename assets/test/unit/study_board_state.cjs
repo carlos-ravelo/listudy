@@ -29,7 +29,7 @@ for (const color of ['white', 'black']) for (const reading of [false, true]) {
             if (movable) Object.assign(board.movable, movable);
         }, setShapes: noop }
     });
-    vm.runInContext(read('modules/board_interaction.js').replace(/^export /gm, '') + '\n' + setup, context);
+    vm.runInContext(read('modules/board/board_interaction.js').replace(/^export /gm, '') + '\n' + setup, context);
     const assertPlayable = () => {
         assert.equal(board.fen, chess.fen());
         assert.equal(board.turnColor, chess.turn() === 'w' ? 'white' : 'black');

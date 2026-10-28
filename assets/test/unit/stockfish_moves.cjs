@@ -40,7 +40,7 @@ function mount(hash = '') {
     });
     context.window = context;
     require('./board_game_helper.cjs')(context);
-    for (const name of ['page_scope', 'training_lifecycle']) {
+    for (const name of ['page_scope', 'training/training_lifecycle']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', name + '.js'), 'utf8')
             .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
     }

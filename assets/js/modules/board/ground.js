@@ -1,6 +1,6 @@
 const Chessground = require('chessground').Chessground;
 import { ground_legal_moves, cal_to_ftc, san_to_uci, move_to_ucistr } from './chess_utils';
-import { array_contains } from './utils.js';
+import { array_contains } from '../utils.js';
 
 /*
  * All the functions assume there is a global variable

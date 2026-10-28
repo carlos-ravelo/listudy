@@ -4,8 +4,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const context = vm.createContext({require, setTimeout, clearTimeout, stockfishVersion: '19.0.1'});
 require('./chess_moves_helper.cjs')(context);
-for (const name of ['evaluation', 'session', 'chess_adapter', 'uci_engine']) {
-    vm.runInContext(fs.readFileSync(path.join(__dirname, `../../js/modules/sparring/${name}.js`), 'utf8')
+for (const name of ['sparring/evaluation', 'sparring/session', 'sparring/chess_adapter', 'engine/uci_engine']) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, `../../js/modules/${name}.js`), 'utf8')
         .replace(/^import .*\n/gm, '').replace(/^export /gm, ''), context);
 }
 const {createSparringEngine, createSparringSession, createChapterSparring} = context;

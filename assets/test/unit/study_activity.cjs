@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 (async () => {
-    const source = fs.readFileSync(path.resolve(__dirname, '../../js/modules/study_activity.js'), 'utf8');
+    const source = fs.readFileSync(path.resolve(__dirname, '../../js/modules/study/activity.js'), 'utf8');
     const { readStudyActivity, requestedStudyActivity, trackStudyActivity } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
     const values = new Map();
     const storage = { getItem: key => values.get(key), setItem: (key, value) => values.set(key, value) };

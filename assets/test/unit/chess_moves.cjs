@@ -6,7 +6,7 @@ const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const context = vm.createContext({ require, console: { error() {} } });
 require('./chess_moves_helper.cjs')(context);
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/chess_utils.js'), 'utf8')
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board/chess_utils.js'), 'utf8')
     .replace(/^import .*;\n/gm, '').replace(/export \{[^}]+\};/g, ''), context);
 const { parseUciMove, moveToUci, playUciMove, inspectMove, uci_to_san, san_to_uci } = context;
 const snapshot = board => JSON.stringify({ fen: board.fen(), history: board.history(), pgn: board.pgn(),

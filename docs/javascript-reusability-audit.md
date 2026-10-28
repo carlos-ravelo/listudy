@@ -22,7 +22,7 @@ Documentation translated to English on 2026-10-22.
 - `modules/search_text.js`: `normalizeSearchText(value)` shared by simple and full
   library modes and the opening picker. Consumers retain trimming and field
   selection.
-- `modules/download_pgn.js`: `downloadPgn(pgn, filename)` shared by collections,
+- `modules/pgn/download_pgn.js`: `downloadPgn(pgn, filename)` shared by collections,
   Lichess, and Sparring. It preserves the PGN MIME type and releases the URL after
   the click; consumers retain filenames, contents, and additional behavior.
 - `modules/request_json.js`: JSON transport shared by editor loading/saving,
@@ -33,7 +33,7 @@ Documentation translated to English on 2026-10-22.
   response checks, drafts, and messages remain in consumers. Non-JSON responses
   use the consumer's error message; writes without a CSRF token fail before
   sending. Metadata uploads using `FormData` and files retain their transport.
-- `modules/practice_activity.js`: activity, focus, visibility, blocking, and
+- `modules/training/practice_activity.js`: activity, focus, visibility, blocking, and
   interval events shared by study and mistake practice. It returns an idempotent
   cleanup function; `setupStudySessions().destroy()` also releases the progress
   listener and its controls. Study keeps one-second rendering, 15-second saves,
@@ -61,7 +61,7 @@ explicit reload, including a 409 response without JSON. Tests cover edits during
 saving, HTTP failures, invalid responses, recovery, and conflicts when reopening
 an account with pending local edits.
 
-Navigation in `modules/study_page_controls.js` also reuses `isEditableTarget`,
+Navigation in `components/study_page_controls.js` also reuses `isEditableTarget`,
 protecting empty and `plaintext-only` forms of `contenteditable`. Its tests cover
 composition, modifiers, prevented events, static content, document-level event
 targets, and dialog blocking.

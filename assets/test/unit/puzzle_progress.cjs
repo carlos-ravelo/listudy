@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const context = vm.createContext({});
-for (const file of ['attempt_state', 'puzzle_progress']) {
+for (const file of ['training/attempt_state', 'training/puzzle_progress']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', file + '.js'), 'utf8')
         .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 }

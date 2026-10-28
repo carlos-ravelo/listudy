@@ -15,8 +15,8 @@ const html = `<html><head><link rel="stylesheet" href="/priv/static/css/bootstra
 <div id="collection_modal" class="modal ui-modal collection-modal" tabindex="-1" data-user-id=""><div class="modal-dialog modal-dialog-centered"><div class="modal-content collection-dialog"><div class="modal-header"><div><h2 id="collection_heading">Collections</h2>${read('lib/listudy_web/templates/study/_collection_heading.html.eex')}</div><button id="modal_close" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">×</button></div><div class="modal-body">${read('lib/listudy_web/templates/study/_collection_body.html.eex')}</div></div></div></div>
 </main><script src="/bootstrap-modals.js"></script>
 <script type="module">
-import { setupStudyCollections } from '/assets/js/modules/study_collections.js';
-import { setupStudyNavigation, setupStudyToolsMenu } from '/assets/js/modules/study_page_controls.js';
+import { setupStudyCollections } from '/assets/js/components/study_collections.js';
+import { setupStudyNavigation, setupStudyToolsMenu } from '/assets/js/components/study_page_controls.js';
 const chapters = [{title: 'Alpha', pgn: '1. e4 *'}, {title: '<b>Beta</b>', pgn: '1. d4 *'}];
 const select = document.getElementById('chapter_select');
 chapters.forEach((chapter, index) => select.add(new Option(chapter.title, index)));

@@ -1,9 +1,9 @@
-import { createPageScope } from './page_scope.js';
-import { downloadPgn } from './download_pgn.js';
-import { requestJson } from './request_json.js';
-import { openDialog } from './dialog_lifecycle.js';
-import { CollectionStore } from './study/collection_store.js';
-import { CollectionAccount } from './study/collection_account.js';
+import { createPageScope } from '../modules/page_scope.js';
+import { downloadPgn } from '../modules/pgn/download_pgn.js';
+import { requestJson } from '../modules/request_json.js';
+import { openDialog } from '../modules/dialog_lifecycle.js';
+import { CollectionStore } from '../modules/study/collection_store.js';
+import { CollectionAccount } from '../modules/study/collection_account.js';
 
 function element(tag, className, text) {
     const node = document.createElement(tag);

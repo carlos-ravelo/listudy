@@ -1,6 +1,6 @@
-import { createPracticeTracker, practiceTotals, sessionGoal } from './study/practice_sessions.js';
-import { hasBlockingUi, setupBlockingUi } from './blocking_ui.js';
-import { setupPracticeActivity } from './practice_activity.js';
+import { createPracticeTracker, practiceTotals, sessionGoal } from '../modules/study/practice_sessions.js';
+import { hasBlockingUi, setupBlockingUi } from '../modules/blocking_ui.js';
+import { setupPracticeActivity } from '../modules/training/practice_activity.js';
 
 export function setupStudySessions({ getStats, persist, storage, labels, onContinue, onFinish }) {
     setupBlockingUi();

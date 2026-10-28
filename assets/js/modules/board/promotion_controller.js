@@ -1,4 +1,4 @@
-import { createPromotionPicker } from './promotion_picker.js';
+import { createPromotionPicker } from '../../components/promotion_picker.js';
 
 export function createPromotionController({ element, onOpen, onChoose, onCancel, onPendingChange = () => {} }) {
     let pending = null;

@@ -7,7 +7,7 @@ const Chess = ChessModule.Chess || ChessModule;
 const read = file => fs.readFileSync(path.join(__dirname, '../../js', file), 'utf8');
 const helpers = vm.createContext({ require });
 require('./chess_moves_helper.cjs')(helpers);
-vm.runInContext(read('modules/engine_line.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), helpers);
+vm.runInContext(read('modules/engine/engine_line.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), helpers);
 const { engineLine } = helpers;
 const pv = ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5', 'a7a6', 'b5a4'];
 const start = new Chess().fen();

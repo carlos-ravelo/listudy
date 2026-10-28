@@ -24,9 +24,9 @@ const html = `<!doctype html><html><head><meta charset="utf-8">
 </main><script src="/assets/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
 import { hasBlockingUi, setupBlockingUi } from '/assets/js/modules/blocking_ui.js';
-import { setupStudyNavigation } from '/assets/js/modules/study_page_controls.js';
-import { setupStudySessions } from '/assets/js/modules/study_sessions.js';
-import { setupStudyFeedback } from '/assets/js/modules/study_feedback.js';
+import { setupStudyNavigation } from '/assets/js/components/study_page_controls.js';
+import { setupStudySessions } from '/assets/js/components/study_sessions.js';
+import { setupStudyFeedback } from '/assets/js/components/study_feedback.js';
 import { set_text } from '/assets/js/modules/info_boxes.js';
 let now = Date.now(), callbacks = [], stats = { version: 1, chapters: {} }, sequence = 0;
 Date.now = () => now;

@@ -36,7 +36,7 @@ const handler = source.slice(source.indexOf('async function play_move('), source
         });
         require('./board_game_helper.cjs')(context, { options: { check: false },
             onMove(move, position) { context.pieceMask.move(move); context.ground_move(move, position); } });
-        vm.runInContext(read('modules/board_interaction.js').replace(/^export /gm, ''), context);
+        vm.runInContext(read('modules/board/board_interaction.js').replace(/^export /gm, ''), context);
         require('./line_exercise_helper.cjs')(context, { applyOptions: {} });
         vm.runInContext('let finished = false;\n' + handler, context);
         await context.play_move(from, to);

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const createPageScope = require('./page_scope_helper.cjs');
-const source = fs.readFileSync(path.join(__dirname, '../../js/modules/training_lifecycle.js'), 'utf8')
+const source = fs.readFileSync(path.join(__dirname, '../../js/modules/training/training_lifecycle.js'), 'utf8')
     .replace(/^import .*;\n/gm, '').replace(/^export /gm, '');
 const createTrainingLifecycle = new Function('createPageScope', source + '\nreturn createTrainingLifecycle;')(createPageScope);
 const transition = (events, name, persisted) => {

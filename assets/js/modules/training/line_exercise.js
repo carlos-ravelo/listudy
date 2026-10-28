@@ -1,5 +1,5 @@
-import { inspectMove, moveToUci, playUciMove, parseUciMove } from './chess_moves.js';
-import { enginePosition } from './engine_position.js';
+import { inspectMove, moveToUci, playUciMove, parseUciMove } from '../board/chess_moves.js';
+import { enginePosition } from '../engine/engine_position.js';
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 

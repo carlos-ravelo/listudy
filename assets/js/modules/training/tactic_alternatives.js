@@ -1,6 +1,6 @@
-import { playUciMove } from './chess_moves.js';
-import { createEndgameEngine } from './endgame_engine.js';
-import { enginePosition } from './engine_position.js';
+import { playUciMove } from '../board/chess_moves.js';
+import { createEndgameEngine } from '../engine/endgame_engine.js';
+import { enginePosition } from '../engine/engine_position.js';
 const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 

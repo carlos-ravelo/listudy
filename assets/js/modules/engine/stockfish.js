@@ -1,4 +1,4 @@
-const engineDistribution = require('../../stockfish.config.js');
+const engineDistribution = require('../../../stockfish.config.js');
 export const stockfishVersion = engineDistribution.version;
 
 export function createStockfishWorker({ forceFallback = false } = {}) {

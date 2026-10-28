@@ -1,6 +1,6 @@
-import { createBoardGame } from '../../modules/board_game.js';
+import { createBoardGame } from '../../modules/board/board_game.js';
 import { playMoveSound } from '../../modules/sounds.js';
-import { blockBoardMoves, restoreBoardPosition } from '../../modules/board_interaction.js';
+import { blockBoardMoves, restoreBoardPosition } from '../../modules/board/board_interaction.js';
 import { mountStudyPage } from '../../modules/study/page_lifecycle.js';
 import { createStudyRun } from '../../modules/study/run_lifecycle.js';
 import { gradeStudyMove } from '../../modules/study/move_grading.js';
@@ -17,8 +17,8 @@ import { reconcileStudyProgress } from '../../modules/study/progress_preservatio
 import { presentTacticsTrap } from '../../modules/study/tactics_trap.js';
 import { tacticsMainline, tacticsCandidates, classifyTacticsMove } from '../../modules/study/tactics_mainline.js';
 import { practiceDepthLimit, scopePositionCatalog } from '../../modules/study/practice_scope.js';
-import { setupStudyFeedback } from '../../modules/study_feedback.js';
-import { setupStudySessions } from '../../modules/study_sessions.js';
+import { setupStudyFeedback } from '../../components/study_feedback.js';
+import { setupStudySessions } from '../../components/study_sessions.js';
 import { closeDialog, onDialogClosed } from '../../modules/dialog_lifecycle.js';
 import { setupStudySparring } from '../../modules/sparring/study_adapter.js';
 import { replayPositionContext } from '../../modules/study/position_context.js';
@@ -31,27 +31,27 @@ require("regenerator-runtime/runtime"); // required for sleep (https://github.co
 
 const Chessground = require('chessground').Chessground;
 const Chess = require('chess.js')
-import { turn_color, setup_chess, uci_to_san, cal_to_ucistr, move_to_ucistr } from '../../modules/chess_utils.js';
+import { turn_color, setup_chess, uci_to_san, cal_to_ucistr, move_to_ucistr } from '../../modules/board/chess_utils.js';
 import { string_hash } from '../../modules/hash.js';
 import { clear_local_storage } from '../../modules/localstorage.js';
 import { tree_value_add, tree_move_index, tree_children, tree_possible_moves, has_children, tree_value,
          need_hint, update_value, value_sort, tree_get_node, tree_children_filter_sort, tree_get_node_depth,
-         tree_get_node_string, tree_size_weighted_random_move, tree_max_num_moves_deep } from '../../modules/tree_utils.js';
-import { generate_move_trees, annotate_pgn } from '../../modules/tree_from_pgn.js';
+         tree_get_node_string, tree_size_weighted_random_move, tree_max_num_moves_deep } from '../../modules/pgn/tree_utils.js';
+import { generate_move_trees, annotate_pgn } from '../../modules/pgn/tree_from_pgn.js';
 import { getRandomIntFromRange } from '../../modules/random.js';
 import { unescape_string } from '../../modules/security_related.js';
 import { ground_init_state, onresize, resize_ground, setup_ground, ground_set_moves,
          setup_move_handler, setup_click_handler,
-         create_arrow_from_move, create_pgn_arrow, create_pgn_circle, create_playable_arrow, get_doubled_playable_move_objects } from '../../modules/ground.js';
+         create_arrow_from_move, create_pgn_arrow, create_pgn_circle, create_playable_arrow, get_doubled_playable_move_objects } from '../../modules/board/ground.js';
 import { TextOverlayId, TextOverlayManager } from '../../modules/overlays.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from '../../modules/info_boxes.js';
 import { array_contains } from '../../modules/utils.js';
 import { StorageAdapter } from '../../modules/study/storage_adapter.js';
 import { splitChapterPgn, chapterFromUrl } from '../../modules/study/chapter_pgn.js';
 import { lichessAnalysisUrl, prepareLichessAnalysis } from '../../modules/study/lichess_analysis.js';
-import { setupStudyCollections } from '../../modules/study_collections.js';
-import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from '../../modules/study_page_controls.js';
-import { readStudyActivity, requestedStudyActivity, trackStudyActivity } from '../../modules/study_activity.js';
+import { setupStudyCollections } from '../../components/study_collections.js';
+import { setupStudyNavigation, setupStudyMoveNavigation, setupPuzzleRun } from '../../components/study_page_controls.js';
+import { readStudyActivity, requestedStudyActivity, trackStudyActivity } from '../../modules/study/activity.js';
 import { readChapterStats, recordChapterAttempt, chapterMoveCatalog, chapterMastery, weakChapterOrder, beginChapterPractice, finishChapterPractice, bindChapterIdentities } from '../../modules/study/chapter_stats.js';
 import { emptyChapterReviews, readChapterReviews, chapterReviewSignature, recordLineReview, chapterReviewStatus } from '../../modules/study/chapter_review.js';
 import { setupStudyMoveTree, readChapterPosition } from '../../modules/study/study_move_tree.js';

@@ -8,9 +8,9 @@ const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '../../..');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'listudy-board-game-'));
 const entry = path.join(temp, 'entry.cjs');
-fs.writeFileSync(entry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/board_game.js'))}),
-...require(${JSON.stringify(path.join(root, 'assets/js/modules/line_exercise.js'))}),
-...require(${JSON.stringify(path.join(root, 'assets/js/modules/training_lifecycle.js'))}),
+fs.writeFileSync(entry, `module.exports={...require(${JSON.stringify(path.join(root, 'assets/js/modules/board/board_game.js'))}),
+...require(${JSON.stringify(path.join(root, 'assets/js/modules/training/line_exercise.js'))}),
+...require(${JSON.stringify(path.join(root, 'assets/js/modules/training/training_lifecycle.js'))}),
 Chessground:require(${JSON.stringify(path.join(root, 'assets/node_modules/chessground'))}).Chessground,
 Chess:require(${JSON.stringify(path.join(root, 'assets/node_modules/chess.js'))})};`);
 const html = `<!doctype html><link rel="stylesheet" href="/board.css"><style>#board{width:320px;height:320px}</style>

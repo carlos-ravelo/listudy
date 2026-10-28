@@ -55,7 +55,7 @@ function harness({ source = pgn, tactics = true, wait = async () => {}, actualRe
     context.pageScope.sleep = wait;
     context.preferences = { get: () => undefined };
     context.window = context;
-    for (const file of ['board_interaction.js', 'tree.js', 'tree_from_pgn.js', 'tree_utils.js', 'study/tactics_mainline.js', 'study/tactics_trap.js',
+    for (const file of ['board/board_interaction.js', 'pgn/tree.js', 'pgn/tree_from_pgn.js', 'pgn/tree_utils.js', 'study/tactics_mainline.js', 'study/tactics_trap.js',
         'study/chapter_stats.js', 'study/review_history.js', 'study/position_review.js', 'study/failed_positions.js',
         'study/move_grading.js', 'study/run_lifecycle.js']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', file), 'utf8')

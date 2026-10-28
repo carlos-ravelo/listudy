@@ -16,7 +16,7 @@ const html = `<html><head><meta charset="utf-8"><meta name="viewport" content="w
 <body class="bootstrap-ui"><main class="container study-workspace"><button id="open_settings">Settings</button><button id="progress">Progress</button>
 ${feedback}${settings}<div id="progress_modal">${statsPanel}</div></main>
 <script type="module">
-import { setupStudySessions } from '/assets/js/modules/study_sessions.js';
+import { setupStudySessions } from '/assets/js/components/study_sessions.js';
 let stats = JSON.parse(localStorage.getItem('session-test-stats') || '{"version":1,"chapters":{}}');
 if (!localStorage.getItem('smart_session_goal')) localStorage.setItem('smart_session_goal', '5');
 const labels = { session:'Session', newMoves:'new', practiced:'practiced', decisions:'decisions', sessions:'sessions',

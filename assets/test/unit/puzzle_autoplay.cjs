@@ -10,7 +10,7 @@ const context = vm.createContext({
     setTimeout: callback => {timers.set(++clock, callback); return clock;}, clearTimeout: id => timers.delete(id)
 });
 vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/page_scope.js'), 'utf8').replace(/^export /gm, ''), context);
-vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/puzzle_autoplay.js'), 'utf8').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/training/puzzle_autoplay.js'), 'utf8').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 const autoplay = context.createPuzzleAutoplay({isFinished: () => finished, next: () => advances++});
 autoplay.refresh(); assert.equal(input.checked, false);
 input.checked = true; input.onchange();

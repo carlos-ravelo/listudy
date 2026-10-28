@@ -1,19 +1,19 @@
-import { createTrainingLifecycle } from '../../modules/training_lifecycle.js';
-import { createLineExercise } from '../../modules/line_exercise.js';
-import { createBoardGame } from '../../modules/board_game.js';
+import { createTrainingLifecycle } from '../../modules/training/training_lifecycle.js';
+import { createLineExercise } from '../../modules/training/line_exercise.js';
+import { createBoardGame } from '../../modules/board/board_game.js';
 import { playMoveSound } from '../../modules/sounds.js';
-import { blockBoardMoves, restoreBoardPosition } from '../../modules/board_interaction.js';
+import { blockBoardMoves, restoreBoardPosition } from '../../modules/board/board_interaction.js';
 require("regenerator-runtime/runtime"); // required for sleep (https://github.com/babel/babel/issues/9849#issuecomment-487040428)
 
 import { onresize, resize_ground, setup_ground, ground_set_moves,
-         setup_move_handler } from '../../modules/ground.js';
-import { setup_chess } from '../../modules/chess_utils.js';
+         setup_move_handler } from '../../modules/board/ground.js';
+import { setup_chess } from '../../modules/board/chess_utils.js';
 import { set_text, clear_all_text, success_div, info_div, error_div, suggestion_div } from '../../modules/info_boxes.js';
-import { createTacticAttempts } from '../../modules/tactic_attempts.js';
-import { createEndgameEngine } from '../../modules/endgame_engine.js';
-import { createPromotionController } from '../../modules/promotion_controller.js';
-import { createPuzzleProgress } from '../../modules/puzzle_progress.js';
-import { createPuzzleAutoplay } from '../../modules/puzzle_autoplay.js';
+import { createTacticAttempts } from '../../modules/training/tactic_attempts.js';
+import { createEndgameEngine } from '../../modules/engine/endgame_engine.js';
+import { createPromotionController } from '../../modules/board/promotion_controller.js';
+import { createPuzzleProgress } from '../../modules/training/puzzle_progress.js';
+import { createPuzzleAutoplay } from '../../modules/training/puzzle_autoplay.js';
 let progress, picker;
 let busy = false, finished = false;
 const boardGame = createBoardGame({ getPosition: () => chess, getBoard: () => ground,

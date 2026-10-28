@@ -1,4 +1,4 @@
-import { downloadPgn } from '../download_pgn.js';
+import { downloadPgn } from '../pgn/download_pgn.js';
 
 // Lichess truncates inline PGNs at 5,000 characters. Larger chapters are
 // downloaded intact so they can be imported from the analysis board.

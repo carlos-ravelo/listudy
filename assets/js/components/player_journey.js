@@ -1,4 +1,4 @@
-import { readStudyActivity } from '../modules/study_activity.js';
+import { readStudyActivity } from '../modules/study/activity.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-study-continue]').forEach(link => {

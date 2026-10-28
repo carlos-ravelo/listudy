@@ -1,8 +1,8 @@
 /*
  * Text overlays are "speech bubbles" that can be placed on the chessboard and are used to explain certain arrows etc.
  */
-import { san_to_uci, cal_to_ftc } from './chess_utils.js';
-import { calculate_width, ground_is_legal_move, some_moves_neglected, current_move_neglected } from './ground.js';
+import { san_to_uci, cal_to_ftc } from './board/chess_utils.js';
+import { calculate_width, ground_is_legal_move, some_moves_neglected, current_move_neglected } from './board/ground.js';
 import { array_contains } from './utils.js';
 
 

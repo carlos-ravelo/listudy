@@ -5,9 +5,9 @@ const root = path.resolve(__dirname, '../../..');
 const uri = source => 'data:text/javascript;base64,' + Buffer.from(source).toString('base64');
 (async () => {
     const evaluation = uri(fs.readFileSync(path.join(root, 'assets/js/modules/sparring/evaluation.js'), 'utf8'));
-    const source = fs.readFileSync(path.join(root, 'assets/js/modules/endgame_feedback.js'), 'utf8').replace("'./sparring/evaluation.js'", JSON.stringify(evaluation));
+    const source = fs.readFileSync(path.join(root, 'assets/js/modules/training/endgame_feedback.js'), 'utf8').replace("'../sparring/evaluation.js'", JSON.stringify(evaluation));
     const {endgameTurningPoint, endgameMateCue, endgameMateSlower, endgameAssessmentCertain, createEndgameFeedback} = await import(uri(source));
-    const barSource = fs.readFileSync(path.join(root, 'assets/js/modules/evaluation_bar.js'), 'utf8').replace("'./sparring/evaluation.js'", JSON.stringify(evaluation));
+    const barSource = fs.readFileSync(path.join(root, 'assets/js/components/evaluation_bar.js'), 'utf8').replace("'../modules/sparring/evaluation.js'", JSON.stringify(evaluation));
     const {evaluationBarValue, renderEvaluationBar} = await import(uri(barSource));
     assert.equal(evaluationBarValue(null), null);
     assert.deepEqual(evaluationBarValue({score: {type: 'cp', value: 0}, turn: 'b'}), {white: 50, text: '0.0'});

@@ -26,7 +26,7 @@ const handler = source.slice(source.indexOf('async function play_move('), source
         });
         require('./board_game_helper.cjs')(context, { options: { color: 'white' } });
         require('./line_exercise_helper.cjs')(context);
-        vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), context);
+        vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/board/board_interaction.js'), 'utf8').replace(/^export /gm, ''), context);
         vm.runInContext('let busy = false, finished = false, progress;\n' + handler, context);
         await context.play_move('d2', 'd4', 'q');
         assert.equal(chess.history().length, 0);

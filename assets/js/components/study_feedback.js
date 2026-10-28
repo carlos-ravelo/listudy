@@ -1,5 +1,5 @@
-import { createPageScope } from './page_scope.js';
-import { hasBlockingUi, setupBlockingUi } from './blocking_ui.js';
+import { createPageScope } from '../modules/page_scope.js';
+import { hasBlockingUi, setupBlockingUi } from '../modules/blocking_ui.js';
 
 export function setupStudyFeedback({ durationMs = 4000 } = {}) {
     const scope = createPageScope();

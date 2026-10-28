@@ -1,12 +1,12 @@
-import { restoreBoardPosition } from '../board_interaction.js';
+import { restoreBoardPosition } from '../board/board_interaction.js';
 import { createPageScope } from '../page_scope.js';
-import { engineLine } from '../engine_line.js';
-import { moveArrows } from '../board_shapes.js';
-import { downloadPgn } from '../download_pgn.js';
+import { engineLine } from '../engine/engine_line.js';
+import { moveArrows } from '../board/board_shapes.js';
+import { downloadPgn } from '../pgn/download_pgn.js';
 import { createSparringSession, sparringReviewEvery } from './session.js';
 import { createStudySparring, sparringStartPositions, createSparringChapterRotation } from './chess_adapter.js';
-import { createSparringEngine, sparringStrength, sparringRating } from './uci_engine.js';
-import { createPromotionController } from '../promotion_controller.js';
+import { createSparringEngine, sparringStrength, sparringRating } from '../engine/uci_engine.js';
+import { createPromotionController } from '../board/promotion_controller.js';
 import { setupStudyMoveTree } from '../study/study_move_tree.js';
 import { sounds, playMoveSound } from '../sounds.js';
 import { set_text, clear_all_text, info_div, error_div, success_div } from '../info_boxes.js';

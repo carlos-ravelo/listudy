@@ -6,7 +6,7 @@ const ChessModule = require('chess.js');
 const Chess = ChessModule.Chess || ChessModule;
 const context = vm.createContext({require});
 require('./chess_moves_helper.cjs')(context);
-for (const name of ['engine_position', 'tactic_alternatives']) {
+for (const name of ['engine/engine_position', 'training/tactic_alternatives']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules', name + '.js'), 'utf8').replace(/^import .*\n/gm, '').replace(/^export /gm, ''), context);
 }
 const {createTacticAlternatives, enginePosition} = context;

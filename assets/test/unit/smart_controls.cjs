@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const createPageScope = require('./page_scope_helper.cjs');
-const source = fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/study_page_controls.js'), 'utf8');
+const source = fs.readFileSync(require('node:path').join(__dirname, '../../js/components/study_page_controls.js'), 'utf8');
 const listeners = {};
 const storage = {};
 const nodes = Object.fromEntries(['puzzle_run', 'practice_smart', 'practice_lines', 'line_order_control', 'stop_smart_run'].map(id => [id, { attributes: {}, setAttribute(key, value) { this.attributes[key] = value; } }]));
@@ -90,7 +90,7 @@ const smartContext = vm.createContext({ createPageScope, ...state,
     ground: { set() {} }, i18n: { smart_learning: 'new', smart_complete: 'done', spaced_review_next: 'next' }
 });
 smartContext.window = smartContext;
-vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), smartContext);
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/board/board_interaction.js'), 'utf8').replace(/^export /gm, ''), smartContext);
 vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../../js/modules/study/run_lifecycle.js'), 'utf8').replace(/^export /gm, ''), smartContext);
 smartContext.studyRun = smartContext.createStudyRun({ getChapter: () => smartContext.chapter });
 smartContext.studyRun.invalidate();

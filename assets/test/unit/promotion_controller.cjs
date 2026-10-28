@@ -9,7 +9,7 @@ const context = vm.createContext({
         return { open() {}, close() {}, destroy() {} };
     }
 });
-vm.runInContext(fs.readFileSync('assets/js/modules/promotion_controller.js', 'utf8')
+vm.runInContext(fs.readFileSync('assets/js/modules/board/promotion_controller.js', 'utf8')
     .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 
 for (const color of ['white', 'black']) {

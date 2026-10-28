@@ -1,4 +1,4 @@
-import { winningChances } from './sparring/evaluation.js';
+import { winningChances } from '../modules/sparring/evaluation.js';
 
 export function evaluationBarValue(analysis) {
     const score = analysis?.score;

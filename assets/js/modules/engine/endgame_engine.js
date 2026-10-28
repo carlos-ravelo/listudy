@@ -1,4 +1,4 @@
-import { createSparringEngine } from './sparring/uci_engine.js';
+import { createSparringEngine } from './uci_engine.js';
 import { createTablebaseClient, tablebaseMove, tablebaseAssessment } from './tablebase.js';
 
 const tablebases = createTablebaseClient();

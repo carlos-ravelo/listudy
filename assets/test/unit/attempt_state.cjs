@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const context = vm.createContext({});
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/attempt_state.js'), 'utf8').replace(/^export /gm, ''), context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/training/attempt_state.js'), 'utf8').replace(/^export /gm, ''), context);
 const record = { attempts: 0, errors: 0, assisted: false, completed: false };
 const attempt = context.createAttemptState(record);
 assert.equal(attempt.active, true);

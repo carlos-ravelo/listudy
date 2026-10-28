@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const context = vm.createContext({setTimeout, clearTimeout, stockfishVersion: '19.0.1'});
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/sparring/uci_engine.js'), 'utf8')
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/engine/uci_engine.js'), 'utf8')
     .replace(/^import .*\n/gm, '').replace(/^export /gm, ''), context);
 const {engineHashMb, createSparringEngine} = context;
 const state = {initialFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', moves: []};

@@ -4,23 +4,23 @@
 
 | Responsibility | Shared implementation | Consumers |
 | --- | --- | --- |
-| Coordinate notation, move inspection and UCI execution | `assets/js/modules/chess_moves.js` | Native tactics, Blind, Pieceless, endgames, Sparring, standalone Stockfish and legacy SAN/UCI wrappers |
-| Legacy board/color helpers | `assets/js/modules/chess_utils.js` | Legacy board modes |
-| Line exercise progression | `assets/js/modules/line_exercise.js` | Native tactics, Pieceless, Blind and Chessclicker; adapters retain presentation and rewards |
-| Applying moves, undo and board synchronization | `assets/js/modules/board_game.js` | Study, native tactics, Pieceless, endgames, standalone Stockfish, Chessclicker and game-mistake practice |
-| Board interaction, authoritative position restoration and legal destinations | `assets/js/modules/board_interaction.js` | Study, editor, Sparring, native tactics, Pieceless, endgames and Blind; `chess_utils.js` delegates destination mapping for legacy board modes |
-| Board creation, movement, sizing, sound | `assets/js/modules/ground.js` | Study and native exercises; newer controllers also render Chessground directly |
-| Alternative solution analysis | `assets/js/modules/tactic_alternatives.js` | Native tactics, Blind, Pieceless through `tactic_attempts.js` |
-| Pending validation and stale response rejection | `assets/js/modules/tactic_attempts.js` | Native tactics, Blind, Pieceless |
-| Promotion interaction and pending move | `assets/js/modules/promotion_controller.js` | Editor, Sparring, native tactics, Pieceless, endgames |
-| Page and exercise lifetimes | `assets/js/modules/training_lifecycle.js` | Native tactics, Blind, Pieceless, Chessclicker, endgames and standalone Stockfish |
-| Move hint shapes | `assets/js/modules/board_shapes.js` | Endgame review/hints, Sparring best moves and analysis game comparisons |
-| Engine continuation presentation | `assets/js/modules/engine_line.js` | Chapter editor, Sparring review/downloads and endgame review/hints |
-| UCI worker protocol, search cancellation and full-strength/limited-strength options | `assets/js/modules/sparring/uci_engine.js` | Sparring, alternative validation, endgame analysis and standalone Stockfish |
-| Attempt errors, assistance and terminal outcome | `assets/js/modules/attempt_state.js` | Native catalogue progress and Blind/Pieceless visualization records |
+| Coordinate notation, move inspection and UCI execution | `assets/js/modules/board/chess_moves.js` | Native tactics, Blind, Pieceless, endgames, Sparring, standalone Stockfish and legacy SAN/UCI wrappers |
+| Legacy board/color helpers | `assets/js/modules/board/chess_utils.js` | Legacy board modes |
+| Line exercise progression | `assets/js/modules/training/line_exercise.js` | Native tactics, Pieceless, Blind and Chessclicker; adapters retain presentation and rewards |
+| Applying moves, undo and board synchronization | `assets/js/modules/board/board_game.js` | Study, native tactics, Pieceless, endgames, standalone Stockfish, Chessclicker and game-mistake practice |
+| Board interaction, authoritative position restoration and legal destinations | `assets/js/modules/board/board_interaction.js` | Study, editor, Sparring, native tactics, Pieceless, endgames and Blind; `chess_utils.js` delegates destination mapping for legacy board modes |
+| Board creation, movement, sizing, sound | `assets/js/modules/board/ground.js` | Study and native exercises; newer controllers also render Chessground directly |
+| Alternative solution analysis | `assets/js/modules/training/tactic_alternatives.js` | Native tactics, Blind, Pieceless through `tactic_attempts.js` |
+| Pending validation and stale response rejection | `assets/js/modules/training/tactic_attempts.js` | Native tactics, Blind, Pieceless |
+| Promotion interaction and pending move | `assets/js/modules/board/promotion_controller.js` | Editor, Sparring, native tactics, Pieceless, endgames |
+| Page and exercise lifetimes | `assets/js/modules/training/training_lifecycle.js` | Native tactics, Blind, Pieceless, Chessclicker, endgames and standalone Stockfish |
+| Move hint shapes | `assets/js/modules/board/board_shapes.js` | Endgame review/hints, Sparring best moves and analysis game comparisons |
+| Engine continuation presentation | `assets/js/modules/engine/engine_line.js` | Chapter editor, Sparring review/downloads and endgame review/hints |
+| UCI worker protocol, search cancellation and full-strength/limited-strength options | `assets/js/modules/engine/uci_engine.js` | Sparring, alternative validation, endgame analysis and standalone Stockfish |
+| Attempt errors, assistance and terminal outcome | `assets/js/modules/training/attempt_state.js` | Native catalogue progress and Blind/Pieceless visualization records |
 | Latest async task ownership | `assets/js/modules/latest_task.js` | Editor analysis/chapter loads and endgame opponent/review/hint requests |
 | Page resource cleanup | `assets/js/modules/page_scope.js` | Consumers that explicitly register resources |
-| Visualization progression | `assets/js/modules/native_visualization.js`, `study/visualization.js` | Native visualization exercises and PGN visualization |
+| Visualization progression | `assets/js/modules/training/native_visualization.js`, `study/visualization.js` | Native visualization exercises and PGN visualization |
 
 ## Remaining differences to address
 

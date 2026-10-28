@@ -23,7 +23,7 @@ for (const color of ['white', 'black']) {
             if (movable) Object.assign(state.movable, movable);
         } }
     });
-    vm.runInContext(read('modules/board_interaction.js').replace(/^export /gm, '') + '\n' + ready, context);
+    vm.runInContext(read('modules/board/board_interaction.js').replace(/^export /gm, '') + '\n' + ready, context);
     context.boardReady();
     assert.equal(state.movable.color, color);
     assert(state.movable.dests.size > 0);

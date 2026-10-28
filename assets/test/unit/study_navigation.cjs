@@ -12,7 +12,7 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/run
 function createContext(values) {
     const context = vm.createContext(values);
     require('./board_game_helper.cjs')(context);
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board_interaction.js'), 'utf8').replace(/^export /gm, ''), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/board/board_interaction.js'), 'utf8').replace(/^export /gm, ''), context);
     const keys = { arrows: 'show_arrows', arrowType: 'arrow_type', comments: 'show_comments',
         review: 'board_review', keyMoves: 'key_moves_mode', moveDelay: 'move_delay_time' };
     context.selectStudyComments = commentContext.selectStudyComments;
@@ -40,7 +40,7 @@ const statsContext = createContext({ sparring: null, visualization: null,});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/chapter_stats.js'), 'utf8')
     .replace(/export \{[^}]+\};/, ''), statsContext);
 const moveTreeContext = createContext({ sparring: null, visualization: null, require });
-vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/download_pgn.js'), 'utf8')
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/pgn/download_pgn.js'), 'utf8')
     .replace(/^export /gm, ''), moveTreeContext);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/lichess_analysis.js'), 'utf8')
     .replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), moveTreeContext);

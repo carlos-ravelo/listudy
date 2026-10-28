@@ -30,7 +30,7 @@ const context = vm.createContext({
     createPromotionController() { return { destroy() { counts.pickers++; } }; }
 });
 context.window = context;
-vm.runInContext(read('modules/training_lifecycle.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
+vm.runInContext(read('modules/training/training_lifecycle.js').replace(/^import .*;\n/gm, '').replace(/^export /gm, ''), context);
 context.lifecycle = context.createTrainingLifecycle({ events, restore: () => context.main(true) });
 vm.runInContext(main, context);
 context.main();
