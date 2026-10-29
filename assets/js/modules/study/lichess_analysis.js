@@ -6,7 +6,8 @@ const inlineLimit = 5000;
 
 function analysisPgn(pgn) {
     return pgn.replace(/"(?:\\.|[^"\\])*"|\{[^}]*\}|;[^\r\n]*/g,
-        token => token.startsWith('"') ? token : ' ').trim();
+        token => token.startsWith('"') ? token : ' ')
+        .replace(/"(?:\\.|[^"\\])*"|\s+/g, token => token.startsWith('"') ? token : ' ').trim();
 }
 
 export function lichessAnalysisUrl(pgn, orientation, fen, path = []) {

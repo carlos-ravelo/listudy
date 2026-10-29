@@ -199,7 +199,7 @@ function assertSynchronized({ context, board, links }) {
     trainer.chapterPgns[1] = '[Event "Tactics"]\n\n1. e4 e5 (1... c5 {Defense}) 2. Nf3 (2. Nc3) *';
     trainer.change_analysis_board();
     assert.equal(decodeURIComponent(new URL(tactics.links.analysis_board.href).pathname.slice('/analysis/pgn/'.length)),
-        '[Event "Tactics"]\n\n1. e4 e5 (1... c5  ) 2. Nf3 (2. Nc3) *', 'Include every defense and alternative in the comment-free analysis URL');
+        '[Event "Tactics"] 1. e4 e5 (1... c5 ) 2. Nf3 (2. Nc3) *', 'Include every defense and alternative in the comment-free analysis URL');
     assert.ok(trainer.chapterPgns[1].includes('{Defense}'), 'Keep comments in the source chapter');
     trainer.tacticsCollection = true;
     trainer.trees[0].first_variation = null;
@@ -364,7 +364,7 @@ function assertSynchronized({ context, board, links }) {
 
     const reply = fixture(['e4', 'e5', 'Nf3']);
     const pendingReply = reply.context.handle_move('e2', 'e4');
-    assert(reply.links.analysis_board.href.includes(encodeURIComponent(reply.context.chapterPgns[1])));
+    assert(reply.links.analysis_board.href.includes(encodeURIComponent(reply.context.chapterPgns[1].replace(/\s+/g, ' '))));
     reply.context.go_back();
     reply.waits.shift()();
     await pendingReply;

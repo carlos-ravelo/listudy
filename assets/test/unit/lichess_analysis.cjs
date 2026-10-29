@@ -23,7 +23,7 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/lic
     const link = context.lichessAnalysisUrl(pgn, 'black', fen, []);
     const url = new URL(link);
     assert.equal(url.origin, 'https://lichess.org');
-    assert.equal(decodeURIComponent(url.pathname.slice('/analysis/pgn/'.length)), pgn.replace('{Solución}', ' '));
+    assert.equal(decodeURIComponent(url.pathname.slice('/analysis/pgn/'.length)), pgn.replace('{Solución}', ' ').replace(/\s+/g, ' '));
     assert.equal(url.searchParams.get('color'), 'black');
     assert.equal(url.hash, '#32', 'Use the absolute ply for a custom starting position');
     assert.equal(new URL(context.lichessAnalysisUrl(pgn, 'white', '4k3/Q7/8/8/8/8/8/4K3 b - - 0 17', [0])).hash, '#33');
@@ -37,7 +37,13 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../../js/modules/study/lic
     assert.equal(downloaded, undefined, 'Long comments do not trigger the import fallback');
     const annotated = '[Event "Keep {braces}; punctuation"]\n1. e4; Ignore this move: e5\n e5 {[%eval 0.2]} (1... c5) *';
     const sent = decodeURIComponent(new URL(context.lichessAnalysisUrl(annotated, 'white', fen)).pathname.slice('/analysis/pgn/'.length));
-    assert.equal(sent, '[Event "Keep {braces}; punctuation"]\n1. e4 \n e5   (1... c5) *');
+    assert.equal(sent, '[Event "Keep {braces}; punctuation"] 1. e4 e5 (1... c5) *');
+    const paragraphs = '[Event "Title  with spaces"]\n\n1. d4 c5\n{First explanation}\n\n2. d5 e5\n\n(2... d6) 3. e4 *';
+    const paragraphUrl = context.lichessAnalysisUrl(paragraphs, 'white', fen);
+    const inline = decodeURIComponent(new URL(paragraphUrl).pathname.slice('/analysis/pgn/'.length));
+    assert.equal(inline, '[Event "Title  with spaces"] 1. d4 c5 2. d5 e5 (2... d6) 3. e4 *',
+        'Blank lines left after removing comments must not truncate Lichess imports');
+    assert(!inline.includes('\n'), 'Send one line while preserving whitespace inside quoted headers');
     context.downloadPgn(long, 'chapter.pgn');
     assert.equal(await downloaded.text(), long, 'Normal downloads retain all comments');
     const largeChapter = long + '\n' + '1. e4 e5 '.repeat(1000);
