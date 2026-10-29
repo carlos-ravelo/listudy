@@ -7,7 +7,8 @@ const root = path.resolve(__dirname, '../../..');
 const css = fs.readFileSync(path.join(root, 'assets/css/features/study_presentation.css'), 'utf8');
 const html = `<style>${css}
 .hidden{display:none}body{margin:0}.infoBox{background:#def}#chessground{position:fixed;left:12px;top:50px;width:296px;height:350px}#study_board_actions{position:fixed;top:440px;left:12px;width:296px;height:80px}
-</style><div class="study-workspace"><div id="chessground"></div><div id="study_board_actions"></div><div class="study-feedback"><div class="info"><p id="info" class="infoBox hidden"><button class="close_button">×</button><span id="info_text"></span></p></div></div></div>
+@media(max-width:600px){#chessground{position:static;margin:50px 12px 0}#study_board_actions{position:static;margin:40px 12px 0}}
+</style><div class="study-workspace"><div id="chessground"></div><div id="study_board_actions"></div><div class="study-feedback"><div class="info"><p id="info" class="infoBox hidden"><button class="close_button">×</button><span id="info_text"></span></p></div></div><p id="weak_run_status">Practicing weak chapters · 3 chapters left</p></div>
 <script type="module">import {setupStudyFeedback} from '/assets/js/components/study_feedback.js';import {set_text} from '/assets/js/modules/info_boxes.js';setupStudyFeedback();window.showFeedback=text=>set_text('info',text);</script>`;
 (async () => {
     const server = http.createServer((req, res) => {
@@ -28,17 +29,21 @@ const html = `<style>${css}
             await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
             const bounds = await page.evaluate(() => {
                 const region = document.querySelector('.study-feedback'), rect = region.getBoundingClientRect();
-                return {top: rect.top, bottom: rect.bottom, right: rect.right, clipped: region.scrollHeight > region.clientHeight + 1};
+                const status = document.querySelector('#weak_run_status').getBoundingClientRect();
+                const actions = document.querySelector('#study_board_actions').getBoundingClientRect();
+                return {top: rect.top, bottom: rect.bottom, right: rect.right, statusTop: status.top, actionsBottom: actions.bottom, clipped: region.scrollHeight > region.clientHeight + 1};
             });
-            assert(bounds.top >= 0 && bounds.bottom <= 600 && bounds.right <= width);
+            assert(bounds.top >= bounds.actionsBottom && bounds.bottom <= bounds.statusTop && bounds.right <= width);
             assert.equal(bounds.clipped, false);
             await page.evaluate(() => { window.showFeedback('Long message. '.repeat(500)); });
             await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
             await page.evaluate(() => { document.querySelector('.study-feedback').scrollTop = 100; window.showFeedback('Saved.'); });
             assert.equal(await page.locator('.study-feedback').evaluate(el => el.scrollTop), 0);
+            const statusTop = await page.locator('#weak_run_status').evaluate(el => el.getBoundingClientRect().top);
             await page.locator('.close_button').click();
+            assert.equal(await page.locator('#weak_run_status').evaluate(el => el.getBoundingClientRect().top), statusTop, 'Dismissing a short message keeps the practice status in place');
             assert(await page.locator('#info').isHidden());
         }
-        console.log('Feedback stays readable, resets scrolling and dismisses at 320/390px');
+        console.log('Mobile feedback stays in flow without covering or shifting practice status at 320/390px');
     } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -25,6 +25,10 @@ export function setupStudyFeedback({ durationMs = 4000 } = {}) {
     }
     function position() {
         frame = null;
+        if (region.closest('.study-workspace') && window.matchMedia('(max-width: 600px)').matches) {
+            for (const property of ['width', 'inset-inline-end', 'left', 'top', 'bottom', 'max-height']) region.style.removeProperty(property);
+            return;
+        }
         if (!current || current.classList.contains('hidden')) return;
         region.style.maxHeight = '';
         const board = document.querySelector('#chessground')?.getBoundingClientRect();
