@@ -188,6 +188,18 @@
 .study-workspace .study-depth-controls button { width: 44px; flex: 0 0 44px; text-align: center; }
 .study-workspace .study-depth-controls input { width: 100%; min-width: 0; margin: 0; }
 .study-workspace .study-depth-controls :disabled { opacity: .5; cursor: default; }
+.study-workspace .study-depth-bulk { margin-top: 12px; min-width: 0; }
+.study-workspace .study-depth-bulk-heading { width: 100%; position: relative; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.study-workspace .study-depth-bulk-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 4px; font-size: 13px; }
+.study-workspace .study-depth-bulk-row > span { min-width: 0; }
+.study-workspace .study-depth-bulk-row .btn { width: auto; flex-shrink: 0; padding: 8px 12px; border: var(--bs-border-width, 1px) solid var(--bs-btn-border-color); border-radius: var(--bs-btn-border-radius); text-align: center; }
+.study-workspace .study-depth-bulk-actions { display: flex; gap: 8px; }
+.study-workspace .study-depth-bulk-actions .btn { min-width: 44px; }
+.study-workspace .study-depth-help { position: static; display: inline-flex; font-weight: 400; }
+.study-workspace .study-depth-help .study-depth-info { display: inline-flex; align-items: center; justify-content: center; width: 32px; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--study-muted); }
+.study-workspace .study-depth-popover { inset-inline-start: 0; top: 100%; box-sizing: border-box; width: min(320px, calc(100vw - 64px)); max-width: 100%; min-width: 0; padding: 12px; font-size: 13px; line-height: 1.5; white-space: normal; }
+.study-workspace .study-depth-popover > span { display: block; }
+.study-workspace .study-depth-popover > span + span { margin-top: 8px; }
 .study-workspace #max_depth_help { margin: 4px 0 0; color: var(--study-muted); font-size: 12px; line-height: 1.5; }
 .study-workspace .study-metadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }
 .study-workspace .study-metadata dt { font-size: 13px; color: var(--study-muted); }

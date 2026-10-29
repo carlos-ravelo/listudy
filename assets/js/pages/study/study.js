@@ -281,7 +281,10 @@ const tacticsCollection = document.querySelector('[data-training-kind="tactics"]
 const preferences = createStudyPreferences({ storage: StorageAdapter, labels: i18n, tactics: tacticsCollection });
 
 // Option to control the maximum number of moves being played
-const practiceDepth = createPracticeDepth({ storage: StorageAdapter, studyId: study_id });
+const practiceDepth = createPracticeDepth({
+    storage: StorageAdapter, studyId: study_id,
+    chapterDepths: () => trees.map((_, index) => get_repertoire_depth(index))
+});
 let practiceDepthView;
 let depthSettingsChanged = false;
 const progressPublisher = createProgressPublisher({
@@ -1244,8 +1247,8 @@ function get_move_delay() {
     return delay;
 }
 
-function get_repertoire_depth() {
-    let starting_moves = trees[chapter].root;
+function get_repertoire_depth(chapterIndex = chapter) {
+    let starting_moves = trees[chapterIndex].root;
     if (!starting_moves.length) return 1;
     let for_white = color == "white";
     return tree_max_num_moves_deep(starting_moves, for_white);

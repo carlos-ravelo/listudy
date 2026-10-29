@@ -84,4 +84,37 @@ assert.equal(effects, 2);
 binding.destroy();
 component.change('depth', '3');
 assert.equal(effects, 2, 'Disposing removes the command listener');
+const bulkValues = new Map([
+    ['max_depth_bulk_0', '2'], ['max_depth_bulk_0_enabled', 'true'],
+    ['max_depth_bulk_1', '4'], ['max_depth_bulk_1_enabled', 'true'],
+    ['max_depth_bulk_2', '-1'], ['max_depth_bulk_2_enabled', 'true'],
+    ['max_depth_bulk_3', '2'], ['max_depth_bulk_3_enabled', 'false']
+]);
+const bulkStorage = { getItem: key => bulkValues.get(key) ?? null,
+    setItem: (key, value) => bulkValues.set(key, String(value)) };
+const bulk = context.createPracticeDepth({ storage: bulkStorage, studyId: 'bulk', chapterDepths: () => [8, 5, 3, 10] });
+bulk.selectChapter(0, 8);
+assert(bulk.change({ type: 'stepAll', value: 1 }));
+assert.equal(bulk.snapshot().depth, 3, 'The selected chapter refreshes after bulk changes');
+assert.equal(bulkValues.get('max_depth_bulk_1'), '-1', 'Increasing to the chapter maximum keeps maximum semantics');
+assert.equal(bulkValues.get('max_depth_bulk_2'), '-1', 'Unlimited chapters stay unlimited');
+assert.equal(bulkValues.get('max_depth_bulk_3'), '2', 'Disabled limits retain their saved depth');
+assert.equal(bulk.change({ type: 'stepAll', value: 2 }), false);
+assert(bulk.change({ type: 'stepAll', value: -1 }));
+assert.equal(bulk.snapshot().depth, 2);
+assert.equal(bulkValues.get('max_depth_bulk_1'), '-1', 'Global steps leave unlimited chapters alone');
+bulk.change({ type: 'depth', value: 6 });
+assert(bulk.change({ type: 'applyAll' }));
+assert.equal(bulkValues.get('max_depth_bulk_1'), '-1', 'Applying clamps to each chapter maximum');
+assert.equal(bulkValues.get('max_depth_bulk_2'), '-1');
+assert.equal(bulkValues.get('max_depth_bulk_3'), '6');
+assert.equal(bulkValues.get('max_depth_bulk_3_enabled'), 'true');
+assert.equal(bulk.change({ type: 'applyAll' }), false, 'Repeated apply is a no-op');
+bulk.selectChapter(3, 10);
+bulk.change({ type: 'depth', value: 4 });
+assert.equal(bulkValues.get('max_depth_bulk_0'), '6', 'Individual edits remain independent after a bulk change');
+bulk.change({ type: 'enable', value: false });
+assert(bulk.change({ type: 'applyAll' }));
+for (let chapter = 0; chapter < 4; chapter++) assert.equal(context.practiceDepthLimit(bulkStorage, 'bulk', chapter), Infinity);
+assert.equal(bulkValues.get('max_depth_bulk_0'), '4', 'Applying a disabled setting also copies its saved numeric depth');
 console.log('Study depth model, Alpine commands, hydration, chapters, bounds, scope compatibility and cleanup passed');

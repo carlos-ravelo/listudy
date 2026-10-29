@@ -47,6 +47,29 @@
       </div>
     </div>
     <p id="max_depth_help"><%= dgettext("study", "Limits Full lines and Smart to this depth in this chapter. Deeper positions and their review schedules are preserved. Changes apply when you close Settings.") %></p>
+    <fieldset class="study-depth-bulk">
+      <legend class="study-depth-bulk-heading">
+        <%= dgettext("study", "All chapters") %>
+        <span class="study-depth-help" x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @click.outside="open = pinned = false" @keydown.escape.stop="open = pinned = false; $refs.help.focus()" @focusout="if (!$el.contains($event.relatedTarget)) open = pinned = false">
+          <button type="button" class="study-depth-info" x-ref="help" @click="pinned = !pinned; open = pinned" @focus="open = true" :aria-expanded="open" aria-controls="study_depth_bulk_help" aria-label="<%= dgettext("study", "About bulk depth settings") %>"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v2"/></svg></button>
+          <span id="study_depth_bulk_help" class="dropdown-menu show study-depth-popover" role="region" aria-label="<%= dgettext("study", "About bulk depth settings") %>" x-show="open" x-cloak>
+            <span><strong><%= dgettext("study", "Adjust depth:") %></strong> <%= dgettext("study", "Increase or decrease the depth of all limited chapters by one. Unlimited chapters remain unchanged.") %></span>
+            <span><strong><%= dgettext("study", "Apply to all:") %></strong> <%= dgettext("study", "Apply the currently selected depth and limit settings to every chapter, replacing their individual configurations.") %></span>
+          </span>
+        </span>
+      </legend>
+      <div class="study-depth-bulk-row">
+        <span><%= dgettext("study", "Adjust depth across chapters") %></span>
+        <div class="study-depth-bulk-actions" role="group" aria-label="<%= dgettext("study", "Adjust depth across chapters") %>">
+          <button type="button" class="btn btn-outline-secondary" @click="change('stepAll', -1)" :disabled="!ready" aria-label="<%= dgettext("study", "Decrease depth by 1 in all limited chapters") %>">−1</button>
+          <button type="button" class="btn btn-outline-secondary" @click="change('stepAll', 1)" :disabled="!ready" aria-label="<%= dgettext("study", "Increase depth by 1 in all limited chapters") %>">+1</button>
+        </div>
+      </div>
+      <div class="study-depth-bulk-row">
+        <span><%= dgettext("study", "Use current settings") %></span>
+        <button type="button" class="btn btn-outline-secondary" @click="change('applyAll')" :disabled="!ready"><%= dgettext("study", "Apply to all") %></button>
+      </div>
+    </fieldset>
   </div>
 </fieldset>
 <fieldset class="study-setting-group study-session-settings"><legend><%= dgettext("study", "Study sessions") %></legend>

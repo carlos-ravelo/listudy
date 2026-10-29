@@ -1574,3 +1574,83 @@ msgstr "Reintentar"
 #, elixir-autogen, elixir-format
 msgid "View solution"
 msgstr "Ver solución"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "All chapters"
+msgstr "Todos los capítulos"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Decrease depth by 1 in all limited chapters"
+msgstr "Reducir la profundidad en 1 en todos los capítulos con límite"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Increase depth by 1 in all limited chapters"
+msgstr "Aumentar la profundidad en 1 en todos los capítulos con límite"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Apply current settings to all chapters"
+msgstr "Aplicar los ajustes actuales a todos los capítulos"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "−1 / +1 adjusts each limited chapter from its current depth. Unlimited chapters stay unlimited. Apply replaces every chapter’s depth and limit setting with the current selection."
+msgstr "−1 / +1 ajusta cada capítulo con límite desde su profundidad actual. Los capítulos sin límite siguen sin límite. Aplicar reemplaza la profundidad y la activación del límite de todos los capítulos con la selección actual."
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Adjust each chapter from its current depth. Unlimited chapters stay unlimited."
+msgstr "Ajusta cada capítulo desde su profundidad actual. Los capítulos sin límite siguen sin límite."
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Adjust depth in all chapters"
+msgstr "Ajustar la profundidad de todos los capítulos"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Less depth"
+msgstr "Menos profundidad"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "More depth"
+msgstr "Más profundidad"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Use the same depth everywhere"
+msgstr "Usar la misma profundidad en todos"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "No depth limit"
+msgstr "Sin límite de profundidad"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Replaces individual chapter settings."
+msgstr "Reemplaza los ajustes individuales de cada capítulo."
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Apply to all"
+msgstr "Aplicar a todos"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "About bulk depth settings"
+msgstr "Acerca de los ajustes de profundidad de todos los capítulos"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Adjust depth:"
+msgstr "Ajustar profundidad:"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Increase or decrease the depth of all limited chapters by one. Unlimited chapters remain unchanged."
+msgstr "Aumenta o reduce en uno la profundidad de todos los capítulos con límite. Los capítulos sin límite no cambian."
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Apply to all:"
+msgstr "Aplicar a todos:"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Apply the currently selected depth and limit settings to every chapter, replacing their individual configurations."
+msgstr "Aplica la profundidad y el límite seleccionados a todos los capítulos, reemplazando sus ajustes individuales."
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Adjust depth across chapters"
+msgstr "Ajustar profundidad de los capítulos"
+
+#: lib/listudy_web/templates/study/_study_settings.html.eex
+msgid "Use current settings"
+msgstr "Usar los ajustes actuales"
