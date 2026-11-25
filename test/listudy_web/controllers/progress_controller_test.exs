@@ -89,6 +89,16 @@ defmodule ListudyWeb.ProgressControllerTest do
            |> json_response(200) == %{"status" => "ok"}
   end
 
+  test "invalid preferences are rejected through the JSON fallback", %{user: user} do
+    body =
+      auth(user)
+      |> post("/api/progress/sync", %{key: "", value: "fast"})
+      |> json_response(422)
+
+    assert body["error"] == "The data could not be saved."
+    assert body["errors"] == %{"key" => ["can't be blank"]}
+  end
+
   test "hydration omits legacy trees and scopes progress without losing preferences", %{
     user: user,
     other: other
